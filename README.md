@@ -1,1 +1,1 @@
-# django-report-builder
+# Django Report builder
