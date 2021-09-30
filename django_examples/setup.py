@@ -5,7 +5,7 @@ setuptools.setup(
     version="0.0.1",
     author="Ian Jones",
     description="Ajax examples",
-    include_package_data = True,
+    include_package_data=True,
     packages=['ajax_examples'],
     classifiers=[
         "Programming Language :: Python :: 3",

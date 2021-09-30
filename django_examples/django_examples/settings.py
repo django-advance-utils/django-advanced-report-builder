@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'django_modals',
     'django_datatables',
     'report_builder',
-    'report_builder_examples'
+    'report_builder_examples',
 ]
 
 MIDDLEWARE = [
