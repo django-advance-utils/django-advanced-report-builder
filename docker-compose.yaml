@@ -1,0 +1,18 @@
+version: "3"
+services:
+
+ django_report_builder:
+  build:
+   context: ./
+  volumes:
+   - ./django_examples/:/app
+   - ./report_builder/:/builder/report_builder
+   - /var/run/docker.sock:/var/run/docker.sock
+  command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8010"
+  environment:
+   - PYTHONPATH=/ajax
+  ports:
+   - 8010:8010
+
+
+
