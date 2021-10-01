@@ -1,8 +1,6 @@
 from django.contrib import admin
 from django.apps import apps
 
-from report_builder.models import MyChild
-
 
 class ReportAdmin(admin.ModelAdmin):
     list_display = ('name',
@@ -29,9 +27,3 @@ def setup_report_builder_admin(app_label, model_name):
 
     table_report_cls = apps.get_model(app_label=app_label, model_name=f'{model_name}TableReport')
     admin.site.register(table_report_cls, ReportTableAdmin)
-
-
-@admin.register(MyChild)
-class MyChildAdmin(admin.ModelAdmin):
-    list_display = ('name',
-                    )

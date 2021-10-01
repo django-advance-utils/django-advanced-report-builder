@@ -1,0 +1,45 @@
+{% extends 'report_builder_examples/base.html' %}
+{% load datatable_tags %}
+{% load ajax_helpers %}
+
+{% block head %}
+
+    {% lib_include 'datatable' module='django_datatables.includes' %}
+
+{% endblock %}
+
+
+{% block content %}
+{% block top %}{% endblock %}
+
+    {% if show_pivot_table %}
+    <div class="col-12 col-sm-6 col-md-5 col-lg-4 col-xl-2 float-left">
+        <div class="card jms-card">
+            {% filter_control datatable %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="{{ show_pivot_table|yesno:"col-12 col-sm-6 col-md-7 col-lg-8 col-xl-10,col-12" }} float-left">
+        <div class="card jms-card">
+            <div class="card-header">
+                <div class="d-flex align-items-center">
+                        <h5 class="mr-auto">{% block table_header %}{{ table_title }}{% endblock %}</h5>
+
+                         {% block table_buttons %}{{ menus.table_menu.render }}{% endblock %}
+                </div>
+            </div>
+            <div class="card-body jms-datatable-list">
+                {% if not show_pivot_table and show_search_bar %}
+                <div class="d-flex">
+                    <div class="p-2">{% no_of_results datatable %}</div>
+                    <div class="p-2">{% no_of_rows datatable %}</div>
+                    <div class="ml-auto p-2">{% table_search datatable %}</div>
+                </div>
+                {% endif %}
+                {{ datatable.render|safe }}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+

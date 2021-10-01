@@ -2,14 +2,21 @@ from django.db import models
 from django.db.models import Count
 from django_datatables.model_def import DatatableModel
 from django_datatables.columns import ColumnLink, DatatableColumn, ChoiceColumn
+from time_stamped_model.models import TimeStampedModel
 
 from report_builder.models import ReportBase
+from report_builder.report_builder import ReportBuilderFields
 
 
-class Company(models.Model):
+class Sector(TimeStampedModel):
+    name = models.CharField(max_length=80)
+
+
+class Company(TimeStampedModel):
     name = models.CharField(max_length=80)
     active = models.BooleanField(default=False)
     importance = models.IntegerField(null=True)
+    sector = models.ForeignKey(Sector, blank=True, null=True, on_delete=models.CASCADE)
 
     class Meta:
         verbose_name_plural = 'Companies'
@@ -36,6 +43,16 @@ class Company(models.Model):
                 ]
                 self.options['lookup'] = list(Tags.objects.values_list('id', 'tag'))
                 self.row_result = self.proc_result
+
+    class ReportBuilder(ReportBuilderFields):
+        fields = ['name',
+                  'active',
+                  'importance',
+                  'people',
+                  'collink_1',
+                  'sector__name',
+                  'created',
+                  'modified']
 
     def __str__(self):
         return self.name

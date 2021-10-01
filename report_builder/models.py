@@ -34,11 +34,26 @@ class TableReportBase(models.Model):
         pivot_data = json.loads(self.pivot_fields)
         return pivot_data
 
+    def get_field_strings(self):
+        table_fields = json.loads(self.table_fields)
+
+        fields = []
+        for table_field in table_fields:
+            if 'title' in table_field:
+                fields.append((table_field['field'], table_field['title']))
+            else:
+                fields.append(table_field['field'])
+        return fields
+
     class Meta:
         abstract = True
 
 
 class ReportMeta(ModelBase):
+    """
+    This dynamically adds the other models needed to run reports
+    """
+
     def __new__(cls, name, bases, attrs, **kwargs):
         module_name = attrs['__module__']
 
