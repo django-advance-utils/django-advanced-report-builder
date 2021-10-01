@@ -3,3 +3,4 @@ django-tab-menus==0.0.13
 django-filtered-datatables==0.0.18
 django-nested-modals==0.0.13
 django-ajax-helpers==0.0.13
+time-stamped-model==0.1.1

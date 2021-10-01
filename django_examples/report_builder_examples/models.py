@@ -3,6 +3,8 @@ from django.db.models import Count
 from django_datatables.model_def import DatatableModel
 from django_datatables.columns import ColumnLink, DatatableColumn, ChoiceColumn
 
+from report_builder.models import ReportBase
+
 
 class Company(models.Model):
     name = models.CharField(max_length=80)
@@ -61,3 +63,11 @@ class Note(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     date = models.DateField()
     notes = models.TextField()
+
+
+class Report(ReportBase):
+    pass
+
+
+# class MyReport(ReportBase):
+#     report = models.ForeignKey(Report, on_delete=models.CASCADE, null=True, blank=True)
