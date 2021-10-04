@@ -17,9 +17,9 @@
     <div class="card jms-card">
         <div class="card-header">
             <div class="d-flex align-items-center">
-                    <h5 class="mr-auto">{% block table_header %}{{ table_title }}{% endblock %}</h5>
+                    <h5 class="mr-auto">{{ table_report.get_title }}</h5>
 
-                     {% block table_buttons %}{{ menus.table_menu.render }}{% endblock %}
+                     {% block table_buttons %}{{ menu.render }}{% endblock %}
             </div>
         </div>
         <div class="card-body jms-datatable-list">

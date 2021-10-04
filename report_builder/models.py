@@ -108,10 +108,11 @@ class ReportBase(TimeStampedModel, metaclass=ReportMeta):
         if output_type == OUTPUT_TYPE_TABLE:
             return getattr(self, f"{model_name}tablereport")
 
-
         return None
-
 
     def get_model_name(self):
         return self._meta.model_name
+
+    def get_title(self):
+        return self.name
 

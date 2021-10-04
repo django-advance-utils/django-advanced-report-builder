@@ -3,6 +3,7 @@ import json
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django_datatables.datatables import DatatableTable
+from django_menus.menu import HtmlMenu
 
 
 class DatatableReportView:
@@ -25,8 +26,11 @@ class DatatableReportView:
         table_report = self.setup_datatable(table)
         datatable = self.datatables[list(self.datatables.keys())[0]]
 
+        menu = HtmlMenu(self.request, 'button_group').add_items(*self.report_menu())
+
         return render_to_string(self.datatable_template, {'datatable': datatable,
-                                                          'table_report': table_report})
+                                                          'table_report': table_report,
+                                                          'menu': menu})
 
     def setup_datatable(self, table):
         model_name = self.object.get_model_name()
