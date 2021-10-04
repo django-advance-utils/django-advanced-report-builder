@@ -5,7 +5,7 @@ from django.db.models.base import ModelBase
 from time_stamped_model.models import TimeStampedModel
 from django.db import models
 
-from report_builder import OUTPUT_TYPE_GANTT, OUTPUT_TYPE_CALENDAR, OUTPUT_TYPE_SORTABLE_TABLE, OUTPUT_TYPE_TABLE, \
+from report_builder import OUTPUT_TYPE_CALENDAR, OUTPUT_TYPE_TABLE, \
     OUTPUT_TYPE_BAR_CHART, OUTPUT_TYPE_SINGLE_VALUE, OUTPUT_TYPE_CUSTOM, OUTPUT_TYPE_LINE_CHART, OUTPUT_TYPE_FUNNEL
 
 
@@ -79,10 +79,8 @@ class ReportMeta(ModelBase):
 
 class ReportBase(TimeStampedModel, metaclass=ReportMeta):
     OUTPUT_TYPE_CHOICES = (
-        (OUTPUT_TYPE_GANTT, 'Gantt'),
-        (OUTPUT_TYPE_CALENDAR, 'Calendar'),
-        (OUTPUT_TYPE_SORTABLE_TABLE, 'Sortable Table'),
         (OUTPUT_TYPE_TABLE, 'Table'),
+        (OUTPUT_TYPE_CALENDAR, 'Calendar'),
         (OUTPUT_TYPE_BAR_CHART, 'Bar Chart'),
         (OUTPUT_TYPE_SINGLE_VALUE, 'Single Value'),
         (OUTPUT_TYPE_CUSTOM, 'Custom'),
@@ -101,3 +99,19 @@ class ReportBase(TimeStampedModel, metaclass=ReportMeta):
     class Meta:
         ordering = ['name']
         abstract = True
+
+    def get_report(self):
+        output_type = self.output_type
+
+        model_name = self._meta.model_name
+
+        if output_type == OUTPUT_TYPE_TABLE:
+            return getattr(self, f"{model_name}tablereport")
+
+
+        return None
+
+
+    def get_model_name(self):
+        return self._meta.model_name
+
