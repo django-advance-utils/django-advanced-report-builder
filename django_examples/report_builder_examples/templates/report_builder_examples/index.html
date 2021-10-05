@@ -1,6 +1,5 @@
 {% extends 'report_builder_examples/base.html' %}
-{% load datatable_tags %}
-{% load ajax_helpers %}
+{% load datatable_tags ajax_helpers %}
 
 {% block head %}
 
@@ -11,6 +10,9 @@
 
 {% block content %}
 {% block top %}{% endblock %}
+
+
+
 
     {% if show_pivot_table %}
     <div class="col-12 col-sm-6 col-md-5 col-lg-4 col-xl-2 float-left">

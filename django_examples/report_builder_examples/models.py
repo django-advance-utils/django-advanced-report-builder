@@ -4,7 +4,7 @@ from django_datatables.model_def import DatatableModel
 from django_datatables.columns import ColumnLink, DatatableColumn, ChoiceColumn
 from time_stamped_model.models import TimeStampedModel
 
-from report_builder.models import ReportBase
+from report_builder.models import Report
 from report_builder.report_builder import ReportBuilderFields
 
 
@@ -82,9 +82,6 @@ class Note(models.Model):
     notes = models.TextField()
 
 
-class Report(ReportBase):
-    pass
-
-
-# class MyReport(ReportBase):
-#     report = models.ForeignKey(Report, on_delete=models.CASCADE, null=True, blank=True)
+class ExtraReportFields(models.Model):
+    report = models.OneToOneField(Report, primary_key=True, on_delete=models.CASCADE)
+    notes = models.TextField()

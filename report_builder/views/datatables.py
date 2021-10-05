@@ -1,60 +1,50 @@
-import json
+from ajax_helpers.mixins import AjaxHelpers
+from django.shortcuts import get_object_or_404
+from django_datatables.datatables import DatatableView
+from django_menus.menu import MenuMixin, MenuItem
+from django_modals.modals import ModelFormModal
+from django_modals.widgets.widgets import Toggle
 
-from django.http import HttpResponse
-from django.template.loader import render_to_string
-from django_datatables.datatables import DatatableTable
-from django_menus.menu import HtmlMenu
+from report_builder.models import TableReport
 
 
-class DatatableReportView:
+class TableView(AjaxHelpers, MenuMixin, DatatableView):
+    template_name = 'report_builder/datatable.html'
 
-    datatable_template = 'report_builder/datatable.html'
+    def add_tables(self):
+        return None
 
-    def __init__(self, *args, **kwargs):
-        self.object = None
-        super().__init__(*args, **kwargs)
-        self.datatables = {}
+    def dispatch(self, request, *args, **kwargs):
+        self.table_report = get_object_or_404(TableReport, pk=self.kwargs['pk'])
+        base_model = self.table_report.report_type.content_type.model_class()
+        self.add_table(type(self).__name__.lower(), model=base_model)
 
-    def add_datatable(self):
-        table_id = f'setup_report{self.object.id}'
-        base_model = self.object.report_type.content_type.model_class()
-        self.datatables[table_id] = DatatableTable(table_id, model=base_model)
-        return self.datatables[table_id]
+        return super().dispatch(request, *args, **kwargs)
 
-    def view_datatable(self):
-        table = self.add_datatable()
-        table_report = self.setup_datatable(table)
-        datatable = self.datatables[list(self.datatables.keys())[0]]
-
-        menu = HtmlMenu(self.request, 'button_group').add_items(*self.report_menu())
-
-        return render_to_string(self.datatable_template, {'datatable': datatable,
-                                                          'table_report': table_report,
-                                                          'menu': menu})
-
-    def setup_datatable(self, table):
-        model_name = self.object.get_model_name()
-        table_report = getattr(self.object, f"{model_name}tablereport")
-
-        fields = table_report.get_field_strings()
+    def setup_table(self, table):
+        fields = self.table_report.get_field_strings()
         table.add_columns(*fields)
-        return table_report
 
-    @staticmethod
-    def get_datatable_query(table, **kwargs):
-        return table.get_query(**kwargs)
+    def add_to_context(self, **kwargs):
+        return {'table_report': self.table_report}
 
-    def post_datatable(self, request, *args, **kwargs):
-        if request.POST.get('datatable_data'):
-            # table = self.datatables[request.POST['table_id']]
-            table = self.add_datatable()
-            self.setup_datatable(table=table)
-            results = self.get_datatable_query(table, **kwargs)
-            return HttpResponse(table.get_json(request, results), content_type='application/json')
-        if hasattr(super(), 'post'):
-            # noinspection PyUnresolvedReferences
-            return super().post(request, *args, **kwargs)
-        elif request.is_ajax() and request.content_type == 'application/json':
-            response = json.loads(request.body)
-            raise Exception(f'May need to use AjaxHelpers Mixin or'
-                            f' add one of these \n{", ".join(response.keys())}\nto ajax_commands ')
+    def setup_menu(self):
+        super().setup_menu()
+        self.add_menu('button_menu', 'button_group').add_items(
+            *self.pod_menu()
+        )
+
+    def pod_menu(self):
+        return [MenuItem(f'report_builder:table_modal,pk-{self.table_report.id}',
+                         menu_display='Edit',
+                         font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
+
+
+class TableModal(ModelFormModal):
+    size = 'xl'
+    model = TableReport
+    form_fields = ['name',
+                   ('has_clickable_rows', {'widget': Toggle(attrs={'data-onstyle': 'success',
+                                                                   'data-on': 'YES',
+                                                                   'data-off': 'NO'})})
+                   ]

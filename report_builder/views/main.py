@@ -2,29 +2,24 @@ from ajax_helpers.mixins import AjaxHelpers
 from django.views.generic import DetailView
 from django_menus.menu import MenuMixin
 
-from report_builder import OUTPUT_TYPE_TABLE
-from report_builder.views.datatables import DatatableReportView
+from report_builder.views.datatables import TableView
 
 
-class ViewReportBase(AjaxHelpers, DatatableReportView, MenuMixin, DetailView):
+class ViewReportBase(AjaxHelpers, MenuMixin, DetailView):
+
+    views = {'tablereport': TableView}
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        report_data = self.view_report()
+        view = self.get_view(report=self.object)
+        report_data = view.as_view()(self.request, *self.args, **self.kwargs).rendered_content
         context['report'] = report_data
         return context
 
-    def view_report(self):
-        if self.object.output_type == OUTPUT_TYPE_TABLE:
-            return self.view_datatable()
-        return None
+    def get_view(self, report):
+        return self.views.get(report.instance_type)
 
     def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        if self.object.output_type == OUTPUT_TYPE_TABLE:
-            return self.post_datatable(request, *args, **kwargs)
-        return None
-
-    def report_menu(self):
-        return []
-
+        view = self.get_view(report=self.get_object())
+        return view.as_view()(self.request, *self.args, **self.kwargs)
 
