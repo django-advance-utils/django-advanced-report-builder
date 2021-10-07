@@ -1,0 +1,142 @@
+<div id="div_{{ field.auto_id }}" class="form-group row">
+    <label for="{{ field.auto_id }}" class="col-form-label col-md-3 col-form-label-sm">
+        Display Fields
+    </label>
+
+    <div class="col-md-9 input-group-sm">
+        <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+        <style>
+            #{{ field.auto_id }}_selection, #{{ field.auto_id }}_available_fields {
+                border: 1px solid #eee;
+                width: 100%;
+                min-height: 300px;
+                list-style-type: none;
+                padding: 5px 0 0 0;
+                float: left;
+                margin: 0 10px 0 0;
+            }
+
+            #{{ field.auto_id }}_selection li, #{{ field.auto_id }}_available_fields li {
+                margin: 0 5px 5px 5px;
+                padding: 5px;
+                font-size: 1.2em;
+                width: 100%;
+            }
+        </style>
+
+        <script>
+
+            let selection_id_name = '#{{ field.auto_id }}_selection';
+            let available_fields_id_name = '#{{ field.auto_id }}_available_fields';
+
+            ajax_helpers.command_functions.report_fields = function (command) {
+                console.log(command.data);
+                let data = jQuery.parseJSON(command.data);
+                $(selection_id_name).empty();
+                $(available_fields_id_name).empty();
+
+                $.each(data['fields'], function (key, value) {
+                    $(available_fields_id_name).append('<li class="ui-state-default">' + value["label"] + '</a></li>');
+
+                });
+
+            }
+
+
+            $(function () {
+                $(selection_id_name + ', ' + available_fields_id_name).sortable({
+                    connectWith: ".connectedSortable"
+                }).disableSelection();
+            });
+
+            $('#id_report_type').on('change', function (e) {
+                get_fields(this.value);
+            });
+
+
+            function get_fields(report_type_id) {
+                if (report_type_id === '') {
+                    $(selection_id_name).empty();
+                    $(available_fields_id_name).empty();
+                } else {
+                    ajax_helpers.post_json({
+                        "ajax": true,
+                        "data": {
+                            "report_type_id": report_type_id,
+                            "ajax": "get_fields"
+                        }
+                    })
+                }
+
+            }
+
+
+            function {{ field.auto_id }}_search_fields(search_box_id, area_id) {
+                let searchString = $(search_box_id).val().toUpperCase();
+                $(area_id + " li").each(function (index, value) {
+                    let currentName = $(value).text()
+                    if (currentName.toUpperCase().indexOf(searchString) > -1) {
+                        $(value).show();
+                    } else {
+                        $(value).hide();
+                    }
+                });
+            }
+
+
+        </script>
+
+        <div class="row">
+
+            <div class="col-5" id="selection_div">
+                <h6><strong>Selection</strong>
+                </h6> <input type="text"
+                             id="{{ field.auto_id }}_selected_search_input"
+                             onkeyup="{{ field.auto_id }}_search_fields('#{{ field.auto_id }}_selected_search_input', selection_id_name)"
+                             placeholder="Search selected fields"
+                             class="form-control"
+                             style="width: 100%!important;">
+                <br>
+                <ol id="{{ field.auto_id }}_selection" class="connectedSortable ui-sortable ui-droppable"
+                    data-empty-message="Drag available fields from the right to this area." style="font-size: 12px">
+
+
+                </ol>
+            </div>
+
+            <div class="col-4" id="{{ field.auto_id }}_available_fields_div">
+                <h6><strong>Available
+                    Fields</strong>
+                </h6> <input
+                    type="text" id="{{ field.auto_id }}_field_search_input"
+                    onkeyup="{{ field.auto_id }}_search_fields('#{{ field.auto_id }}_field_search_input', available_fields_id_name)"
+                    placeholder="Search available fields"
+                    class="form-control" style="width: 100%px!important;"> <br>
+                <ul id="{{ field.auto_id }}_available_fields" class="connectedSortable ui-sortable ui-droppable"
+                    style="font-size: 12px">
+                    <li class="ui-state-default">Item 1</li>
+                    <li class="ui-state-default">Item 2</li>
+                    <li class="ui-state-default">Item 3</li>
+                    <li class="ui-state-default">Item 4</li>
+                    <li class="ui-state-default">Item 5</li>
+
+                </ul>
+            </div>
+
+
+            <div id="keys" class="col-3">
+                <div class="col-sm-12" style=";font-size: 12px;"><i class="fa fa-square fa-2x"
+                                                                    style="opacity:1;color: #2e6da4"></i><span>A Table</span>
+                </div>
+                <div class="col-sm-12" style=";font-size: 12px;"><i class="fa fa-square fa-2x"
+                                                                    style="opacity:1;color: #f931f3"></i><span>B Table</span>
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </div>
+</div>

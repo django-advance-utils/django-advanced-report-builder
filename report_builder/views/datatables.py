@@ -1,7 +1,10 @@
+import json
+
 from ajax_helpers.mixins import AjaxHelpers
 from django.shortcuts import get_object_or_404
 from django_datatables.datatables import DatatableView
 from django_menus.menu import MenuMixin, MenuItem
+from django_modals.fields import FieldEx
 from django_modals.modals import ModelFormModal
 from django_modals.widgets.widgets import Toggle
 
@@ -43,8 +46,22 @@ class TableView(AjaxHelpers, MenuMixin, DatatableView):
 class TableModal(ModelFormModal):
     size = 'xl'
     model = TableReport
+    ajax_commands = ['button', 'select2', 'ajax']
     form_fields = ['name',
                    ('has_clickable_rows', {'widget': Toggle(attrs={'data-onstyle': 'success',
                                                                    'data-on': 'YES',
-                                                                   'data-off': 'NO'})})
+                                                                   'data-off': 'NO'})}),
+                   'report_type',
+                   'table_fields'
                    ]
+
+    def form_setup(self, form, *_args, **_kwargs):
+        return [FieldEx('name'),
+                FieldEx('report_type'),
+                FieldEx('has_clickable_rows', template='django_modals/fields/label_checkbox.html'),
+                FieldEx('table_fields', template='report_builder/fields/select_column.html'),
+                ]
+
+    def ajax_get_fields(self, **kwargs):
+        return self.command_response('report_fields', data=json.dumps({'fields': [{'field': 'name',
+                                                                                   'label': 'Name'}]}))

@@ -26,16 +26,20 @@ class ViewReports(DatatableView):
 
 class ViewReport(ViewReportBase):
     template_name = 'report_builder_examples/report.html'
-    model = Report
 
 
 class TableExtraModal(TableModal):
+
+
+
     def form_setup(self, form, *_args, **_kwargs):
         form.fields['notes'] = CharField(widget=Textarea)
 
+
+
         return [FieldEx('name'),
                 FieldEx('notes'),
-                FieldEx('has_clickable_rows')]
+                FieldEx('has_clickable_rows', template='django_modals/fields/label_checkbox.html')]
 
 
 

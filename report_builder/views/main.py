@@ -2,11 +2,12 @@ from ajax_helpers.mixins import AjaxHelpers
 from django.views.generic import DetailView
 from django_menus.menu import MenuMixin
 
+from report_builder.models import Report
 from report_builder.views.datatables import TableView
 
 
 class ViewReportBase(AjaxHelpers, MenuMixin, DetailView):
-
+    model = Report
     views = {'tablereport': TableView}
 
     def get_context_data(self, **kwargs):
