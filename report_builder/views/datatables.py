@@ -46,6 +46,7 @@ class TableView(AjaxHelpers, MenuMixin, DatatableView):
 class TableModal(ModelFormModal):
     size = 'xl'
     model = TableReport
+    ajax_commands = ['button', 'select2', 'ajax']
     form_fields = ['name',
                    ('has_clickable_rows', {'widget': Toggle(attrs={'data-onstyle': 'success',
                                                                    'data-on': 'YES',
@@ -93,7 +94,7 @@ class TableModal(ModelFormModal):
                              title=include.get('title'),
                              colour=include.get('colour'))
 
-    def button_get_fields(self, **kwargs):
+    def ajax_get_fields(self, **kwargs):
         report_type_id = kwargs['report_type'][0]
 
         report_type = get_object_or_404(ReportType, pk=report_type_id)

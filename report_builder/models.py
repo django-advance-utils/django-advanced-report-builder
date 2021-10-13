@@ -60,7 +60,7 @@ class TableReport(Report):
         fields = []
         for table_field in table_fields:
             if 'title' in table_field:
-                fields.append((table_field['field'], table_field['title']))
+                fields.append((table_field['field'], {'title': table_field['title']}))
             else:
                 fields.append(table_field['field'])
         return fields
