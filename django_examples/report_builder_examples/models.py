@@ -23,7 +23,7 @@ class Company(TimeStampedModel):
 
     class Datatable(DatatableModel):
         people = {'annotations': {'people': Count('person__id')}}
-        collink_1 = ColumnLink(title='Defined in Model', field='name', url_name='company')
+        collink_1 = ColumnLink(title='Defined in Model', field='name', url_name='report_builder_examples:company')
 
         class Tags(DatatableColumn):
             def setup_results(self, request, all_results):
@@ -45,12 +45,14 @@ class Company(TimeStampedModel):
                 self.row_result = self.proc_result
 
     class ReportBuilder(ReportBuilderFields):
-        fields = ['name',
+        colour = '#00008b'
+        title = 'Company'
+        fields = ['collink_1',
+                  'name',
                   'active',
                   'importance',
                   'people',
-                  'collink_1',
-                  'sector__name',
+                  ('sector__name', {'title': 'Sector Name'}),
                   'created',
                   'modified']
 
@@ -69,6 +71,17 @@ class Person(models.Model):
     first_name = models.CharField(max_length=80)
     surname = models.CharField(max_length=80)
     date_entered = models.DateField(auto_now_add=True)
+
+    class ReportBuilder(ReportBuilderFields):
+        colour = '#FF0000'
+        title = 'Person'
+        fields = ['title',
+                  'first_name',
+                  'surname',
+                  'date_entered']
+        includes = [{'prefix': 'company__',
+                     'title_prefix': 'Company -> ',
+                     'model': 'report_builder_examples.Company.ReportBuilder'}]
 
 
 class Tags(models.Model):

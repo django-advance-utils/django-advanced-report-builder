@@ -8,6 +8,7 @@ from time_stamped_model.models import TimeStampedModel
 class ReportType(TimeStampedModel):
     name = models.CharField(max_length=200)
     content_type = models.ForeignKey(ContentType, null=False, blank=False, on_delete=models.PROTECT)
+    report_builder_class_name = models.CharField(max_length=200)
 
     def __str__(self):
         return self.name

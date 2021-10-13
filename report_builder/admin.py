@@ -12,7 +12,8 @@ class ReportAdmin(admin.ModelAdmin):
 @admin.register(ReportType)
 class ReportTypeAdmin(admin.ModelAdmin):
     list_display = ('name',
-                    'content_type')
+                    'content_type',
+                    'report_builder_class_name')
 
 
 @admin.register(TableReport)

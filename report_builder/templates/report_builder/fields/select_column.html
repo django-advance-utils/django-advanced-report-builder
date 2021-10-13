@@ -15,6 +15,7 @@
                 padding: 5px 0 0 0;
                 float: left;
                 margin: 0 10px 0 0;
+                color: white;
             }
 
             #{{ field.auto_id }}_selection li, #{{ field.auto_id }}_available_fields li {
@@ -22,6 +23,7 @@
                 padding: 5px;
                 font-size: 1.2em;
                 width: 100%;
+                color: white;
             }
         </style>
 
@@ -29,17 +31,26 @@
 
             let selection_id_name = '#{{ field.auto_id }}_selection';
             let available_fields_id_name = '#{{ field.auto_id }}_available_fields';
+            let table_field_keys = '#{{ field.auto_id }}_keys';
 
             ajax_helpers.command_functions.report_fields = function (command) {
                 console.log(command.data);
                 let data = jQuery.parseJSON(command.data);
                 $(selection_id_name).empty();
                 $(available_fields_id_name).empty();
-
+                $(table_field_keys).empty();
                 $.each(data['fields'], function (key, value) {
-                    $(available_fields_id_name).append('<li class="ui-state-default">' + value["label"] + '</a></li>');
+                    $(available_fields_id_name).append('<li class="ui-state-default"' +
+                        ' style="background-color: ' + value["colour"] + '">' + value["label"] + '</a></li>');
 
                 });
+
+                $.each(data['tables'], function (key, value) {
+                    $(table_field_keys).append('<div class="col-sm-12" style=";font-size: 12px;">' +
+                        '<i class="fa fa-square fa-2x" style="opacity:1;color: ' + value["colour"] + '"></i>' +
+                        ' <span>' + value["name"] + '</span> </div>');
+                });
+
 
             }
 
@@ -53,22 +64,18 @@
             $('#id_report_type').on('change', function (e) {
                 get_fields(this.value);
             });
-
+            $( document ).ready(function() {
+                get_fields($('#id_report_type').val());
+            });
 
             function get_fields(report_type_id) {
                 if (report_type_id === '') {
                     $(selection_id_name).empty();
                     $(available_fields_id_name).empty();
+                    $(table_field_keys).empty();
                 } else {
-                    ajax_helpers.post_json({
-                        "ajax": true,
-                        "data": {
-                            "report_type_id": report_type_id,
-                            "ajax": "get_fields"
-                        }
-                    })
+                    django_modal.send_inputs('get_fields')
                 }
-
             }
 
 
@@ -115,23 +122,11 @@
                     class="form-control" style="width: 100%px!important;"> <br>
                 <ul id="{{ field.auto_id }}_available_fields" class="connectedSortable ui-sortable ui-droppable"
                     style="font-size: 12px">
-                    <li class="ui-state-default">Item 1</li>
-                    <li class="ui-state-default">Item 2</li>
-                    <li class="ui-state-default">Item 3</li>
-                    <li class="ui-state-default">Item 4</li>
-                    <li class="ui-state-default">Item 5</li>
-
                 </ul>
             </div>
 
 
-            <div id="keys" class="col-3">
-                <div class="col-sm-12" style=";font-size: 12px;"><i class="fa fa-square fa-2x"
-                                                                    style="opacity:1;color: #2e6da4"></i><span>A Table</span>
-                </div>
-                <div class="col-sm-12" style=";font-size: 12px;"><i class="fa fa-square fa-2x"
-                                                                    style="opacity:1;color: #f931f3"></i><span>B Table</span>
-                </div>
+            <div id="{{ field.auto_id }}_keys" class="col-3">
 
             </div>
 
@@ -140,3 +135,4 @@
 
     </div>
 </div>
+<textarea cols="40" rows="30" name="{{ field.name }}" id="{{ field.auto_id }}">{% if field.value %}{{ field.value }}{% endif %}</textarea>
