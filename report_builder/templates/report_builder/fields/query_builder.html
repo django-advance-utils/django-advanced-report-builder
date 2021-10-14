@@ -1,0 +1,63 @@
+<link href="/static/report_builder/query_builder/css/query-builder.default.css" rel="stylesheet">
+<script type="text/javascript" src="/static/report_builder/dot/js/doT.js"></script>
+<script type="text/javascript" src="/static/report_builder/jquery_extendext/js/jQuery.extendext.js"></script>
+<script type="text/javascript" src="/static/report_builder/query_builder/js/query-builder.min.js"></script>
+
+
+<div id="div_{{ field.auto_id }}" class="form-group row">
+
+    <div class="form-group"><label class="control-label col-12">{{ field.label }}</label>
+    </div>
+
+
+
+    <div id="{{ field.auto_id }}_builder" class="col-12"></div>
+    <script>
+        $(function () {
+            let query_builder_id = '#{{ field.auto_id }}_builder';
+
+            ajax_helpers.command_functions.query_builder = function (command) {
+                 let filters = jQuery.parseJSON(command.data);
+                 console.log(filters)
+
+
+                $(query_builder_id).queryBuilder({
+                    filters: filters
+                });
+
+
+
+            }
+
+
+
+            function initialise_query_builder(report_type_id) {
+                $(query_builder_id).queryBuilder('destroy');
+                django_modal.send_inputs({'ajax': 'get_query_builder_fields'})
+
+
+            }
+
+
+            $(document).ready(function () {
+                initialise_query_builder();
+
+            });
+
+
+            $('#id_report_type').on('change', function (e) {
+                 initialise_query_builder($('#id_report_type').val());
+            });
+
+
+
+
+
+        });
+    </script>
+    <textarea cols="50" rows="10" name="{{ field.name }}" id="{{ field.auto_id }}">{% if field.value %}
+        {{ field.value }}{% endif %}</textarea>
+
+</div>
+
+

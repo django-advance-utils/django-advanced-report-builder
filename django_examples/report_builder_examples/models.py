@@ -47,12 +47,12 @@ class Company(TimeStampedModel):
     class ReportBuilder(ReportBuilderFields):
         colour = '#00008b'
         title = 'Company'
-        fields = ['collink_1',
-                  'name',
+        fields = ['name',
                   'active',
                   'importance',
                   'people',
                   ('sector__name', {'title': 'Sector Name'}),
+                  'collink_1',
                   'created',
                   'modified']
 

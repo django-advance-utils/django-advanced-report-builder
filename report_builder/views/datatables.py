@@ -1,6 +1,8 @@
 import json
 
 from ajax_helpers.mixins import AjaxHelpers
+from django.db.models import BooleanField
+from django.forms import CharField
 from django.shortcuts import get_object_or_404
 from django_datatables.datatables import DatatableView, ColumnInitialisor
 from django_menus.menu import MenuMixin, MenuItem
@@ -8,6 +10,8 @@ from django_modals.fields import FieldEx
 from django_modals.modals import ModelFormModal
 from django_modals.widgets.widgets import Toggle
 from django.apps import apps
+
+from report_builder.field_types import FieldTypes
 from report_builder.models import TableReport, ReportType
 
 
@@ -52,7 +56,9 @@ class TableModal(ModelFormModal):
                                                                    'data-on': 'YES',
                                                                    'data-off': 'NO'})}),
                    'report_type',
-                   'table_fields'
+                   'table_fields',
+                   'search_filter_data'
+
                    ]
 
     def form_setup(self, form, *_args, **_kwargs):
@@ -60,6 +66,7 @@ class TableModal(ModelFormModal):
                 FieldEx('report_type'),
                 FieldEx('has_clickable_rows', template='django_modals/fields/label_checkbox.html'),
                 FieldEx('table_fields', template='report_builder/fields/select_column.html'),
+                FieldEx('search_filter_data', template='report_builder/fields/query_builder.html'),
                 ]
 
     def _get_fields(self, base_model, fields, tables, report_builder_fields,
@@ -94,21 +101,57 @@ class TableModal(ModelFormModal):
                              title=include.get('title'),
                              colour=include.get('colour'))
 
+    def _get_query_builder_fields(self, base_model, query_builder_filters, report_builder_fields, prefix='',
+                                  title_prefix=''):
+
+        field_types = FieldTypes()
+
+        for report_builder_field in report_builder_fields.fields:
+
+            column_initialisor = ColumnInitialisor(start_model=base_model, path=report_builder_field)
+            columns = column_initialisor.get_columns()
+            for column in columns:
+                model_field = getattr(column.model, column.column_name, None)
+
+                if model_field is not None:
+                    field_types.get_filter(query_builder_filters=query_builder_filters,
+                                           model_field=model_field,
+                                           field=prefix + column.column_name,
+                                           title=title_prefix + column.title)
+        for include in report_builder_fields.includes:
+            app_label, model, report_builder_fields_str = include['model'].split('.')
+            new_model = apps.get_model(app_label, model)
+            new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
+
+            self._get_query_builder_fields(base_model=new_model,
+                                           query_builder_filters=query_builder_filters,
+                                           report_builder_fields=new_report_builder_fields,
+                                           prefix=include['prefix'],
+                                           title_prefix=include['title_prefix'])
+
     def ajax_get_fields(self, **kwargs):
         report_type_id = kwargs['report_type'][0]
 
         report_type = get_object_or_404(ReportType, pk=report_type_id)
         base_model = report_type.content_type.model_class()
-
         report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
-
         fields = []
         tables = []
-
         self._get_fields(base_model=base_model,
                          fields=fields,
                          tables=tables,
                          report_builder_fields=report_builder_fields)
-
         return self.command_response('report_fields', data=json.dumps({'fields': fields,
                                                                        'tables': tables}))
+
+    def ajax_get_query_builder_fields(self, **kwargs):
+        report_type_id = kwargs['report_type'][0]
+        report_type = get_object_or_404(ReportType, pk=report_type_id)
+        base_model = report_type.content_type.model_class()
+        report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
+        query_builder_filters = []
+        self._get_query_builder_fields(base_model=base_model,
+                                       query_builder_filters=query_builder_filters,
+                                       report_builder_fields=report_builder_fields)
+
+        return self.command_response('query_builder', data=json.dumps(query_builder_filters))

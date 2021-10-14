@@ -21,6 +21,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('favicon.ico', RedirectView.as_view(url='/static/report_builder_examples/favicon.ico', permanent=True)),
     path('report_builder/', include('report_builder.urls', namespace='report_builder')),
-
+    path('test/', TemplateView.as_view(template_name='report_builder_examples/test.html'), name='test'),
     path('', include('report_builder_examples.urls', namespace='report_builder_examples')),
 ]

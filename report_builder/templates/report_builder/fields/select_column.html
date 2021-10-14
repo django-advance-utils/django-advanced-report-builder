@@ -4,7 +4,7 @@
     </label>
 
     <div class="col-md-9 input-group-sm">
-        <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+        <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
         <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
         <style>
             #{{ field.auto_id }}_selection, #{{ field.auto_id }}_available_fields {
@@ -120,8 +120,6 @@
                 });
                 $(document).ready(function () {
                     get_fields($('#id_report_type').val());
-
-
                 });
 
                 function get_fields(report_type_id) {
@@ -151,7 +149,6 @@
                 function load_section() {
                     let fields = JSON.parse($(main_field).val())
                     $.each(fields, function (key, value) {
-                        console.log(value);
                         let field_data = available_fields_data[value.field];
                         $(selection_fields_id_name).append('<li class="ui-state-default"' +
                             'data-origin="' + value.field + '" style="background-color: ' + field_data.colour + '">' + value.title + '</a></li>');
@@ -182,4 +179,4 @@
 
         </script>
 </div>
-<textarea cols="40" rows="30" name="{{ field.name }}" id="{{ field.auto_id }}">{% if field.value %}{{ field.value }}{% endif %}</textarea>
+<input type="hidden" name="{{ field.name }}" id="{{ field.auto_id }}" value="{% if field.value %}{{ field.value }}{% endif %}">
