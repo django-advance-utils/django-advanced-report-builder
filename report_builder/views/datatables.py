@@ -1,21 +1,25 @@
 import json
+import operator
+from functools import reduce
 
 from ajax_helpers.mixins import AjaxHelpers
-from django.db.models import BooleanField
-from django.forms import CharField
+from crispy_forms.bootstrap import StrictButton
+from django.apps import apps
+
 from django.shortcuts import get_object_or_404
 from django_datatables.datatables import DatatableView, ColumnInitialisor
 from django_menus.menu import MenuMixin, MenuItem
 from django_modals.fields import FieldEx
+from django_modals.forms import ModelCrispyForm
 from django_modals.modals import ModelFormModal
 from django_modals.widgets.widgets import Toggle
-from django.apps import apps
 
 from report_builder.field_types import FieldTypes
+from report_builder.filter_query import FilterQueryMixin
 from report_builder.models import TableReport, ReportType
 
 
-class TableView(AjaxHelpers, MenuMixin, DatatableView):
+class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
     template_name = 'report_builder/datatable.html'
 
     def add_tables(self):
@@ -25,12 +29,17 @@ class TableView(AjaxHelpers, MenuMixin, DatatableView):
         self.table_report = get_object_or_404(TableReport, pk=self.kwargs['pk'])
         base_model = self.table_report.report_type.content_type.model_class()
         self.add_table(type(self).__name__.lower(), model=base_model)
-
         return super().dispatch(request, *args, **kwargs)
 
     def setup_table(self, table):
+        table.extra_filters = self.extra_filters
+
         fields = self.table_report.get_field_strings()
         table.add_columns(*fields)
+
+    def extra_filters(self, query):
+        return self.process_filters(query=query,
+                                    search_filter_data=self.table_report.search_filter_data)
 
     def add_to_context(self, **kwargs):
         return {'table_report': self.table_report}
@@ -47,9 +56,17 @@ class TableView(AjaxHelpers, MenuMixin, DatatableView):
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
 
 
+class ReportBaseForm(ModelCrispyForm):
+    submit_class = 'btn-success modal-submit'
+
+    def submit_button(self, css_class=submit_class, button_text='Submit'):
+        return StrictButton(button_text, css_class=css_class)
+
+
 class TableModal(ModelFormModal):
     size = 'xl'
     model = TableReport
+    base_form = ReportBaseForm
     ajax_commands = ['button', 'select2', 'ajax']
     form_fields = ['name',
                    ('has_clickable_rows', {'widget': Toggle(attrs={'data-onstyle': 'success',
@@ -111,11 +128,9 @@ class TableModal(ModelFormModal):
             column_initialisor = ColumnInitialisor(start_model=base_model, path=report_builder_field)
             columns = column_initialisor.get_columns()
             for column in columns:
-                model_field = getattr(column.model, column.column_name, None)
-
-                if model_field is not None:
+                if column_initialisor.django_field is not None:
                     field_types.get_filter(query_builder_filters=query_builder_filters,
-                                           model_field=model_field,
+                                           django_field=column_initialisor.django_field,
                                            field=prefix + column.column_name,
                                            title=title_prefix + column.title)
         for include in report_builder_fields.includes:
@@ -155,3 +170,4 @@ class TableModal(ModelFormModal):
                                        report_builder_fields=report_builder_fields)
 
         return self.command_response('query_builder', data=json.dumps(query_builder_filters))
+

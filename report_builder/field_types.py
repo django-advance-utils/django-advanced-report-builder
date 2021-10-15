@@ -1,4 +1,4 @@
-from django.db.models import CharField
+from django.db import models
 
 
 class FieldTypes:
@@ -45,8 +45,10 @@ class FieldTypes:
                      }
         return operators.get(field_type)
 
-    def get_filter(self, query_builder_filters, model_field, field, title):
-        if isinstance(model_field.field, CharField):
+    def get_filter(self, query_builder_filters, django_field, field, title):
+
+        field_type = type(django_field)
+        if field_type in [models.CharField, models.TextField, models.EmailField]:
             query_builder_filters.append({"id": field,
                                           "label": title,
                                           "field": field,
@@ -55,3 +57,14 @@ class FieldTypes:
                                           "validation": {"allow_empty_value": True
                                                          }
                                           })
+        elif field_type in [models.IntegerField, models.PositiveSmallIntegerField, models.PositiveIntegerField]:
+            query_builder_filters.append({"id": field,
+                                          "label": title,
+                                          "field": field,
+                                          "type": "integer",
+                                          "operators": self.get_operator(self.FIELD_TYPE_NUMBER),
+                                          "validation": {"allow_empty_value": True
+                                                         }
+                                          })
+
+

@@ -8,56 +8,58 @@
 
     <div class="form-group"><label class="control-label col-12">{{ field.label }}</label>
     </div>
-
-
-
     <div id="{{ field.auto_id }}_builder" class="col-12"></div>
+    <input type="hidden" name="{{ field.name }}" id="{{ field.auto_id }}" value="{% if field.value %}{{ field.value }}{% endif %}">
+
     <script>
         $(function () {
             let query_builder_id = '#{{ field.auto_id }}_builder';
+            let field_id = '#{{ field.auto_id }}';
+
 
             ajax_helpers.command_functions.query_builder = function (command) {
-                 let filters = jQuery.parseJSON(command.data);
-                 console.log(filters)
 
+                let rules = $(field_id).val();
+                let filters = jQuery.parseJSON(command.data);
 
-                $(query_builder_id).queryBuilder({
-                    filters: filters
-                });
-
-
-
+                if (rules !== '') {
+                    $(field_id).val('');
+                    $(query_builder_id).queryBuilder({
+                        allow_empty: true,
+                        filters: filters,
+                        rules: JSON.parse(rules)
+                    });
+                }
+                else {
+                    $(query_builder_id).queryBuilder({
+                        allow_empty: true,
+                        filters: filters,
+                    });
+                }
             }
-
-
 
             function initialise_query_builder(report_type_id) {
                 $(query_builder_id).queryBuilder('destroy');
                 django_modal.send_inputs({'ajax': 'get_query_builder_fields'})
-
-
             }
-
 
             $(document).ready(function () {
                 initialise_query_builder();
-
             });
 
 
             $('#id_report_type').on('change', function (e) {
                  initialise_query_builder($('#id_report_type').val());
             });
+            
 
-
-
-
-
+            $('#{{ form_id }} .modal-submit').click(function (event) {
+                if ($(query_builder_id).queryBuilder('validate', {skip_empty: true})) {
+                    let results = $(query_builder_id).queryBuilder('getRules', {skip_empty: true});
+                    $(field_id).val(JSON.stringify(results, null, 2));
+                    django_modal.process_commands_lock([{'function': 'post_modal'}]);
+                }
+            });
         });
     </script>
-    <textarea cols="50" rows="10" name="{{ field.name }}" id="{{ field.auto_id }}">{% if field.value %}
-        {{ field.value }}{% endif %}</textarea>
-
 </div>
-
-
