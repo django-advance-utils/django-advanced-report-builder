@@ -69,7 +69,7 @@ class Person(models.Model):
 
     title_choices = ((0, 'Mr'), (1, 'Mrs'), (2, 'Miss'))
     title = models.IntegerField(choices=title_choices, null=True)
-    company = models.ForeignKey(Company,  on_delete=models.CASCADE)
+    company = models.ForeignKey(Company,  on_delete=models.CASCADE, null=True, blank=True)
     first_name = models.CharField(max_length=80)
     surname = models.CharField(max_length=80)
     date_entered = models.DateField(auto_now_add=True)
@@ -81,8 +81,8 @@ class Person(models.Model):
                   'first_name',
                   'surname',
                   'date_entered']
-        includes = [{'prefix': 'company__',
-                     'title_prefix': 'Company -> ',
+        includes = [{'field': 'company',
+                     'title': 'Company',
                      'model': 'report_builder_examples.Company.ReportBuilder'}]
 
 

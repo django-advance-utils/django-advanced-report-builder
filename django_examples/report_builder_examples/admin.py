@@ -16,7 +16,8 @@ class CompanyAdmin(admin.ModelAdmin):
 
 @admin.register(Person)
 class PersonAdmin(admin.ModelAdmin):
-    list_display = ('first_name',
+    list_display = ('title',
+                    'first_name',
                     'surname',
                     'company',
                     'date_entered'

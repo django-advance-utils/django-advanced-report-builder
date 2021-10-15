@@ -46,7 +46,6 @@ class FieldTypes:
         return operators.get(field_type)
 
     def get_filter(self, query_builder_filters, django_field, field, title):
-
         field_type = type(django_field)
         if field_type in [models.CharField, models.TextField, models.EmailField]:
             query_builder_filters.append({"id": field,
@@ -58,13 +57,35 @@ class FieldTypes:
                                                          }
                                           })
         elif field_type in [models.IntegerField, models.PositiveSmallIntegerField, models.PositiveIntegerField]:
-            query_builder_filters.append({"id": field,
-                                          "label": title,
-                                          "field": field,
-                                          "type": "integer",
-                                          "operators": self.get_operator(self.FIELD_TYPE_NUMBER),
-                                          "validation": {"allow_empty_value": True
-                                                         }
-                                          })
+
+            if django_field.choices is None:
+                query_builder_filter = {"id": field,
+                                        "label": title,
+                                        "field": field,
+                                        "type": "integer",
+                                        "operators": self.get_operator(self.FIELD_TYPE_NUMBER),
+                                        }
+            else:
+                query_builder_filter = {"id": field,
+                                        "label": title,
+                                        "field": field,
+                                        "type": "integer",
+                                        'input': 'select',
+                                        'multiple': True,
+                                        'values': dict(django_field.choices),
+                                        "operators": self.get_operator(self.FIELD_TYPE_MULTIPLE_CHOICE),
+                                        }
+            query_builder_filters.append(query_builder_filter)
+
+    def get_foreign_key_null_field(self, query_builder_filters, field, title):
+        query_builder_filters.append({"id": field,
+                                      "label": title,
+                                      "field": field,
+                                      "type": "integer",
+                                      "operators": self.get_operator(self.FIELD_TYPE_FOREIGN_KEY),
+                                      "validation": {"allow_empty_value": True
+                                                     }
+                                      })
+
 
 

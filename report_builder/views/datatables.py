@@ -113,8 +113,8 @@ class TableModal(ModelFormModal):
                              fields=fields,
                              tables=tables,
                              report_builder_fields=new_report_builder_fields,
-                             prefix=include['prefix'],
-                             title_prefix=include['title_prefix'],
+                             prefix=f"{include['field']}__",
+                             title_prefix=include['title'],
                              title=include.get('title'),
                              colour=include.get('colour'))
 
@@ -137,12 +137,17 @@ class TableModal(ModelFormModal):
             app_label, model, report_builder_fields_str = include['model'].split('.')
             new_model = apps.get_model(app_label, model)
             new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
+            foreign_key_field = getattr(base_model, include['field'], None).field
+            if foreign_key_field.null:
+                field_types.get_foreign_key_null_field(query_builder_filters=query_builder_filters,
+                                                       field=prefix + include['field'],
+                                                       title=title_prefix + include['title'])
 
             self._get_query_builder_fields(base_model=new_model,
                                            query_builder_filters=query_builder_filters,
                                            report_builder_fields=new_report_builder_fields,
-                                           prefix=include['prefix'],
-                                           title_prefix=include['title_prefix'])
+                                           prefix=f"{include['field']}__",
+                                           title_prefix=f"{include['title']} --> ")
 
     def ajax_get_fields(self, **kwargs):
         report_type_id = kwargs['report_type'][0]
