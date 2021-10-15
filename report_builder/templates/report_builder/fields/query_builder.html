@@ -1,8 +1,5 @@
-<link href="/static/report_builder/query_builder/css/query-builder.default.css" rel="stylesheet">
-<script type="text/javascript" src="/static/report_builder/dot/js/doT.js"></script>
-<script type="text/javascript" src="/static/report_builder/jquery_extendext/js/jQuery.extendext.js"></script>
-<script type="text/javascript" src="/static/report_builder/query_builder/js/query-builder.min.js"></script>
-
+{% load ajax_helpers %}
+{% lib_include 'query_builder' module='report_builder.includes' %}
 
 <div id="div_{{ field.auto_id }}" class="form-group row">
 
@@ -29,8 +26,7 @@
                         filters: filters,
                         rules: JSON.parse(rules)
                     });
-                }
-                else {
+                } else {
                     $(query_builder_id).queryBuilder({
                         allow_empty: true,
                         filters: filters,
@@ -51,7 +47,9 @@
             $('#id_report_type').on('change', function (e) {
                  initialise_query_builder($('#id_report_type').val());
             });
-            
+
+
+
 
             $('#{{ form_id }} .modal-submit').click(function (event) {
                 if ($(query_builder_id).queryBuilder('validate', {skip_empty: true})) {

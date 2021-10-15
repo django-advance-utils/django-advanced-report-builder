@@ -22,7 +22,9 @@ class Company(TimeStampedModel):
         verbose_name_plural = 'Companies'
 
     class Datatable(DatatableModel):
-        people = {'annotations': {'people': Count('person__id')}}
+        people = DatatableColumn(annotations={'people': Count('person__id', distinct=True)})
+
+        # people = {'annotations': {'people': Count('person__id')}}
         collink_1 = ColumnLink(title='Defined in Model', field='name', url_name='report_builder_examples:company')
 
         class Tags(DatatableColumn):
