@@ -13,6 +13,3 @@ services:
    - PYTHONPATH=/ajax
   ports:
    - 8010:8010
-
-
-

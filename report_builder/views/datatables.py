@@ -1,6 +1,4 @@
 import json
-import operator
-from functools import reduce
 
 from ajax_helpers.mixins import AjaxHelpers
 from crispy_forms.bootstrap import StrictButton
@@ -11,11 +9,12 @@ from django_datatables.datatables import DatatableView, ColumnInitialisor
 from django_menus.menu import MenuMixin, MenuItem
 from django_modals.fields import FieldEx
 from django_modals.forms import ModelCrispyForm
-from django_modals.modals import ModelFormModal
+from django_modals.modals import ModelFormModal, FormModal
 from django_modals.widgets.widgets import Toggle
 
 from report_builder.field_types import FieldTypes
 from report_builder.filter_query import FilterQueryMixin
+from report_builder.forms import FieldForm
 from report_builder.models import TableReport, ReportType
 
 
@@ -114,7 +113,7 @@ class TableModal(ModelFormModal):
                              tables=tables,
                              report_builder_fields=new_report_builder_fields,
                              prefix=f"{include['field']}__",
-                             title_prefix=include['title'],
+                             title_prefix=include['title'] + ' -> ',
                              title=include.get('title'),
                              colour=include.get('colour'))
 
@@ -175,4 +174,19 @@ class TableModal(ModelFormModal):
                                        report_builder_fields=report_builder_fields)
 
         return self.command_response('query_builder', data=json.dumps(query_builder_filters))
+
+
+class FieldModal(FormModal):
+    form_class = FieldForm
+    modal_title = 'CHANGE ME'
+
+    def form_valid(self, form):
+        selector = self.slug['selector']
+        self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
+        self.add_command({'function': 'update_selection'})
+        return self.command_response('close')
+
+
+
+
 

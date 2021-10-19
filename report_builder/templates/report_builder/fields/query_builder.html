@@ -11,7 +11,17 @@
     <script>
         $(function () {
             let query_builder_id = '#{{ field.auto_id }}_builder';
+            let query_builder = $(query_builder_id);
             let field_id = '#{{ field.auto_id }}';
+
+            function set_select2() {
+                setTimeout(function () {
+                    $(query_builder_id + ' .rule-value-container select').css('width', '275px');
+                    $(query_builder_id + ' select').select2({theme: "bootstrap4",
+                    dropdownParent: $("#div_{{ field.auto_id }}")});
+
+                }, 100)
+            }
 
 
             ajax_helpers.command_functions.query_builder = function (command) {
@@ -21,21 +31,37 @@
 
                 if (rules !== '') {
                     $(field_id).val('');
-                    $(query_builder_id).queryBuilder({
+                    query_builder.queryBuilder({
                         allow_empty: true,
                         filters: filters,
                         rules: JSON.parse(rules)
                     });
                 } else {
-                    $(query_builder_id).queryBuilder({
+                    query_builder.queryBuilder({
                         allow_empty: true,
                         filters: filters,
                     });
                 }
+                set_select2();
+
+                query_builder.on('afterCreateRuleInput.queryBuilder', function (e, rule) {
+                    set_select2();
+                    if (rule.filter.plugin === 'datetimepicker') {
+                        let $input = rule.$el.find('.rule-value-container [name*=_value_]');
+                        $input.on('dp.change', function () {
+                            $input.trigger('change');
+                        });
+                    }
+                });
+
+                query_builder.on("afterAddRule.queryBuilder", function (event, group) {
+                   set_select2();
+                });
+
             }
 
             function initialise_query_builder(report_type_id) {
-                $(query_builder_id).queryBuilder('destroy');
+                query_builder.queryBuilder('destroy');
                 django_modal.send_inputs({'ajax': 'get_query_builder_fields'})
             }
 
@@ -43,17 +69,13 @@
                 initialise_query_builder();
             });
 
-
             $('#id_report_type').on('change', function (e) {
                  initialise_query_builder($('#id_report_type').val());
             });
 
-
-
-
             $('#{{ form_id }} .modal-submit').click(function (event) {
-                if ($(query_builder_id).queryBuilder('validate', {skip_empty: true})) {
-                    let results = $(query_builder_id).queryBuilder('getRules', {skip_empty: true});
+                if (query_builder.queryBuilder('validate', {skip_empty: true})) {
+                    let results = query_builder.queryBuilder('getRules', {skip_empty: true});
                     $(field_id).val(JSON.stringify(results, null, 2));
                     django_modal.process_commands_lock([{'function': 'post_modal'}]);
                 }

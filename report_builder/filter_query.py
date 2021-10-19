@@ -2,6 +2,10 @@ import json
 import operator
 from functools import reduce
 from django.db.models import Q
+from datetime import datetime, date, timedelta
+
+from report_builder.variable_date import VariableDate
+
 
 class FilterQueryMixin:
 
@@ -73,25 +77,22 @@ class FilterQueryMixin:
                 continue
 
             field = rule['field']
+            _id = rule['id']
             display_operator = rule['operator']
             query_string = field + self._get_operator(display_operator)
-            # data_type = rule['type']
+            data_type = rule['type']
             value = rule.get('value', '')
             if display_operator == 'is_null':
                 value = True
             elif display_operator == 'is_not_null':
                 value = False
 
-            if False:  # special date stuff
-                # Variable dates need to be handled in a special way (a range between 2 values).
-                if display_operator in ['less', 'greater_or_equal']:
-                    query_list.append(Q((query_string, value[0])))
-                elif display_operator in ['greater', 'less_or_equal']:
-                    query_list.append(Q((query_string, value[1])))
-                elif display_operator in ["not_equal", "not_in"]:
-                    query_list.append(~((Q((field + "__gte", value[0]))) & (Q((field + "__lte", value[1])))))
-                else:
-                    query_list.append(((Q((field + "__gte", value[0]))) & (Q((field + "__lte", value[1])))))
+            if data_type == "string" and _id.endswith('__variable_date'):
+                self.get_variable_date(value=value,
+                                       query_list=query_list,
+                                       display_operator=display_operator,
+                                       field=field,
+                                       query_string=query_string)
             else:
                 # 'Normal' Query.
                 if display_operator in ["not_equal", "not_in", "not_contains", 'not_begins_with', "not_ends_with"]:
@@ -108,3 +109,17 @@ class FilterQueryMixin:
 
             variable_date = False
         return query_list
+
+    @staticmethod
+    def get_variable_date(value, query_list, display_operator, field, query_string):
+        _, range_type = value.split(":")
+        variable_date = VariableDate()
+        value = variable_date.get_variable_dates(range_type=int(range_type))
+        if display_operator in ['less', 'greater_or_equal']:
+            query_list.append(Q((query_string, value[0])))
+        elif display_operator in ['greater', 'less_or_equal']:
+            query_list.append(Q((query_string, value[1])))
+        elif display_operator in ["not_equal", "not_in"]:
+            query_list.append(~((Q((field + "__gte", value[0]))) & (Q((field + "__lte", value[1])))))
+        else:
+            query_list.append(((Q((field + "__gte", value[0]))) & (Q((field + "__lte", value[1])))))

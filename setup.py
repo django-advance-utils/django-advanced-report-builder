@@ -11,7 +11,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/django-advance-utils/django-advance-query-builder",
-    include_package_data = True,
+    include_package_data=True,
     packages=['ajax_helpers'],
     classifiers=[
         "Programming Language :: Python :: 3",

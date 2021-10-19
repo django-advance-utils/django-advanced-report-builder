@@ -1,5 +1,7 @@
 from django.db import models
 
+from report_builder.variable_date import VariableDate
+
 
 class FieldTypes:
     FIELD_TYPE_STRING = 1
@@ -46,8 +48,7 @@ class FieldTypes:
         return operators.get(field_type)
 
     def get_filter(self, query_builder_filters, django_field, field, title):
-        field_type = type(django_field)
-        if field_type in [models.CharField, models.TextField, models.EmailField]:
+        if isinstance(django_field, (models.CharField, models.TextField, models.EmailField)):
             query_builder_filters.append({"id": field,
                                           "label": title,
                                           "field": field,
@@ -56,8 +57,9 @@ class FieldTypes:
                                           "validation": {"allow_empty_value": True
                                                          }
                                           })
-        elif field_type in [models.IntegerField, models.PositiveSmallIntegerField, models.PositiveIntegerField]:
-
+        elif isinstance(django_field, (models.IntegerField,
+                                       models.PositiveSmallIntegerField,
+                                       models.PositiveIntegerField)):
             if django_field.choices is None:
                 query_builder_filter = {"id": field,
                                         "label": title,
@@ -76,6 +78,17 @@ class FieldTypes:
                                         "operators": self.get_operator(self.FIELD_TYPE_MULTIPLE_CHOICE),
                                         }
             query_builder_filters.append(query_builder_filter)
+        elif isinstance(django_field, models.BooleanField):
+            query_builder_filters.append({"id": field,
+                                          "label": title,
+                                          "field": field,
+                                          "input": "select",
+                                          "operators": self.get_operator(self.FIELD_TYPE_BOOLEAN),
+                                          "values": {"0": "False", "1": "True"}})
+        elif isinstance(django_field, models.DateTimeField):
+            self.get_date_field(query_builder_filters=query_builder_filters,
+                                field=field,
+                                title=title)
 
     def get_foreign_key_null_field(self, query_builder_filters, field, title):
         query_builder_filters.append({"id": field,
@@ -87,5 +100,13 @@ class FieldTypes:
                                                      }
                                       })
 
-
-
+    def get_date_field(self, query_builder_filters, field, title):
+        variable_date = VariableDate()
+        query_builder_filter = {"id": f'{field}__variable_date',
+                                "label": f'{title} (Variable)',
+                                "field": field,
+                                "operators": self.get_operator(self.FIELD_TYPE_DATE),
+                                "input": "select",
+                                "values": variable_date.get_variable_date_filter_values()
+                                }
+        query_builder_filters.append(query_builder_filter)
