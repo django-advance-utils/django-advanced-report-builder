@@ -73,13 +73,22 @@
                  initialise_query_builder($('#id_report_type').val());
             });
 
+            function save_query_builder() {
+                let results = query_builder.queryBuilder('getRules', {skip_empty: true});
+                $(field_id).val(JSON.stringify(results, null, 2));
+            }
+
             $('#{{ form_id }} .modal-submit').click(function (event) {
                 if (query_builder.queryBuilder('validate', {skip_empty: true})) {
-                    let results = query_builder.queryBuilder('getRules', {skip_empty: true});
-                    $(field_id).val(JSON.stringify(results, null, 2));
+                    save_query_builder();
                     django_modal.process_commands_lock([{'function': 'post_modal'}]);
                 }
             });
+
+            ajax_helpers.command_functions.save_query_builder = function (command) {
+                save_query_builder()
+            };
+
         });
     </script>
 </div>

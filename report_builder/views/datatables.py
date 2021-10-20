@@ -183,6 +183,7 @@ class FieldModal(FormModal):
     def form_valid(self, form):
         selector = self.slug['selector']
         self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
+        self.add_command({'function': 'save_query_builder'})
         self.add_command({'function': 'update_selection'})
         return self.command_response('close')
 
