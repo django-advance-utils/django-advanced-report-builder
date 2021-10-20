@@ -115,15 +115,8 @@
 
                     $('.edit_field_link').click(function(){
                         let selector = 's' + String(new Date().getTime());
-
-
                         let parent_li = $(this).parent()
-
                         parent_li.attr('id', selector);
-
-                        {#alert(parent_li.attr('id'))#}
-
-
                         let field_info = get_field_dict(parent_li);
                         let field_info_b64 = (btoa(JSON.stringify(field_info)));
                         let url = "{% url 'report_builder:field_modal' 'selector-99999-data-FIELD_INFO' %}";
@@ -134,12 +127,20 @@
 
                 $(selection_fields_id_name + ', ' + available_fields_id_name).sortable({
                     connectWith: ".connectedSortable",
-
                     stop: function () {
                         update_selection();
+                    },
+                    receive: function (event, ui) { //only when dropped from one to another!
+                        let sourceList = ui.sender;
+                        if(sourceList.attr('id') === 'id_table_fields_available_fields') {
+                            let clone = $(ui.item).clone();
+                            sourceList.append(clone);  // adds it back to the end
+                        } else {
+                            ui.item.remove();  // removes it as it already in the list
+                        }
                     }
 
-                }).disableSelection();
+                });
 
                 $('#id_report_type').on('change', function (e) {
                     get_fields(this.value);
@@ -206,11 +207,7 @@
 
                 ajax_helpers.command_functions.update_selection = function (command) {
                    update_selection();
-
                 };
-
-
-
             });
 
 
