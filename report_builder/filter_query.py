@@ -1,8 +1,8 @@
 import json
 import operator
 from functools import reduce
+
 from django.db.models import Q
-from datetime import datetime, date, timedelta
 
 from report_builder.variable_date import VariableDate
 
@@ -16,6 +16,7 @@ class FilterQueryMixin:
         query_data = json.loads(search_filter_data)
         query_list = self._process_group(query_data=query_data)
         reduce_by = self._format_group_conditions(query_data['condition'])
+
         if query_list:
             return query.filter(reduce(reduce_by, query_list))
 

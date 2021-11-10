@@ -4,8 +4,6 @@
     </label>
 
     <div class="col-md-9 input-group-sm">
-{#        <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">#}
-{#        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>#}
         <style>
             #{{ field.auto_id }}_selection, #{{ field.auto_id }}_available_fields {
                 border: 1px solid #eee;
@@ -86,8 +84,12 @@
                 let available_fields_data = {};
                 let initial = true;
 
-                function get_field_html(field_id, label, colour) {
-                    return `<li class="ui-state-default" data-origin="${field_id}" style="background-color: ${colour}">
+                function get_field_html(field_id, label, colour, attr) {
+                    let data_attr = '';
+                    if(attr !== undefined && attr !== '') {
+                        data_attr = ` data-attr="${attr}"`
+                    }
+                    return `<li class="ui-state-default" data-origin="${field_id}" style="background-color: ${colour}"${data_attr}>
                             <a href="#" class="edit_field_link"><i class="edit-field fas fa-pencil-alt float-right" style="color:white;"></i></a><span>${label}</span></li>`
                 }
 
@@ -99,7 +101,7 @@
                     available_fields_data = {};
                     $.each(data['fields'], function (key, value) {
                         available_fields_data[value.field] = value;
-                        $(available_fields_id_name).append(get_field_html(value.field, value.label, value.colour));
+                        $(available_fields_id_name).append(get_field_html(value.field, value.label, value.colour, ''));
                     });
                     $.each(data['tables'], function (key, value) {
                         $(table_field_keys).append('<div class="col-sm-12" style=";font-size: 12px;">' +
@@ -119,8 +121,8 @@
                         parent_li.attr('id', selector);
                         let field_info = get_field_dict(parent_li);
                         let field_info_b64 = (btoa(JSON.stringify(field_info)));
-                        let url = "{% url 'report_builder:field_modal' 'selector-99999-data-FIELD_INFO' %}";
-                        django_modal.show_modal(url.replace('99999', selector).replace('FIELD_INFO', field_info_b64))
+                        let url = "{% url 'report_builder:field_modal' 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID' %}";
+                        django_modal.show_modal(url.replace('99999', selector).replace('REPORT_TYPE_ID', $('#id_report_type').val()).replace('FIELD_INFO', field_info_b64))
                     });
 
                 }
@@ -171,10 +173,16 @@
                 function get_field_dict(field) {
                     let data_origin = field.attr('data-origin');
                     let title = field.children("span").text()
-                    return {
+                    let result = {
                         'field': data_origin,
-                        'title': title
+                        'title': title,
                     };
+                    let data_attr = field.attr('data-attr');
+
+                    if(data_attr) {
+                        result['data_attr'] = data_attr;
+                    }
+                    return result;
                 }
 
 
@@ -182,7 +190,8 @@
                     let fields = JSON.parse($(main_field).val())
                     $.each(fields, function (key, value) {
                         let field_data = available_fields_data[value.field];
-                        $(selection_fields_id_name).append( get_field_html(value.field, value.title, field_data.colour));
+                        console.log(value);
+                        $(selection_fields_id_name).append(get_field_html(value.field, value.title, field_data.colour, value.data_attr));
                     });
                 }
                 $('#{{ field.auto_id }}_selected_search_input').keyup(function() {

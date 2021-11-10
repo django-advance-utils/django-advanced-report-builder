@@ -1,11 +1,13 @@
 Django==3.2.7
 
 django-tab-menus==0.0.13
-git+https://github.com/jonesim/django-datatables.git@a7e11dab9624b2b7e00c4bb60871284159d8b3e6
+git+https://github.com/jonesim/django-datatables.git@a4724bece02f38033bb55449d890d430e23b4d79
 # django-filtered-datatables==0.0.18
 
-git+https://github.com/jonesim/django-modals.git@76e3dbe7e723bdf660b7e85cf13b685f951ef53c
+git+https://github.com/jonesim/django-modals.git@25d6bb25fe2b06630eb0f1a764ad2a01434ae00f
 # django-nested-modals==0.0.16
-django-ajax-helpers==0.0.15
+
+git+https://github.com/jonesim/ajax-helpers.git@304f022923924c7609423d19499083735877e7d5
+# django-ajax-helpers==0.0.15
 time-stamped-model==0.1.1
 date-offset==0.0.1

@@ -90,6 +90,9 @@ class Tags(models.Model):
     tag = models.CharField(max_length=40)
     company = models.ManyToManyField(Company, blank=True)
 
+    class Meta:
+        verbose_name_plural = 'Tags'
+
 
 class Note(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
@@ -100,3 +103,29 @@ class Note(models.Model):
 class ExtraReportFields(models.Model):
     report = models.OneToOneField(Report, primary_key=True, on_delete=models.CASCADE)
     notes = models.TextField()
+
+
+class Tally(models.Model):
+    date = models.DateField()
+    cars = models.IntegerField()
+    vans = models.IntegerField()
+    buses = models.IntegerField()
+    lorries = models.IntegerField()
+    motor_bikes = models.IntegerField()
+    push_bikes = models.IntegerField()
+    tractors = models.IntegerField()
+
+    class Meta:
+        verbose_name_plural = 'Tallies'
+
+    class ReportBuilder(ReportBuilderFields):
+        colour = '#006400'
+        title = 'Tally'
+        fields = ['date',
+                  'cars',
+                  'vans',
+                  'buses',
+                  'lorries',
+                  'push_bikes',
+                  'tractors']
+

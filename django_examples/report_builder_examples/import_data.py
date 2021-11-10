@@ -4,6 +4,11 @@ from report_builder_examples import models
 
 
 def import_data(path):
+    # import_companies(path)
+    import_tallies(path)
+
+
+def import_companies(path):
     if models.Company.objects.all().count() > 0:
         return
     with open(path + '/data/test_data.csv', 'r') as f:
@@ -27,3 +32,17 @@ def import_data(path):
                 if tag != '':
                     tag = models.Tags.objects.get_or_create(tag=tag)[0]
                     tag.company.add(company)
+
+
+def import_tallies(path):
+    with open(path + '/data/test_tallies_data.csv', 'r') as f:
+        csv_reader = csv.DictReader(f)
+        for r in csv_reader:
+            models.Tally.objects.get_or_create(date=datetime.datetime.strptime(r['Date'], '%d/%m/%Y'),
+                                               cars=int(r['Cars']),
+                                               vans=int(r['Vans']),
+                                               buses=int(r['Buses']),
+                                               lorries=int(r['Lorries']),
+                                               motor_bikes=int(r['Motor Bikes']),
+                                               push_bikes=int(r['Push Bikes']),
+                                               tractors=int(r['Tractors']))

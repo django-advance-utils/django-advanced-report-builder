@@ -1,5 +1,5 @@
 from django.contrib import admin
-from report_builder_examples.models import Company, Person, Tags, Sector
+from report_builder_examples.models import Company, Person, Tags, Sector, Tally
 
 
 @admin.register(Sector)
@@ -30,3 +30,14 @@ class TagsAdmin(admin.ModelAdmin):
     list_display = ('tag',
                     )
 
+
+@admin.register(Tally)
+class TallyAdmin(admin.ModelAdmin):
+    list_display = ('date',
+                    'cars',
+                    'vans',
+                    'buses',
+                    'lorries',
+                    'motor_bikes',
+                    'push_bikes',
+                    'tractors')

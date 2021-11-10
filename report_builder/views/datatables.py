@@ -1,3 +1,4 @@
+import base64
 import json
 
 from ajax_helpers.mixins import AjaxHelpers
@@ -26,7 +27,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
 
     def dispatch(self, request, *args, **kwargs):
         self.table_report = get_object_or_404(TableReport, pk=self.kwargs['pk'])
-        base_model = self.table_report.report_type.content_type.model_class()
+        base_model = self.table_report.get_base_modal()
         self.add_table(type(self).__name__.lower(), model=base_model)
         return super().dispatch(request, *args, **kwargs)
 
@@ -58,7 +59,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
 class ReportBaseForm(ModelCrispyForm):
     submit_class = 'btn-success modal-submit'
 
-    def submit_button(self, css_class=submit_class, button_text='Submit'):
+    def submit_button(self, css_class=submit_class, button_text='Submit', **kwargs):
         return StrictButton(button_text, css_class=css_class)
 
 
@@ -178,16 +179,22 @@ class TableModal(ModelFormModal):
 
 class FieldModal(FormModal):
     form_class = FieldForm
-    modal_title = 'CHANGE ME'
+
+    @property
+    def modal_title(self):
+        data = json.loads(base64.b64decode(self.slug['data']))
+        return f'Edit {data["title"]}'
 
     def form_valid(self, form):
         selector = self.slug['selector']
+
+        _attr = form.get_additional_attributes()
+        self.add_command({'function': 'set_attr',
+                          'selector': f'#{selector}',
+                          'attr': 'data-attr',
+                          'val': _attr})
+
         self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
         self.add_command({'function': 'save_query_builder'})
         self.add_command({'function': 'update_selection'})
         return self.command_response('close')
-
-
-
-
-

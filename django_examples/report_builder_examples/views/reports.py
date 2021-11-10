@@ -1,4 +1,3 @@
-from crispy_forms.layout import Field
 from django.forms import CharField, Textarea
 from django_datatables.columns import ColumnLink
 from django_datatables.datatables import DatatableView
@@ -30,12 +29,8 @@ class ViewReport(ViewReportBase):
 
 class TableExtraModal(TableModal):
 
-
-
     def form_setup(self, form, *_args, **_kwargs):
         form.fields['notes'] = CharField(widget=Textarea)
-
-
 
         return [FieldEx('name'),
                 FieldEx('notes'),
