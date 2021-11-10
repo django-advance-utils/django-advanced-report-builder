@@ -1,6 +1,7 @@
 from django.forms import CharField, Textarea
 from django_datatables.columns import ColumnLink
 from django_datatables.datatables import DatatableView
+from django_menus.menu import MenuMixin, MenuItem
 from django_modals.fields import FieldEx
 
 from report_builder.models import Report
@@ -8,9 +9,13 @@ from report_builder.views.datatables import TableModal
 from report_builder.views.main import ViewReportBase
 
 
-class ViewReports(DatatableView):
+class ViewReports(MenuMixin, DatatableView):
     model = Report
     template_name = 'report_builder_examples/index.html'
+
+    def setup_menu(self):
+        super().setup_menu()
+        self.add_menu('table_menu', 'button_group').add_items(('report_builder:table_modal,-', 'Add Table Report'))
 
     @staticmethod
     def setup_table(table):

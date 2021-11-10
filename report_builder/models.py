@@ -109,7 +109,7 @@ class TableReport(Report):
                 if 'title' in table_field:
                     _attr['title'] = table_field['title']
 
-                if data_attr and 'annotations_type' in data_attr:
+                if 'annotations_type' in data_attr:
                     annotations_type = data_attr['annotations_type']
                     new_field_name = f'{annotations_type}_{field}'
                     function = ANNOTATION_FUNCTIONS[annotations_type]

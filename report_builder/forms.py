@@ -50,16 +50,20 @@ class FieldForm(CrispyForm):
         super().setup_modal(*args, **kwargs)
 
     def get_additional_attributes(self):
-        attributes = None
+        attributes = []
         django_field = self.get_django_field()
         if django_field is not None:
-            if (isinstance(django_field, DATE_FIELDS) and
-                    self.cleaned_data['annotations_value']):
-                attributes = f'annotations_value-{self.cleaned_data["annotations_value"]}-' \
-                             f'date_format-{self.cleaned_data["date_format"]}'
+            if isinstance(django_field, DATE_FIELDS):
+                if self.cleaned_data['annotations_value']:
+                    attributes.append(f'annotations_value-{self.cleaned_data["annotations_value"]}')
+                if self.cleaned_data['date_format']:
+                    attributes.append(f'date_format-{self.cleaned_data["date_format"]}')
 
             elif (isinstance(django_field, NUMBER_FIELDS) and
                     self.cleaned_data['annotations_type']):
-                attributes = f'annotations_type-{self.cleaned_data["annotations_type"]}'
+                attributes.append(f'annotations_type-{self.cleaned_data["annotations_type"]}')
 
-        return attributes
+        if attributes:
+            return '-'.join(attributes)
+
+        return None

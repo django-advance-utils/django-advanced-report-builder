@@ -51,7 +51,8 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         )
 
     def pod_menu(self):
-        return [MenuItem(f'report_builder:table_modal,pk-{self.table_report.id}',
+        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
+                MenuItem(f'report_builder:table_modal,pk-{self.table_report.id}',
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
 

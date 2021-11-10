@@ -1,5 +1,6 @@
 from django.db import models
 
+from report_builder.globals import DATE_FIELDS
 from report_builder.variable_date import VariableDate
 
 
@@ -85,7 +86,7 @@ class FieldTypes:
                                           "input": "select",
                                           "operators": self.get_operator(self.FIELD_TYPE_BOOLEAN),
                                           "values": {"0": "False", "1": "True"}})
-        elif isinstance(django_field, models.DateTimeField):
+        elif isinstance(django_field, DATE_FIELDS):
             self.get_date_field(query_builder_filters=query_builder_filters,
                                 field=field,
                                 title=title)
