@@ -2,14 +2,12 @@ import json
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django_datatables.columns import DateColumn
 from django_datatables.datatables import ColumnInitialisor
 from time_stamped_model.models import TimeStampedModel
 
-from report_builder.columns import ReportBuilderDateColumn
 from report_builder.globals import ANNOTATION_VALUE_FUNCTIONS, ANNOTATION_FUNCTIONS, DATE_FIELDS, \
     DATE_FORMAT_TYPES_DJANGO_FORMAT
-from report_builder.utils import split_attr
+from report_builder.utils import split_attr, get_custom_report_builder
 
 
 class ReportType(TimeStampedModel):
@@ -85,7 +83,9 @@ class TableReport(Report):
 
         date_function_kwargs.update({'field': field_name,
                                      'column_name': field_name})
-        field = ReportBuilderDateColumn(**date_function_kwargs)
+
+        field = get_custom_report_builder().datatable_date_field(**date_function_kwargs)
+
         return field
 
     def get_field_strings(self):
@@ -121,4 +121,3 @@ class TableReport(Report):
 
             fields.append(field)
         return fields
-
