@@ -7,20 +7,27 @@ from django.apps import apps
 
 from django.shortcuts import get_object_or_404
 from django_datatables.datatables import DatatableView, ColumnInitialisor
+from django_datatables.plugins.column_totals import ColumnTotals
 from django_menus.menu import MenuMixin, MenuItem
 from django_modals.fields import FieldEx
 from django_modals.forms import ModelCrispyForm
 from django_modals.modals import ModelFormModal, FormModal
 from django_modals.widgets.widgets import Toggle
 
+from report_builder.columns import ReportBuilderDateColumn
 from report_builder.field_types import FieldTypes
 from report_builder.filter_query import FilterQueryMixin
 from report_builder.forms import FieldForm
+from report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_FUNCTIONS, DATE_FIELDS, \
+    ANNOTATION_FUNCTIONS
 from report_builder.models import TableReport, ReportType
+from report_builder.utils import split_attr
 
 
 class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
     template_name = 'report_builder/datatable.html'
+
+    datatable_date_field = ReportBuilderDateColumn
 
     def add_tables(self):
         return None
@@ -31,11 +38,76 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         self.add_table(type(self).__name__.lower(), model=base_model)
         return super().dispatch(request, *args, **kwargs)
 
+    def get_date_field(self, table_field):
+        data_attr = split_attr(table_field)
+        field_name = table_field['field']
+        date_format = data_attr.get('date_format')
+        if date_format:
+            date_format = DATE_FORMAT_TYPES_DJANGO_FORMAT[int(date_format)]
+
+        date_function_kwargs = {'title': table_field.get('title'),
+                                'date_format': date_format}
+
+        if 'annotations_value' in data_attr:
+            annotations_value = data_attr['annotations_value']
+            new_field_name = f'{annotations_value}_{field_name}'
+            function = ANNOTATION_VALUE_FUNCTIONS[annotations_value]
+            date_function_kwargs['annotations_value'] = {new_field_name: function(field_name)}
+
+            field_name = new_field_name
+
+        date_function_kwargs.update({'field': field_name,
+                                     'column_name': field_name})
+
+        field = self.datatable_date_field(**date_function_kwargs)
+        return field
+
     def setup_table(self, table):
         table.extra_filters = self.extra_filters
+        table_fields = json.loads(self.table_report.table_fields)
+        fields = []
+        totals = {}
+        base_modal = self.table_report.get_base_modal()
+        first_field_name = None
+        for table_field in table_fields:
+            field = table_field['field']
 
-        fields = self.table_report.get_field_strings()
+            column_initialisor = ColumnInitialisor(start_model=base_modal, path=field)
+            column_initialisor.get_columns()
+            django_field = column_initialisor.django_field
+
+            if isinstance(django_field, DATE_FIELDS):
+                field = self.get_date_field(table_field=table_field)
+                if not first_field_name:
+                    first_field_name = field.field
+            else:
+                data_attr = split_attr(table_field)
+                field_attr = {}
+                if 'title' in table_field:
+                    field_attr['title'] = table_field['title']
+
+                annotations_type = data_attr.get('annotations_type')
+                if annotations_type:
+                    new_field_name = f'{annotations_type}_{field}'
+                    function = ANNOTATION_FUNCTIONS[annotations_type]
+                    field_attr['annotations'] = {new_field_name: function(field)}
+                    field = new_field_name
+
+                show_total = data_attr.get('show_totals')
+                if show_total == '1':
+                    totals[field] = {'sum': True}
+
+                if field_attr:
+                    field = (field, field_attr)
+
+                if not first_field_name:
+                    first_field_name = field
+
+            fields.append(field)
         table.add_columns(*fields)
+        if totals:
+            totals[first_field_name] = {'text': 'Totals'}
+            table.add_plugin(ColumnTotals, totals)
 
     def extra_filters(self, query):
         return self.process_filters(query=query,

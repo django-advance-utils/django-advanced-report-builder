@@ -1,10 +1,11 @@
 import base64
 import json
 
-from django.forms import CharField, ChoiceField
+from django.forms import CharField, ChoiceField, BooleanField
 from django.shortcuts import get_object_or_404
 from django_datatables.datatables import ColumnInitialisor
 from django_modals.forms import CrispyForm
+from django_modals.widgets.widgets import Toggle
 
 from report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, \
     DATE_FORMAT_TYPES
@@ -26,9 +27,12 @@ class FieldForm(CrispyForm):
         return column_initialisor.django_field
 
     def setup_modal(self, *args, **kwargs):
+
+
         data = json.loads(base64.b64decode(self.slug['data']))
         django_field = self.get_django_field()
         self.fields['title'] = CharField(initial=data['title'])
+
 
         if django_field is not None:
             data_attr = split_attr(data)
@@ -47,6 +51,13 @@ class FieldForm(CrispyForm):
                 self.fields['annotations_type'] = ChoiceField(choices=ANNOTATIONS_CHOICES, required=False)
                 if data_attr and 'annotations_type' in data_attr:
                     self.fields['annotations_type'].initial = data_attr['annotations_type']
+                self.fields['show_totals'] = BooleanField(required=False,
+                                                          widget=Toggle(attrs={'data-onstyle': 'success',
+                                                                               'data-on': 'YES',
+                                                                               'data-off': 'NO'}))
+                if data_attr and 'show_totals' in data_attr and data_attr['show_totals'] == '1':
+                    self.fields['show_totals'].initial = True
+
         super().setup_modal(*args, **kwargs)
 
     def get_additional_attributes(self):
@@ -59,9 +70,11 @@ class FieldForm(CrispyForm):
                 if self.cleaned_data['date_format']:
                     attributes.append(f'date_format-{self.cleaned_data["date_format"]}')
 
-            elif (isinstance(django_field, NUMBER_FIELDS) and
-                    self.cleaned_data['annotations_type']):
-                attributes.append(f'annotations_type-{self.cleaned_data["annotations_type"]}')
+            elif isinstance(django_field, NUMBER_FIELDS):
+                if self.cleaned_data['annotations_type']:
+                    attributes.append(f'annotations_type-{self.cleaned_data["annotations_type"]}')
+                if self.cleaned_data['show_totals'] and self.cleaned_data["show_totals"]:
+                    attributes.append(f'show_totals-1')
 
         if attributes:
             return '-'.join(attributes)
