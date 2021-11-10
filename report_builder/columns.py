@@ -18,3 +18,19 @@ class ReportBuilderDateColumn(ColumnBase):
             return date
         except AttributeError:
             return ""
+
+
+class ReportBuilderNumberColumn(ColumnBase):
+
+    def __init__(self, *,  decimal_places=0, **kwargs):
+        if not self.initialise(locals()):
+            return
+        super().__init__(**kwargs)
+        self.decimal_places = f'{{:.{decimal_places}f}}'
+
+    def row_result(self, data, _page_data):
+        try:
+            number = self.decimal_places.format(data[self.field])
+            return number
+        except AttributeError:
+            return ""

@@ -14,12 +14,12 @@ from django_modals.forms import ModelCrispyForm
 from django_modals.modals import ModelFormModal, FormModal
 from django_modals.widgets.widgets import Toggle
 
-from report_builder.columns import ReportBuilderDateColumn
+from report_builder.columns import ReportBuilderDateColumn, ReportBuilderNumberColumn
 from report_builder.field_types import FieldTypes
 from report_builder.filter_query import FilterQueryMixin
 from report_builder.forms import FieldForm
 from report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_FUNCTIONS, DATE_FIELDS, \
-    ANNOTATION_FUNCTIONS
+    ANNOTATION_FUNCTIONS, NUMBER_FIELDS
 from report_builder.models import TableReport, ReportType
 from report_builder.utils import split_attr
 
@@ -27,7 +27,8 @@ from report_builder.utils import split_attr
 class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
     template_name = 'report_builder/datatable.html'
 
-    datatable_date_field = ReportBuilderDateColumn
+    date_field = ReportBuilderDateColumn
+    number_field = ReportBuilderNumberColumn
 
     def add_tables(self):
         return None
@@ -38,7 +39,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         self.add_table(type(self).__name__.lower(), model=base_model)
         return super().dispatch(request, *args, **kwargs)
 
-    def get_date_field(self, table_field):
+    def get_date_field(self, table_field, fields):
         data_attr = split_attr(table_field)
         field_name = table_field['field']
         date_format = data_attr.get('date_format')
@@ -48,19 +49,49 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         date_function_kwargs = {'title': table_field.get('title'),
                                 'date_format': date_format}
 
-        if 'annotations_value' in data_attr:
-            annotations_value = data_attr['annotations_value']
+        annotations_value = data_attr.get('annotations_value')
+        if annotations_value:
             new_field_name = f'{annotations_value}_{field_name}'
             function = ANNOTATION_VALUE_FUNCTIONS[annotations_value]
             date_function_kwargs['annotations_value'] = {new_field_name: function(field_name)}
-
             field_name = new_field_name
 
         date_function_kwargs.update({'field': field_name,
                                      'column_name': field_name})
 
-        field = self.datatable_date_field(**date_function_kwargs)
-        return field
+        field = self.date_field(**date_function_kwargs)
+        fields.append(field)
+        return field_name
+
+    def get_number_field(self, table_field, fields, totals):
+        data_attr = split_attr(table_field)
+        field_name = table_field['field']
+        decimal_places = data_attr.get('decimal_places')
+
+        number_function_kwargs = {'title': table_field.get('title')}
+
+        if decimal_places:
+            number_function_kwargs = {'decimal_places': int(decimal_places)}
+
+        annotations_type = data_attr.get('annotations_type')
+        if annotations_type:
+            new_field_name = f'{annotations_type}_{field_name}'
+            function = ANNOTATION_FUNCTIONS[annotations_type]
+            number_function_kwargs['annotations'] = {new_field_name: function(field_name)}
+            field_name = new_field_name
+
+        number_function_kwargs.update({'field': field_name,
+                                       'column_name': field_name})
+
+        field = self.number_field(**number_function_kwargs)
+        fields.append(field)
+
+        decimal_places = data_attr.get('decimal_places', 0)
+        show_total = data_attr.get('show_totals')
+        if show_total == '1':
+            totals[field_name] = {'sum': 'to_fixed', 'decimal_places': decimal_places}
+
+        return field_name
 
     def setup_table(self, table):
         table.extra_filters = self.extra_filters
@@ -77,33 +108,20 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
             django_field = column_initialisor.django_field
 
             if isinstance(django_field, DATE_FIELDS):
-                field = self.get_date_field(table_field=table_field)
-                if not first_field_name:
-                    first_field_name = field.field
+                field_name = self.get_date_field(table_field=table_field, fields=fields)
+
+            elif isinstance(django_field, NUMBER_FIELDS):
+                field_name = self.get_number_field(table_field=table_field, fields=fields, totals=totals)
             else:
-                data_attr = split_attr(table_field)
                 field_attr = {}
                 if 'title' in table_field:
                     field_attr['title'] = table_field['title']
-
-                annotations_type = data_attr.get('annotations_type')
-                if annotations_type:
-                    new_field_name = f'{annotations_type}_{field}'
-                    function = ANNOTATION_FUNCTIONS[annotations_type]
-                    field_attr['annotations'] = {new_field_name: function(field)}
-                    field = new_field_name
-
-                show_total = data_attr.get('show_totals')
-                if show_total == '1':
-                    totals[field] = {'sum': True}
-
+                field_name = field
                 if field_attr:
                     field = (field, field_attr)
-
-                if not first_field_name:
-                    first_field_name = field
-
-            fields.append(field)
+                fields.append(field)
+            if not first_field_name:
+                first_field_name = field_name
         table.add_columns(*fields)
         if totals:
             totals[first_field_name] = {'text': 'Totals'}
