@@ -54,6 +54,9 @@ DATE_FORMAT_TYPE_SHORT_WORDS_MM_YYYY = 20
 DATE_FORMAT_TYPE_MM = 21
 DATE_FORMAT_TYPE_WORDS_MM = 22
 DATE_FORMAT_TYPE_SHORT_WORDS_MM = 23
+DATE_FORMAT_TYPE_WW = 24
+DATE_FORMAT_TYPE_WW_YYYY_DASH = 25
+DATE_FORMAT_TYPE_WW_YY_DASH = 26
 
 
 DATE_FORMAT_TYPES_DJANGO_FORMAT = {DATE_FORMAT_TYPE_DD_MM_YY_SLASH: '%d/%m/%y',
@@ -79,6 +82,10 @@ DATE_FORMAT_TYPES_DJANGO_FORMAT = {DATE_FORMAT_TYPE_DD_MM_YY_SLASH: '%d/%m/%y',
                                    DATE_FORMAT_TYPE_MM: '%m',
                                    DATE_FORMAT_TYPE_WORDS_MM: '%B',
                                    DATE_FORMAT_TYPE_SHORT_WORDS_MM: '%b',
+                                   DATE_FORMAT_TYPE_WW: '%W',
+                                   DATE_FORMAT_TYPE_WW_YYYY_DASH: '%W-%Y',
+                                   DATE_FORMAT_TYPE_WW_YY_DASH: '%W-%y',
+
                                    }
 
 DATE_FORMAT_TYPES = (
@@ -106,4 +113,7 @@ DATE_FORMAT_TYPES = (
     (DATE_FORMAT_TYPE_MM, 'mm'),
     (DATE_FORMAT_TYPE_WORDS_MM, 'MM'),
     (DATE_FORMAT_TYPE_SHORT_WORDS_MM, 'd'),
+    (DATE_FORMAT_TYPE_WW, 'WW'),
+    (DATE_FORMAT_TYPE_WW_YYYY_DASH, 'WW-YYYY'),
+    (DATE_FORMAT_TYPE_WW_YY_DASH, 'WW-YY'),
 )
