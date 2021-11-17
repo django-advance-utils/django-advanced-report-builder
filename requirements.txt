@@ -1,6 +1,7 @@
 Django==3.2.7
 django-crispy-forms==1.12.0
-django-tab-menus==0.0.13
+git+https://github.com/jonesim/django-menus.git@927c04d5cd327a6f95bc9ed75b74edf861b46adc
+#django-tab-menus==0.0.13
 git+https://github.com/jonesim/django-datatables.git@a4724bece02f38033bb55449d890d430e23b4d79
 # django-filtered-datatables==0.0.18
 

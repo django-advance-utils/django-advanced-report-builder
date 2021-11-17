@@ -22,7 +22,7 @@ from report_builder.forms import FieldForm
 from report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_FUNCTIONS, DATE_FIELDS, \
     ANNOTATION_FUNCTIONS, NUMBER_FIELDS
 from report_builder.models import TableReport, ReportType, ReportQuery
-from report_builder.utils import split_attr
+from report_builder.utils import split_attr, split_slug
 
 
 class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
@@ -33,13 +33,15 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
 
     def __init__(self, *args, **kwargs):
         self.table_report = None
+        self.slug = None
         super().__init__(*args, **kwargs)
 
     def add_tables(self):
         return None
 
     def dispatch(self, request, *args, **kwargs):
-        self.table_report = get_object_or_404(TableReport, pk=self.kwargs['pk'])
+        self.slug = split_slug(self.kwargs['slug'])
+        self.table_report = get_object_or_404(TableReport, pk=self.slug['pk'])
         base_model = self.table_report.get_base_modal()
         self.add_table(type(self).__name__.lower(), model=base_model)
         return super().dispatch(request, *args, **kwargs)
@@ -172,7 +174,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
             table.add_plugin(ColumnTotals, totals)
 
     def get_report_query(self):
-        query_id = self.request.GET.get('query')
+        query_id = self.slug.get(f'query{self.table_report.id}')
         if query_id:
             report_query = get_object_or_404(ReportQuery, id=query_id)
             if report_query.report_id != self.table_report.id:
@@ -201,21 +203,16 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
 
     def pod_menu(self):
 
-        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
-                MenuItem(f'report_builder:table_modal,pk-{self.table_report.id}',
+        query_id = self.slug.get(f'query{self.table_report.id}')
+        slug_str = ''
+        if query_id:
+            slug_str = f'-query_id-{query_id}'
+
+        return [MenuItem(f'report_builder:table_modal,pk-{self.table_report.id}{slug_str}',
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
 
     def queries_menu(self):
-        report_queries = self.table_report.reportquery_set.all()
-        if len(report_queries) > 1:
-            dropdown = []
-
-            for report_query in report_queries:
-                pass
-
-            return [MenuItem(menu_display='', placement='bottom-end', css_classes='btn-secondary',
-                             dropdown=dropdown)]
         return []
 
 
@@ -242,6 +239,7 @@ class TableModal(ModelFormModal):
 
     def __init__(self, *args, **kwargs):
         self.report_query = None
+        self.show_query_name = False
         super().__init__(*args, **kwargs)
 
     def form_setup(self, form, *_args, **_kwargs):
@@ -256,15 +254,22 @@ class TableModal(ModelFormModal):
                 self.report_query = self.object.reportquery_set.first()
 
             if self.report_query:
+                self.show_query_name = self.object.reportquery_set.count() > 1
+                if self.show_query_name:
+                    form.fields['query_name'] = CharField(required=True, initial=self.report_query.name)
+
                 form.fields['query_data'].initial = self.report_query.query
 
-        return [FieldEx('name'),
-                FieldEx('report_type'),
-                FieldEx('has_clickable_rows', template='django_modals/fields/label_checkbox.html'),
-                FieldEx('table_fields', template='report_builder/fields/select_column.html'),
+        fields = [FieldEx('name'),
+                  FieldEx('report_type'),
+                  FieldEx('has_clickable_rows', template='django_modals/fields/label_checkbox.html'),
+                  FieldEx('table_fields', template='report_builder/fields/select_column.html')]
 
-                FieldEx('query_data', template='report_builder/fields/query_builder.html'),
-                ]
+        if self.show_query_name:
+            fields.append(FieldEx('query_name'))
+
+        fields.append(FieldEx('query_data', template='report_builder/fields/query_builder.html'))
+        return fields
 
     def form_valid(self, form):
         # Create a item using some of the extra fields and save it, then attach it to the SiteVisit.
@@ -275,6 +280,8 @@ class TableModal(ModelFormModal):
                         report=table_report).save()
         elif form.cleaned_data['query_data']:
             self.report_query.query = form.cleaned_data['query_data']
+            if self.show_query_name:
+                self.report_query.name = form.cleaned_data['query_name']
             self.report_query.save()
         elif self.report_query:
             self.report_query.delete()

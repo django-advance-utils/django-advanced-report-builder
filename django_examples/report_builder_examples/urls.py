@@ -11,10 +11,7 @@ urlpatterns = [
     path('company/<int:pk>',
          TemplateView.as_view(template_name='report_builder_examples/company.html'), name='company'),
     path('', ViewReports.as_view(), name='index'),
-    path('<int:pk>/', ViewReport.as_view(), name='view_report'),
+    path('<str:slug>/', ViewReport.as_view(), name='view_report'),
     path('table/edit/<str:slug>/', TableExtraModal.as_view(), name='table_extra_modal'),
-
-
-
 
 ]

@@ -1,3 +1,5 @@
+import copy
+
 from django.forms import CharField, Textarea
 from django_datatables.columns import ColumnLink
 from django_datatables.datatables import DatatableView
@@ -5,7 +7,8 @@ from django_menus.menu import MenuMixin, MenuItem
 from django_modals.fields import FieldEx
 
 from report_builder.models import Report
-from report_builder.views.datatables import TableModal
+from report_builder.utils import make_slug_str
+from report_builder.views.datatables import TableModal, TableView
 from report_builder.views.main import ViewReportBase
 
 
@@ -25,11 +28,31 @@ class ViewReports(MenuMixin, DatatableView):
             ColumnLink(column_name='view_company', field='name', url_name='report_builder_examples:view_report'),
         )
 
-# class ViewTable(ViewReportBase):
+
+class ViewTableReport(TableView):
+    def pod_menu(self):
+        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
+                *super().pod_menu()]
+
+    def queries_menu(self):
+        report_queries = self.table_report.reportquery_set.all()
+        if len(report_queries) > 1:
+            dropdown = []
+            for report_query in report_queries:
+                slug_str = make_slug_str(self.slug, overrides={f'query{self.table_report.id}': report_query.id})
+                dropdown.append(('report_builder_examples:view_report',
+                                 report_query.name, {'url_kwargs': {'slug': slug_str}}))
+            # name = self.get_report_query().name
+
+            # return [MenuItem(menu_display=name, no_hover=True, css_classes='btn-secondary',
+            #                  dropdown=dropdown)]
+            return dropdown
+        return []
 
 
 class ViewReport(ViewReportBase):
     template_name = 'report_builder_examples/report.html'
+    views = {'tablereport': ViewTableReport}
 
 
 class TableExtraModal(TableModal):
