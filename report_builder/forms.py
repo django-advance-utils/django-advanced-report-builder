@@ -23,12 +23,18 @@ class FieldForm(CrispyForm):
         base_model = report_type.content_type.model_class()
 
         column_initialisor = ColumnInitialisor(start_model=base_model, path=data['field'])
-        column_initialisor.get_columns()
+        cols = column_initialisor.get_columns()
+
+        if column_initialisor.django_field is None and cols:
+            column_initialisor = ColumnInitialisor(start_model=base_model, path=cols[0].field)
+            column_initialisor.get_columns()
+
         return column_initialisor.django_field
 
     def setup_modal(self, *args, **kwargs):
         data = json.loads(base64.b64decode(self.slug['data']))
         django_field = self.get_django_field()
+
         self.fields['title'] = CharField(initial=data['title'])
 
         if django_field is not None:

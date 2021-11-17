@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models import Count
 from django_datatables.model_def import DatatableModel
-from django_datatables.columns import ColumnLink, DatatableColumn, ChoiceColumn
+from django_datatables.columns import ColumnLink, DatatableColumn, ChoiceColumn, CurrencyColumn, CurrencyPenceColumn
 from time_stamped_model.models import TimeStampedModel
 
 from report_builder.models import Report
@@ -129,3 +129,22 @@ class Tally(models.Model):
                   'push_bikes',
                   'tractors']
 
+
+class Payment(TimeStampedModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    date = models.DateField()
+    amount = models.IntegerField()
+    quantity = models.IntegerField()
+
+    class Datatable(DatatableModel):
+        currency_amount = CurrencyPenceColumn(column_name='currency_amount', field='amount')
+
+    class ReportBuilder(ReportBuilderFields):
+        colour = '#006440'
+        title = 'Payment'
+        fields = ['date',
+                  'currency_amount',
+                  'quantity']
+        includes = [{'field': 'company',
+                     'title': 'Company',
+                     'model': 'report_builder_examples.Company.ReportBuilder'}]

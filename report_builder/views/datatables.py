@@ -1,4 +1,5 @@
 import base64
+import copy
 import json
 
 from ajax_helpers.mixins import AjaxHelpers
@@ -63,33 +64,62 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         fields.append(field)
         return field_name
 
-    def get_number_field(self, table_field, fields, totals):
+    def get_number_field(self, table_field, fields, totals, col_type_override):
         data_attr = split_attr(table_field)
         field_name = table_field['field']
-        decimal_places = data_attr.get('decimal_places')
-
-        number_function_kwargs = {'title': table_field.get('title')}
-
-        if decimal_places:
-            number_function_kwargs = {'decimal_places': int(decimal_places)}
+        css_class = None
 
         annotations_type = data_attr.get('annotations_type')
-        if annotations_type:
-            new_field_name = f'{annotations_type}_{field_name}'
-            function = ANNOTATION_FUNCTIONS[annotations_type]
-            number_function_kwargs['annotations'] = {new_field_name: function(field_name)}
-            field_name = new_field_name
 
-        number_function_kwargs.update({'field': field_name,
-                                       'column_name': field_name})
+        if col_type_override:
+            field = copy.deepcopy(col_type_override)
+            title = table_field.get('title')
+            if annotations_type == 'count':
+                new_field_name = f'{annotations_type}_{field_name}'
+                number_function_kwargs = {}
+                if title:
+                    number_function_kwargs['title'] = title
+                function = ANNOTATION_FUNCTIONS[annotations_type]
+                number_function_kwargs['annotations'] = {new_field_name: function(field.field)}
 
-        field = self.number_field(**number_function_kwargs)
-        fields.append(field)
+                number_function_kwargs.update({'field': new_field_name,
+                                               'column_name': field_name})
+                field = self.number_field(**number_function_kwargs)
+            else:
+                css_class = field.column_defs.get('className')
+                if title:
+                    field.title = title
+                if annotations_type:
+                    new_field_name = f'{annotations_type}_{field_name}'
+
+                    function = ANNOTATION_FUNCTIONS[annotations_type]
+                    field.annotations = {new_field_name: function(field.field)}
+                    field.field = new_field_name
+
+            fields.append(field)
+        else:
+            number_function_kwargs = {'title': table_field.get('title')}
+            decimal_places = data_attr.get('decimal_places')
+
+            if decimal_places:
+                number_function_kwargs = {'decimal_places': int(decimal_places)}
+
+            if annotations_type:
+                new_field_name = f'{annotations_type}_{field_name}'
+                function = ANNOTATION_FUNCTIONS[annotations_type]
+                number_function_kwargs['annotations'] = {new_field_name: function(field_name)}
+                field_name = new_field_name
+
+            number_function_kwargs.update({'field': field_name,
+                                           'column_name': field_name})
+
+            field = self.number_field(**number_function_kwargs)
+            fields.append(field)
 
         decimal_places = data_attr.get('decimal_places', 0)
         show_total = data_attr.get('show_totals')
         if show_total == '1':
-            totals[field_name] = {'sum': 'to_fixed', 'decimal_places': decimal_places}
+            totals[field_name] = {'sum': 'to_fixed', 'decimal_places': decimal_places, 'css_class':css_class}
 
         return field_name
 
@@ -103,15 +133,25 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         for table_field in table_fields:
             field = table_field['field']
 
-            column_initialisor = ColumnInitialisor(start_model=base_modal, path=field)
-            column_initialisor.get_columns()
-            django_field = column_initialisor.django_field
+            original_column_initialisor = ColumnInitialisor(start_model=base_modal, path=field)
+            cols = original_column_initialisor.get_columns()
+            django_field = original_column_initialisor.django_field
+            col_type_override = None
+
+            if django_field is None and cols:
+                col_type_override = cols[0]
+                column_initialisor = ColumnInitialisor(start_model=base_modal, path=col_type_override.field)
+                column_initialisor.get_columns()
+                django_field = column_initialisor.django_field
 
             if isinstance(django_field, DATE_FIELDS):
                 field_name = self.get_date_field(table_field=table_field, fields=fields)
 
             elif isinstance(django_field, NUMBER_FIELDS):
-                field_name = self.get_number_field(table_field=table_field, fields=fields, totals=totals)
+                field_name = self.get_number_field(table_field=table_field,
+                                                   fields=fields,
+                                                   totals=totals,
+                                                   col_type_override=col_type_override)
             else:
                 field_attr = {}
                 if 'title' in table_field:
