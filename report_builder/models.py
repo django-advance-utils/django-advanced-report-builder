@@ -2,12 +2,7 @@ import json
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django_datatables.datatables import ColumnInitialisor
 from time_stamped_model.models import TimeStampedModel
-
-from report_builder.globals import ANNOTATION_VALUE_FUNCTIONS, ANNOTATION_FUNCTIONS, DATE_FIELDS, \
-    DATE_FORMAT_TYPES_DJANGO_FORMAT
-from report_builder.utils import split_attr, get_custom_report_builder
 
 
 class ReportType(TimeStampedModel):
@@ -26,7 +21,6 @@ class Report(TimeStampedModel):
     name = models.CharField(max_length=200)
     report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
     instance_type = models.CharField(null=True, max_length=255)
-    search_filter_data = models.TextField(null=True, blank=True)  # To store the current query.
 
     def __str__(self):
         return self.name
@@ -50,6 +44,17 @@ class Report(TimeStampedModel):
         return self.report_type.content_type.model_class()
 
 
+class ReportQuery(TimeStampedModel):
+    report = models.ForeignKey(Report, on_delete=models.CASCADE)
+    name = models.TextField(default='Standard')
+    query = models.JSONField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['name']
+        unique_together = ('name', 'report')
+        verbose_name_plural = 'Report queries'
+
+
 class TableReport(Report):
     table_fields = models.TextField(null=True, blank=True)
     has_clickable_rows = models.BooleanField(default=False)  # This is for standard tables.
@@ -61,5 +66,3 @@ class TableReport(Report):
     def get_pivot_fields(self):
         pivot_data = json.loads(self.pivot_fields)
         return pivot_data
-
-

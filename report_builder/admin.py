@@ -1,5 +1,17 @@
 from django.contrib import admin
-from report_builder.models import Report, ReportType, TableReport
+from report_builder.models import Report, ReportType, TableReport, ReportQuery
+
+
+@admin.register(ReportQuery)
+class ReportQueryAdmin(admin.ModelAdmin):
+    model = ReportQuery
+    list_display = ('report',
+                    'name',
+                    'query')
+
+
+class ReportQueryInline(admin.TabularInline):
+    model = ReportQuery
 
 
 @admin.register(Report)
@@ -7,6 +19,7 @@ class ReportAdmin(admin.ModelAdmin):
     list_display = ('name',
                     'instance_type',
                     )
+    inlines = [ReportQueryInline]
 
 
 @admin.register(ReportType)
@@ -22,3 +35,8 @@ class ReportTableAdmin(admin.ModelAdmin):
                     )
     exclude = ['instance_type',
                ]
+    inlines = [ReportQueryInline]
+
+
+
+

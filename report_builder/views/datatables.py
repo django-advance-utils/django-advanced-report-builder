@@ -5,7 +5,7 @@ import json
 from ajax_helpers.mixins import AjaxHelpers
 from crispy_forms.bootstrap import StrictButton
 from django.apps import apps
-
+from django.forms import CharField
 from django.shortcuts import get_object_or_404
 from django_datatables.datatables import DatatableView, ColumnInitialisor
 from django_datatables.plugins.column_totals import ColumnTotals
@@ -21,7 +21,7 @@ from report_builder.filter_query import FilterQueryMixin
 from report_builder.forms import FieldForm
 from report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_FUNCTIONS, DATE_FIELDS, \
     ANNOTATION_FUNCTIONS, NUMBER_FIELDS
-from report_builder.models import TableReport, ReportType
+from report_builder.models import TableReport, ReportType, ReportQuery
 from report_builder.utils import split_attr
 
 
@@ -30,6 +30,10 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
 
     date_field = ReportBuilderDateColumn
     number_field = ReportBuilderNumberColumn
+
+    def __init__(self, *args, **kwargs):
+        self.table_report = None
+        super().__init__(*args, **kwargs)
 
     def add_tables(self):
         return None
@@ -119,7 +123,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         decimal_places = data_attr.get('decimal_places', 0)
         show_total = data_attr.get('show_totals')
         if show_total == '1':
-            totals[field_name] = {'sum': 'to_fixed', 'decimal_places': decimal_places, 'css_class':css_class}
+            totals[field_name] = {'sum': 'to_fixed', 'decimal_places': decimal_places, 'css_class': css_class}
 
         return field_name
 
@@ -167,9 +171,23 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
             totals[first_field_name] = {'text': 'Totals'}
             table.add_plugin(ColumnTotals, totals)
 
+    def get_report_query(self):
+        query_id = self.request.GET.get('query')
+        if query_id:
+            report_query = get_object_or_404(ReportQuery, id=query_id)
+            if report_query.report_id != self.table_report.id:
+                return None
+        else:
+            report_query = self.table_report.reportquery_set.first()
+        return report_query
+
     def extra_filters(self, query):
+        report_query = self.get_report_query()
+        if not report_query:
+            return query
+
         return self.process_filters(query=query,
-                                    search_filter_data=self.table_report.search_filter_data)
+                                    search_filter_data=report_query.query)
 
     def add_to_context(self, **kwargs):
         return {'table_report': self.table_report}
@@ -177,14 +195,28 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
     def setup_menu(self):
         super().setup_menu()
         self.add_menu('button_menu', 'button_group').add_items(
-            *self.pod_menu()
+            *self.pod_menu(),
+            *self.queries_menu(),
         )
 
     def pod_menu(self):
+
         return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
                 MenuItem(f'report_builder:table_modal,pk-{self.table_report.id}',
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
+
+    def queries_menu(self):
+        report_queries = self.table_report.reportquery_set.all()
+        if len(report_queries) > 1:
+            dropdown = []
+
+            for report_query in report_queries:
+                pass
+
+            return [MenuItem(menu_display='', placement='bottom-end', css_classes='btn-secondary',
+                             dropdown=dropdown)]
+        return []
 
 
 class ReportBaseForm(ModelCrispyForm):
@@ -199,23 +231,55 @@ class TableModal(ModelFormModal):
     model = TableReport
     base_form = ReportBaseForm
     ajax_commands = ['button', 'select2', 'ajax']
+
     form_fields = ['name',
                    ('has_clickable_rows', {'widget': Toggle(attrs={'data-onstyle': 'success',
                                                                    'data-on': 'YES',
                                                                    'data-off': 'NO'})}),
                    'report_type',
                    'table_fields',
-                   'search_filter_data'
-
                    ]
 
+    def __init__(self, *args, **kwargs):
+        self.report_query = None
+        super().__init__(*args, **kwargs)
+
     def form_setup(self, form, *_args, **_kwargs):
+        self.report_query = None
+        form.fields['query_data'] = CharField(required=False)
+
+        if self.object.id:
+            query_id = self.slug.get('query_id')
+            if query_id:
+                self.report_query = get_object_or_404(ReportQuery, id=query_id)
+            else:
+                self.report_query = self.object.reportquery_set.first()
+
+            if self.report_query:
+                form.fields['query_data'].initial = self.report_query.query
+
         return [FieldEx('name'),
                 FieldEx('report_type'),
                 FieldEx('has_clickable_rows', template='django_modals/fields/label_checkbox.html'),
                 FieldEx('table_fields', template='report_builder/fields/select_column.html'),
-                FieldEx('search_filter_data', template='report_builder/fields/query_builder.html'),
+
+                FieldEx('query_data', template='report_builder/fields/query_builder.html'),
                 ]
+
+    def form_valid(self, form):
+        # Create a item using some of the extra fields and save it, then attach it to the SiteVisit.
+        table_report = form.save()
+
+        if not self.report_query and form.cleaned_data['query_data']:
+            ReportQuery(query=form.cleaned_data['query_data'],
+                        report=table_report).save()
+        elif form.cleaned_data['query_data']:
+            self.report_query.query = form.cleaned_data['query_data']
+            self.report_query.save()
+        elif self.report_query:
+            self.report_query.delete()
+
+        return self.command_response('reload')
 
     def _get_fields(self, base_model, fields, tables, report_builder_fields,
                     prefix='', title_prefix='', title=None, colour=None):
