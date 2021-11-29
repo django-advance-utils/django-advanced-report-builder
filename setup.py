@@ -1,12 +1,12 @@
 import setuptools
 from setuptools import find_packages
 
-with open("readme.md", "r") as fh:
+with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name="django-advanced-report-builder",
-    version="0.0.1",
+    version="0.0.3",
     author="Thomas Turner",
     description="Django app that allows you to build reports from modals",
     long_description=long_description,
