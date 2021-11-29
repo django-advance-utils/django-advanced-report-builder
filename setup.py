@@ -11,7 +11,7 @@ setuptools.setup(
     description="Django app that allows you to build reports from modals",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/django-advance-utils/django-advance-query-builder",
+    url="https://github.com/django-advance-utils/django-advanced-report-builder",
     include_package_data=True,
     packages=find_packages(),
     classifiers=[
