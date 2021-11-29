@@ -1,4 +1,5 @@
 import setuptools
+from setuptools import find_packages
 
 with open("readme.md", "r") as fh:
     long_description = fh.read()
@@ -12,7 +13,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/django-advance-utils/django-advance-query-builder",
     include_package_data=True,
-    packages=['ajax_helpers'],
+    packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
