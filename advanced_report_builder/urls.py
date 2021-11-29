@@ -1,6 +1,6 @@
 from django.urls import path
 
-from report_builder.views.datatables import TableModal, TableView, FieldModal
+from advanced_report_builder.views.datatables import TableModal, FieldModal
 
 app_name = 'report_builder'
 

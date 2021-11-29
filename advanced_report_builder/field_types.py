@@ -1,7 +1,7 @@
 from django.db import models
 
-from report_builder.globals import DATE_FIELDS
-from report_builder.variable_date import VariableDate
+from advanced_report_builder.globals import DATE_FIELDS
+from advanced_report_builder.variable_date import VariableDate
 
 
 class FieldTypes:

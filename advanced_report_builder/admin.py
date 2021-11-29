@@ -1,5 +1,5 @@
 from django.contrib import admin
-from report_builder.models import Report, ReportType, TableReport, ReportQuery
+from advanced_report_builder.models import Report, ReportType, TableReport, ReportQuery
 
 
 @admin.register(ReportQuery)

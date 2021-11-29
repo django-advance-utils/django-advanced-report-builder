@@ -1,11 +1,11 @@
 from django.db import models
 from django.db.models import Count
+from django_datatables.columns import ColumnLink, DatatableColumn, ChoiceColumn, CurrencyPenceColumn
 from django_datatables.model_def import DatatableModel
-from django_datatables.columns import ColumnLink, DatatableColumn, ChoiceColumn, CurrencyColumn, CurrencyPenceColumn
 from time_stamped_model.models import TimeStampedModel
 
-from report_builder.models import Report
-from report_builder.report_builder import ReportBuilderFields
+from advanced_report_builder.models import Report
+from advanced_report_builder.report_builder import ReportBuilderFields
 
 
 class Sector(TimeStampedModel):

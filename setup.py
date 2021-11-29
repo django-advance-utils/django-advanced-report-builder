@@ -5,7 +5,7 @@ with open("readme.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="django-advance-query-builder",
+    name="django-advanced-report-builder",
     version="0.0.1",
     author="Thomas Turner",
     description="Django app that allows you to build reports from modals",

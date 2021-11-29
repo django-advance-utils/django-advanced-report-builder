@@ -3,9 +3,9 @@ from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView
 from django_menus.menu import MenuMixin
 
-from report_builder.models import Report
-from report_builder.utils import split_slug
-from report_builder.views.datatables import TableView
+from advanced_report_builder.models import Report
+from advanced_report_builder.utils import split_slug
+from advanced_report_builder.views.datatables import TableView
 
 
 class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):

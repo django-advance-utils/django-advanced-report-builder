@@ -4,7 +4,7 @@ from functools import reduce
 
 from django.db.models import Q
 
-from report_builder.variable_date import VariableDate
+from advanced_report_builder.variable_date import VariableDate
 
 
 class FilterQueryMixin:

@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'django_menus',
     'django_modals',
     'django_datatables',
-    'report_builder',
+    'advanced_report_builder',
     'report_builder_examples',
 ]
 
@@ -112,7 +112,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'en-gb'
 
 TIME_ZONE = 'UTC'
 

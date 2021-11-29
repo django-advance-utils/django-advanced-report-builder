@@ -6,7 +6,7 @@ services:
    context: ./
   volumes:
    - ./django_examples/:/app
-   - ./report_builder/:/app/report_builder
+   - ./advanced_report_builder/:/app/advanced_report_builder
    - /var/run/docker.sock:/var/run/docker.sock
   command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8010"
   environment:

@@ -1,15 +1,13 @@
-import copy
-
 from django.forms import CharField, Textarea
 from django_datatables.columns import ColumnLink
 from django_datatables.datatables import DatatableView
-from django_menus.menu import MenuMixin, MenuItem
+from django_menus.menu import MenuMixin
 from django_modals.fields import FieldEx
 
-from report_builder.models import Report
-from report_builder.utils import make_slug_str
-from report_builder.views.datatables import TableModal, TableView
-from report_builder.views.main import ViewReportBase
+from advanced_report_builder.models import Report
+from advanced_report_builder.utils import make_slug_str
+from advanced_report_builder.views.datatables import TableModal, TableView
+from advanced_report_builder.views.main import ViewReportBase
 
 
 class ViewReports(MenuMixin, DatatableView):

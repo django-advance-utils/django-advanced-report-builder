@@ -7,12 +7,12 @@ from django_datatables.datatables import ColumnInitialisor
 from django_modals.forms import CrispyForm
 from django_modals.widgets.widgets import Toggle
 
-from report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, \
+from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, \
     DATE_FORMAT_TYPES
-from report_builder.models import ReportType
+from advanced_report_builder.models import ReportType
 
 
-from report_builder.utils import split_attr
+from advanced_report_builder.utils import split_attr
 
 
 class FieldForm(CrispyForm):

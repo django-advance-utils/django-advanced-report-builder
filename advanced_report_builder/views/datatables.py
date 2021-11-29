@@ -15,14 +15,14 @@ from django_modals.forms import ModelCrispyForm
 from django_modals.modals import ModelFormModal, FormModal
 from django_modals.widgets.widgets import Toggle
 
-from report_builder.columns import ReportBuilderDateColumn, ReportBuilderNumberColumn
-from report_builder.field_types import FieldTypes
-from report_builder.filter_query import FilterQueryMixin
-from report_builder.forms import FieldForm
-from report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_FUNCTIONS, DATE_FIELDS, \
+from advanced_report_builder.columns import ReportBuilderDateColumn, ReportBuilderNumberColumn
+from advanced_report_builder.field_types import FieldTypes
+from advanced_report_builder.filter_query import FilterQueryMixin
+from advanced_report_builder.forms import FieldForm
+from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_FUNCTIONS, DATE_FIELDS, \
     ANNOTATION_FUNCTIONS, NUMBER_FIELDS
-from report_builder.models import TableReport, ReportType, ReportQuery
-from report_builder.utils import split_attr, split_slug
+from advanced_report_builder.models import TableReport, ReportType, ReportQuery
+from advanced_report_builder.utils import split_attr, split_slug
 
 
 class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
