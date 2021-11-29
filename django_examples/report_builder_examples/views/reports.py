@@ -16,7 +16,8 @@ class ViewReports(MenuMixin, DatatableView):
 
     def setup_menu(self):
         super().setup_menu()
-        self.add_menu('table_menu', 'button_group').add_items(('report_builder:table_modal,-', 'Add Table Report'))
+        self.add_menu('table_menu', 'button_group').add_items(('advanced_report_builder:table_modal,-',
+                                                               'Add Table Report'))
 
     @staticmethod
     def setup_table(table):

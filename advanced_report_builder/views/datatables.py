@@ -26,7 +26,7 @@ from advanced_report_builder.utils import split_attr, split_slug
 
 
 class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
-    template_name = 'report_builder/datatable.html'
+    template_name = 'advanced_report_builder/datatable.html'
 
     date_field = ReportBuilderDateColumn
     number_field = ReportBuilderNumberColumn
@@ -208,7 +208,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         if query_id:
             slug_str = f'-query_id-{query_id}'
 
-        return [MenuItem(f'report_builder:table_modal,pk-{self.table_report.id}{slug_str}',
+        return [MenuItem(f'advanced_report_builder:table_modal,pk-{self.table_report.id}{slug_str}',
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
 
@@ -263,12 +263,12 @@ class TableModal(ModelFormModal):
         fields = [FieldEx('name'),
                   FieldEx('report_type'),
                   FieldEx('has_clickable_rows', template='django_modals/fields/label_checkbox.html'),
-                  FieldEx('table_fields', template='report_builder/fields/select_column.html')]
+                  FieldEx('table_fields', template='advanced_report_builder/fields/select_column.html')]
 
         if self.show_query_name:
             fields.append(FieldEx('query_name'))
 
-        fields.append(FieldEx('query_data', template='report_builder/fields/query_builder.html'))
+        fields.append(FieldEx('query_data', template='advanced_report_builder/fields/query_builder.html'))
         return fields
 
     def form_valid(self, form):
