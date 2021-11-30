@@ -2,7 +2,7 @@ from django.urls import path
 
 from advanced_report_builder.views.datatables import TableModal, FieldModal
 
-app_name = 'report_builder'
+app_name = 'advanced_report_builder'
 
 
 urlpatterns = [
