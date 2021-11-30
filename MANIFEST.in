@@ -1,0 +1,2 @@
+recursive-include advanced_report_builder *
+recursive-exclude advanced_report_builder *.pyc
