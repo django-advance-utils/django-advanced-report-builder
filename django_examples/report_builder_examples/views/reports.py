@@ -24,7 +24,9 @@ class ViewReports(MenuMixin, DatatableView):
         table.add_columns(
             ('id', {'column_defs': {'width': '30px'}}),
             'name',
-            ColumnLink(column_name='view_company', field='name', url_name='report_builder_examples:view_report'),
+            'instance_type',
+            'OutputType',
+            ColumnLink(column_name='view_report', field='name', url_name='report_builder_examples:view_report'),
         )
 
 
@@ -51,7 +53,7 @@ class ViewTableReport(TableView):
 
 class ViewReport(ViewReportBase):
     template_name = 'report_builder_examples/report.html'
-    views = {'tablereport': ViewTableReport}
+    views_overrides = {'tablereport': ViewTableReport}
 
 
 class TableExtraModal(TableModal):

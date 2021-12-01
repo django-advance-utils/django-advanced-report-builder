@@ -3,7 +3,9 @@ import operator
 from functools import reduce
 
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 
+from advanced_report_builder.models import ReportQuery
 from advanced_report_builder.variable_date import VariableDate
 
 
@@ -124,3 +126,14 @@ class FilterQueryMixin:
             query_list.append(~((Q((field + "__gte", value[0]))) & (Q((field + "__lte", value[1])))))
         else:
             query_list.append(((Q((field + "__gte", value[0]))) & (Q((field + "__lte", value[1])))))
+
+    def get_report_query(self, report):
+
+        slug_key = self.slug.get(f'query{report.pk}')
+        if slug_key:
+            report_query = get_object_or_404(ReportQuery, id=slug_key)
+            if report_query.report_id != report.pk:
+                return None
+        else:
+            report_query = report.reportquery_set.first()
+        return report_query

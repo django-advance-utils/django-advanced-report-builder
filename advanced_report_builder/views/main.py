@@ -6,11 +6,14 @@ from django_menus.menu import MenuMixin
 from advanced_report_builder.models import Report
 from advanced_report_builder.utils import split_slug
 from advanced_report_builder.views.datatables import TableView
+from advanced_report_builder.views.single_values import SingleValueView
 
 
 class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
     model = Report
-    views = {'tablereport': TableView}
+    views = {'tablereport': TableView,
+             'singlevaluereport': SingleValueView}
+    views_overrides = {}
 
     def get_object(self):
         slug = split_slug(self.kwargs['slug'])
@@ -24,6 +27,8 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         return context
 
     def get_view(self, report):
+        if report.instance_type in self.views_overrides:
+            return self.views_overrides.get(report.instance_type)
         return self.views.get(report.instance_type)
 
     def post(self, request, *args, **kwargs):

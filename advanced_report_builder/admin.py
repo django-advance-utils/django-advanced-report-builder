@@ -1,5 +1,5 @@
 from django.contrib import admin
-from advanced_report_builder.models import Report, ReportType, TableReport, ReportQuery
+from advanced_report_builder.models import Report, ReportType, TableReport, ReportQuery, SingleValueReport
 
 
 @admin.register(ReportQuery)
@@ -37,6 +37,14 @@ class ReportTableAdmin(admin.ModelAdmin):
                ]
     inlines = [ReportQueryInline]
 
+
+@admin.register(SingleValueReport)
+class SingleValueAdmin(admin.ModelAdmin):
+    list_display = ('name',
+                    )
+    exclude = ['instance_type',
+               ]
+    inlines = [ReportQueryInline]
 
 
 

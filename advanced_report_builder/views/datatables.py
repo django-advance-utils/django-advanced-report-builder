@@ -173,18 +173,8 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
             totals[first_field_name] = {'text': 'Totals'}
             table.add_plugin(ColumnTotals, totals)
 
-    def get_report_query(self):
-        query_id = self.slug.get(f'query{self.table_report.id}')
-        if query_id:
-            report_query = get_object_or_404(ReportQuery, id=query_id)
-            if report_query.report_id != self.table_report.id:
-                return None
-        else:
-            report_query = self.table_report.reportquery_set.first()
-        return report_query
-
     def extra_filters(self, query):
-        report_query = self.get_report_query()
+        report_query = self.get_report_query(report=self.table_report)
         if not report_query:
             return query
 

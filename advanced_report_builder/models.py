@@ -2,6 +2,8 @@ import json
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django_datatables.columns import DatatableColumn, NoHeadingColumn
+from django_datatables.model_def import DatatableModel
 from time_stamped_model.models import TimeStampedModel
 
 
@@ -43,11 +45,36 @@ class Report(TimeStampedModel):
     def get_base_modal(self):
         return self.report_type.content_type.model_class()
 
+    class Datatable(DatatableModel):
+
+        class OutputType(DatatableColumn):
+            output_types = {'tablereport': 'Table'}
+
+            def col_setup(self):
+                self.field = ['instance_type']
+
+            # noinspection PyMethodMayBeStatic
+            def row_result(self, data, _page_data):
+                instance_type = data[self.model_path + 'instance_type']
+                return self.output_types.get(instance_type, '')
+
+        class OutputTypeIcon(NoHeadingColumn):
+            output_types = {'tablereport': '<i class="fas fa-table"></i>'}
+
+            def col_setup(self):
+                self.field = ['instance_type']
+
+            # noinspection PyMethodMayBeStatic
+            def row_result(self, data, _page_data):
+                instance_type = data[self.model_path + 'instance_type']
+                return self.output_types.get(instance_type, '')
+
 
 class ReportQuery(TimeStampedModel):
     report = models.ForeignKey(Report, on_delete=models.CASCADE)
     name = models.TextField(default='Standard')
     query = models.JSONField(null=True, blank=True)
+    extra_query = models.JSONField(null=True, blank=True)  # used for single value percent_divider_query_data
 
     class Meta:
         ordering = ['name']
@@ -66,3 +93,25 @@ class TableReport(Report):
     def get_pivot_fields(self):
         pivot_data = json.loads(self.pivot_fields)
         return pivot_data
+
+
+class SingleValueReport(Report):
+    SINGLE_VALUE_TYPE_COUNT = 1
+    SINGLE_VALUE_TYPE_SUM = 2
+    SINGLE_VALUE_TYPE_COUNT_AND_SUM = 3
+    SINGLE_VALUE_TYPE_PERCENT = 4
+    SINGLE_VALUE_TYPE_AVERAGE = 5
+
+    SINGLE_VALUE_TYPE_CHOICES = (
+        (SINGLE_VALUE_TYPE_COUNT, 'Count'),
+        (SINGLE_VALUE_TYPE_SUM, 'Sum'),
+        (SINGLE_VALUE_TYPE_COUNT_AND_SUM, 'Count & Sum'),
+        (SINGLE_VALUE_TYPE_PERCENT, 'Percent'),
+        (SINGLE_VALUE_TYPE_AVERAGE, 'Average')
+    )
+
+    tile_colour = models.CharField(max_length=10, blank=True, null=True)
+    field = models.CharField(max_length=200, blank=True, null=True)
+    single_value_type = models.PositiveSmallIntegerField(choices=SINGLE_VALUE_TYPE_CHOICES,
+                                                         default=SINGLE_VALUE_TYPE_COUNT, null=True, blank=True)
+    decimal_places = models.IntegerField(default=0)
