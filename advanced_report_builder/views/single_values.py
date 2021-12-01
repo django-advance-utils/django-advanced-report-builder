@@ -1,6 +1,5 @@
 from ajax_helpers.mixins import AjaxHelpers
 from django.db.models import Sum, Avg
-from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView
 from django_menus.menu import MenuMixin
 
@@ -20,6 +19,7 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
 
     def dispatch(self, request, *args, **kwargs):
         self.slug = split_slug(kwargs.get('slug'))
+        self.single_value_report = kwargs.get('report').singlevaluereport
         return super().dispatch(request, *args, **kwargs)
 
     @staticmethod
@@ -29,7 +29,10 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
     def _get_sum(self, query):
         field = self.single_value_report.field
         result = query.aggregate(sum=Sum(field))
-        return result['sum']
+        total = result['sum']
+        if total is None:
+            return 0
+        return total
 
     def _get_average(self, query):
         field = self.single_value_report.field
@@ -67,8 +70,6 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         return return_dict
 
     def get_context_data(self, **kwargs):
-        self.single_value_report = get_object_or_404(SingleValueReport, pk=self.slug['pk'])
-
         context = super().get_context_data(**kwargs)
         context['query_results'] = self.process_query_results()
         context['single_value_report'] = self.single_value_report

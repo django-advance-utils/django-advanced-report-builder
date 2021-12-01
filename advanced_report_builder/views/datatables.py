@@ -41,7 +41,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
 
     def dispatch(self, request, *args, **kwargs):
         self.slug = split_slug(self.kwargs['slug'])
-        self.table_report = get_object_or_404(TableReport, pk=self.slug['pk'])
+        self.table_report = kwargs.get('report').tablereport
         base_model = self.table_report.get_base_modal()
         self.add_table(type(self).__name__.lower(), model=base_model)
         return super().dispatch(request, *args, **kwargs)

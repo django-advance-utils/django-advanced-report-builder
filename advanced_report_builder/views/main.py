@@ -17,11 +17,13 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
 
     def get_object(self):
         slug = split_slug(self.kwargs['slug'])
-        return get_object_or_404(self.model, pk=slug['pk'])
+        return get_object_or_404(self.model, slug=slug['pk'])
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        view = self.get_view(report=self.get_object())
+        report = self.get_object()
+        view = self.get_view(report=report)
+        self.kwargs['report'] = report
         report_data = view.as_view()(self.request, *self.args, **self.kwargs).rendered_content
         context['report'] = report_data
         return context
@@ -32,6 +34,8 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         return self.views.get(report.instance_type)
 
     def post(self, request, *args, **kwargs):
-        view = self.get_view(report=self.get_object())
+        report = self.get_object()
+        view = self.get_view(report=report)
+        self.kwargs['report'] = report
         return view.as_view()(self.request, *self.args, **self.kwargs)
 

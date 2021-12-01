@@ -21,6 +21,7 @@ class ReportType(TimeStampedModel):
 
 class Report(TimeStampedModel):
     name = models.CharField(max_length=200)
+    slug = models.SlugField(unique=True)
     report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
     instance_type = models.CharField(null=True, max_length=255)
 
@@ -37,6 +38,7 @@ class Report(TimeStampedModel):
         return self.name
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        self.make_new_slug(allow_dashes=False)
         if self.instance_type is None:
             self.instance_type = self._meta.label_lower.split('.')[1]
         return super().save(force_insert=force_insert, force_update=force_update,
@@ -48,7 +50,8 @@ class Report(TimeStampedModel):
     class Datatable(DatatableModel):
 
         class OutputType(DatatableColumn):
-            output_types = {'tablereport': 'Table'}
+            output_types = {'tablereport': 'Table',
+                            'singlevaluereport': 'Single Value'}
 
             def col_setup(self):
                 self.field = ['instance_type']
@@ -59,7 +62,8 @@ class Report(TimeStampedModel):
                 return self.output_types.get(instance_type, '')
 
         class OutputTypeIcon(NoHeadingColumn):
-            output_types = {'tablereport': '<i class="fas fa-table"></i>'}
+            output_types = {'tablereport': '<i class="fas fa-table"></i>',
+                            'singlevaluereport': '<i class="fas fa-box-open"></i>'}
 
             def col_setup(self):
                 self.field = ['instance_type']

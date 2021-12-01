@@ -23,10 +23,14 @@ class ViewReports(MenuMixin, DatatableView):
     def setup_table(table):
         table.add_columns(
             ('id', {'column_defs': {'width': '30px'}}),
+            'slug',
             'name',
             'instance_type',
             'OutputType',
-            ColumnLink(column_name='view_report', field='name', url_name='report_builder_examples:view_report'),
+            ColumnLink(column_name='view_report',
+                       field='name',
+                       link_ref_column='slug',
+                       url_name='report_builder_examples:view_report'),
         )
 
 

@@ -18,6 +18,7 @@ class ReportQueryInline(admin.TabularInline):
 class ReportAdmin(admin.ModelAdmin):
     list_display = ('name',
                     'instance_type',
+                    'slug',
                     )
     inlines = [ReportQueryInline]
 
@@ -32,8 +33,10 @@ class ReportTypeAdmin(admin.ModelAdmin):
 @admin.register(TableReport)
 class ReportTableAdmin(admin.ModelAdmin):
     list_display = ('name',
+                    'slug',
                     )
     exclude = ['instance_type',
+               'slug',
                ]
     inlines = [ReportQueryInline]
 
@@ -41,8 +44,10 @@ class ReportTableAdmin(admin.ModelAdmin):
 @admin.register(SingleValueReport)
 class SingleValueAdmin(admin.ModelAdmin):
     list_display = ('name',
+                    'slug',
                     )
     exclude = ['instance_type',
+               'slug',
                ]
     inlines = [ReportQueryInline]
 
