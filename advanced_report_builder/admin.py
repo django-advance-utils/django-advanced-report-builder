@@ -20,6 +20,9 @@ class ReportAdmin(admin.ModelAdmin):
                     'instance_type',
                     'slug',
                     )
+    exclude = ['slug',
+               ]
+
     inlines = [ReportQueryInline]
 
 
