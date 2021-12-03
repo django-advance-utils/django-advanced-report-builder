@@ -25,7 +25,7 @@ class Company(TimeStampedModel):
         people = DatatableColumn(annotations={'people': Count('person__id', distinct=True)})
 
         # people = {'annotations': {'people': Count('person__id')}}
-        collink_1 = ColumnLink(title='Defined in Model', field='name', url_name='report_builder_examples:company')
+        collink_1 = ColumnLink(title='Defined in Model', field='name', url_name='report_builder_examples:example_link')
 
         class Tags(DatatableColumn):
             def setup_results(self, request, all_results):

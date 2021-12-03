@@ -6,6 +6,9 @@ from django_datatables.columns import DatatableColumn, NoHeadingColumn
 from django_datatables.model_def import DatatableModel
 from time_stamped_model.models import TimeStampedModel
 
+from advanced_report_builder.globals import DISPLAY_OPTION_CHOICES, DISPLAY_OPTION_2_PER_ROW, DISPLAY_OPTION_NONE, \
+    DISPLAY_OPTION_CLASSES
+
 
 class ReportType(TimeStampedModel):
     name = models.CharField(max_length=200)
@@ -127,8 +130,10 @@ class SingleValueReport(Report):
 
 
 class Dashboard(TimeStampedModel):
+
     slug = models.SlugField(unique=True)
     name = models.CharField(max_length=200)
+    display_option = models.PositiveIntegerField(choices=DISPLAY_OPTION_CHOICES[1:], default=DISPLAY_OPTION_2_PER_ROW)
 
     def __str__(self):
         return self.name
@@ -145,6 +150,13 @@ class DashboardReport(TimeStampedModel):
     dashboard = models.ForeignKey(Dashboard, on_delete=models.CASCADE)
     order = models.PositiveSmallIntegerField()
     report = models.ForeignKey(Report, on_delete=models.CASCADE)
+    top = models.BooleanField(default=False)
+    display_option = models.PositiveIntegerField(choices=DISPLAY_OPTION_CHOICES, default=DISPLAY_OPTION_NONE)
+
+    def get_class(self):
+        if self.display_option != DISPLAY_OPTION_NONE:
+            return DISPLAY_OPTION_CLASSES.get(self.display_option)
+        return DISPLAY_OPTION_CLASSES.get(self.dashboard.display_option)
 
     class Meta:
         ordering = ['order']

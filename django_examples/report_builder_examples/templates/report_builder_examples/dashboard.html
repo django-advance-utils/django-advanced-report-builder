@@ -3,9 +3,28 @@
 {% block content %}
     <h1>{{ dashboard.name }}</h1>
 
+    {% if top_reports %}
+        <div class="col-sm-12 float-left">
+            <div class="row">
+                <div class="container-fluid" id="top_reports">
+                    <div class="row">
+                        {% for top_report in top_reports %}
+                            <div id="content_{{ top_report.report_id }}"
+                                 class="{{ top_reports_class }}">
+                                <div>{{ top_report.render }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
 
     {% for report in reports %}
-        <hr/>
-        <div>{{ report.render }}</div>
+
+        <div class="float-left{{ report.class }}">
+            {{ report.render }}
+        </div>
     {% endfor %}
 {% endblock %}

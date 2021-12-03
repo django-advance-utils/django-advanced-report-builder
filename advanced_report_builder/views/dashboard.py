@@ -40,15 +40,31 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
 
         return super().dispatch(request, *args, **kwargs)
 
+    @staticmethod
+    def get_top_report_class(reports):
+        reports_len = len(reports)
+        spans = {1: ' col-12', 2: ' col-6', 3: ' col-4', 6: ' col-4', 9: ' col-4'}
+        return spans.get(reports_len, ' col-3')
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['dashboard'] = self.dashboard
+
+        top_reports = []
         reports = []
+
         for dashboard_report in self.dashboard.dashboardreport_set.all():
             report_data = self.call_view(report=dashboard_report.report,
                                          dashboard_report_id=dashboard_report.id).rendered_content
-            report = {'render': report_data, 'name': dashboard_report.report.name}
-            reports.append(report)
+            report = {'render': report_data,
+                      'name': dashboard_report.report.name,
+                      'class': dashboard_report.get_class()}
+            if dashboard_report.top:
+                top_reports.append(report)
+            else:
+                reports.append(report)
+        context['top_reports'] = top_reports
+        context['top_reports_class'] = self.get_top_report_class(top_reports)
         context['reports'] = reports
         return context
 
