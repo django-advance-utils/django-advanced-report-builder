@@ -42,9 +42,27 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
     def dispatch(self, request, *args, **kwargs):
         self.slug = split_slug(self.kwargs['slug'])
         self.table_report = kwargs.get('report').tablereport
+        dashboard_report_id = kwargs.get('dashboard_report_id')
+        if dashboard_report_id:
+            table_id = f'table_{dashboard_report_id}'
+        else:
+            table_id = f'table_{self.table_report.id}'
+
         base_model = self.table_report.get_base_modal()
-        self.add_table(type(self).__name__.lower(), model=base_model)
+        self.add_table(table_id, model=base_model)
         return super().dispatch(request, *args, **kwargs)
+
+    def setup_tables(self, table_id=None):
+        for t_id, table in self.tables.items():
+            if not table_id or t_id == table_id:
+                if t_id == type(self).__name__.lower():
+                    self.setup_table(table)
+                else:
+                    if hasattr(self, 'setup_' + t_id):
+                        getattr(self, 'setup_' + t_id)(table)
+                    else:
+                        self.setup_table(table)
+            table.view_filter = self.view_filter
 
     def get_date_field(self, table_field, fields):
         data_attr = split_attr(table_field)

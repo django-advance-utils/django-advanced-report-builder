@@ -1,16 +1,18 @@
 from django.forms import CharField, Textarea
+from django.shortcuts import redirect
 from django_datatables.columns import ColumnLink
 from django_datatables.datatables import DatatableView
-from django_menus.menu import MenuMixin
 from django_modals.fields import FieldEx
 
 from advanced_report_builder.models import Report
 from advanced_report_builder.utils import make_slug_str
 from advanced_report_builder.views.datatables import TableModal, TableView
-from advanced_report_builder.views.main import ViewReportBase
+from report_builder_examples.views.menu import MainMenu
+
+from advanced_report_builder.views.reports import ViewReportBase
 
 
-class ViewReports(MenuMixin, DatatableView):
+class ViewReports(MainMenu, DatatableView):
     model = Report
     template_name = 'report_builder_examples/index.html'
 
@@ -55,9 +57,12 @@ class ViewTableReport(TableView):
         return []
 
 
-class ViewReport(ViewReportBase):
+class ViewReport(MainMenu, ViewReportBase):
     template_name = 'report_builder_examples/report.html'
     views_overrides = {'tablereport': ViewTableReport}
+
+    def redirect_url(self):
+        return redirect('report_builder_examples:view_report', slug=self.report.slug)
 
 
 class TableExtraModal(TableModal):
@@ -68,10 +73,3 @@ class TableExtraModal(TableModal):
         return [FieldEx('name'),
                 FieldEx('notes'),
                 FieldEx('has_clickable_rows', template='django_modals/fields/label_checkbox.html')]
-
-
-
-
-
-
-

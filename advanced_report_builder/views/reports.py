@@ -1,4 +1,5 @@
 from ajax_helpers.mixins import AjaxHelpers
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView
 from django_menus.menu import MenuMixin
@@ -15,15 +16,33 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
              'singlevaluereport': SingleValueView}
     views_overrides = {}
 
-    def get_object(self):
+    def __init__(self, *args, **kwargs):
+        self.report = None
+        super().__init__(*args, **kwargs)
+
+    def redirect_url(self):
+        """ used if the slug changes"""
+        return None
+
+    def dispatch(self, request, *args, **kwargs):
         slug = split_slug(self.kwargs['slug'])
-        return get_object_or_404(self.model, slug=slug['pk'])
+        self.report = self.model.objects.filter(slug=slug['pk']).first()
+
+        if self.report is None:
+            self.report = self.model.objects.filter(slug_alias=slug['pk']).first()
+            if self.report is None:
+                raise Http404
+            else:
+                redirect_url = self.redirect_url()
+                if redirect_url:
+                    return redirect_url
+
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        report = self.get_object()
-        view = self.get_view(report=report)
-        self.kwargs['report'] = report
+        view = self.get_view(report=self.report)
+        self.kwargs['report'] = self.report
         report_data = view.as_view()(self.request, *self.args, **self.kwargs).rendered_content
         context['report'] = report_data
         return context
@@ -34,8 +53,7 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         return self.views.get(report.instance_type)
 
     def post(self, request, *args, **kwargs):
-        report = self.get_object()
-        view = self.get_view(report=report)
-        self.kwargs['report'] = report
+        view = self.get_view(report=self.report)
+        self.kwargs['report'] = self.report
         return view.as_view()(self.request, *self.args, **self.kwargs)
 

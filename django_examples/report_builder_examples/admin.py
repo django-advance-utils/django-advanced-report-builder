@@ -2,7 +2,6 @@ from django.contrib import admin
 from report_builder_examples.models import Company, Person, Tags, Sector, Tally, Payment
 
 
-
 @admin.register(Sector)
 class SectorAdmin(admin.ModelAdmin):
     list_display = ('name',

@@ -22,6 +22,7 @@ class ReportType(TimeStampedModel):
 class Report(TimeStampedModel):
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
+    slug_alias = models.SlugField(blank=True, null=True)  # used if the slug changes
     report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
     instance_type = models.CharField(null=True, max_length=255)
 
@@ -37,12 +38,16 @@ class Report(TimeStampedModel):
     def get_title(self):
         return self.name
 
-    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
-        self.make_new_slug(allow_dashes=False)
+    def save(self, *args, **kwargs):
+
+        slug_alias = self.slug
+        self.make_new_slug(allow_dashes=False, on_edit=True)
+        if slug_alias != self.slug:
+            self.slug_alias = slug_alias
+
         if self.instance_type is None:
             self.instance_type = self._meta.label_lower.split('.')[1]
-        return super().save(force_insert=force_insert, force_update=force_update,
-                            using=using, update_fields=update_fields)
+        return super().save(*args, **kwargs)
 
     def get_base_modal(self):
         return self.report_type.content_type.model_class()
@@ -119,3 +124,28 @@ class SingleValueReport(Report):
     single_value_type = models.PositiveSmallIntegerField(choices=SINGLE_VALUE_TYPE_CHOICES,
                                                          default=SINGLE_VALUE_TYPE_COUNT, null=True, blank=True)
     decimal_places = models.IntegerField(default=0)
+
+
+class Dashboard(TimeStampedModel):
+    slug = models.SlugField(unique=True)
+    name = models.CharField(max_length=200)
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        slug_alias = self.slug
+        self.make_new_slug(allow_dashes=False, on_edit=True)
+        if slug_alias != self.slug:
+            self.slug_alias = slug_alias
+        return super().save(*args, **kwargs)
+
+
+class DashboardReport(TimeStampedModel):
+    dashboard = models.ForeignKey(Dashboard, on_delete=models.CASCADE)
+    order = models.PositiveSmallIntegerField()
+    report = models.ForeignKey(Report, on_delete=models.CASCADE)
+
+    class Meta:
+        ordering = ['order']
+
