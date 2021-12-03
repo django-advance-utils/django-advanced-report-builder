@@ -20,6 +20,8 @@
     <div class="dashboard-tile detail" style="background-color: {% if single_value_report.tile_colour %}#{{ single_value_report.tile_colour }}{% else %}#23527c{% endif %}; color: white;">
         <div class="content" style="padding: 2px;">
             {{ datatable.render }}
+
+                        <p>{{ single_value_report.name|safe }}</p>
         </div>
     </div>
 </div>

@@ -130,10 +130,10 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # context['query_results'] = self.process_query_results()
         base_modal = self.single_value_report.get_base_modal()
 
         table = HorizontalTable(model=base_modal)
+        table.datatable_template = 'advanced_report_builder/single_value_middle.html'
         table.extra_filters = self.extra_filters
         fields = self.process_query_results()
         table.add_columns(
