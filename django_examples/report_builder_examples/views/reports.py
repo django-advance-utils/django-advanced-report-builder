@@ -7,14 +7,14 @@ from django_modals.fields import FieldEx
 from advanced_report_builder.models import Report
 from advanced_report_builder.utils import make_slug_str
 from advanced_report_builder.views.datatables import TableModal, TableView
-from report_builder_examples.views.menu import MainMenu
+from report_builder_examples.views.base import MainMenu, MainIndices
 
 from advanced_report_builder.views.reports import ViewReportBase
 
 
-class ViewReports(MainMenu, DatatableView):
+class ViewReports(MainIndices):
     model = Report
-    template_name = 'report_builder_examples/index.html'
+    table_title = 'Reports'
 
     def setup_menu(self):
         super().setup_menu()
@@ -36,10 +36,11 @@ class ViewReports(MainMenu, DatatableView):
         )
 
 
+
 class ViewTableReport(TableView):
-    def pod_menu(self):
+    def pod_report_menu(self):
         return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
-                *super().pod_menu()]
+                *super().pod_report_menu()]
 
     def queries_menu(self):
         report_queries = self.table_report.reportquery_set.all()

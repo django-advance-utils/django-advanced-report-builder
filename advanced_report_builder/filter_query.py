@@ -11,6 +11,13 @@ from advanced_report_builder.variable_date import VariableDate
 
 class FilterQueryMixin:
 
+    def __init__(self, *args, **kwargs):
+        self.table_report = None
+        self.report = None
+        self.dashboard_report = None
+        self.slug = None
+        super().__init__(*args, **kwargs)
+
     def process_filters(self, query, search_filter_data):
         if not search_filter_data:
             return query
@@ -137,3 +144,9 @@ class FilterQueryMixin:
         else:
             report_query = report.reportquery_set.first()
         return report_query
+
+    def get_title(self):
+        if self.dashboard_report and self.dashboard_report.name_override:
+            return self.dashboard_report.name_override
+        else:
+            return self.table_report.name

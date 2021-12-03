@@ -8,12 +8,12 @@ from django_modals.fields import FieldEx
 from advanced_report_builder.models import Report, Dashboard
 from advanced_report_builder.utils import make_slug_str
 from advanced_report_builder.views.datatables import TableModal, TableView
-from report_builder_examples.views.menu import MainMenu
+from report_builder_examples.views.base import MainMenu, MainIndices
 
 
-class ViewDashboards(MainMenu, DatatableView):
+class ViewDashboards(MainIndices):
     model = Dashboard
-    template_name = 'report_builder_examples/index.html'
+    table_title = 'Dashboards'
 
     # def setup_menu(self):
     #     super().setup_menu()

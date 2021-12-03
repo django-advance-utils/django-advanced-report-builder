@@ -31,38 +31,22 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
     date_field = ReportBuilderDateColumn
     number_field = ReportBuilderNumberColumn
 
-    def __init__(self, *args, **kwargs):
-        self.table_report = None
-        self.slug = None
-        super().__init__(*args, **kwargs)
-
     def add_tables(self):
         return None
 
     def dispatch(self, request, *args, **kwargs):
         self.slug = split_slug(self.kwargs['slug'])
-        self.table_report = kwargs.get('report').tablereport
-        dashboard_report_id = kwargs.get('dashboard_report_id')
-        if dashboard_report_id:
-            table_id = f'table_{dashboard_report_id}'
+        self.report = kwargs.get('report')
+        self.table_report = self.report.tablereport
+        self.dashboard_report = kwargs.get('dashboard_report')
+        if self.dashboard_report:
+            table_id = f'tabledashboard_{self.dashboard_report.id}'
         else:
             table_id = f'table_{self.table_report.id}'
 
         base_model = self.table_report.get_base_modal()
         self.add_table(table_id, model=base_model)
         return super().dispatch(request, *args, **kwargs)
-
-    def setup_tables(self, table_id=None):
-        for t_id, table in self.tables.items():
-            if not table_id or t_id == table_id:
-                if t_id == type(self).__name__.lower():
-                    self.setup_table(table)
-                else:
-                    if hasattr(self, 'setup_' + t_id):
-                        getattr(self, 'setup_' + t_id)(table)
-                    else:
-                        self.setup_table(table)
-            table.view_filter = self.view_filter
 
     def get_date_field(self, table_field, fields):
         data_attr = split_attr(table_field)
@@ -150,6 +134,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
     def setup_table(self, table):
         table.extra_filters = self.extra_filters
         table_fields = json.loads(self.table_report.table_fields)
+
         fields = []
         totals = {}
         base_modal = self.table_report.get_base_modal()
@@ -187,6 +172,9 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
             if not first_field_name:
                 first_field_name = field_name
         table.add_columns(*fields)
+        table.table_options['pageLength'] = self.table_report.page_length
+        table.table_options['bStateSave'] = False
+
         if totals:
             totals[first_field_name] = {'text': 'Totals'}
             table.add_plugin(ColumnTotals, totals)
@@ -200,16 +188,27 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
                                     search_filter_data=report_query.query)
 
     def add_to_context(self, **kwargs):
-        return {'table_report': self.table_report}
+        return {'title': self.get_title(),
+                'table_report': self.table_report}
 
     def setup_menu(self):
         super().setup_menu()
+        if self.dashboard_report:
+            report_menu = self.pod_dashboard_menu()
+        else:
+            report_menu = self.pod_report_menu()
+
         self.add_menu('button_menu', 'button_group').add_items(
-            *self.pod_menu(),
+            *report_menu,
             *self.queries_menu(),
         )
 
-    def pod_menu(self):
+    def pod_dashboard_menu(self):
+        return [MenuItem(f'advanced_report_builder:dashboard_report_modal,pk-{self.dashboard_report.id}',
+                         menu_display='Edit',
+                         font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
+
+    def pod_report_menu(self):
 
         query_id = self.slug.get(f'query{self.table_report.id}')
         slug_str = ''
@@ -241,6 +240,7 @@ class TableModal(ModelFormModal):
                    ('has_clickable_rows', {'widget': Toggle(attrs={'data-onstyle': 'success',
                                                                    'data-on': 'YES',
                                                                    'data-off': 'NO'})}),
+                   'page_length',
                    'report_type',
                    'table_fields',
                    ]
@@ -271,6 +271,7 @@ class TableModal(ModelFormModal):
         fields = [FieldEx('name'),
                   FieldEx('report_type'),
                   FieldEx('has_clickable_rows', template='django_modals/fields/label_checkbox.html'),
+                  FieldEx('page_length', template='django_modals/fields/label_checkbox.html'),
                   FieldEx('table_fields', template='advanced_report_builder/fields/select_column.html')]
 
         if self.show_query_name:

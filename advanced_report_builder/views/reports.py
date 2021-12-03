@@ -1,6 +1,5 @@
 from ajax_helpers.mixins import AjaxHelpers
 from django.http import Http404
-from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView
 from django_menus.menu import MenuMixin
 

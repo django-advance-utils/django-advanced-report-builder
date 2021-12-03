@@ -98,6 +98,12 @@ class TableReport(Report):
     table_fields = models.TextField(null=True, blank=True)
     has_clickable_rows = models.BooleanField(default=False)  # This is for standard tables.
     pivot_fields = models.TextField(null=True, blank=True)
+    page_length = models.PositiveSmallIntegerField(choices=((10, '10'),
+                                                            (25, '25'),
+                                                            (50, '50'),
+                                                            (100, '100'),
+                                                            (150, '150'),
+                                                            (200, '200')), default=100)
 
     def has_pivot_data(self):
         return self.pivot_fields is not None and self.pivot_fields != ''
@@ -151,6 +157,7 @@ class DashboardReport(TimeStampedModel):
     order = models.PositiveSmallIntegerField()
     report = models.ForeignKey(Report, on_delete=models.CASCADE)
     top = models.BooleanField(default=False)
+    name_override = models.CharField(max_length=200, blank=True, null=True)
     display_option = models.PositiveIntegerField(choices=DISPLAY_OPTION_CHOICES, default=DISPLAY_OPTION_NONE)
 
     def get_class(self):

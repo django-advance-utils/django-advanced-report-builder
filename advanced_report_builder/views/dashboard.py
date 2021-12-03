@@ -4,8 +4,9 @@ from ajax_helpers.mixins import AjaxHelpers
 from django.http import Http404
 from django.views.generic import TemplateView
 from django_menus.menu import MenuMixin
+from django_modals.modals import ModelFormModal
 
-from advanced_report_builder.models import Dashboard
+from advanced_report_builder.models import Dashboard, DashboardReport
 from advanced_report_builder.utils import split_slug
 from advanced_report_builder.views.datatables import TableView
 from advanced_report_builder.views.single_values import SingleValueView
@@ -54,8 +55,7 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         reports = []
 
         for dashboard_report in self.dashboard.dashboardreport_set.all():
-            report_data = self.call_view(report=dashboard_report.report,
-                                         dashboard_report_id=dashboard_report.id).rendered_content
+            report_data = self.call_view(dashboard_report=dashboard_report).rendered_content
             report = {'render': report_data,
                       'name': dashboard_report.report.name,
                       'class': dashboard_report.get_class()}
@@ -73,11 +73,11 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
             return self.views_overrides.get(report.instance_type)
         return self.views.get(report.instance_type)
 
-    def call_view(self, report, dashboard_report_id):
-        view = self.get_view(report=report)
+    def call_view(self, dashboard_report):
+        view = self.get_view(report=dashboard_report.report)
         view_kwargs = copy.deepcopy(self.kwargs)
-        view_kwargs['report'] = report
-        view_kwargs['dashboard_report_id'] = dashboard_report_id
+        view_kwargs['report'] = dashboard_report.report
+        view_kwargs['dashboard_report'] = dashboard_report
         return view.as_view()(self.request, *self.args, **view_kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -87,7 +87,13 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
             if dashboard_report_id:
                 dashboard_report = self.dashboard.dashboardreport_set.filter(id=dashboard_report_id).first()
 
-                return self.call_view(report=dashboard_report.report,
-                                      dashboard_report_id=dashboard_report.id)
+                return self.call_view(dashboard_report=dashboard_report)
 
         return super().post(request, *args, **kwargs)
+
+
+class DashboardReportModal(ModelFormModal):
+    model = DashboardReport
+    form_fields = ['name_override',
+                   'display_option']
+
