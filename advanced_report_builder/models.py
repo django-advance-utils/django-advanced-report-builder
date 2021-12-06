@@ -166,6 +166,11 @@ class DashboardReport(TimeStampedModel):
             return DISPLAY_OPTION_CLASSES.get(self.display_option)
         return DISPLAY_OPTION_CLASSES.get(self.dashboard.display_option)
 
+    def save(self, *args, **kwargs):
+        self.set_order_field(extra_filters={'dashboard': self.dashboard,
+                                            'top': self.top})
+        return super().save(*args, **kwargs)
+
     class Meta:
         ordering = ['order']
 

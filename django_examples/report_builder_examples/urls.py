@@ -4,7 +4,6 @@ from report_builder_examples.views.dashboards import ViewDashboards, ViewDashboa
 
 from report_builder_examples.views.reports import ViewReport, ViewReports, TableExtraModal
 
-
 app_name = 'report_builder_examples'
 
 
@@ -18,5 +17,6 @@ urlpatterns = [
     path('dashboards/', ViewDashboards.as_view(), name='dashboards_index'),
     path('dashboards/<str:slug>/', ViewDashboard.as_view(), name='view_dashboard'),
     path('dashboards/edit/<str:slug>/', ViewDashboard.as_view(enable_edit=True), name='edit_dashboard'),
+
 
 ]

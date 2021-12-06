@@ -1,13 +1,17 @@
 import copy
 
 from ajax_helpers.mixins import AjaxHelpers
+from django.forms import ModelChoiceField
 from django.http import Http404
+from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView
 from django_menus.menu import MenuMixin
-from django_modals.modals import ModelFormModal
+from django_modals.forms import CrispyForm
+from django_modals.modals import ModelFormModal, FormModal
+from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.widgets import Toggle
 
-from advanced_report_builder.models import Dashboard, DashboardReport
+from advanced_report_builder.models import Dashboard, DashboardReport, Report
 from advanced_report_builder.utils import split_slug
 from advanced_report_builder.views.datatables import TableView
 from advanced_report_builder.views.single_values import SingleValueView
@@ -121,6 +125,9 @@ class DashboardModal(ModelFormModal):
 
 class DashboardReportModal(ModelFormModal):
     model = DashboardReport
+    process = PROCESS_EDIT_DELETE
+    permission_delete = PERMISSION_OFF
+
     form_fields = ['name_override',
                    'top',
                    'display_option']
@@ -131,3 +138,19 @@ class DashboardReportModal(ModelFormModal):
         form.add_trigger('top', 'onchange', [
             {'selector': '#div_id_display_option', 'values': {'checked': 'hide'}, 'default': 'show'},
         ])
+
+
+class DashboardAddReportForm(CrispyForm):
+    report = ModelChoiceField(queryset=Report.objects.all())
+
+
+class DashboardAddReportModal(FormModal):
+    form_class = DashboardAddReportForm
+    modal_title = 'Add Report'
+
+    def form_valid(self, form):
+        dashboard = get_object_or_404(Dashboard, id=self.slug['pk'])
+        dashboard_report = DashboardReport(dashboard=dashboard)
+        dashboard_report.report = form.cleaned_data['report']
+        dashboard_report.save()
+        return self.command_response('reload')

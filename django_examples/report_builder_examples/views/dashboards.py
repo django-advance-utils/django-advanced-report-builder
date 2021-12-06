@@ -46,7 +46,11 @@ class ViewDashboard(MainMenu, ViewDashboardBase):
             report_menu = [MenuItem('report_builder_examples:view_dashboard', 'View Only',
                                     url_kwargs={'slug': self.kwargs['slug']}, css_classes='btn-success'),
                            MenuItem('advanced_report_builder:dashboard_modal', 'Edit',
-                                    url_kwargs={'slug': self.dashboard.id})]
+                                    url_kwargs={'slug': self.dashboard.id}),
+                           MenuItem('advanced_report_builder:add_dashboard_report', 'Add Report',
+                                    url_kwargs={'slug': self.dashboard.id}, css_classes='btn-secondary'),
+
+                           ]
 
         if report_menu:
             self.add_menu('dashboard_buttons', 'button_group').add_items(
