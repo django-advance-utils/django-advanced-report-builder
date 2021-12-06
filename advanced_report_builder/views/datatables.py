@@ -229,17 +229,9 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         return []
 
 
-class ReportBaseForm(ModelCrispyForm):
-    submit_class = 'btn-success modal-submit'
-
-    def submit_button(self, css_class=submit_class, button_text='Submit', **kwargs):
-        return StrictButton(button_text, css_class=css_class)
-
-
 class TableModal(ModelFormModal):
     size = 'xl'
     model = TableReport
-    base_form = ReportBaseForm
     ajax_commands = ['button', 'select2', 'ajax']
 
     form_fields = ['name',

@@ -5,6 +5,7 @@ from django.db.models import Sum, Avg
 from django.views.generic import TemplateView
 from django_datatables.datatables import ColumnInitialisor, DatatableView, DatatableTable, HorizontalTable
 from django_menus.menu import MenuMixin, MenuItem
+from django_modals.modals import ModelFormModal
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.filter_query import FilterQueryMixin
@@ -28,7 +29,7 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         self.single_value_report = self.report.singlevaluereport
         self.enable_edit = kwargs.get('enable_edit')
         self.dashboard_report = kwargs.get('dashboard_report')
-        if self.enable_edit or (self.dashboard_report and not self.dashboard_report.top):
+        if self.enable_edit or (self.dashboard_report and not self.dashboard_report.top) or not self.dashboard_report:
             self.show_toolbar = True
         return super().dispatch(request, *args, **kwargs)
 
@@ -182,9 +183,18 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         if query_id:
             slug_str = f'-query_id-{query_id}'
 
-        return [MenuItem(f'advanced_report_builder:table_modal,pk-{self.single_value_report.id}{slug_str}',
+        return [MenuItem(f'advanced_report_builder:single_value_modal,pk-{self.single_value_report.id}{slug_str}',
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
 
     def queries_menu(self):
         return []
+
+
+class SingleValueModal(ModelFormModal):
+    size = 'xl'
+    model = SingleValueReport
+    ajax_commands = ['button', 'select2', 'ajax']
+
+    form_fields = ['name',
+                   ]
