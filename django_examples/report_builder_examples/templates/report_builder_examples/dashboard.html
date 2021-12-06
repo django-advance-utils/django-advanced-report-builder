@@ -1,16 +1,24 @@
 {% extends 'report_builder_examples/base.html' %}
+{% load ajax_helpers %}
+
+{% block head %}
+    {% lib_include 'dashboard' module='advanced_report_builder.includes' %}
+{% endblock %}
 
 {% block content %}
     <h1>{{ dashboard.name }}</h1>
 
+    {% block dashboard_buttons %}{{ menus.dashboard_buttons.render }}{% endblock %}
+
     {% if top_reports %}
-        <div class="col-sm-12 float-left">
+
+        <div class="col-sm-12 float-left" style="padding-bottom: 50px">
             <div class="row">
                 <div class="container-fluid" id="top_reports">
-                    <div class="row">
+                    <div class="row dashboard_top">
                         {% for top_report in top_reports %}
-                            <div id="content_{{ top_report.report_id }}"
-                                 class="{{ top_reports_class }}">
+                            <div id="content_{{ top_report.id }}"
+                                 class="{{ top_reports_class }} dashboard_item" data-id="{{ top_report.id }}">
                                 <div>{{ top_report.render }}</div>
                             </div>
                         {% endfor %}
@@ -18,13 +26,14 @@
                 </div>
             </div>
         </div>
+
     {% endif %}
 
-
+    <div class="container-fluid dashboard_bottom">
     {% for report in reports %}
-
-        <div class="float-left{{ report.class }}">
+        <div class="float-left{{ report.class }} dashboard_item" data-id="{{ report.id }}">
             {{ report.render }}
         </div>
     {% endfor %}
+    </div>
 {% endblock %}

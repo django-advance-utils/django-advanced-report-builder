@@ -15,13 +15,32 @@
     }
 </style>
 {% lib_include 'datatable' module='django_datatables.includes' %}
+{% if show_toolbar %}
+    <div class="col-12 float-left">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex align-items-center">
+                    <h5 class="mr-auto">{{ title }}</h5>
 
-<div>
-    <div class="dashboard-tile detail" style="background-color: {% if single_value_report.tile_colour %}#{{ single_value_report.tile_colour }}{% else %}#23527c{% endif %}; color: white;">
-        <div class="content" style="padding: 2px;">
-            {{ datatable.render }}
-
-                        <p>{{ single_value_report.name|safe }}</p>
+                    {% block table_buttons %}{{ menus.button_menu.render }}{% endblock %}
+                </div>
+            </div>
+            <div class="dashboard-tile detail" style="background-color: {% if single_value_report.tile_colour %}#{{ single_value_report.tile_colour }}{% else %}#23527c{% endif %}; color: white;">
+                <div class="content" style="padding: 2px;">
+                    {{ datatable.render }}
+                </div>
+            </div>
         </div>
     </div>
-</div>
+
+{% else %}
+    <div>
+        <div class="dashboard-tile detail" style="background-color: {% if single_value_report.tile_colour %}#{{ single_value_report.tile_colour }}{% else %}#23527c{% endif %}; color: white;">
+            <div class="content" style="padding: 2px;">
+                {{ datatable.render }}
+
+                <p>{{ title|safe }}</p>
+            </div>
+        </div>
+    </div>
+{% endif %}

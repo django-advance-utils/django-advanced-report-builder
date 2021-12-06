@@ -138,6 +138,7 @@ class SingleValueReport(Report):
 class Dashboard(TimeStampedModel):
 
     slug = models.SlugField(unique=True)
+    slug_alias = models.SlugField(blank=True, null=True)  # used if the slug changes
     name = models.CharField(max_length=200)
     display_option = models.PositiveIntegerField(choices=DISPLAY_OPTION_CHOICES[1:], default=DISPLAY_OPTION_2_PER_ROW)
 

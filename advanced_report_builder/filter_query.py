@@ -15,6 +15,7 @@ class FilterQueryMixin:
         self.table_report = None
         self.report = None
         self.dashboard_report = None
+        self.enable_edit = None
         self.slug = None
         super().__init__(*args, **kwargs)
 
@@ -149,4 +150,4 @@ class FilterQueryMixin:
         if self.dashboard_report and self.dashboard_report.name_override:
             return self.dashboard_report.name_override
         else:
-            return self.table_report.name
+            return self.report.name

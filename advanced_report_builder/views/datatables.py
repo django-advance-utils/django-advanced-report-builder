@@ -39,6 +39,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         self.report = kwargs.get('report')
         self.table_report = self.report.tablereport
         self.dashboard_report = kwargs.get('dashboard_report')
+        self.enable_edit = kwargs.get('enable_edit')
         if self.dashboard_report:
             table_id = f'tabledashboard_{self.dashboard_report.id}'
         else:
@@ -193,8 +194,10 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
 
     def setup_menu(self):
         super().setup_menu()
-        if self.dashboard_report:
-            report_menu = self.pod_dashboard_menu()
+        if self.dashboard_report and self.enable_edit:
+            report_menu = self.pod_dashboard_edit_menu()
+        elif self.dashboard_report and not self.enable_edit:
+            report_menu = self.pod_dashboard_view_menu()
         else:
             report_menu = self.pod_report_menu()
 
@@ -203,10 +206,13 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
             *self.queries_menu(),
         )
 
-    def pod_dashboard_menu(self):
+    def pod_dashboard_edit_menu(self):
         return [MenuItem(f'advanced_report_builder:dashboard_report_modal,pk-{self.dashboard_report.id}',
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
+
+    def pod_dashboard_view_menu(self):
+        return []
 
     def pod_report_menu(self):
 

@@ -5,6 +5,7 @@ from django.http import Http404
 from django.views.generic import TemplateView
 from django_menus.menu import MenuMixin
 from django_modals.modals import ModelFormModal
+from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.models import Dashboard, DashboardReport
 from advanced_report_builder.utils import split_slug
@@ -14,6 +15,7 @@ from advanced_report_builder.views.single_values import SingleValueView
 
 class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
     model = Dashboard
+    enable_edit = True
     views = {'tablereport': TableView,
              'singlevaluereport': SingleValueView}
     views_overrides = {}
@@ -44,8 +46,12 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
     @staticmethod
     def get_top_report_class(reports):
         reports_len = len(reports)
-        spans = {1: ' col-12', 2: ' col-6', 3: ' col-4', 6: ' col-4', 9: ' col-4'}
-        return spans.get(reports_len, ' col-3')
+        spans = {1: ' col-12',
+                 2: ' col-12 col-sm-12 col-md-6',
+                 3: ' col-12 col-sm-12 col-md-4',
+                 4: ' col-12 col-sm-12 col-md-6 col-lg-4',
+                 9: ' col-12 col-sm-12 col-md-4'}
+        return spans.get(reports_len, ' col-3 col-sm-12')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -58,6 +64,7 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
             report_data = self.call_view(dashboard_report=dashboard_report).rendered_content
             report = {'render': report_data,
                       'name': dashboard_report.report.name,
+                      'id': dashboard_report.id,
                       'class': dashboard_report.get_class()}
             if dashboard_report.top:
                 top_reports.append(report)
@@ -78,6 +85,7 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         view_kwargs = copy.deepcopy(self.kwargs)
         view_kwargs['report'] = dashboard_report.report
         view_kwargs['dashboard_report'] = dashboard_report
+        view_kwargs['enable_edit'] = self.enable_edit
         return view.as_view()(self.request, *self.args, **view_kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -86,14 +94,40 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
             dashboard_report_id = table_id.split('_')[1]
             if dashboard_report_id:
                 dashboard_report = self.dashboard.dashboardreport_set.filter(id=dashboard_report_id).first()
-
                 return self.call_view(dashboard_report=dashboard_report)
 
         return super().post(request, *args, **kwargs)
+
+    def button_change_placement(self, **kwargs):
+
+        ids = kwargs['ids']
+        dashboard_reports = DashboardReport.objects.filter(id__in=ids)
+        obj_dict = dict([(obj.id, obj) for obj in dashboard_reports])
+        sorted_objects = [obj_dict[_id] for _id in ids]
+
+        for index, dashboard_report in enumerate(sorted_objects):
+            if dashboard_report.order != index:
+                dashboard_report.order = index
+                dashboard_report.save()
+
+        return self.command_response()
+
+
+class DashboardModal(ModelFormModal):
+    model = Dashboard
+    form_fields = ['name',
+                   'display_option']
 
 
 class DashboardReportModal(ModelFormModal):
     model = DashboardReport
     form_fields = ['name_override',
+                   'top',
                    'display_option']
+    widgets = {'top': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'})}
 
+    @staticmethod
+    def form_setup(form, *_args, **_kwargs):
+        form.add_trigger('top', 'onchange', [
+            {'selector': '#div_id_display_option', 'values': {'checked': 'hide'}, 'default': 'show'},
+        ])

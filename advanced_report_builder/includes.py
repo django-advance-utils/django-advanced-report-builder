@@ -22,6 +22,14 @@ class QueryBuilder(SourceBase):
     js_filename = 'query-builder.min.js'
 
 
+class DashboardInclude(SourceBase):
+    static_path = '/advanced_report_builder/dashboard/'
+    js_filename = 'dashboard.js'
+
+
 packages = {
     'query_builder': [JQueryExtendext, Dot, QueryBuilder],
+    'dashboard': [DashboardInclude],
 }
+
+

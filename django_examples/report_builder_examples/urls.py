@@ -17,5 +17,6 @@ urlpatterns = [
     path('report/table/edit/<str:slug>/', TableExtraModal.as_view(), name='table_extra_modal'),
     path('dashboards/', ViewDashboards.as_view(), name='dashboards_index'),
     path('dashboards/<str:slug>/', ViewDashboard.as_view(), name='view_dashboard'),
+    path('dashboards/edit/<str:slug>/', ViewDashboard.as_view(enable_edit=True), name='edit_dashboard'),
 
 ]

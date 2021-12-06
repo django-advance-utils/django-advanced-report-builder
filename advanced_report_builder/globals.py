@@ -132,6 +132,5 @@ DISPLAY_OPTION_CHOICES = [
 ]
 
 DISPLAY_OPTION_CLASSES = {DISPLAY_OPTION_1_PER_ROW: ' col-12',
-                          DISPLAY_OPTION_2_PER_ROW: ' col-6',
-                          DISPLAY_OPTION_3_PER_ROW: ' col-4',
-                          }
+                          DISPLAY_OPTION_2_PER_ROW: ' col-12 col-md-12 col-lg-6',
+                          DISPLAY_OPTION_3_PER_ROW: ' col-12 col-md-12 col-lg-4'}

@@ -1,14 +1,12 @@
 from django.forms import CharField, Textarea
 from django.shortcuts import redirect
 from django_datatables.columns import ColumnLink
-from django_datatables.datatables import DatatableView
 from django_modals.fields import FieldEx
+from report_builder_examples.views.base import MainMenu, MainIndices
 
 from advanced_report_builder.models import Report
 from advanced_report_builder.utils import make_slug_str
 from advanced_report_builder.views.datatables import TableModal, TableView
-from report_builder_examples.views.base import MainMenu, MainIndices
-
 from advanced_report_builder.views.reports import ViewReportBase
 
 

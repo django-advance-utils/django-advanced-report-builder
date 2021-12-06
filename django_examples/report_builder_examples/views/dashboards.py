@@ -1,14 +1,10 @@
-from advanced_report_builder.views.dashboard import ViewDashboardBase
-from django.forms import CharField, Textarea
+from django.shortcuts import redirect
 from django_datatables.columns import ColumnLink
-from django_datatables.datatables import DatatableView
-from django_menus.menu import MenuMixin
-from django_modals.fields import FieldEx
-
-from advanced_report_builder.models import Report, Dashboard
-from advanced_report_builder.utils import make_slug_str
-from advanced_report_builder.views.datatables import TableModal, TableView
+from django_menus.menu import MenuItem
 from report_builder_examples.views.base import MainMenu, MainIndices
+
+from advanced_report_builder.models import Dashboard
+from advanced_report_builder.views.dashboard import ViewDashboardBase
 
 
 class ViewDashboards(MainIndices):
@@ -36,6 +32,29 @@ class ViewDashboards(MainIndices):
 
 
 class ViewDashboard(MainMenu, ViewDashboardBase):
+    enable_edit = False
     template_name = 'report_builder_examples/dashboard.html'
     # views_overrides = {'tablereport': ViewTableReport}
 
+    def setup_menu(self):
+        super().setup_menu()
+
+        if not self.enable_edit:
+            report_menu = [MenuItem('report_builder_examples:edit_dashboard', 'Enable Edit',
+                                    url_kwargs={'slug': self.kwargs['slug']})]
+        else:
+            report_menu = [MenuItem('report_builder_examples:view_dashboard', 'View Only',
+                                    url_kwargs={'slug': self.kwargs['slug']}, css_classes='btn-success'),
+                           MenuItem('advanced_report_builder:dashboard_modal', 'Edit',
+                                    url_kwargs={'slug': self.dashboard.id})]
+
+        if report_menu:
+            self.add_menu('dashboard_buttons', 'button_group').add_items(
+                *report_menu,
+            )
+
+    def redirect_url(self):
+        if self.enable_edit:
+            return redirect('report_builder_examples:edit_dashboard', slug=self.dashboard.slug)
+        else:
+            return redirect('report_builder_examples:view_dashboard', slug=self.dashboard.slug)

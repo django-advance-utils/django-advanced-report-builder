@@ -4,7 +4,7 @@ from ajax_helpers.mixins import AjaxHelpers
 from django.db.models import Sum, Avg
 from django.views.generic import TemplateView
 from django_datatables.datatables import ColumnInitialisor, DatatableView, DatatableTable, HorizontalTable
-from django_menus.menu import MenuMixin
+from django_menus.menu import MenuMixin, MenuItem
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.filter_query import FilterQueryMixin
@@ -18,13 +18,18 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
     template_name = 'advanced_report_builder/single_value.html'
 
     def __init__(self, *args, **kwargs):
-        self.slug = None
         self.single_value_report = None
+        self.show_toolbar = False
         super().__init__(*args, **kwargs)
 
     def dispatch(self, request, *args, **kwargs):
         self.slug = split_slug(kwargs.get('slug'))
-        self.single_value_report = kwargs.get('report').singlevaluereport
+        self.report = kwargs.get('report')
+        self.single_value_report = self.report.singlevaluereport
+        self.enable_edit = kwargs.get('enable_edit')
+        self.dashboard_report = kwargs.get('dashboard_report')
+        if self.enable_edit or (self.dashboard_report and not self.dashboard_report.top):
+            self.show_toolbar = True
         return super().dispatch(request, *args, **kwargs)
 
     def extra_filters(self, query):
@@ -139,7 +144,47 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         table.add_columns(
             *fields
         )
-
+        context['show_toolbar'] = self.show_toolbar
         context['datatable'] = table
         context['single_value_report'] = self.single_value_report
+        context['title'] = self.get_title()
         return context
+
+    def setup_menu(self):
+        super().setup_menu()
+        if not self.show_toolbar:
+            return
+
+        if self.dashboard_report and self.enable_edit:
+            report_menu = self.pod_dashboard_edit_menu()
+        elif self.dashboard_report and not self.enable_edit:
+            report_menu = self.pod_dashboard_view_menu()
+        else:
+            report_menu = self.pod_report_menu()
+
+        self.add_menu('button_menu', 'button_group').add_items(
+            *report_menu,
+            *self.queries_menu(),
+        )
+
+    def pod_dashboard_edit_menu(self):
+        return [MenuItem(f'advanced_report_builder:dashboard_report_modal,pk-{self.dashboard_report.id}',
+                         menu_display='Edit',
+                         font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
+
+    def pod_dashboard_view_menu(self):
+        return []
+
+    def pod_report_menu(self):
+
+        query_id = self.slug.get(f'query{self.single_value_report.id}')
+        slug_str = ''
+        if query_id:
+            slug_str = f'-query_id-{query_id}'
+
+        return [MenuItem(f'advanced_report_builder:table_modal,pk-{self.single_value_report.id}{slug_str}',
+                         menu_display='Edit',
+                         font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
+
+    def queries_menu(self):
+        return []
