@@ -3,33 +3,27 @@ import json
 
 from django.forms import CharField, ChoiceField, BooleanField, IntegerField
 from django.shortcuts import get_object_or_404
-from django_datatables.datatables import ColumnInitialisor
 from django_modals.forms import CrispyForm
 from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, \
     DATE_FORMAT_TYPES
 from advanced_report_builder.models import ReportType
-
-
-from advanced_report_builder.utils import split_attr
+from advanced_report_builder.utils import split_attr, get_django_field
 
 
 class FieldForm(CrispyForm):
 
     def get_django_field(self):
         data = json.loads(base64.b64decode(self.slug['data']))
+
+
         report_type = get_object_or_404(ReportType, pk=self.slug['report_type_id'])
         base_model = report_type.content_type.model_class()
 
-        column_initialisor = ColumnInitialisor(start_model=base_model, path=data['field'])
-        cols = column_initialisor.get_columns()
+        django_field, _, _ = get_django_field(base_modal=base_model, field=data['field'])
 
-        if column_initialisor.django_field is None and cols:
-            column_initialisor = ColumnInitialisor(start_model=base_model, path=cols[0].field)
-            column_initialisor.get_columns()
-
-        return column_initialisor.django_field
+        return django_field
 
     def setup_modal(self, *args, **kwargs):
         data = json.loads(base64.b64decode(self.slug['data']))

@@ -1,0 +1,13 @@
+{% extends 'django_modals/modal_base.html' %}
+
+{% block javascript %}
+<script>
+            $(function () {
+                $('#id_report_type').on('change', function (e) {
+                    $('#id_field').val('').trigger('change');;
+                });
+
+            });
+
+</script>
+{% endblock %}

@@ -1,22 +1,27 @@
 import copy
 
 from ajax_helpers.mixins import AjaxHelpers
-from django.db.models import Sum, Avg
+from django.apps import apps
+from django.db.models import Avg
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView
-from django_datatables.datatables import ColumnInitialisor, DatatableView, DatatableTable, HorizontalTable
+from django_datatables.datatables import HorizontalTable
 from django_menus.menu import MenuMixin, MenuItem
 from django_modals.modals import ModelFormModal
+from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
+from django_modals.widgets.select2 import Select2
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_FUNCTIONS
-from advanced_report_builder.models import SingleValueReport
-from advanced_report_builder.utils import split_slug
+from advanced_report_builder.models import SingleValueReport, ReportType
+from advanced_report_builder.utils import split_slug, get_django_field
 
 
 class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
     number_field = ReportBuilderNumberColumn
-    template_name = 'advanced_report_builder/single_value.html'
+    template_name = 'advanced_report_builder/single_value/report.html'
 
     def __init__(self, *args, **kwargs):
         self.single_value_report = None
@@ -91,16 +96,8 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         field = self.single_value_report.field
         base_modal = self.single_value_report.get_base_modal()
 
-        original_column_initialisor = ColumnInitialisor(start_model=base_modal, path=field)
-        cols = original_column_initialisor.get_columns()
-        django_field = original_column_initialisor.django_field
-        col_type_override = None
+        django_field, col_type_override, _ = get_django_field(base_modal=base_modal, field=field)
 
-        if django_field is None and cols:
-            col_type_override = cols[0]
-            column_initialisor = ColumnInitialisor(start_model=base_modal, path=col_type_override.field)
-            column_initialisor.get_columns()
-            django_field = column_initialisor.django_field
         if isinstance(django_field, NUMBER_FIELDS):
             self.get_number_field(fields=fields,
                                   field_name=field,
@@ -139,7 +136,7 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         base_modal = self.single_value_report.get_base_modal()
 
         table = HorizontalTable(model=base_modal)
-        table.datatable_template = 'advanced_report_builder/single_value_middle.html'
+        table.datatable_template = 'advanced_report_builder/single_value/middle.html'
         table.extra_filters = self.extra_filters
         fields = self.process_query_results()
         table.add_columns(
@@ -193,8 +190,57 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
 
 class SingleValueModal(ModelFormModal):
     size = 'xl'
+    template_name = 'advanced_report_builder/single_value/modal.html'
+    process = PROCESS_EDIT_DELETE
+    permission_delete = PERMISSION_OFF
     model = SingleValueReport
     ajax_commands = ['button', 'select2', 'ajax']
 
     form_fields = ['name',
+                   'report_type',
+                   'single_value_type',
+                   'field',
+                   'tile_colour',
                    ]
+
+    widgets = {'field': Select2(attrs={'ajax': True})}
+
+    def select2_field(self, **kwargs):
+        fields = []
+        if kwargs['report_type'] != '':
+            report_type = get_object_or_404(ReportType, pk=kwargs['report_type'])
+            base_model = report_type.content_type.model_class()
+            report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
+            fields = []
+            self._get_fields(base_model=base_model,
+                             fields=fields,
+                             report_builder_fields=report_builder_fields)
+
+        return JsonResponse({'results': fields})
+
+    def _get_fields(self, base_model, fields, report_builder_fields,
+                    prefix='', title_prefix=''):
+
+        for report_builder_field in report_builder_fields.fields:
+
+            django_field, _, columns = get_django_field(base_modal=base_model, field=report_builder_field)
+
+            for column in columns:
+                if isinstance(django_field, NUMBER_FIELDS):
+                    fields.append({'id': prefix + column.column_name,
+                                   'text': title_prefix + column.title})
+
+        for include in report_builder_fields.includes:
+            app_label, model, report_builder_fields_str = include['model'].split('.')
+            new_model = apps.get_model(app_label, model)
+            new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
+            self._get_fields(base_model=new_model,
+                             fields=fields,
+                             report_builder_fields=new_report_builder_fields,
+                             prefix=f"{include['field']}__",
+                             title_prefix=include['title'] + ' -> ')
+
+    def form_valid(self, form):
+        single_value_report = form.save()
+        single_value_report.save()
+        return self.command_response('reload')

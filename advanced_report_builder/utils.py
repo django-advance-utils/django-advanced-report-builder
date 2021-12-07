@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.utils.module_loading import import_string
+from django_datatables.datatables import ColumnInitialisor
 
 
 def split_attr(data):
@@ -43,3 +44,17 @@ def get_custom_report_builder():
     return import_string(getattr(settings,
                                  'REPORT_BUILDER_CUSTOMISATION',
                                  'report_builder.customise.CustomiseReportBuilder'))
+
+
+def get_django_field(base_modal, field):
+    original_column_initialisor = ColumnInitialisor(start_model=base_modal, path=field)
+    columns = original_column_initialisor.get_columns()
+    django_field = original_column_initialisor.django_field
+    col_type_override = None
+
+    if django_field is None and columns:
+        col_type_override = columns[0]
+        column_initialisor = ColumnInitialisor(start_model=base_modal, path=col_type_override.field)
+        column_initialisor.get_columns()
+        django_field = column_initialisor.django_field
+    return django_field, col_type_override, columns

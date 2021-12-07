@@ -9,7 +9,7 @@ $(document).ready(function () {
             $(selector + " .dashboard_item").each(function() {
                 ids.push($(this).data("id"));
             });
-            ajax_helpers.post_json({"data": {"button": "change_placement", 'ids': ids}});
+            ajax_helpers.post_json({"data": {"ajax": "change_placement", 'ids': ids}});
         }
     });
          $(selector).disableSelection();

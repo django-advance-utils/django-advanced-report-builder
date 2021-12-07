@@ -23,6 +23,7 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
     views = {'tablereport': TableView,
              'singlevaluereport': SingleValueView}
     views_overrides = {}
+    ajax_commands = ['button', 'select2', 'ajax']
 
     def __init__(self, *args, **kwargs):
         self.dashboard = None
@@ -102,7 +103,7 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
 
         return super().post(request, *args, **kwargs)
 
-    def button_change_placement(self, **kwargs):
+    def ajax_change_placement(self, **kwargs):
 
         ids = kwargs['ids']
         dashboard_reports = DashboardReport.objects.filter(id__in=ids)

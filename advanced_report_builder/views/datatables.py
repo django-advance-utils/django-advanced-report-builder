@@ -3,7 +3,6 @@ import copy
 import json
 
 from ajax_helpers.mixins import AjaxHelpers
-from crispy_forms.bootstrap import StrictButton
 from django.apps import apps
 from django.forms import CharField
 from django.shortcuts import get_object_or_404
@@ -11,8 +10,8 @@ from django_datatables.datatables import DatatableView, ColumnInitialisor
 from django_datatables.plugins.column_totals import ColumnTotals
 from django_menus.menu import MenuMixin, MenuItem
 from django_modals.fields import FieldEx
-from django_modals.forms import ModelCrispyForm
 from django_modals.modals import ModelFormModal, FormModal
+from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.columns import ReportBuilderDateColumn, ReportBuilderNumberColumn
@@ -22,7 +21,7 @@ from advanced_report_builder.forms import FieldForm
 from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_FUNCTIONS, DATE_FIELDS, \
     ANNOTATION_FUNCTIONS, NUMBER_FIELDS
 from advanced_report_builder.models import TableReport, ReportType, ReportQuery
-from advanced_report_builder.utils import split_attr, split_slug
+from advanced_report_builder.utils import split_attr, split_slug, get_django_field
 
 
 class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
@@ -143,16 +142,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         for table_field in table_fields:
             field = table_field['field']
 
-            original_column_initialisor = ColumnInitialisor(start_model=base_modal, path=field)
-            cols = original_column_initialisor.get_columns()
-            django_field = original_column_initialisor.django_field
-            col_type_override = None
-
-            if django_field is None and cols:
-                col_type_override = cols[0]
-                column_initialisor = ColumnInitialisor(start_model=base_modal, path=col_type_override.field)
-                column_initialisor.get_columns()
-                django_field = column_initialisor.django_field
+            django_field, col_type_override, _ = get_django_field(base_modal=base_modal, field=field)
 
             if isinstance(django_field, DATE_FIELDS):
                 field_name = self.get_date_field(table_field=table_field, fields=fields)
@@ -232,6 +222,8 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
 class TableModal(ModelFormModal):
     size = 'xl'
     model = TableReport
+    process = PROCESS_EDIT_DELETE
+    permission_delete = PERMISSION_OFF
     ajax_commands = ['button', 'select2', 'ajax']
 
     form_fields = ['name',
@@ -279,7 +271,6 @@ class TableModal(ModelFormModal):
         return fields
 
     def form_valid(self, form):
-        # Create a item using some of the extra fields and save it, then attach it to the SiteVisit.
         table_report = form.save()
 
         if not self.report_query and form.cleaned_data['query_data']:
