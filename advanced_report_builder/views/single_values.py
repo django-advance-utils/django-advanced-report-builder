@@ -1,10 +1,14 @@
 import copy
+import json
 
 from ajax_helpers.mixins import AjaxHelpers
 from django.apps import apps
+from django.core.exceptions import ValidationError
 from django.db.models import Avg
+from django.forms import ChoiceField
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from django.utils.safestring import mark_safe
 from django.views.generic import TemplateView
 from django_datatables.datatables import HorizontalTable
 from django_menus.menu import MenuMixin, MenuItem
@@ -85,7 +89,9 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
                 field_name = new_field_name
 
             number_function_kwargs.update({'field': field_name,
-                                           'column_name': field_name})
+                                           'column_name': field_name,
+                                           'options': {'calculated': True},
+                                           'model_path': ''})
 
             field = self.number_field(**number_function_kwargs)
             fields.append(field)
@@ -188,6 +194,16 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         return []
 
 
+class Select2New(Select2):
+    template_name = 'django_modals/widgets/select2.html'
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        if hasattr(self, 'select_data'):
+            context['widget']['select_data'] = mark_safe(json.dumps(self.select_data))
+        return context
+
+
 class SingleValueModal(ModelFormModal):
     size = 'xl'
     template_name = 'advanced_report_builder/single_value/modal.html'
@@ -203,7 +219,32 @@ class SingleValueModal(ModelFormModal):
                    'tile_colour',
                    ]
 
-    widgets = {'field': Select2(attrs={'ajax': True})}
+    # widgets = {'field': Select2(attrs={'ajax': True})}
+
+    def form_setup(self, form, *_args, **_kwargs):
+        form.add_trigger('single_value_type', 'onchange', [
+            {'selector': '#div_id_field',
+             'values': {SingleValueReport.SINGLE_VALUE_TYPE_COUNT: 'hide'},
+             'default': 'show'}])
+
+        fields = []
+        if form.instance.field:
+
+            form.fields['field'].initial = form.instance.field
+
+            base_model = form.instance.report_type.content_type.model_class()
+            report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
+
+            self._get_fields(base_model=base_model,
+                             fields=fields,
+                             report_builder_fields=report_builder_fields,
+                             selected_field_id=form.instance.field)
+
+        form.fields['field'].widget = Select2New(attrs={'ajax': True})
+        form.fields['field'].widget.select_data = fields
+
+
+
 
     def select2_field(self, **kwargs):
         fields = []
@@ -219,7 +260,7 @@ class SingleValueModal(ModelFormModal):
         return JsonResponse({'results': fields})
 
     def _get_fields(self, base_model, fields, report_builder_fields,
-                    prefix='', title_prefix=''):
+                    prefix='', title_prefix='', selected_field_id=None):
 
         for report_builder_field in report_builder_fields.fields:
 
@@ -227,8 +268,10 @@ class SingleValueModal(ModelFormModal):
 
             for column in columns:
                 if isinstance(django_field, NUMBER_FIELDS):
-                    fields.append({'id': prefix + column.column_name,
-                                   'text': title_prefix + column.title})
+                    full_id = prefix + column.column_name
+                    if selected_field_id is None or selected_field_id == full_id:
+                        fields.append({'id': full_id,
+                                       'text': title_prefix + column.title})
 
         for include in report_builder_fields.includes:
             app_label, model, report_builder_fields_str = include['model'].split('.')
@@ -244,3 +287,7 @@ class SingleValueModal(ModelFormModal):
         single_value_report = form.save()
         single_value_report.save()
         return self.command_response('reload')
+
+    def clean(self, form, cleaned_data):
+        if cleaned_data['single_value_type'] != SingleValueReport.SINGLE_VALUE_TYPE_COUNT and not cleaned_data['field']:
+            raise ValidationError("Please select a field")
