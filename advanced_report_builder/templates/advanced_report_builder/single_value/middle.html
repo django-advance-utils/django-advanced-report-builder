@@ -8,12 +8,16 @@
         var table = {{ datatable.model_table_setup }};
         table.find_column = django_datatables.PythonTable.prototype.find_column
         for (var i = 0; i < table.initsetup.colOptions.length; i++) {
+            var row = '';
+            if(i > 0) {
+                row += '<div class="single_value_separator"> | </div>';
+            }
             if (table.initsetup.colOptions[i].row_class !== undefined){
                 row_class = ' class="' + table.initsetup.colOptions[i].row_class + '"'
             } else {
                 row_class = ' class="single_value"'
             }
-            var row = '';
+
             for (var j = 0; j < table.data.length; j++) {
                 if (table.initsetup.colOptions[i]['render'] != undefined) {
                     render = new django_datatables.column_render(i, table.initsetup.colOptions[i]['render'], table);

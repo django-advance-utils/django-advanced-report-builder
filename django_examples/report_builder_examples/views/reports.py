@@ -1,3 +1,4 @@
+from advanced_report_builder.views.single_values import SingleValueView
 from django.forms import CharField, Textarea
 from django.shortcuts import redirect
 from django_datatables.columns import ColumnLink
@@ -37,6 +38,11 @@ class ViewReports(MainIndices):
         )
 
 
+class ViewSingleValueReport(SingleValueView):
+    def pod_report_menu(self):
+        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
+                *super().pod_report_menu()]
+
 
 class ViewTableReport(TableView):
     def pod_report_menu(self):
@@ -61,7 +67,9 @@ class ViewTableReport(TableView):
 
 class ViewReport(MainMenu, ViewReportBase):
     template_name = 'report_builder_examples/report.html'
-    views_overrides = {'tablereport': ViewTableReport}
+    views_overrides = {'tablereport': ViewTableReport,
+                       'singlevaluereport': ViewSingleValueReport
+                       }
 
     def redirect_url(self):
         return redirect('report_builder_examples:view_report', slug=self.report.slug)

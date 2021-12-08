@@ -5,10 +5,10 @@ git+https://github.com/jonesim/django-menus.git@927c04d5cd327a6f95bc9ed75b74edf8
 git+https://github.com/jonesim/django-datatables.git@6b068570fa1f3f93357fe9349456f004cd4760f5
 # django-filtered-datatables==0.0.18
 
-git+https://github.com/jonesim/django-modals.git@25d6bb25fe2b06630eb0f1a764ad2a01434ae00f
+git+https://github.com/jonesim/django-modals.git@243176b4d49c8618be6d551856327e7d0a5e7881
 # django-nested-modals==0.0.16
 
-git+https://github.com/jonesim/ajax-helpers.git@304f022923924c7609423d19499083735877e7d5
+git+https://github.com/jonesim/ajax-helpers.git@0a7746487e1dd7f27c9f04c1e5b4a84c882b9f4f
 # django-ajax-helpers==0.0.15
 time-stamped-model==0.2.2
 date-offset==0.0.1

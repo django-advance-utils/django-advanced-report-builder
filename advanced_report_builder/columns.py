@@ -31,6 +31,6 @@ class ReportBuilderNumberColumn(ColumnBase):
     def row_result(self, data, _page_data):
         try:
             number = self.decimal_places.format(data[self.field])
-            return number
+            return number.rstrip('0').rstrip('.')
         except AttributeError:
             return ""

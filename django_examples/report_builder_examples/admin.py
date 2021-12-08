@@ -47,4 +47,5 @@ class TallyAdmin(admin.ModelAdmin):
 class PaymentAdmin(admin.ModelAdmin):
     list_display = ('date',
                     'company',
-                    'amount')
+                    'amount',
+                    'received')

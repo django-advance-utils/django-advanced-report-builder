@@ -135,6 +135,7 @@ class Payment(TimeStampedModel):
     date = models.DateField()
     amount = models.IntegerField()
     quantity = models.IntegerField()
+    received = models.BooleanField(default=False)
 
     class Datatable(DatatableModel):
         currency_amount = CurrencyPenceColumn(column_name='currency_amount', field='amount')
@@ -144,7 +145,8 @@ class Payment(TimeStampedModel):
         title = 'Payment'
         fields = ['date',
                   'currency_amount',
-                  'quantity']
+                  'quantity',
+                  'received']
         includes = [{'field': 'company',
                      'title': 'Company',
                      'model': 'report_builder_examples.Company.ReportBuilder'}]

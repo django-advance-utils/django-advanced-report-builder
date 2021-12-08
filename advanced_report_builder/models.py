@@ -129,7 +129,8 @@ class SingleValueReport(Report):
     )
 
     tile_colour = models.CharField(max_length=10, blank=True, null=True)
-    field = models.CharField(max_length=200, blank=True, null=True)
+    field = models.CharField(max_length=200, blank=True, null=True)  # denominator
+    numerator = models.CharField(max_length=200, blank=True, null=True)
     single_value_type = models.PositiveSmallIntegerField(choices=SINGLE_VALUE_TYPE_CHOICES,
                                                          default=SINGLE_VALUE_TYPE_COUNT)
     decimal_places = models.IntegerField(default=0)

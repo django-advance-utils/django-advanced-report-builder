@@ -4,8 +4,7 @@ import json
 from ajax_helpers.mixins import AjaxHelpers
 from django.apps import apps
 from django.core.exceptions import ValidationError
-from django.db.models import Avg
-from django.forms import ChoiceField
+from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.safestring import mark_safe
@@ -14,11 +13,12 @@ from django_datatables.datatables import HorizontalTable
 from django_menus.menu import MenuMixin, MenuItem
 from django_modals.modals import ModelFormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
+from django_modals.widgets.colour_picker import ColourPickerWidget
 from django_modals.widgets.select2 import Select2
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.filter_query import FilterQueryMixin
-from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_FUNCTIONS
+from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_FUNCTIONS, BOOLEAN_FIELD
 from advanced_report_builder.models import SingleValueReport, ReportType
 from advanced_report_builder.utils import split_slug, get_django_field
 
@@ -49,10 +49,6 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
 
         return self.process_filters(query=query,
                                     search_filter_data=report_query.query)
-
-    @staticmethod
-    def _get_count(query):
-        return len(query)
 
     def get_number_field(self, fields, field_name, col_type_override, aggregations_type, decimal_places=0):
 
@@ -98,41 +94,44 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
 
         return field_name
 
-    def _get_sum(self, fields):
+    def _process_aggregations(self, fields, aggregations_type='sum'):
         field = self.single_value_report.field
         base_modal = self.single_value_report.get_base_modal()
 
         django_field, col_type_override, _ = get_django_field(base_modal=base_modal, field=field)
 
-        if isinstance(django_field, NUMBER_FIELDS):
+        if isinstance(django_field, NUMBER_FIELDS) or isinstance(django_field, BOOLEAN_FIELD):
             self.get_number_field(fields=fields,
                                   field_name=field,
                                   col_type_override=col_type_override,
-                                  aggregations_type='sum')
+                                  aggregations_type=aggregations_type,
+                                  decimal_places=self.single_value_report.decimal_places)
         else:
             assert False, 'not a number field'
 
-    def _get_average(self, query):
-        field = self.single_value_report.field
-        decimal_places = self.single_value_report.decimal_places
-        result = query.aggregate(avg=Avg(field))
-        if decimal_places == 0:
-            avg = int(round(result['avg'], 0))
-        else:
-            avg = round(result['avg'], decimal_places)
-        return avg
+    def _get_count(self, fields):
+
+        number_function_kwargs = {'aggregations': {'count': Count(1)},
+                                  'field': 'count',
+                                  'column_name': 'count',
+                                  'options': {'calculated': True},
+                                  'model_path': ''}
+
+        field = self.number_field(**number_function_kwargs)
+        fields.append(field)
 
     def process_query_results(self):
         single_value_type = self.single_value_report.single_value_type
         fields = []
         if single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_COUNT:
-            pass
+            self._get_count(fields=fields)
         elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_SUM:
-            self._get_sum(fields=fields)
+            self._process_aggregations(fields=fields, aggregations_type='sum')
         elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_COUNT_AND_SUM:
-            pass
+            self._get_count(fields=fields)
+            self._process_aggregations(fields=fields, aggregations_type='sum')
         elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE:
-            pass
+            self._process_aggregations(fields=fields, aggregations_type='avg')
         elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_PERCENT:
             assert False
         return fields
@@ -194,38 +193,31 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         return []
 
 
-class Select2New(Select2):
-    template_name = 'django_modals/widgets/select2.html'
-
-    def get_context(self, name, value, attrs):
-        context = super().get_context(name, value, attrs)
-        if hasattr(self, 'select_data'):
-            context['widget']['select_data'] = mark_safe(json.dumps(self.select_data))
-        return context
-
-
 class SingleValueModal(ModelFormModal):
     size = 'xl'
     template_name = 'advanced_report_builder/single_value/modal.html'
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
     model = SingleValueReport
-    ajax_commands = ['button', 'select2', 'ajax']
+    widgets = {'tile_colour': ColourPickerWidget}
 
     form_fields = ['name',
                    'report_type',
-                   'single_value_type',
+                   ('single_value_type', {'label': 'Value type'}),
                    'field',
+                   'numerator',
                    'tile_colour',
+                   ('decimal_places', {'field_class': 'col-md-5 col-lg-3 input-group-sm'})
                    ]
-
-    # widgets = {'field': Select2(attrs={'ajax': True})}
 
     def form_setup(self, form, *_args, **_kwargs):
         form.add_trigger('single_value_type', 'onchange', [
             {'selector': '#div_id_field',
              'values': {SingleValueReport.SINGLE_VALUE_TYPE_COUNT: 'hide'},
-             'default': 'show'}])
+             'default': 'show'},
+            {'selector': '#div_id_numerator',
+             'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: 'show'},
+             'default': 'hide'}])
 
         fields = []
         if form.instance.field:
@@ -240,11 +232,8 @@ class SingleValueModal(ModelFormModal):
                              report_builder_fields=report_builder_fields,
                              selected_field_id=form.instance.field)
 
-        form.fields['field'].widget = Select2New(attrs={'ajax': True})
+        form.fields['field'].widget = Select2(attrs={'ajax': True})
         form.fields['field'].widget.select_data = fields
-
-
-
 
     def select2_field(self, **kwargs):
         fields = []
@@ -267,7 +256,7 @@ class SingleValueModal(ModelFormModal):
             django_field, _, columns = get_django_field(base_modal=base_model, field=report_builder_field)
 
             for column in columns:
-                if isinstance(django_field, NUMBER_FIELDS):
+                if isinstance(django_field, NUMBER_FIELDS) or isinstance(django_field, BOOLEAN_FIELD):
                     full_id = prefix + column.column_name
                     if selected_field_id is None or selected_field_id == full_id:
                         fields.append({'id': full_id,

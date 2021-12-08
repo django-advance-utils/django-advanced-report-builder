@@ -4,6 +4,7 @@ from django.db.models.functions import TruncMonth, TruncQuarter, TruncYear, Trun
 
 NUMBER_FIELDS = (models.IntegerField, models.PositiveSmallIntegerField, models.PositiveIntegerField)
 DATE_FIELDS = (models.DateTimeField, models.DateField)
+BOOLEAN_FIELD = models.BooleanField
 
 ANNOTATION_VALUE_CHOICES = (('', ''),
                             ('y', 'Year'),
