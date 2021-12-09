@@ -54,7 +54,7 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         spans = {1: ' col-12',
                  2: ' col-12 col-sm-12 col-md-6',
                  3: ' col-12 col-sm-12 col-md-4',
-                 4: ' col-12 col-sm-12 col-md-6 col-lg-4',
+                 4: ' col-12 col-sm-12 col-md-6 col-lg-3',
                  9: ' col-12 col-sm-12 col-md-4'}
         return spans.get(reports_len, ' col-3 col-sm-12')
 

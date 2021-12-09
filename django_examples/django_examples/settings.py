@@ -84,8 +84,12 @@ WSGI_APPLICATION = 'django_examples.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': str(BASE_DIR.joinpath('db.sqlite3')),
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'django_report_builder',
+        'USER': 'django_report_builder',
+        'PASSWORD': 'django_report_builder',
+        'HOST': 'db',
+        'PORT': 5432,
     }
 }
 

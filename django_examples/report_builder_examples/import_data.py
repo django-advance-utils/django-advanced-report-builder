@@ -4,7 +4,7 @@ from report_builder_examples import models
 
 
 def import_data(path):
-    # import_companies(path)
+    import_companies(path)
     import_tallies(path)
 
 

@@ -1,5 +1,4 @@
 import copy
-import json
 
 from ajax_helpers.mixins import AjaxHelpers
 from django.apps import apps
@@ -7,7 +6,6 @@ from django.core.exceptions import ValidationError
 from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.utils.safestring import mark_safe
 from django.views.generic import TemplateView
 from django_datatables.datatables import HorizontalTable
 from django_menus.menu import MenuMixin, MenuItem
@@ -108,6 +106,7 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
                                   decimal_places=self.single_value_report.decimal_places)
         else:
             assert False, 'not a number field'
+
 
     def _get_count(self, fields):
 
@@ -217,7 +216,11 @@ class SingleValueModal(ModelFormModal):
              'default': 'show'},
             {'selector': '#div_id_numerator',
              'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: 'show'},
-             'default': 'hide'}])
+             'default': 'hide'},
+            {'selector': '#div_id_numerator',
+             'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: ('html', {'value': 'test'})},
+             'default': 'hide'},
+        ])
 
         fields = []
         if form.instance.field:
@@ -235,6 +238,9 @@ class SingleValueModal(ModelFormModal):
         form.fields['field'].widget = Select2(attrs={'ajax': True})
         form.fields['field'].widget.select_data = fields
 
+        form.fields['numerator'].widget = Select2(attrs={'ajax': True})
+        form.fields['numerator'].widget.select_data = fields
+
     def select2_field(self, **kwargs):
         fields = []
         if kwargs['report_type'] != '':
@@ -247,6 +253,9 @@ class SingleValueModal(ModelFormModal):
                              report_builder_fields=report_builder_fields)
 
         return JsonResponse({'results': fields})
+
+    def select2_numerator(self, **kwargs):
+        return self.select2_field(**kwargs)
 
     def _get_fields(self, base_model, fields, report_builder_fields,
                     prefix='', title_prefix='', selected_field_id=None):

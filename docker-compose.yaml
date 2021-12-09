@@ -13,3 +13,24 @@ services:
    - PYTHONPATH=/advanced_report_builder
   ports:
    - 8010:8010
+  depends_on:
+   - db
+   - pgadmin
+ db:
+  image: postgres:13.0-alpine
+  volumes:
+   - ./data/db:/var/lib/postgresql/data
+  environment:
+   - POSTGRES_USER=django_report_builder
+   - POSTGRES_PASSWORD=django_report_builder
+   - POSTGRES_DB=django_report_builder
+ pgadmin:
+  image: dpage/pgadmin4
+  environment:
+    PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
+    PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+  volumes:
+   - ./pgadmin:/root/.pgadmin
+  ports:
+   - "${PGADMIN_PORT:-5055}:80"
+  restart: unless-stopped
