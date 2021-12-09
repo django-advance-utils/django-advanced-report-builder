@@ -1,11 +1,16 @@
 import csv
 import datetime
+
+from django.contrib.contenttypes.models import ContentType
 from report_builder_examples import models
+
+from advanced_report_builder.models import ReportType
 
 
 def import_data(path):
     import_companies(path)
     import_tallies(path)
+    import_report_types()
 
 
 def import_companies(path):
@@ -46,3 +51,15 @@ def import_tallies(path):
                                                motor_bikes=int(r['Motor Bikes']),
                                                push_bikes=int(r['Push Bikes']),
                                                tractors=int(r['Tractors']))
+
+
+def import_report_types():
+
+    report_types = [['payment', 'Payment', 'ReportBuilder'],
+                    ['tally', 'Tally', 'ReportBuilder']]
+
+    for report_type in report_types:
+        content_type = ContentType.objects.get(app_label='report_builder_examples', model=report_type[0])
+        ReportType.objects.get_or_create(content_type=content_type,
+                                         defaults={'name': report_type[1],
+                                                   'report_builder_class_name': report_type[2]})

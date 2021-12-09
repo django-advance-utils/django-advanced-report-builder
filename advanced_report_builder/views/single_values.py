@@ -203,8 +203,8 @@ class SingleValueModal(ModelFormModal):
     form_fields = ['name',
                    'report_type',
                    ('single_value_type', {'label': 'Value type'}),
+                   ('numerator', {'label': 'Numerator field'}),
                    'field',
-                   'numerator',
                    'tile_colour',
                    ('decimal_places', {'field_class': 'col-md-5 col-lg-3 input-group-sm'})
                    ]
@@ -217,9 +217,9 @@ class SingleValueModal(ModelFormModal):
             {'selector': '#div_id_numerator',
              'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: 'show'},
              'default': 'hide'},
-            {'selector': '#div_id_numerator',
-             'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: ('html', {'value': 'test'})},
-             'default': 'hide'},
+            {'selector': 'label[for=id_field]',
+             'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: ('html', 'Denominator field')},
+             'default': ('html', 'Dield')},
         ])
 
         fields = []
