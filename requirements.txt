@@ -6,7 +6,7 @@ git+https://github.com/jonesim/django-menus.git@927c04d5cd327a6f95bc9ed75b74edf8
 git+https://github.com/jonesim/django-datatables.git@6b068570fa1f3f93357fe9349456f004cd4760f5
 # django-filtered-datatables==0.0.18
 
-git+https://github.com/jonesim/django-modals.git@ce29ae044abc9d1c5ceec1e16ac1477c0ce38b1a
+git+https://github.com/jonesim/django-modals.git@85dfb92512722ce3e35cf2dfbe32356b212f967e
 # django-nested-modals==0.0.16
 
 git+https://github.com/jonesim/ajax-helpers.git@0a7746487e1dd7f27c9f04c1e5b4a84c882b9f4f

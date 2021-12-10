@@ -19,18 +19,24 @@ class FilterQueryMixin:
         self.slug = None
         super().__init__(*args, **kwargs)
 
-    def process_filters(self, query, search_filter_data):
+    def process_query_filters(self, query, search_filter_data):
+        result = self.process_filters(search_filter_data=search_filter_data)
+        if result:
+            return query.filter(result)
+        return query
+
+    def process_filters(self, search_filter_data):
         if not search_filter_data:
-            return query
+            return []
 
         query_data = json.loads(search_filter_data)
         query_list = self._process_group(query_data=query_data)
         reduce_by = self._format_group_conditions(query_data['condition'])
 
         if query_list:
-            return query.filter(reduce(reduce_by, query_list))
+            return reduce(reduce_by, query_list)
 
-        return query
+        return []
 
     @staticmethod
     def _get_operator(display_operator):

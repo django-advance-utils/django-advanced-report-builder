@@ -3,12 +3,15 @@
 
 <div id="div_{{ field.auto_id }}" class="form-group row">
 
-    <div class="form-group"><label class="control-label col-12">{{ field.label }}</label>
+    <div class="form-group"><label class="control-label col-12 col-form-label-sm">{{ field.label }}</label>
     </div>
     <div id="{{ field.auto_id }}_builder" class="col-12"></div>
     <input type="hidden" name="{{ field.name }}" id="{{ field.auto_id }}" value="{% if field.value %}{{ field.value }}{% endif %}">
 
     <script>
+
+
+
         $(function () {
             let query_builder_id = '#{{ field.auto_id }}_builder';
             let query_builder = $(query_builder_id);
@@ -23,9 +26,7 @@
                 }, 100)
             }
 
-
-            ajax_helpers.command_functions.query_builder = function (command) {
-
+            ajax_helpers.command_functions.query_builder_{{ field.auto_id }} = function (command) {
                 let rules = $(field_id).val();
                 let filters = jQuery.parseJSON(command.data);
 
@@ -62,7 +63,7 @@
 
             function initialise_query_builder(report_type_id) {
                 query_builder.queryBuilder('destroy');
-                django_modal.send_inputs({'ajax': 'get_query_builder_fields'})
+                django_modal.send_inputs({'ajax': 'get_query_builder_fields', 'field_auto_id': '{{ field.auto_id }}'})
             }
 
             $(document).ready(function () {
@@ -85,7 +86,7 @@
                 }
             });
 
-            ajax_helpers.command_functions.save_query_builder = function (command) {
+            ajax_helpers.command_functions.save_query_builder_{{ field.auto_id }} = function (command) {
                 save_query_builder()
             };
 

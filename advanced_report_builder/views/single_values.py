@@ -3,13 +3,14 @@ import copy
 from ajax_helpers.mixins import AjaxHelpers
 from django.apps import apps
 from django.core.exceptions import ValidationError
-from django.db.models import Count
+from django.db.models import Count, Sum, Q
+from django.db.models.functions import Coalesce
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView
 from django_datatables.datatables import HorizontalTable
 from django_menus.menu import MenuMixin, MenuItem
-from django_modals.modals import ModelFormModal
+from django_modals.fields import FieldEx
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
 from django_modals.widgets.select2 import Select2
@@ -17,8 +18,9 @@ from django_modals.widgets.select2 import Select2
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_FUNCTIONS, BOOLEAN_FIELD
-from advanced_report_builder.models import SingleValueReport, ReportType
+from advanced_report_builder.models import SingleValueReport, ReportType, ReportQuery
 from advanced_report_builder.utils import split_slug, get_django_field
+from advanced_report_builder.views.modals_base import QueryBuilderModalBase
 
 
 class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
@@ -45,10 +47,10 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         if not report_query:
             return query
 
-        return self.process_filters(query=query,
-                                    search_filter_data=report_query.query)
+        return self.process_query_filters(query=query,
+                                          search_filter_data=report_query.query)
 
-    def get_number_field(self, fields, field_name, col_type_override, aggregations_type, decimal_places=0):
+    def get_aggregation_field(self, fields, field_name, col_type_override, aggregations_type, decimal_places=0):
 
         if col_type_override:
             field = copy.deepcopy(col_type_override)
@@ -99,14 +101,13 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         django_field, col_type_override, _ = get_django_field(base_modal=base_modal, field=field)
 
         if isinstance(django_field, NUMBER_FIELDS) or isinstance(django_field, BOOLEAN_FIELD):
-            self.get_number_field(fields=fields,
-                                  field_name=field,
-                                  col_type_override=col_type_override,
-                                  aggregations_type=aggregations_type,
-                                  decimal_places=self.single_value_report.decimal_places)
+            self.get_aggregation_field(fields=fields,
+                                       field_name=field,
+                                       col_type_override=col_type_override,
+                                       aggregations_type=aggregations_type,
+                                       decimal_places=self.single_value_report.decimal_places)
         else:
             assert False, 'not a number field'
-
 
     def _get_count(self, fields):
 
@@ -115,6 +116,100 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
                                   'column_name': 'count',
                                   'options': {'calculated': True},
                                   'model_path': ''}
+
+        field = self.number_field(**number_function_kwargs)
+        fields.append(field)
+
+    def get_percentage_field(self, fields,
+                             numerator_field_name, numerator_col_type_override,
+                             denominator_field_name, denominator_col_type_override,
+                             numerator_filter, decimal_places=0):
+        if numerator_col_type_override:
+            actual_numerator_field_name = numerator_col_type_override.field
+        else:
+            actual_numerator_field_name = numerator_field_name
+
+        if denominator_col_type_override:
+            actual_denominator_field_name = denominator_col_type_override.field
+        else:
+            actual_denominator_field_name = denominator_field_name
+
+        number_function_kwargs = {}
+        if decimal_places:
+            number_function_kwargs = {'decimal_places': int(decimal_places)}
+
+        new_field_name = f'{actual_numerator_field_name}_{actual_denominator_field_name}'
+
+        if numerator_filter:
+            numerator = Coalesce((Sum(actual_numerator_field_name, filter=numerator_filter)+0.0), 0.0)
+        else:
+            numerator = Coalesce((Sum(actual_numerator_field_name) + 0.0), 0.0)
+        denominator = Coalesce(Sum(actual_denominator_field_name) + 0.0, 0.0)
+
+        number_function_kwargs['aggregations'] = {new_field_name: (numerator / denominator) * 100.0}
+        field_name = new_field_name
+
+        number_function_kwargs.update({'field': field_name,
+                                       'column_name': field_name,
+                                       'options': {'calculated': True},
+                                       'model_path': ''})
+
+        field = self.number_field(**number_function_kwargs)
+
+        fields.append(field)
+
+        return field_name
+
+    def _process_percentage(self, fields):
+        denominator_field = self.single_value_report.field
+        numerator_field = self.single_value_report.numerator
+        base_modal = self.single_value_report.get_base_modal()
+
+        deno_django_field, denominator_col_type_override, _ = get_django_field(base_modal=base_modal,
+                                                                               field=denominator_field)
+
+        num_django_field, numerator_col_type_override, _ = get_django_field(base_modal=base_modal,
+                                                                            field=denominator_field)
+
+        if ((isinstance(deno_django_field, NUMBER_FIELDS) or isinstance(deno_django_field, BOOLEAN_FIELD)) and
+                (isinstance(num_django_field, NUMBER_FIELDS) or isinstance(num_django_field, BOOLEAN_FIELD))):
+            numerator_filter = None
+            report_query = self.get_report_query(report=self.single_value_report)
+            if report_query:
+                numerator_filter = self.process_filters(search_filter_data=report_query.extra_query)
+
+            self.get_percentage_field(fields=fields,
+                                      numerator_field_name=numerator_field,
+                                      numerator_col_type_override=numerator_col_type_override,
+                                      denominator_field_name=denominator_field,
+                                      denominator_col_type_override=denominator_col_type_override,
+                                      numerator_filter=numerator_filter,
+                                      decimal_places=self.single_value_report.decimal_places,
+                                      )
+        else:
+            assert False, 'not a number field'
+
+    def _process_percentage_from_count(self, fields):
+        report_query = self.get_report_query(report=self.single_value_report)
+
+        numerator_filter = None
+        if report_query:
+            numerator_filter = self.process_filters(search_filter_data=report_query.extra_query)
+
+        if numerator_filter:
+            numerator = Coalesce(Count(1, filter=numerator_filter), 0) + 0.0
+        else:
+            numerator = Coalesce(Count(1), 0) + 0.0, 0.0
+        denominator = Coalesce(Count(1), 0) + 0.0, 1
+        aggregations = {'new_field_name': (numerator / denominator) * 100.0}
+        number_function_kwargs = {'aggregations': {'count': aggregations},
+                                  'field': 'count',
+                                  'column_name': 'count',
+                                  'options': {'calculated': True},
+                                  'model_path': ''}
+        decimal_places = self.single_value_report.decimal_places
+        if decimal_places:
+            number_function_kwargs = {'decimal_places': int(decimal_places)}
 
         field = self.number_field(**number_function_kwargs)
         fields.append(field)
@@ -132,7 +227,9 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE:
             self._process_aggregations(fields=fields, aggregations_type='avg')
         elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_PERCENT:
-            assert False
+            self._process_percentage_from_count(fields=fields)
+        elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT:
+            self._process_percentage(fields=fields)
         return fields
 
     def get_context_data(self, **kwargs):
@@ -192,7 +289,7 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         return []
 
 
-class SingleValueModal(ModelFormModal):
+class SingleValueModal(QueryBuilderModalBase):
     size = 'xl'
     template_name = 'advanced_report_builder/single_value/modal.html'
     process = PROCESS_EDIT_DELETE
@@ -212,14 +309,19 @@ class SingleValueModal(ModelFormModal):
     def form_setup(self, form, *_args, **_kwargs):
         form.add_trigger('single_value_type', 'onchange', [
             {'selector': '#div_id_field',
-             'values': {SingleValueReport.SINGLE_VALUE_TYPE_COUNT: 'hide'},
+             'values': {SingleValueReport.SINGLE_VALUE_TYPE_COUNT: 'hide',
+                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'hide'},
              'default': 'show'},
             {'selector': '#div_id_numerator',
              'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: 'show'},
              'default': 'hide'},
+            {'selector': '#div_id_extra_query_data',
+             'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: 'show',
+                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'show'},
+             'default': 'hide'},
             {'selector': 'label[for=id_field]',
              'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: ('html', 'Denominator field')},
-             'default': ('html', 'Dield')},
+             'default': ('html', 'Field')},
         ])
 
         fields = []
@@ -240,6 +342,23 @@ class SingleValueModal(ModelFormModal):
 
         form.fields['numerator'].widget = Select2(attrs={'ajax': True})
         form.fields['numerator'].widget.select_data = fields
+
+        self.add_query_data(form, include_extra_query=True)
+
+        return ('name',
+                'report_type',
+                'single_value_type',
+                'numerator',
+                'field',
+                FieldEx('extra_query_data',
+                        template='advanced_report_builder/fields/query_builder.html',
+                        ),
+                'tile_colour',
+                'decimal_places',
+
+                FieldEx('query_data',
+                        template='advanced_report_builder/fields/query_builder.html')
+                )
 
     def select2_field(self, **kwargs):
         fields = []
@@ -283,9 +402,25 @@ class SingleValueModal(ModelFormModal):
 
     def form_valid(self, form):
         single_value_report = form.save()
-        single_value_report.save()
+
+        if not self.report_query and (form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']):
+            ReportQuery(query=form.cleaned_data['query_data'],
+                        extra_query=form.cleaned_data['extra_query_data'],
+                        report=single_value_report).save()
+        elif form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']:
+            self.report_query.extra_query = form.cleaned_data['extra_query_data']
+            self.report_query.query = form.cleaned_data['query_data']
+            if self.show_query_name:
+                self.report_query.name = form.cleaned_data['query_name']
+            self.report_query.save()
+        elif self.report_query:
+            self.report_query.delete()
+
         return self.command_response('reload')
 
     def clean(self, form, cleaned_data):
-        if cleaned_data['single_value_type'] != SingleValueReport.SINGLE_VALUE_TYPE_COUNT and not cleaned_data['field']:
+        if (cleaned_data['single_value_type'] not in [SingleValueReport.SINGLE_VALUE_TYPE_COUNT,
+                                                      SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT] and
+                not cleaned_data['field']):
             raise ValidationError("Please select a field")
+

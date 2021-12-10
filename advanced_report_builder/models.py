@@ -86,7 +86,7 @@ class ReportQuery(TimeStampedModel):
     report = models.ForeignKey(Report, on_delete=models.CASCADE)
     name = models.TextField(default='Standard')
     query = models.JSONField(null=True, blank=True)
-    extra_query = models.JSONField(null=True, blank=True)  # used for single value percent_divider_query_data
+    extra_query = models.JSONField(null=True, blank=True)  # used for single value Numerator
 
     class Meta:
         ordering = ['name']
@@ -118,13 +118,15 @@ class SingleValueReport(Report):
     SINGLE_VALUE_TYPE_SUM = 2
     SINGLE_VALUE_TYPE_COUNT_AND_SUM = 3
     SINGLE_VALUE_TYPE_PERCENT = 4
-    SINGLE_VALUE_TYPE_AVERAGE = 5
+    SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT = 5
+    SINGLE_VALUE_TYPE_AVERAGE = 6
 
     SINGLE_VALUE_TYPE_CHOICES = (
         (SINGLE_VALUE_TYPE_COUNT, 'Count'),
         (SINGLE_VALUE_TYPE_SUM, 'Sum'),
         (SINGLE_VALUE_TYPE_COUNT_AND_SUM, 'Count & Sum'),
         (SINGLE_VALUE_TYPE_PERCENT, 'Percent'),
+        (SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT, 'Percent from Count'),
         (SINGLE_VALUE_TYPE_AVERAGE, 'Average')
     )
 
