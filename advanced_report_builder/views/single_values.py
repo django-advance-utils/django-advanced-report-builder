@@ -3,7 +3,7 @@ import copy
 from ajax_helpers.mixins import AjaxHelpers
 from django.apps import apps
 from django.core.exceptions import ValidationError
-from django.db.models import Count, Sum, Q
+from django.db.models import Count, Sum, Q, Value, FloatField
 from django.db.models.functions import Coalesce
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -197,19 +197,20 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
             numerator_filter = self.process_filters(search_filter_data=report_query.extra_query)
 
         if numerator_filter:
-            numerator = Coalesce(Count(1, filter=numerator_filter), 0) + 0.0
+            numerator = Coalesce(Count(1, filter=numerator_filter) + 0.0, 0.0)
         else:
-            numerator = Coalesce(Count(1), 0) + 0.0, 0.0
-        denominator = Coalesce(Count(1), 0) + 0.0, 1
-        aggregations = {'new_field_name': (numerator / denominator) * 100.0}
-        number_function_kwargs = {'aggregations': {'count': aggregations},
+            numerator = Coalesce(Count(1) + 0.0, 0)
+        denominator = Coalesce(Count(1) + 0.0, 0.0)
+        a = (numerator / denominator) * 100.0
+
+        number_function_kwargs = {'aggregations': {'count': a},
                                   'field': 'count',
                                   'column_name': 'count',
                                   'options': {'calculated': True},
                                   'model_path': ''}
         decimal_places = self.single_value_report.decimal_places
         if decimal_places:
-            number_function_kwargs = {'decimal_places': int(decimal_places)}
+            number_function_kwargs['decimal_places'] = int(decimal_places)
 
         field = self.number_field(**number_function_kwargs)
         fields.append(field)
@@ -227,9 +228,9 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE:
             self._process_aggregations(fields=fields, aggregations_type='avg')
         elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_PERCENT:
-            self._process_percentage_from_count(fields=fields)
-        elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT:
             self._process_percentage(fields=fields)
+        elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT:
+            self._process_percentage_from_count(fields=fields)
         return fields
 
     def get_context_data(self, **kwargs):
