@@ -24,7 +24,7 @@ from advanced_report_builder.views.modals_base import QueryBuilderModalBase
 
 
 class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
-    template_name = 'advanced_report_builder/datatable.html'
+    template_name = 'advanced_report_builder/datatable/report.html'
 
     date_field = ReportBuilderDateColumn
     number_field = ReportBuilderNumberColumn
@@ -219,6 +219,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
 
 
 class TableModal(QueryBuilderModalBase):
+    template_name = 'advanced_report_builder/datatable/modal.html'
     size = 'xl'
     model = TableReport
     process = PROCESS_EDIT_DELETE
@@ -335,6 +336,6 @@ class FieldModal(FormModal):
                           'val': _attr})
 
         self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
-        self.add_command({'function': 'save_query_builder'})
+        self.add_command({'function': 'save_query_builder_id_query_data'})
         self.add_command({'function': 'update_selection'})
         return self.command_response('close')

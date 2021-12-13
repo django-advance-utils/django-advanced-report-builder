@@ -1,16 +1,24 @@
 import json
 
+from crispy_forms.bootstrap import StrictButton
 from django.apps import apps
 from django.forms import CharField
 from django.shortcuts import get_object_or_404
 from django_datatables.datatables import ColumnInitialisor
+from django_modals.forms import ModelCrispyForm
 from django_modals.modals import ModelFormModal
 
 from advanced_report_builder.field_types import FieldTypes
 from advanced_report_builder.models import ReportQuery, ReportType
 
 
+class QueryBuilderModelForm(ModelCrispyForm):
+    def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
+        return StrictButton(button_text, onclick=f'save_modal_{ self.form_id }()', css_class=css_class, **kwargs)
+
+
 class QueryBuilderModalBase(ModelFormModal):
+    base_form = QueryBuilderModelForm
     size = 'xl'
 
     def __init__(self, *args, **kwargs):

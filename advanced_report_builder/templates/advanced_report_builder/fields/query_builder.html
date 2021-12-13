@@ -11,8 +11,7 @@
     <script>
 
 
-
-        $(function () {
+(function( {{ field.auto_id }}, $, undefined ) {
             let query_builder_id = '#{{ field.auto_id }}_builder';
             let query_builder = $(query_builder_id);
             let field_id = '#{{ field.auto_id }}';
@@ -74,22 +73,22 @@
                  initialise_query_builder($('#id_report_type').val());
             });
 
-            function save_query_builder() {
+            {{ field.auto_id }}.save_query_builder = function () {
                 let results = query_builder.queryBuilder('getRules', {skip_empty: true});
                 $(field_id).val(JSON.stringify(results, null, 2));
+                return results;
             }
 
-            $('#{{ form_id }} .modal-submit').click(function (event) {
-                if (query_builder.queryBuilder('validate', {skip_empty: true})) {
-                    save_query_builder();
-                    django_modal.process_commands_lock([{'function': 'post_modal'}]);
-                }
-            });
 
-            ajax_helpers.command_functions.save_query_builder_{{ field.auto_id }} = function (command) {
-                save_query_builder()
-            };
 
-        });
+
+}( window.{{ field.auto_id }} = window.{{ field.auto_id }} || {}, jQuery ));
+
+
+    ajax_helpers.command_functions.save_query_builder_{{ field.auto_id }} = function (command) {
+        {{ field.auto_id }}.
+        save_query_builder()
+    };
+
     </script>
 </div>

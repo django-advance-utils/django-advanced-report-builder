@@ -1,9 +1,10 @@
 import copy
 
 from ajax_helpers.mixins import AjaxHelpers
+from crispy_forms.bootstrap import StrictButton
 from django.apps import apps
 from django.core.exceptions import ValidationError
-from django.db.models import Count, Sum, Q, Value, FloatField
+from django.db.models import Count, Sum
 from django.db.models.functions import Coalesce
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -11,6 +12,7 @@ from django.views.generic import TemplateView
 from django_datatables.datatables import HorizontalTable
 from django_menus.menu import MenuMixin, MenuItem
 from django_modals.fields import FieldEx
+from django_modals.forms import ModelCrispyForm
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
 from django_modals.widgets.select2 import Select2
@@ -291,7 +293,6 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
 
 
 class SingleValueModal(QueryBuilderModalBase):
-    size = 'xl'
     template_name = 'advanced_report_builder/single_value/modal.html'
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
@@ -424,4 +425,3 @@ class SingleValueModal(QueryBuilderModalBase):
                                                       SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT] and
                 not cleaned_data['field']):
             raise ValidationError("Please select a field")
-
