@@ -190,7 +190,6 @@
                     let fields = JSON.parse($(main_field).val())
                     $.each(fields, function (key, value) {
                         let field_data = available_fields_data[value.field];
-                        console.log(value);
                         $(selection_fields_id_name).append(get_field_html(value.field, value.title, field_data.colour, value.data_attr));
                     });
                 }

@@ -4,23 +4,28 @@ import json
 
 from ajax_helpers.mixins import AjaxHelpers
 from django.apps import apps
+from django.forms import CharField, ChoiceField, BooleanField, IntegerField
 from django.shortcuts import get_object_or_404
 from django_datatables.datatables import DatatableView, ColumnInitialisor
 from django_datatables.plugins.column_totals import ColumnTotals
 from django_menus.menu import MenuMixin, MenuItem
 from django_modals.fields import FieldEx
+from django_modals.forms import CrispyForm
 from django_modals.modals import FormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.columns import ReportBuilderDateColumn, ReportBuilderNumberColumn
 from advanced_report_builder.filter_query import FilterQueryMixin
-from advanced_report_builder.forms import FieldForm
-from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_FUNCTIONS, DATE_FIELDS, \
-    ANNOTATION_FUNCTIONS, NUMBER_FIELDS
-from advanced_report_builder.models import TableReport, ReportType, ReportQuery
-from advanced_report_builder.utils import split_attr, split_slug, get_django_field
-from advanced_report_builder.views.modals_base import QueryBuilderModalBase
+from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, \
+    DATE_FORMAT_TYPES
+from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_FUNCTIONS, \
+    ANNOTATION_FUNCTIONS
+from advanced_report_builder.models import ReportType
+from advanced_report_builder.models import TableReport, ReportQuery
+from advanced_report_builder.utils import split_attr, get_django_field
+from advanced_report_builder.utils import split_slug
+from advanced_report_builder.views.modals_base import QueryBuilderModalBase, QueryBuilderModalBaseMixin
 
 
 class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
@@ -318,8 +323,76 @@ class TableModal(QueryBuilderModalBase):
                                                                        'tables': tables}))
 
 
-class FieldModal(FormModal):
+class FieldForm(CrispyForm):
+
+    def get_django_field(self):
+        data = json.loads(base64.b64decode(self.slug['data']))
+        report_type = get_object_or_404(ReportType, pk=self.slug['report_type_id'])
+        base_model = report_type.content_type.model_class()
+
+        django_field, _, _ = get_django_field(base_modal=base_model, field=data['field'])
+
+        return django_field
+
+    def setup_modal(self, *args, **kwargs):
+        data = json.loads(base64.b64decode(self.slug['data']))
+        django_field = self.get_django_field()
+
+        self.fields['title'] = CharField(initial=data['title'])
+
+        if django_field is not None:
+            data_attr = split_attr(data)
+
+            if isinstance(django_field, DATE_FIELDS):
+                self.fields['annotations_value'] = ChoiceField(choices=ANNOTATION_VALUE_CHOICES, required=False)
+                if 'annotations_value' in data_attr:
+                    self.fields['annotations_value'].initial = data_attr['annotations_value']
+                self.fields['date_format'] = ChoiceField(choices=DATE_FORMAT_TYPES, required=False)
+                if 'date_format' in data_attr:
+                    self.fields['date_format'].initial = data_attr['date_format']
+            elif isinstance(django_field, NUMBER_FIELDS):
+                self.fields['annotations_type'] = ChoiceField(choices=ANNOTATIONS_CHOICES, required=False)
+                if 'annotations_type' in data_attr:
+                    self.fields['annotations_type'].initial = data_attr['annotations_type']
+                self.fields['show_totals'] = BooleanField(required=False,
+                                                          widget=Toggle(attrs={'data-onstyle': 'success',
+                                                                               'data-on': 'YES',
+                                                                               'data-off': 'NO'}))
+                if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
+                    self.fields['show_totals'].initial = True
+                self.fields['decimal_places'] = IntegerField()
+                self.fields['decimal_places'].initial = int(data_attr.get('decimal_places', 0))
+                self.fields['filter'] = CharField(required=False)
+
+        super().setup_modal(*args, **kwargs)
+
+    def get_additional_attributes(self):
+        attributes = []
+        django_field = self.get_django_field()
+        if django_field is not None:
+            if isinstance(django_field, DATE_FIELDS):
+                if self.cleaned_data['annotations_value']:
+                    attributes.append(f'annotations_value-{self.cleaned_data["annotations_value"]}')
+                if self.cleaned_data['date_format']:
+                    attributes.append(f'date_format-{self.cleaned_data["date_format"]}')
+
+            elif isinstance(django_field, NUMBER_FIELDS):
+                if self.cleaned_data['annotations_type']:
+                    attributes.append(f'annotations_type-{self.cleaned_data["annotations_type"]}')
+                if self.cleaned_data['show_totals'] and self.cleaned_data["show_totals"]:
+                    attributes.append('show_totals-1')
+                if self.cleaned_data['decimal_places'] > 0:
+                    attributes.append(f'decimal_places-{self.cleaned_data["decimal_places"]}')
+
+        if attributes:
+            return '-'.join(attributes)
+
+        return None
+
+
+class FieldModal(QueryBuilderModalBaseMixin, FormModal):
     form_class = FieldForm
+    size = 'xl'
 
     @property
     def modal_title(self):
@@ -339,3 +412,29 @@ class FieldModal(FormModal):
         self.add_command({'function': 'save_query_builder_id_query_data'})
         self.add_command({'function': 'update_selection'})
         return self.command_response('close')
+
+    def form_setup(self, _form, *_args, **_kwargs):
+        data = json.loads(base64.b64decode(self.slug['data']))
+        report_type = get_object_or_404(ReportType, pk=self.slug['report_type_id'])
+        base_model = report_type.content_type.model_class()
+
+        django_field, _, _ = get_django_field(base_modal=base_model, field=data['field'])
+        if django_field is not None:
+            if isinstance(django_field, NUMBER_FIELDS):
+                return ['title',
+                        'annotations_type',
+                        'show_totals',
+                        'decimal_places',
+                        FieldEx('filter',
+                                template='advanced_report_builder/fields/single_query_builder.html',
+                                report_type=report_type)
+                        ]
+
+    def ajax_get_query_builder_fields(self, **kwargs):
+        report_type_id = self.slug['report_type_id']
+        query_builder_filters = self.get_query_builder_report_type_field(report_type_id=report_type_id)
+        field_auto_id = kwargs['field_auto_id'][0]
+        return self.command_response(f'query_builder_{field_auto_id}', data=json.dumps(query_builder_filters))
+
+
+

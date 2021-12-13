@@ -17,17 +17,9 @@ class QueryBuilderModelForm(ModelCrispyForm):
         return StrictButton(button_text, onclick=f'save_modal_{ self.form_id }()', css_class=css_class, **kwargs)
 
 
-class QueryBuilderModalBase(ModelFormModal):
-    base_form = QueryBuilderModelForm
-    size = 'xl'
+class QueryBuilderModalBaseMixin:
 
-    def __init__(self, *args, **kwargs):
-        self.report_query = None
-        self.show_query_name = False
-        super().__init__(*args, **kwargs)
-
-    def ajax_get_query_builder_fields(self, **kwargs):
-        report_type_id = kwargs['report_type'][0]
+    def get_query_builder_report_type_field(self, report_type_id):
         if not report_type_id:
             return self.command_response()
         report_type = get_object_or_404(ReportType, pk=report_type_id)
@@ -38,9 +30,7 @@ class QueryBuilderModalBase(ModelFormModal):
                                        query_builder_filters=query_builder_filters,
                                        report_builder_fields=report_builder_fields)
 
-        field_auto_id = kwargs['field_auto_id'][0]
-
-        return self.command_response(f'query_builder_{field_auto_id}', data=json.dumps(query_builder_filters))
+        return query_builder_filters
 
     def _get_query_builder_fields(self, base_model, query_builder_filters, report_builder_fields, prefix='',
                                   title_prefix=''):
@@ -73,6 +63,22 @@ class QueryBuilderModalBase(ModelFormModal):
                                            prefix=f"{include['field']}__",
                                            title_prefix=f"{include['title']} --> ")
 
+
+class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
+    base_form = QueryBuilderModelForm
+    size = 'xl'
+
+    def __init__(self, *args, **kwargs):
+        self.report_query = None
+        self.show_query_name = False
+        super().__init__(*args, **kwargs)
+
+    def ajax_get_query_builder_fields(self, **kwargs):
+        report_type_id = kwargs['report_type'][0]
+        query_builder_filters = self.get_query_builder_report_type_field(report_type_id=report_type_id)
+        field_auto_id = kwargs['field_auto_id'][0]
+        return self.command_response(f'query_builder_{field_auto_id}', data=json.dumps(query_builder_filters))
+
     def add_query_data(self, form, include_extra_query=True):
         form.fields['query_data'] = CharField(required=False, label='Filter')
 
@@ -94,4 +100,3 @@ class QueryBuilderModalBase(ModelFormModal):
                 form.fields['query_data'].initial = self.report_query.query
                 if include_extra_query:
                     form.fields['extra_query_data'].initial = self.report_query.extra_query
-

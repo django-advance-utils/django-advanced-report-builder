@@ -1,5 +1,4 @@
 $(document).ready(function () {
-    console.log('yes');
     function add_sortable(selector) {
         $(selector).sortable({
         revert: true,

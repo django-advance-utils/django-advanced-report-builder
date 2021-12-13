@@ -1,7 +1,6 @@
 import copy
 
 from ajax_helpers.mixins import AjaxHelpers
-from crispy_forms.bootstrap import StrictButton
 from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Sum
@@ -12,7 +11,6 @@ from django.views.generic import TemplateView
 from django_datatables.datatables import HorizontalTable
 from django_menus.menu import MenuMixin, MenuItem
 from django_modals.fields import FieldEx
-from django_modals.forms import ModelCrispyForm
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
 from django_modals.widgets.select2 import Select2
@@ -201,7 +199,7 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         if numerator_filter:
             numerator = Coalesce(Count(1, filter=numerator_filter) + 0.0, 0.0)
         else:
-            numerator = Coalesce(Count(1) + 0.0, 0)
+            numerator = Coalesce(Count(1) + 0.0, 0.0)
         denominator = Coalesce(Count(1) + 0.0, 0.0)
         a = (numerator / denominator) * 100.0
 

@@ -8,8 +8,9 @@
     <div id="{{ field.auto_id }}_builder" class="col-12"></div>
     <input type="hidden" name="{{ field.name }}" id="{{ field.auto_id }}" value="{% if field.value %}{{ field.value }}{% endif %}">
 
-    <script>
 
+
+    <script>
 
 (function( {{ field.auto_id }}, $, undefined ) {
             let query_builder_id = '#{{ field.auto_id }}_builder';
@@ -66,11 +67,8 @@
             }
 
             $(document).ready(function () {
-                initialise_query_builder();
-            });
-
-            $('#id_report_type').on('change', function (e) {
-                 initialise_query_builder($('#id_report_type').val());
+                {#alert('{{ report_type.id }}')#}
+                initialise_query_builder(1);
             });
 
             {{ field.auto_id }}.save_query_builder = function () {
