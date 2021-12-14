@@ -3,6 +3,7 @@ import copy
 import json
 
 from ajax_helpers.mixins import AjaxHelpers
+from crispy_forms.bootstrap import StrictButton
 from django.apps import apps
 from django.forms import CharField, ChoiceField, BooleanField, IntegerField
 from django.shortcuts import get_object_or_404
@@ -52,7 +53,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         self.add_table(table_id, model=base_model)
         return super().dispatch(request, *args, **kwargs)
 
-    def get_date_field(self, table_field, fields):
+    def get_date_field(self, index, table_field, fields):
         data_attr = split_attr(table_field)
         field_name = table_field['field']
         date_format = data_attr.get('date_format')
@@ -64,7 +65,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
 
         annotations_value = data_attr.get('annotations_value')
         if annotations_value:
-            new_field_name = f'{annotations_value}_{field_name}'
+            new_field_name = f'{annotations_value}_{field_name}_{index}'
             function = ANNOTATION_VALUE_FUNCTIONS[annotations_value]
             date_function_kwargs['annotations_value'] = {new_field_name: function(field_name)}
             field_name = new_field_name
@@ -76,23 +77,34 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         fields.append(field)
         return field_name
 
-    def get_number_field(self, table_field, fields, totals, col_type_override):
+    def get_number_field(self, index, table_field, fields, totals, col_type_override):
         data_attr = split_attr(table_field)
         field_name = table_field['field']
         css_class = None
 
         annotations_type = data_attr.get('annotations_type')
+        annotation_filter = None
+        if annotations_type:
+            b64_filter = data_attr.get('filter')
+            if b64_filter:
+                _filter = base64.urlsafe_b64decode(b64_filter).decode('utf-8', 'ignore')
+                annotation_filter = self.process_filters(search_filter_data=_filter)
 
         if col_type_override:
             field = copy.deepcopy(col_type_override)
             title = table_field.get('title')
             if annotations_type == 'count':
-                new_field_name = f'{annotations_type}_{field_name}'
+                new_field_name = f'{annotations_type}_{field_name}_{index}'
                 number_function_kwargs = {}
                 if title:
                     number_function_kwargs['title'] = title
-                function = ANNOTATION_FUNCTIONS[annotations_type]
-                number_function_kwargs['annotations'] = {new_field_name: function(field.field)}
+                function_type = ANNOTATION_FUNCTIONS[annotations_type]
+                if annotation_filter:
+                    function = function_type(field.field, filter=annotation_filter)
+                else:
+                    function = function_type(field.field)
+
+                number_function_kwargs['annotations'] = {new_field_name: function}
 
                 number_function_kwargs.update({'field': new_field_name,
                                                'column_name': field_name})
@@ -102,10 +114,15 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
                 if title:
                     field.title = title
                 if annotations_type:
-                    new_field_name = f'{annotations_type}_{field_name}'
+                    new_field_name = f'{annotations_type}_{field_name}_{index}'
 
-                    function = ANNOTATION_FUNCTIONS[annotations_type]
-                    field.annotations = {new_field_name: function(field.field)}
+                    function_type = ANNOTATION_FUNCTIONS[annotations_type]
+                    if annotation_filter:
+                        function = function_type(field.field, filter=annotation_filter)
+                    else:
+                        function = function_type(field.field)
+
+                    field.annotations = {new_field_name: function}
                     field.field = new_field_name
 
             fields.append(field)
@@ -114,12 +131,17 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
             decimal_places = data_attr.get('decimal_places')
 
             if decimal_places:
-                number_function_kwargs = {'decimal_places': int(decimal_places)}
+                number_function_kwargs['decimal_places'] = int(decimal_places)
 
             if annotations_type:
-                new_field_name = f'{annotations_type}_{field_name}'
-                function = ANNOTATION_FUNCTIONS[annotations_type]
-                number_function_kwargs['annotations'] = {new_field_name: function(field_name)}
+                new_field_name = f'{annotations_type}_{field_name}_{index}'
+                function_type = ANNOTATION_FUNCTIONS[annotations_type]
+                if annotation_filter:
+                    function = function_type(field_name, filter=annotation_filter)
+                else:
+                    function = function_type(field_name)
+
+                number_function_kwargs['annotations'] = {new_field_name: function}
                 field_name = new_field_name
 
             number_function_kwargs.update({'field': field_name,
@@ -143,16 +165,19 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         totals = {}
         base_modal = self.table_report.get_base_modal()
         first_field_name = None
-        for table_field in table_fields:
+        for index, table_field in enumerate(table_fields):
             field = table_field['field']
 
             django_field, col_type_override, _ = get_django_field(base_modal=base_modal, field=field)
 
             if isinstance(django_field, DATE_FIELDS):
-                field_name = self.get_date_field(table_field=table_field, fields=fields)
+                field_name = self.get_date_field(index=index,
+                                                 table_field=table_field,
+                                                 fields=fields)
 
             elif isinstance(django_field, NUMBER_FIELDS):
-                field_name = self.get_number_field(table_field=table_field,
+                field_name = self.get_number_field(index=index,
+                                                   table_field=table_field,
                                                    fields=fields,
                                                    totals=totals,
                                                    col_type_override=col_type_override)
@@ -251,12 +276,12 @@ class TableModal(QueryBuilderModalBase):
                   FieldEx('report_type'),
                   FieldEx('has_clickable_rows', template='django_modals/fields/label_checkbox.html'),
                   FieldEx('page_length', template='django_modals/fields/label_checkbox.html'),
-                  FieldEx('table_fields', template='advanced_report_builder/fields/select_column.html')]
+                  FieldEx('table_fields', template='advanced_report_builder/datatable/fields/select_column.html')]
 
         if self.show_query_name:
             fields.append(FieldEx('query_name'))
 
-        fields.append(FieldEx('query_data', template='advanced_report_builder/fields/query_builder.html'))
+        fields.append(FieldEx('query_data', template='advanced_report_builder/query_builder.html'))
         return fields
 
     def form_valid(self, form):
@@ -325,11 +350,13 @@ class TableModal(QueryBuilderModalBase):
 
 class FieldForm(CrispyForm):
 
+    def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
+        return StrictButton(button_text, onclick=f'save_modal_{ self.form_id }()', css_class=css_class, **kwargs)
+
     def get_django_field(self):
         data = json.loads(base64.b64decode(self.slug['data']))
         report_type = get_object_or_404(ReportType, pk=self.slug['report_type_id'])
         base_model = report_type.content_type.model_class()
-
         django_field, _, _ = get_django_field(base_modal=base_model, field=data['field'])
 
         return django_field
@@ -337,12 +364,9 @@ class FieldForm(CrispyForm):
     def setup_modal(self, *args, **kwargs):
         data = json.loads(base64.b64decode(self.slug['data']))
         django_field = self.get_django_field()
-
         self.fields['title'] = CharField(initial=data['title'])
-
         if django_field is not None:
             data_attr = split_attr(data)
-
             if isinstance(django_field, DATE_FIELDS):
                 self.fields['annotations_value'] = ChoiceField(choices=ANNOTATION_VALUE_CHOICES, required=False)
                 if 'annotations_value' in data_attr:
@@ -363,6 +387,10 @@ class FieldForm(CrispyForm):
                 self.fields['decimal_places'] = IntegerField()
                 self.fields['decimal_places'].initial = int(data_attr.get('decimal_places', 0))
                 self.fields['filter'] = CharField(required=False)
+                if 'filter' in data_attr:
+                    _filter = base64.urlsafe_b64decode(data_attr['filter'])
+                    _filter = _filter.decode('utf-8', 'ignore')
+                    self.fields['filter'].initial = _filter
 
         super().setup_modal(*args, **kwargs)
 
@@ -375,7 +403,6 @@ class FieldForm(CrispyForm):
                     attributes.append(f'annotations_value-{self.cleaned_data["annotations_value"]}')
                 if self.cleaned_data['date_format']:
                     attributes.append(f'date_format-{self.cleaned_data["date_format"]}')
-
             elif isinstance(django_field, NUMBER_FIELDS):
                 if self.cleaned_data['annotations_type']:
                     attributes.append(f'annotations_type-{self.cleaned_data["annotations_type"]}')
@@ -383,16 +410,19 @@ class FieldForm(CrispyForm):
                     attributes.append('show_totals-1')
                 if self.cleaned_data['decimal_places'] > 0:
                     attributes.append(f'decimal_places-{self.cleaned_data["decimal_places"]}')
-
+                if self.cleaned_data['filter']:
+                    _filter = self.cleaned_data['filter'].encode('utf-8', 'ignore')
+                    b64_filter = base64.urlsafe_b64encode(_filter).decode('utf-8', 'ignore')
+                    attributes.append(f'filter-{b64_filter}')
         if attributes:
             return '-'.join(attributes)
-
         return None
 
 
 class FieldModal(QueryBuilderModalBaseMixin, FormModal):
     form_class = FieldForm
     size = 'xl'
+    template_name = 'advanced_report_builder/datatable/fields/modal.html'
 
     @property
     def modal_title(self):
@@ -426,7 +456,7 @@ class FieldModal(QueryBuilderModalBaseMixin, FormModal):
                         'show_totals',
                         'decimal_places',
                         FieldEx('filter',
-                                template='advanced_report_builder/fields/single_query_builder.html',
+                                template='advanced_report_builder/datatable/fields/single_query_builder.html',
                                 report_type=report_type)
                         ]
 

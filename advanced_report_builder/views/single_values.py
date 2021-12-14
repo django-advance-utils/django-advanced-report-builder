@@ -351,13 +351,13 @@ class SingleValueModal(QueryBuilderModalBase):
                 'numerator',
                 'field',
                 FieldEx('extra_query_data',
-                        template='advanced_report_builder/fields/query_builder.html',
+                        template='advanced_report_builder/query_builder.html',
                         ),
                 'tile_colour',
                 'decimal_places',
 
                 FieldEx('query_data',
-                        template='advanced_report_builder/fields/query_builder.html')
+                        template='advanced_report_builder/query_builder.html')
                 )
 
     def select2_field(self, **kwargs):
