@@ -443,7 +443,10 @@ class FieldModal(QueryBuilderModalBaseMixin, FormModal):
         self.add_command({'function': 'update_selection'})
         return self.command_response('close')
 
-    def form_setup(self, _form, *_args, **_kwargs):
+    def form_setup(self, form, *_args, **_kwargs):
+        form.add_trigger('annotations_type', 'onchange', [
+            {'selector': '#div_id_filter', 'values': {'': 'hide'}, 'default': 'show'}])
+
         data = json.loads(base64.b64decode(self.slug['data']))
         report_type = get_object_or_404(ReportType, pk=self.slug['report_type_id'])
         base_model = report_type.content_type.model_class()
@@ -465,6 +468,3 @@ class FieldModal(QueryBuilderModalBaseMixin, FormModal):
         query_builder_filters = self.get_query_builder_report_type_field(report_type_id=report_type_id)
         field_auto_id = kwargs['field_auto_id'][0]
         return self.command_response(f'query_builder_{field_auto_id}', data=json.dumps(query_builder_filters))
-
-
-

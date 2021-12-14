@@ -126,7 +126,7 @@ DISPLAY_OPTION_3_PER_ROW = 3
 
 
 DISPLAY_OPTION_CHOICES = [
-        (DISPLAY_OPTION_NONE, 'None/Default'),
+    (DISPLAY_OPTION_NONE, 'None/Default'),
     (DISPLAY_OPTION_1_PER_ROW, '1 Report per Row'),
     (DISPLAY_OPTION_2_PER_ROW, '2 Reports per Row'),
     (DISPLAY_OPTION_3_PER_ROW, '3 Reports per Row'),
