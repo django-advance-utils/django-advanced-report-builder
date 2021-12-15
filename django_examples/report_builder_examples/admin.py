@@ -1,5 +1,8 @@
 from django.contrib import admin
 from report_builder_examples.models import Company, Person, Tags, Sector, Tally, Payment
+from django.contrib.auth.admin import UserAdmin
+
+from report_builder_examples.models import UserProfile
 
 
 @admin.register(Sector)
@@ -48,4 +51,8 @@ class PaymentAdmin(admin.ModelAdmin):
     list_display = ('date',
                     'company',
                     'amount',
-                    'received')
+                    'received',
+                    'user_profile')
+
+
+admin.site.register(UserProfile, UserAdmin)

@@ -60,6 +60,8 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'django_examples.urls'
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
+AUTH_USER_MODEL = 'report_builder_examples.UserProfile'
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',

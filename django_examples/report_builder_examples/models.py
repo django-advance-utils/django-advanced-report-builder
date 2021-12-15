@@ -1,3 +1,4 @@
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Count
 from django_datatables.columns import ColumnLink, DatatableColumn, ChoiceColumn, CurrencyPenceColumn
@@ -6,6 +7,15 @@ from time_stamped_model.models import TimeStampedModel
 
 from advanced_report_builder.models import Report
 from advanced_report_builder.report_builder import ReportBuilderFields
+
+
+class UserProfile(AbstractUser):
+    class ReportBuilder(ReportBuilderFields):
+        colour = '#606440'
+        title = 'Users'
+        fields = ['first_name',
+                  'last_name',
+                  'username']
 
 
 class Sector(TimeStampedModel):
@@ -136,6 +146,7 @@ class Payment(TimeStampedModel):
     amount = models.IntegerField()
     quantity = models.IntegerField()
     received = models.BooleanField(default=False)
+    user_profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE, null=True, blank=True)
 
     class Datatable(DatatableModel):
         currency_amount = CurrencyPenceColumn(column_name='currency_amount', field='amount')
@@ -149,4 +160,8 @@ class Payment(TimeStampedModel):
                   'received']
         includes = [{'field': 'company',
                      'title': 'Company',
-                     'model': 'report_builder_examples.Company.ReportBuilder'}]
+                     'model': 'report_builder_examples.Company.ReportBuilder'},
+                    {'field': 'user_profile',
+                     'title': 'User',
+                     'model': 'report_builder_examples.UserProfile.ReportBuilder'},
+                    ]
