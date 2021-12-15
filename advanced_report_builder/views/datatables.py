@@ -6,6 +6,7 @@ from ajax_helpers.mixins import AjaxHelpers
 from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Div
 from django.apps import apps
+from django.db.models import Q
 from django.forms import CharField, ChoiceField, BooleanField, IntegerField, ModelChoiceField
 from django.shortcuts import get_object_or_404
 from django_datatables.datatables import DatatableView, ColumnInitialisor
@@ -51,8 +52,8 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         else:
             table_id = f'table_{self.table_report.id}'
 
-        base_model = self.table_report.get_base_modal()
-        self.add_table(table_id, model=base_model)
+        self.base_model = self.table_report.get_base_modal()
+        self.add_table(table_id, model=self.base_model)
         return super().dispatch(request, *args, **kwargs)
 
     def get_date_field(self, index, table_field, fields):
@@ -79,8 +80,8 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         fields.append(field)
         return field_name
 
-    def get_number_field(self, index, table_field, fields, totals, col_type_override):
-        data_attr = split_attr(table_field)
+    def get_number_field(self, index, table_field, data_attr, fields, totals, col_type_override,
+                         extra_filter=None, title_suffix=''):
         field_name = table_field['field']
         css_class = None
 
@@ -90,11 +91,11 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
             b64_filter = data_attr.get('filter')
             if b64_filter:
                 _filter = base64.urlsafe_b64decode(b64_filter).decode('utf-8', 'ignore')
-                annotation_filter = self.process_filters(search_filter_data=_filter)
-
+                annotation_filter = self.process_filters(search_filter_data=_filter, extra_filter=extra_filter)
+        title = title_suffix + ' ' + table_field.get('title')
         if col_type_override:
             field = copy.deepcopy(col_type_override)
-            title = table_field.get('title')
+
             if annotations_type == 'count':
                 new_field_name = f'{annotations_type}_{field_name}_{index}'
                 number_function_kwargs = {}
@@ -129,7 +130,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
 
             fields.append(field)
         else:
-            number_function_kwargs = {'title': table_field.get('title')}
+            number_function_kwargs = {'title': title}
             decimal_places = data_attr.get('decimal_places')
 
             if decimal_places:
@@ -159,10 +160,18 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
 
         return field_name
 
+    @staticmethod
+    def _set_multiple_title(database_values, value_prefix, fields, text):
+        results = {}
+        for field in fields:
+            value = database_values[value_prefix + '__' + field]
+            results[field] = value
+        return text.format(**results)
+
     def setup_table(self, table):
         table.extra_filters = self.extra_filters
         table_fields = json.loads(self.table_report.table_fields)
-
+        field_name = None
         fields = []
         totals = {}
         base_modal = self.table_report.get_base_modal()
@@ -178,11 +187,43 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
                                                  fields=fields)
 
             elif isinstance(django_field, NUMBER_FIELDS):
-                field_name = self.get_number_field(index=index,
-                                                   table_field=table_field,
-                                                   fields=fields,
-                                                   totals=totals,
-                                                   col_type_override=col_type_override)
+                data_attr = split_attr(table_field)
+
+                if data_attr.get('annotations_type') and data_attr.get('multiple_columns') == '1':
+                    query = self.extra_filters(query=table.model.objects)
+                    multiple_column_field = data_attr.get('multiple_column_field')
+                    report_builder_fields = getattr(self.base_model,
+                                                    self.table_report.report_type.report_builder_class_name, None)
+
+                    report_builder_fields = self._get_report_builder_fields(field_str=multiple_column_field,
+                                                                            report_builder_fields=report_builder_fields)
+                    _fields = report_builder_fields.default_multiple_column_fields
+                    default_multiple_column_fields = [multiple_column_field + '__' + x for x in _fields]
+                    results = query.distinct(multiple_column_field).values(multiple_column_field,
+                                                                           *default_multiple_column_fields)
+
+                    for multiple_index, result in enumerate(results):
+                        suffix = self._set_multiple_title(database_values=result,
+                                                          value_prefix=multiple_column_field,
+                                                          fields=_fields,
+                                                          text=report_builder_fields.default_multiple_column_text)
+                        extra_filter = Q((multiple_column_field, result[multiple_column_field]))
+
+                        field_name = self.get_number_field(index=f'{index}_{multiple_index}',
+                                                           data_attr=data_attr,
+                                                           table_field=table_field,
+                                                           fields=fields,
+                                                           totals=totals,
+                                                           col_type_override=col_type_override,
+                                                           extra_filter=extra_filter,
+                                                           title_suffix=suffix)
+                else:
+                    field_name = self.get_number_field(index=index,
+                                                       data_attr=data_attr,
+                                                       table_field=table_field,
+                                                       fields=fields,
+                                                       totals=totals,
+                                                       col_type_override=col_type_override)
             else:
                 field_attr = {}
                 if 'title' in table_field:
@@ -352,32 +393,39 @@ class TableModal(QueryBuilderModalBase):
 
 class FieldForm(CrispyForm):
 
+    def __init__(self, *args, **kwargs):
+        self.django_field = None
+        super().__init__(*args, **kwargs)
+
     def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
-        return StrictButton(button_text, onclick=f'save_modal_{self.form_id}()', css_class=css_class, **kwargs)
+        if isinstance(self.django_field, NUMBER_FIELDS):
+            return StrictButton(button_text, onclick=f'save_modal_{self.form_id}()', css_class=css_class, **kwargs)
+        else:
+            return super().submit_button(css_class, button_text, **kwargs)
 
     def get_report_type_details(self):
         data = json.loads(base64.b64decode(self.slug['data']))
         report_type = get_object_or_404(ReportType, pk=self.slug['report_type_id'])
         base_model = report_type.content_type.model_class()
-        django_field, _, _ = get_django_field(base_modal=base_model, field=data['field'])
+        self.django_field, _, _ = get_django_field(base_modal=base_model, field=data['field'])
 
-        return report_type, base_model, django_field
+        return report_type, base_model
 
     def setup_modal(self, *args, **kwargs):
         data = json.loads(base64.b64decode(self.slug['data']))
-        report_type, base_model, django_field = self.get_report_type_details()
+        report_type, base_model = self.get_report_type_details()
 
         self.fields['title'] = CharField(initial=data['title'])
-        if django_field is not None:
+        if self.django_field is not None:
             data_attr = split_attr(data)
-            if isinstance(django_field, DATE_FIELDS):
+            if isinstance(self.django_field, DATE_FIELDS):
                 self.fields['annotations_value'] = ChoiceField(choices=ANNOTATION_VALUE_CHOICES, required=False)
                 if 'annotations_value' in data_attr:
                     self.fields['annotations_value'].initial = data_attr['annotations_value']
                 self.fields['date_format'] = ChoiceField(choices=DATE_FORMAT_TYPES, required=False)
                 if 'date_format' in data_attr:
                     self.fields['date_format'].initial = data_attr['date_format']
-            elif isinstance(django_field, NUMBER_FIELDS):
+            elif isinstance(self.django_field, NUMBER_FIELDS):
                 self.fields['annotations_type'] = ChoiceField(choices=ANNOTATIONS_CHOICES, required=False)
                 if 'annotations_type' in data_attr:
                     self.fields['annotations_type'].initial = data_attr['annotations_type']
@@ -387,7 +435,6 @@ class FieldForm(CrispyForm):
                 self.fields['decimal_places'] = IntegerField()
                 self.fields['decimal_places'].initial = int(data_attr.get('decimal_places', 0))
                 self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
-
 
                 self.fields['filter'] = CharField(required=False)
 
@@ -415,14 +462,14 @@ class FieldForm(CrispyForm):
 
     def get_additional_attributes(self):
         attributes = []
-        _, _, django_field = self.get_report_type_details()
-        if django_field is not None:
-            if isinstance(django_field, DATE_FIELDS):
+        self.get_report_type_details()
+        if self.django_field is not None:
+            if isinstance(self.django_field, DATE_FIELDS):
                 if self.cleaned_data['annotations_value']:
                     attributes.append(f'annotations_value-{self.cleaned_data["annotations_value"]}')
                 if self.cleaned_data['date_format']:
                     attributes.append(f'date_format-{self.cleaned_data["date_format"]}')
-            elif isinstance(django_field, NUMBER_FIELDS):
+            elif isinstance(self.django_field, NUMBER_FIELDS):
                 if self.cleaned_data['annotations_type']:
                     attributes.append(f'annotations_type-{self.cleaned_data["annotations_type"]}')
                 if self.cleaned_data['show_totals'] and self.cleaned_data["show_totals"]:
@@ -452,7 +499,7 @@ class FieldForm(CrispyForm):
             app_label, model, report_builder_fields_str = include['model'].split('.')
             new_model = apps.get_model(app_label, model)
             new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
-            fields.append((prefix + include['field'] + '_id', title_prefix + include['title']))
+            fields.append((prefix + include['field'], title_prefix + include['title']))
 
             self._get_query_builder_foreign_key_fields(report_builder_fields=new_report_builder_fields,
                                                        fields=fields,

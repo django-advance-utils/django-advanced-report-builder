@@ -16,6 +16,9 @@ class UserProfile(AbstractUser):
         fields = ['first_name',
                   'last_name',
                   'username']
+        default_multiple_column_text = '{first_name} {last_name}'
+        default_multiple_column_fields = ['first_name',
+                                          'last_name']
 
 
 class Sector(TimeStampedModel):

@@ -2,6 +2,7 @@ import json
 import operator
 from functools import reduce
 
+from django.apps import apps
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 
@@ -17,6 +18,7 @@ class FilterQueryMixin:
         self.dashboard_report = None
         self.enable_edit = None
         self.slug = None
+        self.base_model = None
         super().__init__(*args, **kwargs)
 
     def process_query_filters(self, query, search_filter_data):
@@ -25,17 +27,19 @@ class FilterQueryMixin:
             return query.filter(result)
         return query
 
-    def process_filters(self, search_filter_data):
+    def process_filters(self, search_filter_data, extra_filter=None):
         if not search_filter_data:
             return []
 
         query_data = json.loads(search_filter_data)
         query_list = self._process_group(query_data=query_data)
+        if extra_filter:
+            query_list.append(extra_filter)
+
         reduce_by = self._format_group_conditions(query_data['condition'])
 
         if query_list:
             return reduce(reduce_by, query_list)
-
         return []
 
     @staticmethod
@@ -157,3 +161,18 @@ class FilterQueryMixin:
             return self.dashboard_report.name_override
         else:
             return self.report.name
+
+    def _get_report_builder_fields(self, field_str, report_builder_fields):
+        for include in report_builder_fields.includes:
+            app_label, model, report_builder_fields_str = include['model'].split('.')
+            new_model = apps.get_model(app_label, model)
+            new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
+
+            if field_str == include['field']:
+                return new_report_builder_fields
+
+            result = self._get_report_builder_fields(field_str=field_str,
+                                                     report_builder_fields=new_report_builder_fields)
+            if result:
+                return result
+        return None

@@ -51,6 +51,7 @@ class PaymentAdmin(admin.ModelAdmin):
     list_display = ('date',
                     'company',
                     'amount',
+                    'quantity',
                     'received',
                     'user_profile')
 
