@@ -18,6 +18,7 @@ from django_modals.modals import FormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.widgets import Toggle
 
+from advanced_report_builder.checkbox import RBToggle
 from advanced_report_builder.columns import ReportBuilderDateColumn, ReportBuilderNumberColumn
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, \
@@ -29,7 +30,7 @@ from advanced_report_builder.models import TableReport, ReportQuery
 from advanced_report_builder.utils import split_attr, get_django_field
 from advanced_report_builder.utils import split_slug
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase, QueryBuilderModalBaseMixin
-from report_builder_examples.checkbox import RBToggle
+from report_builder_examples.report_overrides import CustomDateColumn
 
 
 class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
@@ -181,7 +182,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
 
             django_field, col_type_override, _ = get_django_field(base_modal=base_modal, field=field)
 
-            if isinstance(django_field, DATE_FIELDS):
+            if isinstance(django_field, DATE_FIELDS) or isinstance(django_field, CustomDateColumn):
                 field_name = self.get_date_field(index=index,
                                                  table_field=table_field,
                                                  fields=fields)
@@ -387,8 +388,7 @@ class TableModal(QueryBuilderModalBase):
                          fields=fields,
                          tables=tables,
                          report_builder_fields=report_builder_fields)
-        return self.command_response('report_fields', data=json.dumps({'fields': fields,
-                                                                       'tables': tables}))
+        return self.command_response('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
 
 
 class FieldForm(CrispyForm):
