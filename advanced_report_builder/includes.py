@@ -2,9 +2,6 @@
 from ajax_helpers.html_include import SourceBase
 
 
-class ChartJS(SourceBase):
-    cdn_path = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.min.js'
-
 
 class Dot(SourceBase):
     static_path = '/advanced_report_builder/dot/'
@@ -27,9 +24,14 @@ class DashboardInclude(SourceBase):
     js_filename = 'dashboard.js'
 
 
+class ChartJS(SourceBase):
+    static_path = 'libraries/chart-js/'
+    js_filename = ['chart.min.js',
+                   'chartjs-adapter-moment.min.js',  # this does require moment however it's already included
+                   'chartjs-plugin-datalabels.min.js']
+
+
 packages = {
-    'query_builder': [JQueryExtendext, Dot, QueryBuilder],
+    'query_builder': [ChartJS, JQueryExtendext, Dot, QueryBuilder],
     'dashboard': [DashboardInclude],
 }
-
-
