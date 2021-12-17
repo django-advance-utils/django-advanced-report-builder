@@ -8,7 +8,6 @@ from time_stamped_model.models import TimeStampedModel
 
 from advanced_report_builder.globals import DISPLAY_OPTION_CHOICES, DISPLAY_OPTION_2_PER_ROW, DISPLAY_OPTION_NONE, \
     DISPLAY_OPTION_CLASSES
-from advanced_report_builder.variable_date import VariableDate
 
 
 class ReportType(TimeStampedModel):
@@ -152,14 +151,14 @@ class BarChartReport(Report):
         (X_AXIS_SCALE_DAILY, 'Daily')
     )
 
-    Y_AXIS_VALUE_TYPE_COUNT = 1
-    Y_AXIS_VALUE_TYPE_SUM = 2
-    Y_AXIS_VALUE_TYPE_AVERAGE = 3
+    AXIS_VALUE_TYPE_COUNT = 1
+    AXIS_VALUE_TYPE_SUM = 2
+    AXIS_VALUE_TYPE_AVERAGE = 3
 
-    Y_AXIS_VALUE_TYPE_CHOICES = (
-        (Y_AXIS_VALUE_TYPE_COUNT, 'Count'),
-        (Y_AXIS_VALUE_TYPE_SUM, 'Sum'),
-        (Y_AXIS_VALUE_TYPE_AVERAGE, 'Average')
+    AXIS_VALUE_TYPE_CHOICES = (
+        (AXIS_VALUE_TYPE_COUNT, 'Count'),
+        (AXIS_VALUE_TYPE_SUM, 'Sum'),
+        (AXIS_VALUE_TYPE_AVERAGE, 'Average')
     )
 
     BAR_CHART_ORIENTATION_VERTICAL = 'bar'
@@ -170,19 +169,14 @@ class BarChartReport(Report):
         (BAR_CHART_ORIENTATION_HORIZONTAL, 'Horizontal')
     )
 
-    x_axis_scale = models.PositiveSmallIntegerField(choices=X_AXIS_SCALE_OPTIONS, default=X_AXIS_SCALE_YEARLY,
-                                                    null=True, blank=True)
-    x_axis_data = models.CharField(max_length=200, blank=True, null=True)
-    x_axis_date_range = models.PositiveSmallIntegerField(default=VariableDate.RANGE_TYPE_TODAY,
-                                                         choices=VariableDate.RANGE_TYPE_CHOICES)
+    axis_scale = models.PositiveSmallIntegerField(choices=X_AXIS_SCALE_OPTIONS, default=X_AXIS_SCALE_YEARLY,
+                                                  null=True, blank=True)
+    date_field = models.CharField(max_length=200, blank=True, null=True)
+    axis_value_type = models.PositiveSmallIntegerField(choices=AXIS_VALUE_TYPE_CHOICES,
+                                                       default=AXIS_VALUE_TYPE_COUNT, null=True, blank=True)
+    fields = models.TextField(null=True, blank=True)
     x_label = models.CharField(max_length=200, blank=True, null=True)
-
-    y_axis_value = models.CharField(max_length=200, blank=True, null=True)
-    y_axis_value_type = models.PositiveSmallIntegerField(choices=Y_AXIS_VALUE_TYPE_CHOICES,
-                                                         default=Y_AXIS_VALUE_TYPE_COUNT, null=True, blank=True)
     y_label = models.CharField(max_length=200, blank=True, null=True)
-    positive_bar_colour = models.CharField(max_length=10, default='801c70')
-    negative_bar_colour = models.CharField(max_length=10, default='801c70')
 
     bar_chart_orientation = models.CharField(choices=BAR_CHART_ORIENTATION_CHOICES,
                                              default=BAR_CHART_ORIENTATION_VERTICAL,

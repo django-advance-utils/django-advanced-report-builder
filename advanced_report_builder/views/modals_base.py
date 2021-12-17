@@ -19,12 +19,21 @@ class QueryBuilderModelForm(ModelCrispyForm):
 
 class QueryBuilderModalBaseMixin:
 
-    def get_query_builder_report_type_field(self, report_type_id):
+    @staticmethod
+    def get_report_builder_fields(report_type_id):
         if not report_type_id:
-            return self.command_response()
+            return None, None
+
         report_type = get_object_or_404(ReportType, pk=report_type_id)
         base_model = report_type.content_type.model_class()
         report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
+        return report_builder_fields, base_model
+
+    def get_query_builder_report_type_field(self, report_type_id):
+
+        report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=report_type_id)
+        if report_builder_fields is None:
+            return self.command_response()
         query_builder_filters = []
         self._get_query_builder_fields(base_model=base_model,
                                        query_builder_filters=query_builder_filters,
@@ -81,7 +90,7 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
 
             return self.command_response(f'query_builder_{field_auto_id}', data=json.dumps(query_builder_filters))
         else:
-            return self.command_response(f'query_builder_{field_auto_id}', data='[]')
+            return self.command_response()
 
     def add_query_data(self, form, include_extra_query=True):
         form.fields['query_data'] = CharField(required=False, label='Filter')

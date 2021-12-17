@@ -377,10 +377,7 @@ class TableModal(QueryBuilderModalBase):
 
     def ajax_get_fields(self, **kwargs):
         report_type_id = kwargs['report_type'][0]
-
-        report_type = get_object_or_404(ReportType, pk=report_type_id)
-        base_model = report_type.content_type.model_class()
-        report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
+        report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=report_type_id)
         fields = []
         tables = []
         self._get_fields(base_model=base_model,
@@ -404,6 +401,7 @@ class FieldForm(CrispyForm):
 
     def get_report_type_details(self):
         data = json.loads(base64.b64decode(self.slug['data']))
+
         report_type = get_object_or_404(ReportType, pk=self.slug['report_type_id'])
         base_model = report_type.content_type.model_class()
         self.django_field, _, _ = get_django_field(base_modal=base_model, field=data['field'])
@@ -533,9 +531,7 @@ class FieldModal(QueryBuilderModalBaseMixin, FormModal):
     def form_setup(self, form, *_args, **_kwargs):
 
         data = json.loads(base64.b64decode(self.slug['data']))
-        report_type = get_object_or_404(ReportType, pk=self.slug['report_type_id'])
-        base_model = report_type.content_type.model_class()
-
+        report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=self.slug['report_type_id'])
         django_field, _, _ = get_django_field(base_modal=base_model, field=data['field'])
         if django_field is not None:
             if isinstance(django_field, NUMBER_FIELDS):

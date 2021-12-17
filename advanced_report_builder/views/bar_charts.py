@@ -1,12 +1,11 @@
 import copy
+import json
 
 from ajax_helpers.mixins import AjaxHelpers
 from django.apps import apps
-from django.core.exceptions import ValidationError
 from django.db.models import Count, Sum
 from django.db.models.functions import Coalesce
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView
 from django_datatables.datatables import HorizontalTable
 from django_menus.menu import MenuMixin, MenuItem
@@ -17,8 +16,8 @@ from django_modals.widgets.select2 import Select2
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.filter_query import FilterQueryMixin
-from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_FUNCTIONS, BOOLEAN_FIELD
-from advanced_report_builder.models import SingleValueReport, ReportType, ReportQuery, BarChartReport
+from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_FUNCTIONS, BOOLEAN_FIELD, DATE_FIELDS
+from advanced_report_builder.models import SingleValueReport, BarChartReport
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_slug, get_django_field
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
@@ -29,14 +28,14 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
     template_name = 'advanced_report_builder/bar_charts/report.html'
 
     def __init__(self, *args, **kwargs):
-        self.single_value_report = None
+        self.bar_chart_report = None
         self.show_toolbar = False
         super().__init__(*args, **kwargs)
 
     def dispatch(self, request, *args, **kwargs):
         self.slug = split_slug(kwargs.get('slug'))
         self.report = kwargs.get('report')
-        self.single_value_report = self.report.singlevaluereport
+        self.bar_chart_report = self.report.barchartreport
         self.enable_edit = kwargs.get('enable_edit')
         self.dashboard_report = kwargs.get('dashboard_report')
         if self.enable_edit or (self.dashboard_report and not self.dashboard_report.top) or not self.dashboard_report:
@@ -44,7 +43,7 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         return super().dispatch(request, *args, **kwargs)
 
     def extra_filters(self, query):
-        report_query = self.get_report_query(report=self.single_value_report)
+        report_query = self.get_report_query(report=self.bar_chart_report)
         if not report_query:
             return query
 
@@ -219,35 +218,35 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
     def process_query_results(self):
         single_value_type = self.single_value_report.single_value_type
         fields = []
-        if single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_COUNT:
-            self._get_count(fields=fields)
-        elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_SUM:
-            self._process_aggregations(fields=fields, aggregations_type='sum')
-        elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_COUNT_AND_SUM:
-            self._get_count(fields=fields)
-            self._process_aggregations(fields=fields, aggregations_type='sum')
-        elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE:
-            self._process_aggregations(fields=fields, aggregations_type='avg')
-        elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_PERCENT:
-            self._process_percentage(fields=fields)
-        elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT:
-            self._process_percentage_from_count(fields=fields)
+        # if single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_COUNT:
+        #     self._get_count(fields=fields)
+        # elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_SUM:
+        #     self._process_aggregations(fields=fields, aggregations_type='sum')
+        # elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_COUNT_AND_SUM:
+        #     self._get_count(fields=fields)
+        #     self._process_aggregations(fields=fields, aggregations_type='sum')
+        # elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE:
+        #     self._process_aggregations(fields=fields, aggregations_type='avg')
+        # elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_PERCENT:
+        #     self._process_percentage(fields=fields)
+        # elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT:
+        #     self._process_percentage_from_count(fields=fields)
         return fields
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        base_modal = self.single_value_report.get_base_modal()
-
-        table = HorizontalTable(model=base_modal)
-        table.datatable_template = 'advanced_report_builder/bar_charts/middle.html'
-        table.extra_filters = self.extra_filters
-        fields = self.process_query_results()
-        table.add_columns(
-            *fields
-        )
-        context['show_toolbar'] = self.show_toolbar
-        context['datatable'] = table
-        context['single_value_report'] = self.single_value_report
+        # base_modal = self.single_value_report.get_base_modal()
+        #
+        # table = HorizontalTable(model=base_modal)
+        # table.datatable_template = 'advanced_report_builder/bar_charts/middle.html'
+        # table.extra_filters = self.extra_filters
+        # fields = self.process_query_results()
+        # table.add_columns(
+        #     *fields
+        # )
+        # context['show_toolbar'] = self.show_toolbar
+        # context['datatable'] = table
+        # context['single_value_report'] = self.single_value_report
         context['title'] = self.get_title()
         return context
 
@@ -278,12 +277,12 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
 
     def pod_report_menu(self):
 
-        query_id = self.slug.get(f'query{self.single_value_report.id}')
+        query_id = self.slug.get(f'query{self.bar_chart_report.id}')
         slug_str = ''
         if query_id:
             slug_str = f'-query_id-{query_id}'
 
-        return [MenuItem(f'advanced_report_builder:single_value_modal,pk-{self.single_value_report.id}{slug_str}',
+        return [MenuItem(f'advanced_report_builder:bar_chart_modal,pk-{self.bar_chart_report.id}{slug_str}',
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
 
@@ -303,8 +302,13 @@ class BarChartModal(QueryBuilderModalBase):
     form_fields = ['name',
                    'report_type',
                    ('bar_chart_orientation', {'label': 'Orientation'}),
-                   'positive_bar_colour',
-                   'negative_bar_colour',
+                   'axis_value_type',
+                   'axis_scale',
+                   'date_field',
+                   'fields',
+                   'x_label',
+                   'y_label',
+                   'show_totals',
                    ]
 
     def form_setup(self, form, *_args, **_kwargs):
@@ -344,58 +348,37 @@ class BarChartModal(QueryBuilderModalBase):
         #     form.fields['numerator'].widget = Select2(attrs={'ajax': True})
         #     form.fields['numerator'].widget.select_data = fields
         #
+
+        date_fields = []
+        if form.instance.date_field:
+
+            form.fields['fields'].initial = form.instance.fields
+
+            base_model = form.instance.report_type.content_type.model_class()
+            report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
+
+            self._get_date_fields(base_model=base_model,
+                                  fields=date_fields,
+                                  report_builder_fields=report_builder_fields,
+                                  selected_field_id=form.instance.fields)
+
+        form.fields['date_field'].widget = Select2(attrs={'ajax': True})
+        form.fields['date_field'].widget.select_data = date_fields
+
         self.add_query_data(form, include_extra_query=True)
         return ('name',
                 'report_type',
                 'bar_chart_orientation',
-                'positive_bar_colour',
-                'negative_bar_colour',
+                'axis_scale',
+                'axis_value_type',
+                'date_field',
+                FieldEx('fields', template='advanced_report_builder/bar_charts/fields/select_column.html'),
+                'x_label',
+                'y_label',
                 'show_totals',
                 FieldEx('query_data',
                         template='advanced_report_builder/query_builder.html'),
-
-
                 )
-    #
-    # def select2_field(self, **kwargs):
-    #     fields = []
-    #     if kwargs['report_type'] != '':
-    #         report_type = get_object_or_404(ReportType, pk=kwargs['report_type'])
-    #         base_model = report_type.content_type.model_class()
-    #         report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
-    #         fields = []
-    #         self._get_fields(base_model=base_model,
-    #                          fields=fields,
-    #                          report_builder_fields=report_builder_fields)
-    #
-    #     return JsonResponse({'results': fields})
-    #
-    # def select2_numerator(self, **kwargs):
-    #     return self.select2_field(**kwargs)
-    #
-    # def _get_fields(self, base_model, fields, report_builder_fields,
-    #                 prefix='', title_prefix='', selected_field_id=None):
-    #
-    #     for report_builder_field in report_builder_fields.fields:
-    #
-    #         django_field, _, columns = get_django_field(base_modal=base_model, field=report_builder_field)
-    #
-    #         for column in columns:
-    #             if isinstance(django_field, NUMBER_FIELDS) or isinstance(django_field, BOOLEAN_FIELD):
-    #                 full_id = prefix + column.column_name
-    #                 if selected_field_id is None or selected_field_id == full_id:
-    #                     fields.append({'id': full_id,
-    #                                    'text': title_prefix + column.title})
-    #
-    #     for include in report_builder_fields.includes:
-    #         app_label, model, report_builder_fields_str = include['model'].split('.')
-    #         new_model = apps.get_model(app_label, model)
-    #         new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
-    #         self._get_fields(base_model=new_model,
-    #                          fields=fields,
-    #                          report_builder_fields=new_report_builder_fields,
-    #                          prefix=f"{include['field']}__",
-    #                          title_prefix=include['title'] + ' -> ')
     #
     # def form_valid(self, form):
     #     single_value_report = form.save()
@@ -420,3 +403,81 @@ class BarChartModal(QueryBuilderModalBase):
     #                                                   SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT] and
     #             not cleaned_data['field']):
     #         raise ValidationError("Please select a field")
+
+    def select2_date_field(self, **kwargs):
+        fields = []
+        if kwargs['report_type'] != '':
+            report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=kwargs['report_type'])
+            fields = []
+            self._get_date_fields(base_model=base_model,
+                                  fields=fields,
+                                  report_builder_fields=report_builder_fields)
+
+        return JsonResponse({'results': fields})
+
+    def _get_date_fields(self, base_model, fields, report_builder_fields,
+                         prefix='', title_prefix='', selected_field_id=None):
+
+        for report_builder_field in report_builder_fields.fields:
+            django_field, _, columns = get_django_field(base_modal=base_model, field=report_builder_field)
+            for column in columns:
+                if isinstance(django_field, DATE_FIELDS):
+                    full_id = prefix + column.column_name
+                    if selected_field_id is None or selected_field_id == full_id:
+                        fields.append({'id': full_id,
+                                       'text': title_prefix + column.title})
+
+        for include in report_builder_fields.includes:
+            app_label, model, report_builder_fields_str = include['model'].split('.')
+            new_model = apps.get_model(app_label, model)
+            new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
+            self._get_date_fields(base_model=new_model,
+                                  fields=fields,
+                                  report_builder_fields=new_report_builder_fields,
+                                  prefix=f"{include['field']}__",
+                                  title_prefix=include['title'] + ' -> ')
+
+    def _get_fields(self, base_model, fields, tables, report_builder_fields,
+                    prefix='', title_prefix='', title=None, colour=None):
+        if title is None:
+            title = report_builder_fields.title
+        if colour is None:
+            colour = report_builder_fields.colour
+
+        tables.append({'name': title,
+                       'colour': colour})
+
+        for report_builder_field in report_builder_fields.fields:
+            django_field, _, columns = get_django_field(base_modal=base_model, field=report_builder_field)
+            for column in columns:
+                if isinstance(django_field, NUMBER_FIELDS):
+                    fields.append({'field': prefix + column.column_name,
+                                   'label': title_prefix + column.title,
+                                   'colour': report_builder_fields.colour})
+
+        for include in report_builder_fields.includes:
+            app_label, model, report_builder_fields_str = include['model'].split('.')
+            new_model = apps.get_model(app_label, model)
+            new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
+            self._get_fields(base_model=new_model,
+                             fields=fields,
+                             tables=tables,
+                             report_builder_fields=new_report_builder_fields,
+                             prefix=f"{include['field']}__",
+                             title_prefix=include['title'] + ' -> ',
+                             title=include.get('title'),
+                             colour=include.get('colour'))
+
+    def ajax_get_fields(self, **kwargs):
+        report_type_id = kwargs['report_type'][0]
+        report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=report_type_id)
+
+        fields = []
+        tables = []
+        self._get_fields(base_model=base_model,
+                         fields=fields,
+                         tables=tables,
+                         report_builder_fields=report_builder_fields)
+        return self.command_response('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
+
+

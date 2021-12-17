@@ -363,9 +363,7 @@ class SingleValueModal(QueryBuilderModalBase):
     def select2_field(self, **kwargs):
         fields = []
         if kwargs['report_type'] != '':
-            report_type = get_object_or_404(ReportType, pk=kwargs['report_type'])
-            base_model = report_type.content_type.model_class()
-            report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
+            report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=kwargs['report_type'])
             fields = []
             self._get_fields(base_model=base_model,
                              fields=fields,
