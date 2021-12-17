@@ -5,6 +5,7 @@ from django_menus.menu import MenuMixin
 
 from advanced_report_builder.models import Report
 from advanced_report_builder.utils import split_slug
+from advanced_report_builder.views.bar_charts import BarChartView
 from advanced_report_builder.views.datatables import TableView
 from advanced_report_builder.views.single_values import SingleValueView
 
@@ -12,7 +13,9 @@ from advanced_report_builder.views.single_values import SingleValueView
 class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
     model = Report
     views = {'tablereport': TableView,
-             'singlevaluereport': SingleValueView}
+             'singlevaluereport': SingleValueView,
+             'barchartreport': BarChartView,
+             }
     views_overrides = {}
 
     def __init__(self, *args, **kwargs):

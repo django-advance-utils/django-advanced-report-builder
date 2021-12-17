@@ -1,5 +1,6 @@
 from django.urls import path
 
+from advanced_report_builder.views.bar_charts import BarChartModal
 from advanced_report_builder.views.dashboard import DashboardReportModal, DashboardModal, DashboardAddReportModal
 from advanced_report_builder.views.datatables import TableModal, FieldModal
 from advanced_report_builder.views.single_values import SingleValueModal
@@ -12,6 +13,8 @@ urlpatterns = [
     path('table/modal/field/<str:slug>/', FieldModal.as_view(), name='field_modal'),
 
     path('single-value/modal/<str:slug>/', SingleValueModal.as_view(), name='single_value_modal'),
+
+    path('bar-chart/modal/<str:slug>/', BarChartModal.as_view(), name='bar_chart_modal'),
 
     path('dashboard/report/<str:slug>/', DashboardReportModal.as_view(), name='dashboard_report_modal'),
     path('dashboard/<str:slug>/', DashboardModal.as_view(), name='dashboard_modal'),

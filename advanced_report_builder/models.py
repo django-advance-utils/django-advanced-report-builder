@@ -8,6 +8,7 @@ from time_stamped_model.models import TimeStampedModel
 
 from advanced_report_builder.globals import DISPLAY_OPTION_CHOICES, DISPLAY_OPTION_2_PER_ROW, DISPLAY_OPTION_NONE, \
     DISPLAY_OPTION_CLASSES
+from advanced_report_builder.variable_date import VariableDate
 
 
 class ReportType(TimeStampedModel):
@@ -136,6 +137,60 @@ class SingleValueReport(Report):
     single_value_type = models.PositiveSmallIntegerField(choices=SINGLE_VALUE_TYPE_CHOICES,
                                                          default=SINGLE_VALUE_TYPE_COUNT)
     decimal_places = models.IntegerField(default=0)
+
+
+class BarChartReport(Report):
+    X_AXIS_SCALE_YEARLY = 0
+    X_AXIS_SCALE_MONTHLY = 1
+    X_AXIS_SCALE_WEEKLY = 2
+    X_AXIS_SCALE_DAILY = 3
+
+    X_AXIS_SCALE_OPTIONS = (
+        (X_AXIS_SCALE_YEARLY, 'Yearly'),
+        (X_AXIS_SCALE_MONTHLY, 'Monthly'),
+        (X_AXIS_SCALE_WEEKLY, 'Weekly'),
+        (X_AXIS_SCALE_DAILY, 'Daily')
+    )
+
+    Y_AXIS_VALUE_TYPE_COUNT = 1
+    Y_AXIS_VALUE_TYPE_SUM = 2
+    Y_AXIS_VALUE_TYPE_AVERAGE = 3
+
+    Y_AXIS_VALUE_TYPE_CHOICES = (
+        (Y_AXIS_VALUE_TYPE_COUNT, 'Count'),
+        (Y_AXIS_VALUE_TYPE_SUM, 'Sum'),
+        (Y_AXIS_VALUE_TYPE_AVERAGE, 'Average')
+    )
+
+    BAR_CHART_ORIENTATION_VERTICAL = 'bar'
+    BAR_CHART_ORIENTATION_HORIZONTAL = 'horizontalBar'
+
+    BAR_CHART_ORIENTATION_CHOICES = (
+        (BAR_CHART_ORIENTATION_VERTICAL, 'Vertical'),
+        (BAR_CHART_ORIENTATION_HORIZONTAL, 'Horizontal')
+    )
+
+    x_axis_scale = models.PositiveSmallIntegerField(choices=X_AXIS_SCALE_OPTIONS, default=X_AXIS_SCALE_YEARLY,
+                                                    null=True, blank=True)
+    x_axis_data = models.CharField(max_length=200, blank=True, null=True)
+    x_axis_date_range = models.PositiveSmallIntegerField(default=VariableDate.RANGE_TYPE_TODAY,
+                                                         choices=VariableDate.RANGE_TYPE_CHOICES)
+    x_label = models.CharField(max_length=200, blank=True, null=True)
+
+    y_axis_value = models.CharField(max_length=200, blank=True, null=True)
+    y_axis_value_type = models.PositiveSmallIntegerField(choices=Y_AXIS_VALUE_TYPE_CHOICES,
+                                                         default=Y_AXIS_VALUE_TYPE_COUNT, null=True, blank=True)
+    y_label = models.CharField(max_length=200, blank=True, null=True)
+    positive_bar_colour = models.CharField(max_length=10, default='801c70')
+    negative_bar_colour = models.CharField(max_length=10, default='801c70')
+
+    bar_chart_orientation = models.CharField(choices=BAR_CHART_ORIENTATION_CHOICES,
+                                             default=BAR_CHART_ORIENTATION_VERTICAL,
+                                             max_length=200)
+    show_totals = models.BooleanField(default=False)
+
+    def is_orientation_vertical(self):
+        return self.bar_chart_orientation == self.BAR_CHART_ORIENTATION_VERTICAL
 
 
 class Dashboard(TimeStampedModel):

@@ -7,6 +7,7 @@ from time_stamped_model.models import TimeStampedModel
 
 from advanced_report_builder.models import Report
 from advanced_report_builder.report_builder import ReportBuilderFields
+from report_builder_examples.report_overrides import CustomDateColumn
 
 
 class UserProfile(AbstractUser):
@@ -69,7 +70,8 @@ class Company(TimeStampedModel):
                   ('sector__name', {'title': 'Sector Name'}),
                   'collink_1',
                   'created',
-                  'modified']
+                  'modified',
+                  ]
 
     def __str__(self):
         return self.name
@@ -153,6 +155,8 @@ class Payment(TimeStampedModel):
 
     class Datatable(DatatableModel):
         currency_amount = CurrencyPenceColumn(column_name='currency_amount', field='amount')
+        created_field = CustomDateColumn(column_name='created_field', field='created', title='Created')
+        modified_field = CustomDateColumn(column_name='modified_field', field='modified', title='Modified')
 
     class ReportBuilder(ReportBuilderFields):
         colour = '#006440'
@@ -160,7 +164,9 @@ class Payment(TimeStampedModel):
         fields = ['date',
                   'currency_amount',
                   'quantity',
-                  'received']
+                  'created_field',
+                  'modified_field',
+                  ]
         includes = [{'field': 'company',
                      'title': 'Company',
                      'model': 'report_builder_examples.Company.ReportBuilder'},

@@ -18,14 +18,15 @@ from django_modals.widgets.select2 import Select2
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_FUNCTIONS, BOOLEAN_FIELD
-from advanced_report_builder.models import SingleValueReport, ReportType, ReportQuery
+from advanced_report_builder.models import SingleValueReport, ReportType, ReportQuery, BarChartReport
+from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_slug, get_django_field
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
 
 
-class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
+class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
     number_field = ReportBuilderNumberColumn
-    template_name = 'advanced_report_builder/single_values/report.html'
+    template_name = 'advanced_report_builder/bar_charts/report.html'
 
     def __init__(self, *args, **kwargs):
         self.single_value_report = None
@@ -238,7 +239,7 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         base_modal = self.single_value_report.get_base_modal()
 
         table = HorizontalTable(model=base_modal)
-        table.datatable_template = 'advanced_report_builder/single_values/middle.html'
+        table.datatable_template = 'advanced_report_builder/bar_charts/middle.html'
         table.extra_filters = self.extra_filters
         fields = self.process_query_results()
         table.add_columns(
@@ -290,136 +291,132 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         return []
 
 
-class SingleValueModal(QueryBuilderModalBase):
-    template_name = 'advanced_report_builder/single_values/modal.html'
+class BarChartModal(QueryBuilderModalBase):
+    template_name = 'advanced_report_builder/bar_charts/modal.html'
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
-    model = SingleValueReport
-    widgets = {'tile_colour': ColourPickerWidget}
+    model = BarChartReport
+    widgets = {'positive_bar_colour': ColourPickerWidget,
+               'negative_bar_colour': ColourPickerWidget,
+               'show_totals': RBToggle}
 
     form_fields = ['name',
                    'report_type',
-                   ('single_value_type', {'label': 'Value type'}),
-                   ('numerator', {'label': 'Numerator field'}),
-                   'field',
-                   'tile_colour',
-                   ('decimal_places', {'field_class': 'col-md-5 col-lg-3 input-group-sm'})
+                   ('bar_chart_orientation', {'label': 'Orientation'}),
+                   'positive_bar_colour',
+                   'negative_bar_colour',
                    ]
 
     def form_setup(self, form, *_args, **_kwargs):
-        form.add_trigger('single_value_type', 'onchange', [
-            {'selector': '#div_id_field',
-             'values': {SingleValueReport.SINGLE_VALUE_TYPE_COUNT: 'hide',
-                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'hide'},
-             'default': 'show'},
-            {'selector': '#div_id_numerator',
-             'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: 'show'},
-             'default': 'hide'},
-            {'selector': '#div_id_extra_query_data',
-             'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: 'show',
-                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'show'},
-             'default': 'hide'},
-            {'selector': 'label[for=id_field]',
-             'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: ('html', 'Denominator field')},
-             'default': ('html', 'Field')},
-        ])
-
-        fields = []
-        if form.instance.field:
-
-            form.fields['field'].initial = form.instance.field
-
-            base_model = form.instance.report_type.content_type.model_class()
-            report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
-
-            self._get_fields(base_model=base_model,
-                             fields=fields,
-                             report_builder_fields=report_builder_fields,
-                             selected_field_id=form.instance.field)
-
-        form.fields['field'].widget = Select2(attrs={'ajax': True})
-        form.fields['field'].widget.select_data = fields
-
-        form.fields['numerator'].widget = Select2(attrs={'ajax': True})
-        form.fields['numerator'].widget.select_data = fields
-
+        #     form.add_trigger('single_value_type', 'onchange', [
+        #         {'selector': '#div_id_field',
+        #          'values': {SingleValueReport.SINGLE_VALUE_TYPE_COUNT: 'hide',
+        #                     SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'hide'},
+        #          'default': 'show'},
+        #         {'selector': '#div_id_numerator',
+        #          'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: 'show'},
+        #          'default': 'hide'},
+        #         {'selector': '#div_id_extra_query_data',
+        #          'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: 'show',
+        #                     SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'show'},
+        #          'default': 'hide'},
+        #         {'selector': 'label[for=id_field]',
+        #          'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: ('html', 'Denominator field')},
+        #          'default': ('html', 'Field')},
+        #     ])
+        #
+        #     fields = []
+        #     if form.instance.field:
+        #
+        #         form.fields['field'].initial = form.instance.field
+        #
+        #         base_model = form.instance.report_type.content_type.model_class()
+        #         report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
+        #
+        #         self._get_fields(base_model=base_model,
+        #                          fields=fields,
+        #                          report_builder_fields=report_builder_fields,
+        #                          selected_field_id=form.instance.field)
+        #
+        #     form.fields['field'].widget = Select2(attrs={'ajax': True})
+        #     form.fields['field'].widget.select_data = fields
+        #
+        #     form.fields['numerator'].widget = Select2(attrs={'ajax': True})
+        #     form.fields['numerator'].widget.select_data = fields
+        #
         self.add_query_data(form, include_extra_query=True)
-
         return ('name',
                 'report_type',
-                'single_value_type',
-                'numerator',
-                'field',
-                FieldEx('extra_query_data',
-                        template='advanced_report_builder/query_builder.html',
-                        ),
-                'tile_colour',
-                'decimal_places',
-
+                'bar_chart_orientation',
+                'positive_bar_colour',
+                'negative_bar_colour',
+                'show_totals',
                 FieldEx('query_data',
-                        template='advanced_report_builder/query_builder.html')
+                        template='advanced_report_builder/query_builder.html'),
+
+
                 )
-
-    def select2_field(self, **kwargs):
-        fields = []
-        if kwargs['report_type'] != '':
-            report_type = get_object_or_404(ReportType, pk=kwargs['report_type'])
-            base_model = report_type.content_type.model_class()
-            report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
-            fields = []
-            self._get_fields(base_model=base_model,
-                             fields=fields,
-                             report_builder_fields=report_builder_fields)
-
-        return JsonResponse({'results': fields})
-
-    def select2_numerator(self, **kwargs):
-        return self.select2_field(**kwargs)
-
-    def _get_fields(self, base_model, fields, report_builder_fields,
-                    prefix='', title_prefix='', selected_field_id=None):
-
-        for report_builder_field in report_builder_fields.fields:
-
-            django_field, _, columns = get_django_field(base_modal=base_model, field=report_builder_field)
-
-            for column in columns:
-                if isinstance(django_field, NUMBER_FIELDS) or isinstance(django_field, BOOLEAN_FIELD):
-                    full_id = prefix + column.column_name
-                    if selected_field_id is None or selected_field_id == full_id:
-                        fields.append({'id': full_id,
-                                       'text': title_prefix + column.title})
-
-        for include in report_builder_fields.includes:
-            app_label, model, report_builder_fields_str = include['model'].split('.')
-            new_model = apps.get_model(app_label, model)
-            new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
-            self._get_fields(base_model=new_model,
-                             fields=fields,
-                             report_builder_fields=new_report_builder_fields,
-                             prefix=f"{include['field']}__",
-                             title_prefix=include['title'] + ' -> ')
-
-    def form_valid(self, form):
-        single_value_report = form.save()
-
-        if not self.report_query and (form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']):
-            ReportQuery(query=form.cleaned_data['query_data'],
-                        extra_query=form.cleaned_data['extra_query_data'],
-                        report=single_value_report).save()
-        elif form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']:
-            self.report_query.extra_query = form.cleaned_data['extra_query_data']
-            self.report_query.query = form.cleaned_data['query_data']
-            if self.show_query_name:
-                self.report_query.name = form.cleaned_data['query_name']
-            self.report_query.save()
-        elif self.report_query:
-            self.report_query.delete()
-
-        return self.command_response('reload')
-
-    def clean(self, form, cleaned_data):
-        if (cleaned_data['single_value_type'] not in [SingleValueReport.SINGLE_VALUE_TYPE_COUNT,
-                                                      SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT] and
-                not cleaned_data['field']):
-            raise ValidationError("Please select a field")
+    #
+    # def select2_field(self, **kwargs):
+    #     fields = []
+    #     if kwargs['report_type'] != '':
+    #         report_type = get_object_or_404(ReportType, pk=kwargs['report_type'])
+    #         base_model = report_type.content_type.model_class()
+    #         report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
+    #         fields = []
+    #         self._get_fields(base_model=base_model,
+    #                          fields=fields,
+    #                          report_builder_fields=report_builder_fields)
+    #
+    #     return JsonResponse({'results': fields})
+    #
+    # def select2_numerator(self, **kwargs):
+    #     return self.select2_field(**kwargs)
+    #
+    # def _get_fields(self, base_model, fields, report_builder_fields,
+    #                 prefix='', title_prefix='', selected_field_id=None):
+    #
+    #     for report_builder_field in report_builder_fields.fields:
+    #
+    #         django_field, _, columns = get_django_field(base_modal=base_model, field=report_builder_field)
+    #
+    #         for column in columns:
+    #             if isinstance(django_field, NUMBER_FIELDS) or isinstance(django_field, BOOLEAN_FIELD):
+    #                 full_id = prefix + column.column_name
+    #                 if selected_field_id is None or selected_field_id == full_id:
+    #                     fields.append({'id': full_id,
+    #                                    'text': title_prefix + column.title})
+    #
+    #     for include in report_builder_fields.includes:
+    #         app_label, model, report_builder_fields_str = include['model'].split('.')
+    #         new_model = apps.get_model(app_label, model)
+    #         new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
+    #         self._get_fields(base_model=new_model,
+    #                          fields=fields,
+    #                          report_builder_fields=new_report_builder_fields,
+    #                          prefix=f"{include['field']}__",
+    #                          title_prefix=include['title'] + ' -> ')
+    #
+    # def form_valid(self, form):
+    #     single_value_report = form.save()
+    #
+    #     if not self.report_query and (form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']):
+    #         ReportQuery(query=form.cleaned_data['query_data'],
+    #                     extra_query=form.cleaned_data['extra_query_data'],
+    #                     report=single_value_report).save()
+    #     elif form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']:
+    #         self.report_query.extra_query = form.cleaned_data['extra_query_data']
+    #         self.report_query.query = form.cleaned_data['query_data']
+    #         if self.show_query_name:
+    #             self.report_query.name = form.cleaned_data['query_name']
+    #         self.report_query.save()
+    #     elif self.report_query:
+    #         self.report_query.delete()
+    #
+    #     return self.command_response('reload')
+    #
+    # def clean(self, form, cleaned_data):
+    #     if (cleaned_data['single_value_type'] not in [SingleValueReport.SINGLE_VALUE_TYPE_COUNT,
+    #                                                   SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT] and
+    #             not cleaned_data['field']):
+    #         raise ValidationError("Please select a field")

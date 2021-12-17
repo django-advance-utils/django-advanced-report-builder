@@ -75,9 +75,13 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
 
     def ajax_get_query_builder_fields(self, **kwargs):
         report_type_id = kwargs['report_type'][0]
-        query_builder_filters = self.get_query_builder_report_type_field(report_type_id=report_type_id)
         field_auto_id = kwargs['field_auto_id'][0]
-        return self.command_response(f'query_builder_{field_auto_id}', data=json.dumps(query_builder_filters))
+        if report_type_id:
+            query_builder_filters = self.get_query_builder_report_type_field(report_type_id=report_type_id)
+
+            return self.command_response(f'query_builder_{field_auto_id}', data=json.dumps(query_builder_filters))
+        else:
+            return self.command_response(f'query_builder_{field_auto_id}', data='[]')
 
     def add_query_data(self, form, include_extra_query=True):
         form.fields['query_data'] = CharField(required=False, label='Filter')

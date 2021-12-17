@@ -2,7 +2,6 @@
 from ajax_helpers.html_include import SourceBase
 
 
-
 class Dot(SourceBase):
     static_path = '/advanced_report_builder/dot/'
     js_filename = 'doT.js'
@@ -32,6 +31,6 @@ class ChartJS(SourceBase):
 
 
 packages = {
-    'query_builder': [ChartJS, JQueryExtendext, Dot, QueryBuilder],
+    'query_builder': [JQueryExtendext, Dot, QueryBuilder],
     'dashboard': [DashboardInclude],
 }

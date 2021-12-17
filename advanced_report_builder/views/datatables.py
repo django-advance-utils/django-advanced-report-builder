@@ -18,7 +18,7 @@ from django_modals.modals import FormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.widgets import Toggle
 
-from advanced_report_builder.checkbox import RBToggle
+from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.columns import ReportBuilderDateColumn, ReportBuilderNumberColumn
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, \
@@ -30,11 +30,10 @@ from advanced_report_builder.models import TableReport, ReportQuery
 from advanced_report_builder.utils import split_attr, get_django_field
 from advanced_report_builder.utils import split_slug
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase, QueryBuilderModalBaseMixin
-from report_builder_examples.report_overrides import CustomDateColumn
 
 
 class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
-    template_name = 'advanced_report_builder/datatable/report.html'
+    template_name = 'advanced_report_builder/datatables/report.html'
 
     date_field = ReportBuilderDateColumn
     number_field = ReportBuilderNumberColumn
@@ -182,7 +181,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
 
             django_field, col_type_override, _ = get_django_field(base_modal=base_modal, field=field)
 
-            if isinstance(django_field, DATE_FIELDS) or isinstance(django_field, CustomDateColumn):
+            if isinstance(django_field, DATE_FIELDS):
                 field_name = self.get_date_field(index=index,
                                                  table_field=table_field,
                                                  fields=fields)
@@ -293,7 +292,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
 
 
 class TableModal(QueryBuilderModalBase):
-    template_name = 'advanced_report_builder/datatable/modal.html'
+    template_name = 'advanced_report_builder/datatables/modal.html'
     size = 'xl'
     model = TableReport
     process = PROCESS_EDIT_DELETE
@@ -320,7 +319,7 @@ class TableModal(QueryBuilderModalBase):
                   FieldEx('report_type'),
                   FieldEx('has_clickable_rows', template='django_modals/fields/label_checkbox.html'),
                   FieldEx('page_length', template='django_modals/fields/label_checkbox.html'),
-                  FieldEx('table_fields', template='advanced_report_builder/datatable/fields/select_column.html')]
+                  FieldEx('table_fields', template='advanced_report_builder/datatables/fields/select_column.html')]
 
         if self.show_query_name:
             fields.append(FieldEx('query_name'))
@@ -510,7 +509,7 @@ class FieldForm(CrispyForm):
 class FieldModal(QueryBuilderModalBaseMixin, FormModal):
     form_class = FieldForm
     size = 'xl'
-    template_name = 'advanced_report_builder/datatable/fields/modal.html'
+    template_name = 'advanced_report_builder/datatables/fields/modal.html'
 
     @property
     def modal_title(self):
@@ -559,7 +558,7 @@ class FieldModal(QueryBuilderModalBaseMixin, FormModal):
                                     field_class='col-6 input-group-sm'),
                             Div(
                                 FieldEx('filter',
-                                        template='advanced_report_builder/datatable/fields/single_query_builder.html'),
+                                        template='advanced_report_builder/datatables/fields/single_query_builder.html'),
                                 FieldEx('multiple_columns',
                                         template='django_modals/fields/label_checkbox.html',
                                         field_class='col-6 input-group-sm'),

@@ -1,3 +1,4 @@
+from advanced_report_builder.views.bar_charts import BarChartView
 from advanced_report_builder.views.single_values import SingleValueView
 from django.forms import CharField, Textarea
 from django.shortcuts import redirect
@@ -19,9 +20,13 @@ class ViewReports(MainIndices):
     def setup_menu(self):
         super().setup_menu()
         self.add_menu('table_menu', 'button_group').add_items(
-            MenuItem('advanced_report_builder:table_modal,-', 'Add Table Report'),
-            MenuItem('advanced_report_builder:single_value_modal,-',
-                     'Add Single Value Report', css_classes='btn-success'))
+            MenuItem(menu_display='Add', no_hover=True, css_classes='btn-secondary',
+                     dropdown=[MenuItem('advanced_report_builder:table_modal,-', 'Add Table Report'),
+                               MenuItem('advanced_report_builder:single_value_modal,-',
+                                        'Add Single Value Report'),
+                               MenuItem('advanced_report_builder:bar_chart_modal,-',
+                                        'Add Bar Chart Report')]),
+        )
 
     @staticmethod
     def setup_table(table):
@@ -65,10 +70,17 @@ class ViewTableReport(TableView):
         return []
 
 
+class ViewBarChartReport(BarChartView):
+    def pod_report_menu(self):
+        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
+                *super().pod_report_menu()]
+
+
 class ViewReport(MainMenu, ViewReportBase):
     template_name = 'report_builder_examples/report.html'
     views_overrides = {'tablereport': ViewTableReport,
-                       'singlevaluereport': ViewSingleValueReport
+                       'singlevaluereport': ViewSingleValueReport,
+                       'barchartreport': ViewBarChartReport
                        }
 
     def redirect_url(self):
