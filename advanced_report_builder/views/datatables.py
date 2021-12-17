@@ -7,7 +7,7 @@ from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Div
 from django.apps import apps
 from django.db.models import Q
-from django.forms import CharField, ChoiceField, BooleanField, IntegerField, ModelChoiceField
+from django.forms import CharField, ChoiceField, BooleanField, IntegerField
 from django.shortcuts import get_object_or_404
 from django_datatables.datatables import DatatableView, ColumnInitialisor
 from django_datatables.plugins.column_totals import ColumnTotals
@@ -18,7 +18,6 @@ from django_modals.modals import FormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.widgets import Toggle
 
-from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.columns import ReportBuilderDateColumn, ReportBuilderNumberColumn
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, \
@@ -27,6 +26,7 @@ from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANN
     ANNOTATION_FUNCTIONS
 from advanced_report_builder.models import ReportType
 from advanced_report_builder.models import TableReport, ReportQuery
+from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr, get_django_field
 from advanced_report_builder.utils import split_slug
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase, QueryBuilderModalBaseMixin
