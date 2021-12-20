@@ -66,8 +66,8 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         date_function_kwargs = {'title': table_field.get('title'),
                                 'date_format': date_format}
 
-        annotations_value = data_attr.get('annotations_value')
-        if annotations_value:
+        annotations_value = int(data_attr.get('annotations_value', 0))
+        if annotations_value != 0:
             new_field_name = f'{annotations_value}_{field_name}_{index}'
             function = ANNOTATION_VALUE_FUNCTIONS[annotations_value]
             date_function_kwargs['annotations_value'] = {new_field_name: function(field_name)}
@@ -387,7 +387,7 @@ class TableModal(QueryBuilderModalBase):
         return self.command_response('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
 
 
-class FieldForm(CrispyForm):
+class TableFieldForm(CrispyForm):
 
     def __init__(self, *args, **kwargs):
         self.django_field = None
@@ -504,8 +504,8 @@ class FieldForm(CrispyForm):
                                                        title_prefix=f"{include['title']} --> ")
 
 
-class FieldModal(QueryBuilderModalBaseMixin, FormModal):
-    form_class = FieldForm
+class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
+    form_class = TableFieldForm
     size = 'xl'
     template_name = 'advanced_report_builder/datatables/fields/modal.html'
 

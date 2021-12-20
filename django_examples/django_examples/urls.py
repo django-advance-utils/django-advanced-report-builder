@@ -23,4 +23,5 @@ urlpatterns = [
     path('advanced-report-builder/', include('advanced_report_builder.urls', namespace='advanced_report_builder')),
     path('test/', TemplateView.as_view(template_name='report_builder_examples/test.html'), name='test'),
     path('', include('report_builder_examples.urls', namespace='report_builder_examples')),
+    path('__debug__/', include('debug_toolbar.urls')),
 ]

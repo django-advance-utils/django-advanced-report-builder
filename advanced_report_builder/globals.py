@@ -6,18 +6,23 @@ NUMBER_FIELDS = (models.IntegerField, models.PositiveSmallIntegerField, models.P
 DATE_FIELDS = (models.DateTimeField, models.DateField)
 BOOLEAN_FIELD = models.BooleanField
 
-ANNOTATION_VALUE_CHOICES = (('', ''),
-                            ('y', 'Year'),
-                            ('q', 'Quarter'),
-                            ('m', 'Month'),
-                            ('w', 'Week'),
-                            ('d', 'Day'))
+ANNOTATION_VALUE_YEAR = 1
+ANNOTATION_VALUE_QUARTER = 2
+ANNOTATION_VALUE_MONTH = 3
+ANNOTATION_VALUE_WEEK = 4
+ANNOTATION_VALUE_DAY = 5
 
-ANNOTATION_VALUE_FUNCTIONS = {'y': TruncYear,
-                              'q': TruncQuarter,
-                              'm': TruncMonth,
-                              'w': TruncWeek,
-                              'd': TruncDay}
+ANNOTATION_VALUE_CHOICES = ((ANNOTATION_VALUE_YEAR, 'Year'),
+                            (ANNOTATION_VALUE_QUARTER, 'Quarter'),
+                            (ANNOTATION_VALUE_MONTH, 'Month'),
+                            (ANNOTATION_VALUE_WEEK, 'Week'),
+                            (ANNOTATION_VALUE_DAY, 'Day'))
+
+ANNOTATION_VALUE_FUNCTIONS = {ANNOTATION_VALUE_YEAR: TruncYear,
+                              ANNOTATION_VALUE_QUARTER: TruncQuarter,
+                              ANNOTATION_VALUE_MONTH: TruncMonth,
+                              ANNOTATION_VALUE_WEEK: TruncWeek,
+                              ANNOTATION_VALUE_DAY: TruncDay}
 
 ANNOTATIONS_CHOICES = (('', ''),
                        ('sum', 'Sum'),

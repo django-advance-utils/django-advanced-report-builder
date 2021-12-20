@@ -121,7 +121,7 @@
                         parent_li.attr('id', selector);
                         let field_info = get_field_dict(parent_li);
                         let field_info_b64 = (btoa(JSON.stringify(field_info)));
-                        let url = "{% url 'advanced_report_builder:field_modal' 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID' %}";
+                        let url = "{% url 'advanced_report_builder:table_field_modal' 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID' %}";
                         django_modal.show_modal(url.replace('99999', selector).replace('REPORT_TYPE_ID', $('#id_report_type').val()).replace('FIELD_INFO', field_info_b64))
                     });
 

@@ -121,7 +121,7 @@
                         parent_li.attr('id', selector);
                         let field_info = get_field_dict(parent_li);
                         let field_info_b64 = (btoa(JSON.stringify(field_info)));
-                        let url = "{% url 'advanced_report_builder:field_modal' 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID' %}";
+                        let url = "{% url 'advanced_report_builder:bar_chart_field_modal' 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID' %}";
                         django_modal.show_modal(url.replace('99999', selector).replace('REPORT_TYPE_ID', $('#id_report_type').val()).replace('FIELD_INFO', field_info_b64))
                     });
 
@@ -185,13 +185,14 @@
                     return result;
                 }
 
-
                 function load_section() {
-                    let fields = JSON.parse($(main_field).val())
-                    $.each(fields, function (key, value) {
-                        let field_data = available_fields_data[value.field];
-                        $(selection_fields_id_name).append(get_field_html(value.field, value.title, field_data.colour, value.data_attr));
-                    });
+                    if($(main_field).val() !== '') {
+                        let fields = JSON.parse($(main_field).val())
+                        $.each(fields, function (key, value) {
+                            let field_data = available_fields_data[value.field];
+                            $(selection_fields_id_name).append(get_field_html(value.field, value.title, field_data.colour, value.data_attr));
+                        });
+                    }
                 }
                 $('#{{ field.auto_id }}_selected_search_input').keyup(function() {
                     search_fields(this.value, selection_fields_id_name);
