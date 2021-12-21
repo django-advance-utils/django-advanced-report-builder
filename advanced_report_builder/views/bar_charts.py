@@ -23,7 +23,7 @@ from advanced_report_builder.columns import ReportBuilderNumberColumn, ReportBui
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_FUNCTIONS, DATE_FIELDS, \
     ANNOTATION_VALUE_FUNCTIONS, DATE_FORMAT_TYPES_DJANGO_FORMAT, DATE_FORMAT_TYPE_DD_MM_YY_SLASH, \
-    ANNOTATION_CHOICE_COUNT
+    ANNOTATION_CHOICE_COUNT, DEFAULT_DATE_FORMAT
 from advanced_report_builder.models import BarChartReport, ReportType, ReportQuery
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_slug, get_django_field, split_attr
@@ -67,7 +67,11 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         if col_type_override:
             field_name = col_type_override.field
 
-        date_format = DATE_FORMAT_TYPES_DJANGO_FORMAT[DATE_FORMAT_TYPE_DD_MM_YY_SLASH]
+        if self.bar_chart_report.date_format > 0:
+            date_format = DATE_FORMAT_TYPES_DJANGO_FORMAT[self.bar_chart_report.date_format]
+        else:
+            default_format_type = DEFAULT_DATE_FORMAT[self.bar_chart_report.axis_scale]
+            date_format = DATE_FORMAT_TYPES_DJANGO_FORMAT[default_format_type]
 
         date_function_kwargs = {'title': field_name,
                                 'date_format': date_format}
@@ -276,7 +280,8 @@ class BarChartModal(QueryBuilderModalBase):
     model = BarChartReport
     widgets = {'positive_bar_colour': ColourPickerWidget,
                'negative_bar_colour': ColourPickerWidget,
-               'show_totals': RBToggle}
+               'show_totals': RBToggle,
+               'date_format': Select2}
 
     form_fields = ['name',
                    'report_type',
@@ -284,6 +289,7 @@ class BarChartModal(QueryBuilderModalBase):
                    'axis_value_type',
                    'axis_scale',
                    'date_field',
+                   'date_format',
                    'fields',
                    'x_label',
                    'y_label',
@@ -315,6 +321,7 @@ class BarChartModal(QueryBuilderModalBase):
                 'axis_scale',
                 'axis_value_type',
                 'date_field',
+                'date_format',
                 FieldEx('fields', template='advanced_report_builder/bar_charts/fields/select_column.html'),
                 'x_label',
                 'y_label',

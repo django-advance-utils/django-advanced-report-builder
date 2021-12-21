@@ -101,7 +101,7 @@ DATE_FORMAT_TYPES_DJANGO_FORMAT = {DATE_FORMAT_TYPE_DD_MM_YY_SLASH: '%d/%m/%y',
                                    }
 
 DATE_FORMAT_TYPES = (
-    ('', ''),
+    (0, '-----'),
     (DATE_FORMAT_TYPE_DD_MM_YY_SLASH, 'dd/mm/yy'),
     (DATE_FORMAT_TYPE_DD_MM_YYYY_SLASH, 'dd/mm/yyyy'),
     (DATE_FORMAT_TYPE_MM_DD_YY_SLASH, 'mm/dd/yy'),
@@ -146,3 +146,10 @@ DISPLAY_OPTION_CHOICES = [
 DISPLAY_OPTION_CLASSES = {DISPLAY_OPTION_1_PER_ROW: ' col-12',
                           DISPLAY_OPTION_2_PER_ROW: ' col-12 col-md-12 col-lg-6',
                           DISPLAY_OPTION_3_PER_ROW: ' col-12 col-md-12 col-lg-4'}
+
+
+DEFAULT_DATE_FORMAT = {ANNOTATION_VALUE_YEAR: DATE_FORMAT_TYPE_YYYY,
+                       ANNOTATION_VALUE_QUARTER: DATE_FORMAT_TYPE_WORDS_MM_YY,
+                       ANNOTATION_VALUE_MONTH: DATE_FORMAT_TYPE_WORDS_MM_YY,
+                       ANNOTATION_VALUE_WEEK: DATE_FORMAT_TYPE_WW_YY_DASH,
+                       ANNOTATION_VALUE_DAY: DATE_FORMAT_TYPE_DD_MM_YY_SLASH}
