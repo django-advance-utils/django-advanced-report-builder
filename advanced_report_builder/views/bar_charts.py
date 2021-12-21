@@ -6,6 +6,7 @@ from ajax_helpers.mixins import AjaxHelpers
 from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Div
 from django.apps import apps
+from django.db.models import Q
 from django.forms import CharField, ChoiceField, BooleanField
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -22,8 +23,7 @@ from django_modals.widgets.select2 import Select2
 from advanced_report_builder.columns import ReportBuilderNumberColumn, ReportBuilderDateColumn
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_FUNCTIONS, DATE_FIELDS, \
-    ANNOTATION_VALUE_FUNCTIONS, DATE_FORMAT_TYPES_DJANGO_FORMAT, DATE_FORMAT_TYPE_DD_MM_YY_SLASH, \
-    ANNOTATION_CHOICE_COUNT, DEFAULT_DATE_FORMAT
+    ANNOTATION_VALUE_FUNCTIONS, DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_CHOICE_COUNT, DEFAULT_DATE_FORMAT
 from advanced_report_builder.models import BarChartReport, ReportType, ReportQuery
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_slug, get_django_field, split_attr
@@ -58,11 +58,11 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         return self.process_query_filters(query=query,
                                           search_filter_data=report_query.query)
 
-    def get_date_field(self, index, fields, base_modal):
+    def get_date_field(self, index, fields, base_model):
 
         field_name = self.bar_chart_report.date_field
 
-        django_field, col_type_override, _ = get_django_field(base_modal=base_modal, field=field_name)
+        django_field, col_type_override, _ = get_django_field(base_model=base_model, field=field_name)
 
         if col_type_override:
             field_name = col_type_override.field
@@ -91,57 +91,80 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         fields.append(field)
         return field_name
 
-    def process_query_results(self, base_modal):
+    @staticmethod
+    def _set_multiple_title(database_values, value_prefix, fields, text):
+        results = {}
+        for field in fields:
+            value = database_values[value_prefix + '__' + field]
+            results[field] = value
+        return text.format(**results)
+
+    def process_query_results(self, base_model, table):
         fields = []
-        self.get_date_field(0, fields, base_modal=base_modal)
+        self.get_date_field(0, fields, base_model=base_model)
         bar_chart_fields = json.loads(self.bar_chart_report.fields)
         for index, table_field in enumerate(bar_chart_fields, 1):
             field = table_field['field']
 
-            django_field, col_type_override, _ = get_django_field(base_modal=base_modal, field=field)
+            django_field, col_type_override, _ = get_django_field(base_model=base_model, field=field)
 
             if isinstance(django_field, NUMBER_FIELDS):
                 data_attr = split_attr(table_field)
-
+                negative_bar_colour = data_attr.get('negative_bar_colour', '801C70')
+                positive_bar_colour = data_attr.get('positive_bar_colour', '801C70')
                 if data_attr.get('multiple_columns') == '1':
-                    assert False
-                    # query = self.extra_filters(query=table.model.objects)
-                    # multiple_column_field = data_attr.get('multiple_column_field')
-                    # report_builder_fields = getattr(self.base_model,
-                    #                                 self.table_report.report_type.report_builder_class_name, None)
-                    #
-                    # report_builder_fields = self._get_report_builder_fields(field_str=multiple_column_field,
-                    #                                                         report_builder_fields=report_builder_fields)
-                    # _fields = report_builder_fields.default_multiple_column_fields
-                    # default_multiple_column_fields = [multiple_column_field + '__' + x for x in _fields]
-                    # results = query.distinct(multiple_column_field).values(multiple_column_field,
-                    #                                                        *default_multiple_column_fields)
-                    #
-                    # for multiple_index, result in enumerate(results):
-                    #     suffix = self._set_multiple_title(database_values=result,
-                    #                                       value_prefix=multiple_column_field,
-                    #                                       fields=_fields,
-                    #                                       text=report_builder_fields.default_multiple_column_text)
-                    #     extra_filter = Q((multiple_column_field, result[multiple_column_field]))
-                    #
-                    #     field_name = self.get_number_field(index=f'{index}_{multiple_index}',
-                    #                                        data_attr=data_attr,
-                    #                                        table_field=table_field,
-                    #                                        fields=fields,
-                    #                                        totals=totals,
-                    #                                        col_type_override=col_type_override,
-                    #                                        extra_filter=extra_filter,
-                    #                                        title_suffix=suffix)
+                    query = self.extra_filters(query=table.model.objects)
+                    multiple_column_field = data_attr.get('multiple_column_field')
+                    report_builder_fields = getattr(base_model,
+                                                    self.bar_chart_report.report_type.report_builder_class_name, None)
+
+                    report_builder_fields = self._get_report_builder_fields(field_str=multiple_column_field,
+                                                                            report_builder_fields=report_builder_fields)
+                    _fields = report_builder_fields.default_multiple_column_fields
+                    default_multiple_column_fields = [multiple_column_field + '__' + x for x in _fields]
+                    results = query.distinct(multiple_column_field).values(multiple_column_field,
+                                                                           *default_multiple_column_fields)
+
+                    for multiple_index, result in enumerate(results):
+                        suffix = self._set_multiple_title(database_values=result,
+                                                          value_prefix=multiple_column_field,
+                                                          fields=_fields,
+                                                          text=report_builder_fields.default_multiple_column_text)
+                        extra_filter = Q((multiple_column_field, result[multiple_column_field]))
+
+                        self.get_number_field(index=f'{index}_{multiple_index}',
+                                              data_attr=data_attr,
+                                              table_field=table_field,
+                                              fields=fields,
+                                              col_type_override=col_type_override,
+                                              negative_bar_colour=negative_bar_colour,
+                                              positive_bar_colour=positive_bar_colour,
+                                              extra_filter=extra_filter,
+                                              title_suffix=suffix)
+                        negative_bar_colour = self.add_colour_offset(negative_bar_colour)
+                        positive_bar_colour = self.add_colour_offset(positive_bar_colour)
                 else:
-                    field_name = self.get_number_field(index=index,
-                                                       data_attr=data_attr,
-                                                       table_field=table_field,
-                                                       fields=fields,
-                                                       col_type_override=col_type_override)
+                    self.get_number_field(index=index,
+                                          data_attr=data_attr,
+                                          table_field=table_field,
+                                          fields=fields,
+                                          col_type_override=col_type_override,
+                                          negative_bar_colour=negative_bar_colour,
+                                          positive_bar_colour=positive_bar_colour)
         return fields
 
+    # noinspection PyUnresolvedReferences
+    @staticmethod
+    def add_colour_offset(colour):
+        colour_list = list(int(colour[i:i + 2], 16) for i in (0, 2, 4))
+        _, colour_list[0] = divmod(colour_list[0] + 50, 255)
+        _, colour_list[1] = divmod(colour_list[1] + 50, 255)
+        _, colour_list[2] = divmod(colour_list[2] + 50, 255)
+        return "{:02x}{:02x}{:02x}".format(*colour_list)
+
     def get_number_field(self, index, table_field, data_attr, fields, col_type_override,
-                         extra_filter=None, title_suffix=''):
+                         negative_bar_colour, positive_bar_colour,
+                         extra_filter=None, title_suffix='', ):
         field_name = table_field['field']
 
         annotations_type = self.bar_chart_report.axis_value_type
@@ -170,10 +193,11 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
                 number_function_kwargs['annotations'] = {new_field_name: function}
 
                 number_function_kwargs.update({'field': new_field_name,
-                                               'column_name': field_name})
+                                               'column_name': field_name,
+                                               'colours': {'negative': negative_bar_colour,
+                                                           'positive': positive_bar_colour}})
 
                 field = self.number_field(**number_function_kwargs)
-            else:
                 if title:
                     field.title = title
                 if annotations_type:
@@ -196,8 +220,8 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
             if decimal_places:
                 number_function_kwargs['decimal_places'] = int(decimal_places)
 
-            number_function_kwargs['colours'] = {'negative': data_attr.get('negative_bar_colour', '801C70'),
-                                                 'positive': data_attr.get('positive_bar_colour', '801C70')}
+            number_function_kwargs['colours'] = {'negative': negative_bar_colour,
+                                                 'positive': positive_bar_colour}
 
             new_field_name = f'{annotations_type}_{field_name}_{index}'
             function_type = ANNOTATION_FUNCTIONS[annotations_type]
@@ -220,13 +244,13 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        base_modal = self.bar_chart_report.get_base_modal()
+        base_model = self.bar_chart_report.get_base_modal()
 
-        table = HorizontalTable(model=base_modal)
+        table = HorizontalTable(model=base_model)
         table.datatable_template = 'advanced_report_builder/bar_charts/middle.html'
         table.extra_filters = self.extra_filters
 
-        fields = self.process_query_results(base_modal=base_modal)
+        fields = self.process_query_results(base_model=base_model, table=table)
         table.add_columns(*fields)
         context['datatable'] = table
         context['bar_chart_report'] = self.bar_chart_report
@@ -255,6 +279,7 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
 
+    # noinspection PyMethodMayBeStatic
     def pod_dashboard_view_menu(self):
         return []
 
@@ -269,6 +294,7 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
 
+    # noinspection PyMethodMayBeStatic
     def queries_menu(self):
         return []
 
@@ -363,7 +389,7 @@ class BarChartModal(QueryBuilderModalBase):
                          prefix='', title_prefix='', selected_field_id=None):
 
         for report_builder_field in report_builder_fields.fields:
-            django_field, _, columns = get_django_field(base_modal=base_model, field=report_builder_field)
+            django_field, _, columns = get_django_field(base_model=base_model, field=report_builder_field)
             for column in columns:
                 if isinstance(django_field, DATE_FIELDS):
                     full_id = prefix + column.column_name
@@ -392,7 +418,7 @@ class BarChartModal(QueryBuilderModalBase):
                        'colour': colour})
 
         for report_builder_field in report_builder_fields.fields:
-            django_field, _, columns = get_django_field(base_modal=base_model, field=report_builder_field)
+            django_field, _, columns = get_django_field(base_model=base_model, field=report_builder_field)
             for column in columns:
                 if isinstance(django_field, NUMBER_FIELDS):
                     fields.append({'field': prefix + column.column_name,
@@ -442,7 +468,7 @@ class BarChartFieldForm(CrispyForm):
 
         report_type = get_object_or_404(ReportType, pk=self.slug['report_type_id'])
         base_model = report_type.content_type.model_class()
-        self.django_field, _, _ = get_django_field(base_modal=base_model, field=data['field'])
+        self.django_field, _, _ = get_django_field(base_model=base_model, field=data['field'])
 
         return report_type, base_model
 
@@ -545,6 +571,7 @@ class BarChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
         self.add_command({'function': 'update_selection'})
         return self.command_response('close')
 
+    # noinspection PyMethodMayBeStatic
     def form_setup(self, form, *_args, **_kwargs):
         form.add_trigger('has_filter', 'onchange', [
             {'selector': '#filter_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'}])

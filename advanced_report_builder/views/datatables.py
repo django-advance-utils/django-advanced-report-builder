@@ -184,7 +184,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
 
     def process_query_results(self, table):
         first_field_name = None
-        base_modal = self.table_report.get_base_modal()
+        base_model = self.table_report.get_base_modal()
         table_fields = json.loads(self.table_report.table_fields)
         field_name = None
         fields = []
@@ -192,7 +192,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         for index, table_field in enumerate(table_fields):
             field = table_field['field']
 
-            django_field, col_type_override, _ = get_django_field(base_modal=base_modal, field=field)
+            django_field, col_type_override, _ = get_django_field(base_model=base_model, field=field)
 
             if isinstance(django_field, DATE_FIELDS):
                 field_name = self.get_date_field(index=index,
@@ -425,7 +425,7 @@ class TableFieldForm(CrispyForm):
 
         report_type = get_object_or_404(ReportType, pk=self.slug['report_type_id'])
         base_model = report_type.content_type.model_class()
-        self.django_field, _, _ = get_django_field(base_modal=base_model, field=data['field'])
+        self.django_field, _, _ = get_django_field(base_model=base_model, field=data['field'])
 
         return report_type, base_model
 
@@ -555,7 +555,7 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
 
         data = json.loads(base64.b64decode(self.slug['data']))
         report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=self.slug['report_type_id'])
-        django_field, _, _ = get_django_field(base_modal=base_model, field=data['field'])
+        django_field, _, _ = get_django_field(base_model=base_model, field=data['field'])
         if django_field is not None:
             if isinstance(django_field, NUMBER_FIELDS):
                 form.add_trigger('annotations_type', 'onchange', [

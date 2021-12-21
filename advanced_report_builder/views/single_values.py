@@ -97,9 +97,9 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
 
     def _process_aggregations(self, fields, aggregations_type=ANNOTATION_CHOICE_SUM):
         field = self.single_value_report.field
-        base_modal = self.single_value_report.get_base_modal()
+        base_model = self.single_value_report.get_base_modal()
 
-        django_field, col_type_override, _ = get_django_field(base_modal=base_modal, field=field)
+        django_field, col_type_override, _ = get_django_field(base_model=base_model, field=field)
 
         if isinstance(django_field, NUMBER_FIELDS) or isinstance(django_field, BOOLEAN_FIELD):
             self.get_aggregation_field(fields=fields,
@@ -164,12 +164,12 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
     def _process_percentage(self, fields):
         denominator_field = self.single_value_report.field
         numerator_field = self.single_value_report.numerator
-        base_modal = self.single_value_report.get_base_modal()
+        base_model = self.single_value_report.get_base_modal()
 
-        deno_django_field, denominator_col_type_override, _ = get_django_field(base_modal=base_modal,
+        deno_django_field, denominator_col_type_override, _ = get_django_field(base_model=base_model,
                                                                                field=denominator_field)
 
-        num_django_field, numerator_col_type_override, _ = get_django_field(base_modal=base_modal,
+        num_django_field, numerator_col_type_override, _ = get_django_field(base_model=base_model,
                                                                             field=denominator_field)
 
         if ((isinstance(deno_django_field, NUMBER_FIELDS) or isinstance(deno_django_field, BOOLEAN_FIELD)) and
@@ -236,9 +236,9 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        base_modal = self.single_value_report.get_base_modal()
+        base_model = self.single_value_report.get_base_modal()
 
-        table = HorizontalTable(model=base_modal)
+        table = HorizontalTable(model=base_model)
         table.datatable_template = 'advanced_report_builder/single_values/middle.html'
         table.extra_filters = self.extra_filters
         fields = self.process_query_results()
@@ -380,7 +380,7 @@ class SingleValueModal(QueryBuilderModalBase):
 
         for report_builder_field in report_builder_fields.fields:
 
-            django_field, _, columns = get_django_field(base_modal=base_model, field=report_builder_field)
+            django_field, _, columns = get_django_field(base_model=base_model, field=report_builder_field)
 
             for column in columns:
                 if isinstance(django_field, NUMBER_FIELDS) or isinstance(django_field, BOOLEAN_FIELD):
