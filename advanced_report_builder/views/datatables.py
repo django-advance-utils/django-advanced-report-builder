@@ -441,7 +441,7 @@ class TableFieldForm(CrispyForm):
                                                                required=False)
                 if 'annotations_value' in data_attr:
                     self.fields['annotations_value'].initial = data_attr['annotations_value']
-                self.fields['date_format'] = ChoiceField(choices=DATE_FORMAT_TYPES, required=False)
+                self.fields['date_format'] = ChoiceField(choices=[(0, '-----')] + DATE_FORMAT_TYPES, required=False)
                 if 'date_format' in data_attr:
                     self.fields['date_format'].initial = data_attr['date_format']
             elif isinstance(self.django_field, NUMBER_FIELDS):

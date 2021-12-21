@@ -148,10 +148,9 @@ class BarChartReport(Report):
         (BAR_CHART_ORIENTATION_HORIZONTAL, 'Horizontal')
     )
 
-    axis_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES,
-                                                  null=True, blank=True)
+    axis_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES)
     date_field = models.CharField(max_length=200, blank=True, null=True)
-    date_format = models.PositiveSmallIntegerField(choices=DATE_FORMAT_TYPES)
+    date_format = models.PositiveSmallIntegerField(choices=DATE_FORMAT_TYPES, null=True, blank=True)
     axis_value_type = models.PositiveSmallIntegerField(choices=ANNOTATIONS_CHOICES,
                                                        default=ANNOTATION_CHOICE_COUNT, null=True, blank=True)
     fields = models.TextField(null=True, blank=True)

@@ -61,13 +61,15 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
     def get_date_field(self, index, fields, base_model):
 
         field_name = self.bar_chart_report.date_field
+        if field_name is None:
+            return
 
         django_field, col_type_override, _ = get_django_field(base_model=base_model, field=field_name)
 
         if col_type_override:
             field_name = col_type_override.field
 
-        if self.bar_chart_report.date_format > 0:
+        if self.bar_chart_report.date_format is not None:
             date_format = DATE_FORMAT_TYPES_DJANGO_FORMAT[self.bar_chart_report.date_format]
         else:
             default_format_type = DEFAULT_DATE_FORMAT[self.bar_chart_report.axis_scale]
@@ -89,7 +91,6 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
 
         field = self.date_field(**date_function_kwargs)
         fields.append(field)
-        return field_name
 
     @staticmethod
     def _set_multiple_title(database_values, value_prefix, fields, text):
@@ -102,6 +103,8 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
     def process_query_results(self, base_model, table):
         fields = []
         self.get_date_field(0, fields, base_model=base_model)
+        if not self.bar_chart_report.fields:
+            return fields
         bar_chart_fields = json.loads(self.bar_chart_report.fields)
         for index, table_field in enumerate(bar_chart_fields, 1):
             field = table_field['field']
@@ -198,19 +201,22 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
                                                            'positive': positive_bar_colour}})
 
                 field = self.number_field(**number_function_kwargs)
+            else:
                 if title:
                     field.title = title
-                if annotations_type:
-                    new_field_name = f'{annotations_type}_{field_name}_{index}'
 
-                    function_type = ANNOTATION_FUNCTIONS[annotations_type]
-                    if annotation_filter:
-                        function = function_type(field.field, filter=annotation_filter)
-                    else:
-                        function = function_type(field.field)
+                new_field_name = f'{annotations_type}_{field_name}_{index}'
 
-                    field.annotations = {new_field_name: function}
-                    field.field = new_field_name
+                function_type = ANNOTATION_FUNCTIONS[annotations_type]
+                if annotation_filter:
+                    function = function_type(field.field, filter=annotation_filter)
+                else:
+                    function = function_type(field.field)
+
+                field.annotations = {new_field_name: function}
+                field.field = new_field_name
+                field.options['colours'] = {'negative': negative_bar_colour,
+                                            'positive': positive_bar_colour}
 
             fields.append(field)
         else:
