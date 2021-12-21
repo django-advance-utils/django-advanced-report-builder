@@ -21,7 +21,7 @@ from django_modals.widgets.widgets import Toggle
 from advanced_report_builder.columns import ReportBuilderDateColumn, ReportBuilderNumberColumn
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, \
-    DATE_FORMAT_TYPES
+    DATE_FORMAT_TYPES, ANNOTATION_CHOICE_COUNT
 from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_FUNCTIONS, \
     ANNOTATION_FUNCTIONS
 from advanced_report_builder.models import ReportType
@@ -56,28 +56,42 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         self.add_table(table_id, model=self.base_model)
         return super().dispatch(request, *args, **kwargs)
 
-    def get_date_field(self, index, table_field, fields):
+    def get_date_field(self, index, col_type_override, table_field, fields):
         data_attr = split_attr(table_field)
         field_name = table_field['field']
         date_format = data_attr.get('date_format')
+
         if date_format:
             date_format = DATE_FORMAT_TYPES_DJANGO_FORMAT[int(date_format)]
-
-        date_function_kwargs = {'title': table_field.get('title'),
-                                'date_format': date_format}
+        title = table_field.get('title')
 
         annotations_value = int(data_attr.get('annotations_value', 0))
-        if annotations_value != 0:
-            new_field_name = f'{annotations_value}_{field_name}_{index}'
-            function = ANNOTATION_VALUE_FUNCTIONS[annotations_value]
-            date_function_kwargs['annotations_value'] = {new_field_name: function(field_name)}
-            field_name = new_field_name
+        if col_type_override and annotations_value == 0:
 
-        date_function_kwargs.update({'field': field_name,
-                                     'column_name': field_name})
+            field = copy.deepcopy(col_type_override)
 
-        field = self.date_field(**date_function_kwargs)
-        fields.append(field)
+            if title:
+                field.title = title
+            fields.append(field)
+        else:
+            if col_type_override:
+                field_name = col_type_override.field
+
+            date_function_kwargs = {'title': table_field.get('title'),
+                                    'date_format': date_format}
+
+            if annotations_value != 0:
+                new_field_name = f'{annotations_value}_{field_name}_{index}'
+                function = ANNOTATION_VALUE_FUNCTIONS[annotations_value]
+                date_function_kwargs['annotations_value'] = {new_field_name: function(field_name)}
+                field_name = new_field_name
+
+            date_function_kwargs.update({'field': field_name,
+                                         'column_name': field_name})
+
+            field = self.date_field(**date_function_kwargs)
+            fields.append(field)
+
         return field_name
 
     def get_number_field(self, index, table_field, data_attr, fields, totals, col_type_override,
@@ -85,9 +99,9 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         field_name = table_field['field']
         css_class = None
 
-        annotations_type = data_attr.get('annotations_type')
+        annotations_type = int(data_attr.get('annotations_type', 0))
         annotation_filter = None
-        if annotations_type:
+        if annotations_type != 0:
             b64_filter = data_attr.get('filter')
             if b64_filter:
                 _filter = base64.urlsafe_b64decode(b64_filter).decode('utf-8', 'ignore')
@@ -96,7 +110,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         if col_type_override:
             field = copy.deepcopy(col_type_override)
 
-            if annotations_type == 'count':
+            if annotations_type == ANNOTATION_CHOICE_COUNT:
                 new_field_name = f'{annotations_type}_{field_name}_{index}'
                 number_function_kwargs = {}
                 if title:
@@ -136,7 +150,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
             if decimal_places:
                 number_function_kwargs['decimal_places'] = int(decimal_places)
 
-            if annotations_type:
+            if annotations_type != 0:
                 new_field_name = f'{annotations_type}_{field_name}_{index}'
                 function_type = ANNOTATION_FUNCTIONS[annotations_type]
                 if annotation_filter:
@@ -168,14 +182,13 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
             results[field] = value
         return text.format(**results)
 
-    def setup_table(self, table):
-        table.extra_filters = self.extra_filters
+    def process_query_results(self, table):
+        first_field_name = None
+        base_modal = self.table_report.get_base_modal()
         table_fields = json.loads(self.table_report.table_fields)
         field_name = None
         fields = []
         totals = {}
-        base_modal = self.table_report.get_base_modal()
-        first_field_name = None
         for index, table_field in enumerate(table_fields):
             field = table_field['field']
 
@@ -183,6 +196,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
 
             if isinstance(django_field, DATE_FIELDS):
                 field_name = self.get_date_field(index=index,
+                                                 col_type_override=col_type_override,
                                                  table_field=table_field,
                                                  fields=fields)
 
@@ -234,6 +248,13 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
                 fields.append(field)
             if not first_field_name:
                 first_field_name = field_name
+        return fields, totals, first_field_name
+
+    def setup_table(self, table):
+        table.extra_filters = self.extra_filters
+
+        fields, totals, first_field_name = self.process_query_results(table=table)
+
         table.add_columns(*fields)
         table.table_options['pageLength'] = self.table_report.page_length
         table.table_options['bStateSave'] = False
@@ -416,14 +437,16 @@ class TableFieldForm(CrispyForm):
         if self.django_field is not None:
             data_attr = split_attr(data)
             if isinstance(self.django_field, DATE_FIELDS):
-                self.fields['annotations_value'] = ChoiceField(choices=ANNOTATION_VALUE_CHOICES, required=False)
+                self.fields['annotations_value'] = ChoiceField(choices=[(0, '-----')] + ANNOTATION_VALUE_CHOICES,
+                                                               required=False)
                 if 'annotations_value' in data_attr:
                     self.fields['annotations_value'].initial = data_attr['annotations_value']
                 self.fields['date_format'] = ChoiceField(choices=DATE_FORMAT_TYPES, required=False)
                 if 'date_format' in data_attr:
                     self.fields['date_format'].initial = data_attr['date_format']
             elif isinstance(self.django_field, NUMBER_FIELDS):
-                self.fields['annotations_type'] = ChoiceField(choices=ANNOTATIONS_CHOICES, required=False)
+                self.fields['annotations_type'] = ChoiceField(choices=[(0, '-----')] + ANNOTATIONS_CHOICES,
+                                                              required=False)
                 if 'annotations_type' in data_attr:
                     self.fields['annotations_type'].initial = data_attr['annotations_type']
                 self.fields['show_totals'] = BooleanField(required=False, widget=RBToggle())
@@ -467,7 +490,7 @@ class TableFieldForm(CrispyForm):
                 if self.cleaned_data['date_format']:
                     attributes.append(f'date_format-{self.cleaned_data["date_format"]}')
             elif isinstance(self.django_field, NUMBER_FIELDS):
-                if self.cleaned_data['annotations_type']:
+                if int(self.cleaned_data['annotations_type']) != 0:
                     attributes.append(f'annotations_type-{self.cleaned_data["annotations_type"]}')
                 if self.cleaned_data['show_totals'] and self.cleaned_data["show_totals"]:
                     attributes.append('show_totals-1')

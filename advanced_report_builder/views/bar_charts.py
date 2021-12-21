@@ -6,8 +6,6 @@ from ajax_helpers.mixins import AjaxHelpers
 from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Div
 from django.apps import apps
-from django.db.models import Count, Sum
-from django.db.models.functions import Coalesce
 from django.forms import CharField, ChoiceField, BooleanField
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -23,9 +21,9 @@ from django_modals.widgets.select2 import Select2
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn, ReportBuilderDateColumn
 from advanced_report_builder.filter_query import FilterQueryMixin
-from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_FUNCTIONS, BOOLEAN_FIELD, DATE_FIELDS, \
+from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_FUNCTIONS, DATE_FIELDS, \
     ANNOTATION_VALUE_FUNCTIONS, DATE_FORMAT_TYPES_DJANGO_FORMAT, DATE_FORMAT_TYPE_DD_MM_YY_SLASH
-from advanced_report_builder.models import SingleValueReport, BarChartReport, ReportType
+from advanced_report_builder.models import BarChartReport, ReportType
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_slug, get_django_field, split_attr
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase, QueryBuilderModalBaseMixin
@@ -59,175 +57,17 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         return self.process_query_filters(query=query,
                                           search_filter_data=report_query.query)
 
-    def get_aggregation_field(self, fields, field_name, col_type_override, aggregations_type, decimal_places=0):
+    def get_date_field(self, index, fields, base_modal):
+
+        field_name = self.bar_chart_report.date_field
+
+        django_field, col_type_override, _ = get_django_field(base_modal=base_modal, field=field_name)
 
         if col_type_override:
-            field = copy.deepcopy(col_type_override)
-            if aggregations_type == 'count':
-                new_field_name = f'{aggregations_type}_{field_name}'
-                number_function_kwargs = {}
-                function = ANNOTATION_FUNCTIONS[aggregations_type]
-                number_function_kwargs['annotations'] = {new_field_name: function(field.field)}
+            field_name = col_type_override.field
 
-                number_function_kwargs.update({'field': new_field_name,
-                                               'column_name': field_name})
-                field = self.number_field(**number_function_kwargs)
-            else:
-                if aggregations_type:
-                    new_field_name = f'{aggregations_type}_{field_name}'
-
-                    function = ANNOTATION_FUNCTIONS[aggregations_type]
-                    field.aggregations = {new_field_name: function(field.field)}
-                    field.field = new_field_name
-                    field.options['calculated'] = True
-
-            fields.append(field)
-        else:
-            number_function_kwargs = {}
-            if decimal_places:
-                number_function_kwargs = {'decimal_places': int(decimal_places)}
-
-            if aggregations_type:
-                new_field_name = f'{aggregations_type}_{field_name}'
-                function = ANNOTATION_FUNCTIONS[aggregations_type]
-                number_function_kwargs['aggregations'] = {new_field_name: function(field_name)}
-                field_name = new_field_name
-
-            number_function_kwargs.update({'field': field_name,
-                                           'column_name': field_name,
-                                           'options': {'calculated': True},
-                                           'model_path': ''})
-
-            field = self.number_field(**number_function_kwargs)
-            fields.append(field)
-
-        return field_name
-
-    def _process_aggregations(self, fields, aggregations_type='sum'):
-        field = self.bar_chart_report.field
-        base_modal = self.bar_chart_report.get_base_modal()
-
-        django_field, col_type_override, _ = get_django_field(base_modal=base_modal, field=field)
-
-        if isinstance(django_field, NUMBER_FIELDS) or isinstance(django_field, BOOLEAN_FIELD):
-            self.get_aggregation_field(fields=fields,
-                                       field_name=field,
-                                       col_type_override=col_type_override,
-                                       aggregations_type=aggregations_type,
-                                       decimal_places=self.bar_chart_report.decimal_places)
-        else:
-            assert False, 'not a number field'
-
-    def _get_count(self, fields):
-
-        number_function_kwargs = {'aggregations': {'count': Count(1)},
-                                  'field': 'count',
-                                  'column_name': 'count',
-                                  'options': {'calculated': True},
-                                  'model_path': ''}
-
-        field = self.number_field(**number_function_kwargs)
-        fields.append(field)
-
-    def get_percentage_field(self, fields,
-                             numerator_field_name, numerator_col_type_override,
-                             denominator_field_name, denominator_col_type_override,
-                             numerator_filter, decimal_places=0):
-        if numerator_col_type_override:
-            actual_numerator_field_name = numerator_col_type_override.field
-        else:
-            actual_numerator_field_name = numerator_field_name
-
-        if denominator_col_type_override:
-            actual_denominator_field_name = denominator_col_type_override.field
-        else:
-            actual_denominator_field_name = denominator_field_name
-
-        number_function_kwargs = {}
-        if decimal_places:
-            number_function_kwargs = {'decimal_places': int(decimal_places)}
-
-        new_field_name = f'{actual_numerator_field_name}_{actual_denominator_field_name}'
-
-        if numerator_filter:
-            numerator = Coalesce((Sum(actual_numerator_field_name, filter=numerator_filter)+0.0), 0.0)
-        else:
-            numerator = Coalesce((Sum(actual_numerator_field_name) + 0.0), 0.0)
-        denominator = Coalesce(Sum(actual_denominator_field_name) + 0.0, 0.0)
-
-        number_function_kwargs['aggregations'] = {new_field_name: (numerator / denominator) * 100.0}
-        field_name = new_field_name
-
-        number_function_kwargs.update({'field': field_name,
-                                       'column_name': field_name,
-                                       'options': {'calculated': True},
-                                       'model_path': ''})
-
-        field = self.number_field(**number_function_kwargs)
-
-        fields.append(field)
-
-        return field_name
-
-    def _process_percentage(self, fields):
-        denominator_field = self.bar_chart_report.field
-        numerator_field = self.bar_chart_report.numerator
-        base_modal = self.bar_chart_report.get_base_modal()
-
-        deno_django_field, denominator_col_type_override, _ = get_django_field(base_modal=base_modal,
-                                                                               field=denominator_field)
-
-        num_django_field, numerator_col_type_override, _ = get_django_field(base_modal=base_modal,
-                                                                            field=denominator_field)
-
-        if ((isinstance(deno_django_field, NUMBER_FIELDS) or isinstance(deno_django_field, BOOLEAN_FIELD)) and
-                (isinstance(num_django_field, NUMBER_FIELDS) or isinstance(num_django_field, BOOLEAN_FIELD))):
-            numerator_filter = None
-            report_query = self.get_report_query(report=self.bar_chart_report)
-            if report_query:
-                numerator_filter = self.process_filters(search_filter_data=report_query.extra_query)
-
-            self.get_percentage_field(fields=fields,
-                                      numerator_field_name=numerator_field,
-                                      numerator_col_type_override=numerator_col_type_override,
-                                      denominator_field_name=denominator_field,
-                                      denominator_col_type_override=denominator_col_type_override,
-                                      numerator_filter=numerator_filter,
-                                      decimal_places=2,
-                                      )
-        else:
-            assert False, 'not a number field'
-
-    def _process_percentage_from_count(self, fields):
-        report_query = self.get_report_query(report=self.bar_chart_report)
-
-        numerator_filter = None
-        if report_query:
-            numerator_filter = self.process_filters(search_filter_data=report_query.extra_query)
-
-        if numerator_filter:
-            numerator = Coalesce(Count(1, filter=numerator_filter) + 0.0, 0.0)
-        else:
-            numerator = Coalesce(Count(1) + 0.0, 0.0)
-        denominator = Coalesce(Count(1) + 0.0, 0.0)
-        a = (numerator / denominator) * 100.0
-
-        number_function_kwargs = {'aggregations': {'count': a},
-                                  'field': 'count',
-                                  'column_name': 'count',
-                                  'options': {'calculated': True},
-                                  'model_path': ''}
-        decimal_places = self.bar_chart_report.decimal_places
-        if decimal_places:
-            number_function_kwargs['decimal_places'] = int(decimal_places)
-
-        field = self.number_field(**number_function_kwargs)
-        fields.append(field)
-
-
-    def get_date_field(self, index, fields):
         date_format = DATE_FORMAT_TYPES_DJANGO_FORMAT[DATE_FORMAT_TYPE_DD_MM_YY_SLASH]
-        field_name = self.bar_chart_report.date_field
+
         date_function_kwargs = {'title': field_name,
                                 'date_format': date_format}
 
@@ -239,35 +79,135 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         field_name = new_field_name
 
         date_function_kwargs.update({'field': field_name,
-                                     'column_name': field_name,
-                                     'options': {'calculated': True},
-                                     'model_path': ''})
+                                     'column_name': field_name})
 
         field = self.date_field(**date_function_kwargs)
         fields.append(field)
         return field_name
 
-
-    def process_query_results(self):
-        axis_value_type = self.bar_chart_report.axis_value_type
+    def process_query_results(self, base_modal):
         fields = []
+        self.get_date_field(0, fields, base_modal=base_modal)
+        bar_chart_fields = json.loads(self.bar_chart_report.fields)
+        for index, table_field in enumerate(bar_chart_fields, 1):
+            field = table_field['field']
 
-        self.get_date_field(1, fields)
+            django_field, col_type_override, _ = get_django_field(base_modal=base_modal, field=field)
 
-        if axis_value_type == SingleValueReport.SINGLE_VALUE_TYPE_COUNT:
-            self._get_count(fields=fields)
-        elif axis_value_type == SingleValueReport.SINGLE_VALUE_TYPE_SUM:
-            self._process_aggregations(fields=fields, aggregations_type='sum')
-        elif axis_value_type == SingleValueReport.SINGLE_VALUE_TYPE_COUNT_AND_SUM:
-            self._get_count(fields=fields)
-            self._process_aggregations(fields=fields, aggregations_type='sum')
-        elif axis_value_type == SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE:
-            self._process_aggregations(fields=fields, aggregations_type='avg')
-        elif axis_value_type == SingleValueReport.SINGLE_VALUE_TYPE_PERCENT:
-            self._process_percentage(fields=fields)
-        elif axis_value_type == SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT:
-            self._process_percentage_from_count(fields=fields)
+            if isinstance(django_field, NUMBER_FIELDS):
+                data_attr = split_attr(table_field)
+
+                if data_attr.get('multiple_columns') == '1':
+                    assert False
+                    # query = self.extra_filters(query=table.model.objects)
+                    # multiple_column_field = data_attr.get('multiple_column_field')
+                    # report_builder_fields = getattr(self.base_model,
+                    #                                 self.table_report.report_type.report_builder_class_name, None)
+                    #
+                    # report_builder_fields = self._get_report_builder_fields(field_str=multiple_column_field,
+                    #                                                         report_builder_fields=report_builder_fields)
+                    # _fields = report_builder_fields.default_multiple_column_fields
+                    # default_multiple_column_fields = [multiple_column_field + '__' + x for x in _fields]
+                    # results = query.distinct(multiple_column_field).values(multiple_column_field,
+                    #                                                        *default_multiple_column_fields)
+                    #
+                    # for multiple_index, result in enumerate(results):
+                    #     suffix = self._set_multiple_title(database_values=result,
+                    #                                       value_prefix=multiple_column_field,
+                    #                                       fields=_fields,
+                    #                                       text=report_builder_fields.default_multiple_column_text)
+                    #     extra_filter = Q((multiple_column_field, result[multiple_column_field]))
+                    #
+                    #     field_name = self.get_number_field(index=f'{index}_{multiple_index}',
+                    #                                        data_attr=data_attr,
+                    #                                        table_field=table_field,
+                    #                                        fields=fields,
+                    #                                        totals=totals,
+                    #                                        col_type_override=col_type_override,
+                    #                                        extra_filter=extra_filter,
+                    #                                        title_suffix=suffix)
+                else:
+                    field_name = self.get_number_field(index=index,
+                                                       data_attr=data_attr,
+                                                       table_field=table_field,
+                                                       fields=fields,
+                                                       col_type_override=col_type_override)
         return fields
+
+    def get_number_field(self, index, table_field, data_attr, fields, col_type_override,
+                         extra_filter=None, title_suffix='', AXIS_VALUE_TYPE_COUNT=None):
+        field_name = table_field['field']
+
+        annotations_type = self.bar_chart_report.axis_value_type
+
+        annotation_filter = None
+        if annotations_type:
+            b64_filter = data_attr.get('filter')
+            if b64_filter:
+                _filter = base64.urlsafe_b64decode(b64_filter).decode('utf-8', 'ignore')
+                annotation_filter = self.process_filters(search_filter_data=_filter, extra_filter=extra_filter)
+        title = title_suffix + ' ' + table_field.get('title')
+        if col_type_override:
+            field = copy.deepcopy(col_type_override)
+
+            if annotations_type == AXIS_VALUE_TYPE_COUNT:
+                new_field_name = f'{annotations_type}_{field_name}_{index}'
+                number_function_kwargs = {}
+                if title:
+                    number_function_kwargs['title'] = title
+                function_type = ANNOTATION_FUNCTIONS[annotations_type]
+                if annotation_filter:
+                    function = function_type(field.field, filter=annotation_filter)
+                else:
+                    function = function_type(field.field)
+
+                number_function_kwargs['annotations'] = {new_field_name: function}
+
+                number_function_kwargs.update({'field': new_field_name,
+                                               'column_name': field_name})
+                field = self.number_field(**number_function_kwargs)
+            else:
+                css_class = field.column_defs.get('className')
+                if title:
+                    field.title = title
+                if annotations_type:
+                    new_field_name = f'{annotations_type}_{field_name}_{index}'
+
+                    function_type = ANNOTATION_FUNCTIONS[annotations_type]
+                    if annotation_filter:
+                        function = function_type(field.field, filter=annotation_filter)
+                    else:
+                        function = function_type(field.field)
+
+                    field.annotations = {new_field_name: function}
+                    field.field = new_field_name
+
+            fields.append(field)
+        else:
+            number_function_kwargs = {'title': title}
+            decimal_places = data_attr.get('decimal_places')
+
+            if decimal_places:
+                number_function_kwargs['decimal_places'] = int(decimal_places)
+
+            if annotations_type:
+                new_field_name = f'{annotations_type}_{field_name}_{index}'
+                function_type = ANNOTATION_FUNCTIONS[annotations_type]
+                if annotation_filter:
+                    function = function_type(field_name, filter=annotation_filter)
+                else:
+                    function = function_type(field_name)
+
+                number_function_kwargs['annotations'] = {new_field_name: function}
+                field_name = new_field_name
+
+            number_function_kwargs.update({'field': field_name,
+                                           'column_name': field_name})
+
+            field = self.number_field(**number_function_kwargs)
+            fields.append(field)
+
+        return field_name
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -277,10 +217,8 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         table.datatable_template = 'advanced_report_builder/bar_charts/middle.html'
         table.extra_filters = self.extra_filters
 
-        fields = self.process_query_results()
-        table.add_columns(
-            *fields
-        )
+        fields = self.process_query_results(base_modal=base_modal)
+        table.add_columns(*fields)
         context['datatable'] = table
         context['bar_chart_report'] = self.bar_chart_report
         context['title'] = self.get_title()

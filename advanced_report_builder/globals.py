@@ -12,11 +12,11 @@ ANNOTATION_VALUE_MONTH = 3
 ANNOTATION_VALUE_WEEK = 4
 ANNOTATION_VALUE_DAY = 5
 
-ANNOTATION_VALUE_CHOICES = ((ANNOTATION_VALUE_YEAR, 'Year'),
+ANNOTATION_VALUE_CHOICES = [(ANNOTATION_VALUE_YEAR, 'Year'),
                             (ANNOTATION_VALUE_QUARTER, 'Quarter'),
                             (ANNOTATION_VALUE_MONTH, 'Month'),
                             (ANNOTATION_VALUE_WEEK, 'Week'),
-                            (ANNOTATION_VALUE_DAY, 'Day'))
+                            (ANNOTATION_VALUE_DAY, 'Day')]
 
 ANNOTATION_VALUE_FUNCTIONS = {ANNOTATION_VALUE_YEAR: TruncYear,
                               ANNOTATION_VALUE_QUARTER: TruncQuarter,
@@ -24,18 +24,24 @@ ANNOTATION_VALUE_FUNCTIONS = {ANNOTATION_VALUE_YEAR: TruncYear,
                               ANNOTATION_VALUE_WEEK: TruncWeek,
                               ANNOTATION_VALUE_DAY: TruncDay}
 
-ANNOTATIONS_CHOICES = (('', ''),
-                       ('sum', 'Sum'),
-                       ('max', 'Max'),
-                       ('min', 'Min'),
-                       ('count', 'Count'),
-                       ('avg', 'Avg'))
+ANNOTATION_CHOICE_SUM = 1
+ANNOTATION_CHOICE_MAX = 2
+ANNOTATION_CHOICE_MIN = 3
+ANNOTATION_CHOICE_COUNT = 4
+ANNOTATION_CHOICE_AVG = 5
 
-ANNOTATION_FUNCTIONS = {'sum': Sum,
-                        'max': Max,
-                        'min': Min,
-                        'count': Count,
-                        'avg': Avg}
+
+ANNOTATIONS_CHOICES = [(ANNOTATION_CHOICE_SUM, 'Sum'),
+                       (ANNOTATION_CHOICE_MAX, 'Max'),
+                       (ANNOTATION_CHOICE_MIN, 'Min'),
+                       (ANNOTATION_CHOICE_COUNT, 'Count'),
+                       (ANNOTATION_CHOICE_AVG, 'Avg')]
+
+ANNOTATION_FUNCTIONS = {ANNOTATION_CHOICE_SUM: Sum,
+                        ANNOTATION_CHOICE_MAX: Max,
+                        ANNOTATION_CHOICE_MIN: Min,
+                        ANNOTATION_CHOICE_COUNT: Count,
+                        ANNOTATION_CHOICE_AVG: Avg}
 
 DATE_FORMAT_TYPE_DD_MM_YY_SLASH = 1
 DATE_FORMAT_TYPE_DD_MM_YYYY_SLASH = 2

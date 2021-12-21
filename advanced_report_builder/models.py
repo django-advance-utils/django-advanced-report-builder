@@ -7,7 +7,7 @@ from django_datatables.model_def import DatatableModel
 from time_stamped_model.models import TimeStampedModel
 
 from advanced_report_builder.globals import DISPLAY_OPTION_CHOICES, DISPLAY_OPTION_2_PER_ROW, DISPLAY_OPTION_NONE, \
-    DISPLAY_OPTION_CLASSES, ANNOTATION_VALUE_CHOICES
+    DISPLAY_OPTION_CLASSES, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, ANNOTATION_CHOICE_COUNT
 
 
 class ReportType(TimeStampedModel):
@@ -140,17 +140,6 @@ class SingleValueReport(Report):
 
 class BarChartReport(Report):
 
-
-    AXIS_VALUE_TYPE_COUNT = 1
-    AXIS_VALUE_TYPE_SUM = 2
-    AXIS_VALUE_TYPE_AVERAGE = 3
-
-    AXIS_VALUE_TYPE_CHOICES = (
-        (AXIS_VALUE_TYPE_COUNT, 'Count'),
-        (AXIS_VALUE_TYPE_SUM, 'Sum'),
-        (AXIS_VALUE_TYPE_AVERAGE, 'Average')
-    )
-
     BAR_CHART_ORIENTATION_VERTICAL = 'bar'
     BAR_CHART_ORIENTATION_HORIZONTAL = 'horizontalBar'
 
@@ -162,8 +151,8 @@ class BarChartReport(Report):
     axis_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES,
                                                   null=True, blank=True)
     date_field = models.CharField(max_length=200, blank=True, null=True)
-    axis_value_type = models.PositiveSmallIntegerField(choices=AXIS_VALUE_TYPE_CHOICES,
-                                                       default=AXIS_VALUE_TYPE_COUNT, null=True, blank=True)
+    axis_value_type = models.PositiveSmallIntegerField(choices=ANNOTATIONS_CHOICES,
+                                                       default=ANNOTATION_CHOICE_COUNT, null=True, blank=True)
     fields = models.TextField(null=True, blank=True)
     x_label = models.CharField(max_length=200, blank=True, null=True)
     y_label = models.CharField(max_length=200, blank=True, null=True)

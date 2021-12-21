@@ -17,7 +17,8 @@ from django_modals.widgets.select2 import Select2
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.filter_query import FilterQueryMixin
-from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_FUNCTIONS, BOOLEAN_FIELD
+from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_FUNCTIONS, BOOLEAN_FIELD, ANNOTATION_CHOICE_SUM, \
+    ANNOTATION_CHOICE_AVG, ANNOTATION_CHOICE_COUNT
 from advanced_report_builder.models import SingleValueReport, ReportType, ReportQuery
 from advanced_report_builder.utils import split_slug, get_django_field
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
@@ -54,7 +55,7 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
 
         if col_type_override:
             field = copy.deepcopy(col_type_override)
-            if aggregations_type == 'count':
+            if aggregations_type == ANNOTATION_CHOICE_COUNT:
                 new_field_name = f'{aggregations_type}_{field_name}'
                 number_function_kwargs = {}
                 function = ANNOTATION_FUNCTIONS[aggregations_type]
@@ -94,7 +95,7 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
 
         return field_name
 
-    def _process_aggregations(self, fields, aggregations_type='sum'):
+    def _process_aggregations(self, fields, aggregations_type=ANNOTATION_CHOICE_SUM):
         field = self.single_value_report.field
         base_modal = self.single_value_report.get_base_modal()
 
@@ -221,12 +222,12 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         if single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_COUNT:
             self._get_count(fields=fields)
         elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_SUM:
-            self._process_aggregations(fields=fields, aggregations_type='sum')
+            self._process_aggregations(fields=fields, aggregations_type=ANNOTATION_CHOICE_SUM)
         elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_COUNT_AND_SUM:
             self._get_count(fields=fields)
-            self._process_aggregations(fields=fields, aggregations_type='sum')
+            self._process_aggregations(fields=fields, aggregations_type=ANNOTATION_CHOICE_SUM)
         elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE:
-            self._process_aggregations(fields=fields, aggregations_type='avg')
+            self._process_aggregations(fields=fields, aggregations_type=ANNOTATION_CHOICE_AVG)
         elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_PERCENT:
             self._process_percentage(fields=fields)
         elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT:
