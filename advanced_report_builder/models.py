@@ -140,8 +140,8 @@ class SingleValueReport(Report):
 
 class BarChartReport(Report):
 
-    BAR_CHART_ORIENTATION_VERTICAL = 'bar'
-    BAR_CHART_ORIENTATION_HORIZONTAL = 'horizontalBar'
+    BAR_CHART_ORIENTATION_VERTICAL = 1
+    BAR_CHART_ORIENTATION_HORIZONTAL = 2
 
     BAR_CHART_ORIENTATION_CHOICES = (
         (BAR_CHART_ORIENTATION_VERTICAL, 'Vertical'),
@@ -157,9 +157,8 @@ class BarChartReport(Report):
     x_label = models.CharField(max_length=200, blank=True, null=True)
     y_label = models.CharField(max_length=200, blank=True, null=True)
 
-    bar_chart_orientation = models.CharField(choices=BAR_CHART_ORIENTATION_CHOICES,
-                                             default=BAR_CHART_ORIENTATION_VERTICAL,
-                                             max_length=200)
+    bar_chart_orientation = models.PositiveSmallIntegerField(choices=BAR_CHART_ORIENTATION_CHOICES,
+                                                             default=BAR_CHART_ORIENTATION_VERTICAL)
     show_totals = models.BooleanField(default=False)
 
     def is_orientation_vertical(self):

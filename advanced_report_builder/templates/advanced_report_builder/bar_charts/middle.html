@@ -1,8 +1,5 @@
 {% load ajax_helpers %}
 
-
-
-
 <canvas id="{{ datatable.table_id }}" width="400" height="400"></canvas>
 
 <script>
@@ -56,14 +53,58 @@
                 }
             }
         }
+    var x_axis = {
+        {% if targets_data %}
+            stacked: true,
+        {% endif %}
+        display: true,
+        {% if datatable.bar_chart_report.x_label %}
+        title: {
+            display: true,
+            text: '{% if datatable.bar_chart_report.is_orientation_vertical %}{{ datatable.bar_chart_report.x_label|safe|escapejs }}{% else %}{{ datatable.bar_chart_report.y_label|safe|escapejs }}{% endif %}',
+        }
+        {% endif %}
 
+    };
+
+    var y_axis = {
+        {% if targets_data %}
+            stacked: true,
+        {% endif %}
+        ticks: {
+            callback: function (value, index, values) {
+                {% if left_symbol %}
+                    return "{{ left_symbol }}" + value;
+                {% elif right_symbol %}
+                    return value + "{{ right_symbol }}";
+                {% endif %}
+            }
+        },
+        display: true,
+        {% if datatable.bar_chart_report.y_label %}
+        title: {
+            display: true,
+            text: '{% if datatable.bar_chart_report.is_orientation_vertical %}{{ datatable.bar_chart_report.y_label|safe|escapejs }}{% else %}{{ datatable.bar_chart_report.x_label|safe|escapejs }}{% endif %}',
+        }
+        {% endif %}
+    };
     var ctx{{ datatable.table_id }} = document.getElementById('{{ datatable.table_id }}').getContext('2d');
     var bar{{ datatable.table_id }} = new Chart(ctx{{ datatable.table_id }}, {
         type: 'bar',
         data: {labels: labels, datasets: datasets},
         options: {
-            title: {
-                display: false,
+            {% if not datatable.bar_chart_report.is_orientation_vertical %}indexAxis: 'y',{% endif %}
+
+            scales: {
+                // This is because there is a bug in the library,
+                // where the axis label don't swap properly on orientation change.
+                {% if datatable.bar_chart_report.is_orientation_vertical %}
+                    y: y_axis,
+                    x: x_axis,
+                {% else %}
+                    y: x_axis,
+                    x: y_axis,
+                {% endif %}
             },
             responsive: true,
             legend: {

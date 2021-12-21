@@ -255,6 +255,7 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         table = HorizontalTable(model=base_model)
         table.datatable_template = 'advanced_report_builder/bar_charts/middle.html'
         table.extra_filters = self.extra_filters
+        table.bar_chart_report = self.bar_chart_report
 
         fields = self.process_query_results(base_model=base_model, table=table)
         table.add_columns(*fields)
