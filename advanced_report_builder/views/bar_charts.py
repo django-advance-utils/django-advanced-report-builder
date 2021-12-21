@@ -22,7 +22,8 @@ from django_modals.widgets.select2 import Select2
 from advanced_report_builder.columns import ReportBuilderNumberColumn, ReportBuilderDateColumn
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_FUNCTIONS, DATE_FIELDS, \
-    ANNOTATION_VALUE_FUNCTIONS, DATE_FORMAT_TYPES_DJANGO_FORMAT, DATE_FORMAT_TYPE_DD_MM_YY_SLASH
+    ANNOTATION_VALUE_FUNCTIONS, DATE_FORMAT_TYPES_DJANGO_FORMAT, DATE_FORMAT_TYPE_DD_MM_YY_SLASH, \
+    ANNOTATION_CHOICE_COUNT
 from advanced_report_builder.models import BarChartReport, ReportType
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_slug, get_django_field, split_attr
@@ -135,7 +136,7 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         return fields
 
     def get_number_field(self, index, table_field, data_attr, fields, col_type_override,
-                         extra_filter=None, title_suffix='', AXIS_VALUE_TYPE_COUNT=None):
+                         extra_filter=None, title_suffix=''):
         field_name = table_field['field']
 
         annotations_type = self.bar_chart_report.axis_value_type
@@ -150,7 +151,7 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         if col_type_override:
             field = copy.deepcopy(col_type_override)
 
-            if annotations_type == AXIS_VALUE_TYPE_COUNT:
+            if annotations_type == ANNOTATION_CHOICE_COUNT:
                 new_field_name = f'{annotations_type}_{field_name}_{index}'
                 number_function_kwargs = {}
                 if title:
@@ -167,7 +168,6 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
                                                'column_name': field_name})
                 field = self.number_field(**number_function_kwargs)
             else:
-                css_class = field.column_defs.get('className')
                 if title:
                     field.title = title
                 if annotations_type:
@@ -286,42 +286,6 @@ class BarChartModal(QueryBuilderModalBase):
                    ]
 
     def form_setup(self, form, *_args, **_kwargs):
-        #     form.add_trigger('single_value_type', 'onchange', [
-        #         {'selector': '#div_id_field',
-        #          'values': {SingleValueReport.SINGLE_VALUE_TYPE_COUNT: 'hide',
-        #                     SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'hide'},
-        #          'default': 'show'},
-        #         {'selector': '#div_id_numerator',
-        #          'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: 'show'},
-        #          'default': 'hide'},
-        #         {'selector': '#div_id_extra_query_data',
-        #          'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: 'show',
-        #                     SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'show'},
-        #          'default': 'hide'},
-        #         {'selector': 'label[for=id_field]',
-        #          'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: ('html', 'Denominator field')},
-        #          'default': ('html', 'Field')},
-        #     ])
-        #
-        #     fields = []
-        #     if form.instance.field:
-        #
-        #         form.fields['field'].initial = form.instance.field
-        #
-        #         base_model = form.instance.report_type.content_type.model_class()
-        #         report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
-        #
-        #         self._get_fields(base_model=base_model,
-        #                          fields=fields,
-        #                          report_builder_fields=report_builder_fields,
-        #                          selected_field_id=form.instance.field)
-        #
-        #     form.fields['field'].widget = Select2(attrs={'ajax': True})
-        #     form.fields['field'].widget.select_data = fields
-        #
-        #     form.fields['numerator'].widget = Select2(attrs={'ajax': True})
-        #     form.fields['numerator'].widget.select_data = fields
-        #
 
         date_fields = []
         if form.instance.date_field:

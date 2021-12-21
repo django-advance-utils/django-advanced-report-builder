@@ -15,6 +15,7 @@
     }
 </style>
 {% lib_include 'datatable' module='django_datatables.includes' %}
+{% lib_include 'ChartJS' module='advanced_report_builder.includes' %}
 
     <div class="col-12 float-left">
         <div class="card">
@@ -25,7 +26,7 @@
                     {% block button_menu %}{{ menus.button_menu.render }}{% endblock %}
                 </div>
             </div>
-            <div class="dashboard-tile detail" style="background-color: #23527c; color: white;">
+            <div class="dashboard-tile detail">
                 <div class="content" style="padding: 2px;">
                     {{ datatable.render }}
                 </div>

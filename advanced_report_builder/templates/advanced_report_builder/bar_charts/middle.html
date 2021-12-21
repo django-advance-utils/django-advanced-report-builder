@@ -1,3 +1,75 @@
+{% load ajax_helpers %}
+
+
+
+
+<canvas id="report_{{ bar_chart_report.id }}" width="400" height="400"></canvas>
+<script>
+
+     var barChartData = {
+        labels: ['Jan 2021', 'Feb 2021', 'Mar 2021', 'Apr 2021', 'May 2021', 'Jun 2021', 'Jul 2021', 'Aug 2021', 'Sep 2021', 'Oct 2021', 'Nov 2021', 'Dec 2021'],
+
+        datasets: [
+            {
+                datalabels: {
+                    align: 'top',
+                    color: '#000000',
+                    anchor: 'end'
+                },
+                label: 'Projects',
+                borderWidth: 1,
+                data: [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                backgroundColor: ['#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70',]
+            },
+
+
+            {
+                datalabels: {
+                    align: 'top',
+                    color: '#000000',
+                    anchor: 'end'
+                },
+                label: 'Projects2',
+                borderWidth: 1,
+                data: [0, 0, 4, 0, 0, 0, 0, 0, 0, 4, 0, 0],
+                backgroundColor: ['#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70',]
+            }
+
+
+
+
+        ]
+    };
+
+    var ctx = document.getElementById('report_{{ bar_chart_report.id }}').getContext('2d');
+
+
+    var bar = new Chart(ctx, {
+
+        type: 'bar',
+        data: barChartData,
+        options: {
+            title: {
+                display: true,
+                text: 'Count by Date Created \u002D This year'
+            },
+            responsive: true,
+            legend: {
+                position: 'top',
+                display: false
+            },
+        }
+    });
+
+
+
+
+
+</script>
+
+
+
+
 <div id="{{ datatable.table_id }}">
 </div>
 <script>
@@ -10,14 +82,8 @@
         table.find_column = django_datatables.PythonTable.prototype.find_column
         for (var i = 0; i < table.initsetup.colOptions.length; i++) {
             var row = '';
-            if(i > 0) {
-                row += '<div class="single_value_separator"> | </div>';
-            }
-            if (table.initsetup.colOptions[i].row_class !== undefined){
-                row_class = ' class="' + table.initsetup.colOptions[i].row_class + '"'
-            } else {
-                row_class = ' class="single_value"'
-            }
+
+
 
             for (var j = 0; j < table.data.length; j++) {
                 if (table.initsetup.colOptions[i]['render'] != undefined) {
@@ -29,7 +95,7 @@
                 if (cell_data == null) {
                     cell_data = '';
                 }
-                row += '<div' + row_class + '>' + cell_data + '</div>';
+                row += '<div>' + cell_data + '</div>';
             }
             $('#' + table.table_id).append(row);
         }

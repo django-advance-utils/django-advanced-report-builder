@@ -24,7 +24,7 @@ class DashboardInclude(SourceBase):
 
 
 class ChartJS(SourceBase):
-    static_path = 'libraries/chart-js/'
+    static_path = '/advanced_report_builder/chart-js/'
     js_filename = ['chart.min.js',
                    'chartjs-adapter-moment.min.js',  # this does require moment however it's already included
                    'chartjs-plugin-datalabels.min.js']
