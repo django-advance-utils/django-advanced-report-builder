@@ -24,7 +24,7 @@ from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_FUNCTIONS, DATE_FIELDS, \
     ANNOTATION_VALUE_FUNCTIONS, DATE_FORMAT_TYPES_DJANGO_FORMAT, DATE_FORMAT_TYPE_DD_MM_YY_SLASH, \
     ANNOTATION_CHOICE_COUNT
-from advanced_report_builder.models import BarChartReport, ReportType
+from advanced_report_builder.models import BarChartReport, ReportType, ReportQuery
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_slug, get_django_field, split_attr
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase, QueryBuilderModalBaseMixin
@@ -80,7 +80,8 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         field_name = new_field_name
 
         date_function_kwargs.update({'field': field_name,
-                                     'column_name': field_name})
+                                     'column_name': field_name,
+                                     'model_path': ''})
 
         field = self.date_field(**date_function_kwargs)
         fields.append(field)
@@ -166,6 +167,7 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
 
                 number_function_kwargs.update({'field': new_field_name,
                                                'column_name': field_name})
+
                 field = self.number_field(**number_function_kwargs)
             else:
                 if title:
@@ -190,21 +192,24 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
             if decimal_places:
                 number_function_kwargs['decimal_places'] = int(decimal_places)
 
-            if annotations_type:
-                new_field_name = f'{annotations_type}_{field_name}_{index}'
-                function_type = ANNOTATION_FUNCTIONS[annotations_type]
-                if annotation_filter:
-                    function = function_type(field_name, filter=annotation_filter)
-                else:
-                    function = function_type(field_name)
+            number_function_kwargs['colours'] = {'negative': data_attr.get('negative_bar_colour', '801C70'),
+                                                 'positive': data_attr.get('positive_bar_colour', '801C70')}
 
-                number_function_kwargs['annotations'] = {new_field_name: function}
-                field_name = new_field_name
+            new_field_name = f'{annotations_type}_{field_name}_{index}'
+            function_type = ANNOTATION_FUNCTIONS[annotations_type]
+            if annotation_filter:
+                function = function_type(field_name, filter=annotation_filter)
+            else:
+                function = function_type(field_name)
+
+            number_function_kwargs['annotations'] = {new_field_name: function}
+            field_name = new_field_name
 
             number_function_kwargs.update({'field': field_name,
                                            'column_name': field_name})
 
             field = self.number_field(**number_function_kwargs)
+
             fields.append(field)
 
         return field_name
@@ -298,7 +303,7 @@ class BarChartModal(QueryBuilderModalBase):
             self._get_date_fields(base_model=base_model,
                                   fields=date_fields,
                                   report_builder_fields=report_builder_fields,
-                                  selected_field_id=form.instance.fields)
+                                  selected_field_id=form.instance.date_field)
 
         form.fields['date_field'].widget = Select2(attrs={'ajax': True})
         form.fields['date_field'].widget.select_data = date_fields
@@ -317,30 +322,24 @@ class BarChartModal(QueryBuilderModalBase):
                 FieldEx('query_data',
                         template='advanced_report_builder/query_builder.html'),
                 )
-    #
-    # def form_valid(self, form):
-    #     single_value_report = form.save()
-    #
-    #     if not self.report_query and (form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']):
-    #         ReportQuery(query=form.cleaned_data['query_data'],
-    #                     extra_query=form.cleaned_data['extra_query_data'],
-    #                     report=single_value_report).save()
-    #     elif form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']:
-    #         self.report_query.extra_query = form.cleaned_data['extra_query_data']
-    #         self.report_query.query = form.cleaned_data['query_data']
-    #         if self.show_query_name:
-    #             self.report_query.name = form.cleaned_data['query_name']
-    #         self.report_query.save()
-    #     elif self.report_query:
-    #         self.report_query.delete()
-    #
-    #     return self.command_response('reload')
-    #
-    # def clean(self, form, cleaned_data):
-    #     if (cleaned_data['single_value_type'] not in [SingleValueReport.SINGLE_VALUE_TYPE_COUNT,
-    #                                                   SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT] and
-    #             not cleaned_data['field']):
-    #         raise ValidationError("Please select a field")
+
+    def form_valid(self, form):
+        bar_chart_report = form.save()
+
+        if not self.report_query and (form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']):
+            ReportQuery(query=form.cleaned_data['query_data'],
+                        extra_query=form.cleaned_data['extra_query_data'],
+                        report=bar_chart_report).save()
+        elif form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']:
+            self.report_query.extra_query = form.cleaned_data['extra_query_data']
+            self.report_query.query = form.cleaned_data['query_data']
+            if self.show_query_name:
+                self.report_query.name = form.cleaned_data['query_name']
+            self.report_query.save()
+        elif self.report_query:
+            self.report_query.delete()
+
+        return self.command_response('reload')
 
     def select2_date_field(self, **kwargs):
         fields = []

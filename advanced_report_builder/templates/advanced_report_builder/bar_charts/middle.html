@@ -3,75 +3,8 @@
 
 
 
-<canvas id="report_{{ bar_chart_report.id }}" width="400" height="400"></canvas>
-<script>
+<canvas id="{{ datatable.table_id }}" width="400" height="400"></canvas>
 
-     var barChartData = {
-        labels: ['Jan 2021', 'Feb 2021', 'Mar 2021', 'Apr 2021', 'May 2021', 'Jun 2021', 'Jul 2021', 'Aug 2021', 'Sep 2021', 'Oct 2021', 'Nov 2021', 'Dec 2021'],
-
-        datasets: [
-            {
-                datalabels: {
-                    align: 'top',
-                    color: '#000000',
-                    anchor: 'end'
-                },
-                label: 'Projects',
-                borderWidth: 1,
-                data: [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                backgroundColor: ['#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70',]
-            },
-
-
-            {
-                datalabels: {
-                    align: 'top',
-                    color: '#000000',
-                    anchor: 'end'
-                },
-                label: 'Projects2',
-                borderWidth: 1,
-                data: [0, 0, 4, 0, 0, 0, 0, 0, 0, 4, 0, 0],
-                backgroundColor: ['#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70','#801C70',]
-            }
-
-
-
-
-        ]
-    };
-
-    var ctx = document.getElementById('report_{{ bar_chart_report.id }}').getContext('2d');
-
-
-    var bar = new Chart(ctx, {
-
-        type: 'bar',
-        data: barChartData,
-        options: {
-            title: {
-                display: true,
-                text: 'Count by Date Created \u002D This year'
-            },
-            responsive: true,
-            legend: {
-                position: 'top',
-                display: false
-            },
-        }
-    });
-
-
-
-
-
-</script>
-
-
-
-
-<div id="{{ datatable.table_id }}">
-</div>
 <script>
 
 
@@ -80,10 +13,25 @@
         var cell_data, row_class;
         var table = {{ datatable.model_table_setup }};
         table.find_column = django_datatables.PythonTable.prototype.find_column
+
+        var labels = [];
+        var datasets = [];
+
         for (var i = 0; i < table.initsetup.colOptions.length; i++) {
-            var row = '';
 
-
+            if (i > 0) {
+                datasets[i - 1] = {
+                    label: table.row_titles[i],
+                    data: [],
+                    borderWidth: 1,
+                    datalabels: {
+                        align: 'top',
+                        color: '#000000',
+                        anchor: 'end'
+                    },
+                    backgroundColor: []
+                };
+            }
 
             for (var j = 0; j < table.data.length; j++) {
                 if (table.initsetup.colOptions[i]['render'] != undefined) {
@@ -95,9 +43,35 @@
                 if (cell_data == null) {
                     cell_data = '';
                 }
-                row += '<div>' + cell_data + '</div>';
+                if(i > 0) {
+                    datasets[i-1].data.push(cell_data);
+                    var colours = table.initsetup.colOptions[i].colours;
+                    if(cell_data < 0) {
+                        datasets[i-1].backgroundColor.push('#' + colours.negative);
+                    } else {
+                        datasets[i-1].backgroundColor.push('#' + colours.positive);
+                    }
+                } else {
+                    labels.push(cell_data);
+                }
             }
-            $('#' + table.table_id).append(row);
         }
+
+    var ctx{{ datatable.table_id }} = document.getElementById('{{ datatable.table_id }}').getContext('2d');
+    var bar{{ datatable.table_id }} = new Chart(ctx{{ datatable.table_id }}, {
+        type: 'bar',
+        data: {labels: labels, datasets: datasets},
+        options: {
+            title: {
+                display: false,
+            },
+            responsive: true,
+            legend: {
+                position: 'top',
+                display: false
+            },
+        }
+    });
+
     })();
 </script>
