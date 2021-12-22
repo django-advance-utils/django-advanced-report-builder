@@ -7,7 +7,8 @@ from django_datatables.model_def import DatatableModel
 from time_stamped_model.models import TimeStampedModel
 
 from advanced_report_builder.globals import DISPLAY_OPTION_CHOICES, DISPLAY_OPTION_2_PER_ROW, DISPLAY_OPTION_NONE, \
-    DISPLAY_OPTION_CLASSES, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, ANNOTATION_CHOICE_COUNT, DATE_FORMAT_TYPES
+    DISPLAY_OPTION_CLASSES, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, ANNOTATION_CHOICE_COUNT, \
+    ANNOTATION_CHART_SCALE
 
 
 class ReportType(TimeStampedModel):
@@ -150,7 +151,6 @@ class BarChartReport(Report):
 
     axis_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES)
     date_field = models.CharField(max_length=200, blank=True, null=True)
-    date_format = models.PositiveSmallIntegerField(choices=DATE_FORMAT_TYPES, null=True, blank=True)
     axis_value_type = models.PositiveSmallIntegerField(choices=ANNOTATIONS_CHOICES,
                                                        default=ANNOTATION_CHOICE_COUNT, null=True, blank=True)
     fields = models.TextField(null=True, blank=True)
@@ -161,9 +161,13 @@ class BarChartReport(Report):
                                                              default=BAR_CHART_ORIENTATION_VERTICAL)
     stacked = models.BooleanField(default=False)
     show_totals = models.BooleanField(default=False)
+    show_blank_dates = models.BooleanField(default=True)
 
     def is_orientation_vertical(self):
         return self.bar_chart_orientation == self.BAR_CHART_ORIENTATION_VERTICAL
+
+    def get_chart_scale(self):
+        return ANNOTATION_CHART_SCALE[self.axis_scale]
 
 
 class Dashboard(TimeStampedModel):

@@ -23,6 +23,13 @@ ANNOTATION_VALUE_FUNCTIONS = {ANNOTATION_VALUE_YEAR: TruncYear,
                               ANNOTATION_VALUE_MONTH: TruncMonth,
                               ANNOTATION_VALUE_WEEK: TruncWeek,
                               ANNOTATION_VALUE_DAY: TruncDay}
+ANNOTATION_CHART_SCALE = {ANNOTATION_VALUE_YEAR: 'year',
+                          ANNOTATION_VALUE_QUARTER: 'quarter',
+                          ANNOTATION_VALUE_MONTH: 'month',
+                          ANNOTATION_VALUE_WEEK: 'week',
+                          ANNOTATION_VALUE_DAY: 'day'}
+
+
 
 ANNOTATION_CHOICE_SUM = 1
 ANNOTATION_CHOICE_MAX = 2
@@ -145,7 +152,6 @@ DISPLAY_OPTION_CHOICES = [
 DISPLAY_OPTION_CLASSES = {DISPLAY_OPTION_1_PER_ROW: ' col-12',
                           DISPLAY_OPTION_2_PER_ROW: ' col-12 col-md-12 col-lg-6',
                           DISPLAY_OPTION_3_PER_ROW: ' col-12 col-md-12 col-lg-4'}
-
 
 DEFAULT_DATE_FORMAT = {ANNOTATION_VALUE_YEAR: DATE_FORMAT_TYPE_YYYY,
                        ANNOTATION_VALUE_QUARTER: DATE_FORMAT_TYPE_WORDS_MM_YY,

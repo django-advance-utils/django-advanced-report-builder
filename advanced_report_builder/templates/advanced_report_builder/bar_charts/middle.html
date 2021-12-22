@@ -60,14 +60,20 @@
         title: {
             display: true,
             text: '{% if datatable.bar_chart_report.is_orientation_vertical %}{{ datatable.bar_chart_report.x_label|safe|escapejs }}{% else %}{{ datatable.bar_chart_report.y_label|safe|escapejs }}{% endif %}',
-        }
+        },
+            {% if datatable.bar_chart_report.show_blank_dates %}
+            type: 'time',
+            time: {
+                unit: '{{ datatable.bar_chart_report.get_chart_scale}}'
+            }
+                {% endif %}
         {% endif %}
 
     };
 
     var y_axis = {
         {% if datatable.bar_chart_report.stacked %}stacked: true,{% endif %}
-      
+
         display: true,
         {% if datatable.bar_chart_report.y_label %}
         title: {
@@ -82,6 +88,7 @@
         type: 'bar',
         data: {labels: labels, datasets: datasets},
         options: {
+            maintainAspectRatio: false,
             {% if not datatable.bar_chart_report.is_orientation_vertical %}indexAxis: 'y',{% endif %}
 
             scales: {

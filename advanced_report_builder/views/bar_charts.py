@@ -23,7 +23,7 @@ from django_modals.widgets.select2 import Select2
 from advanced_report_builder.columns import ReportBuilderNumberColumn, ReportBuilderDateColumn
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_FUNCTIONS, DATE_FIELDS, \
-    ANNOTATION_VALUE_FUNCTIONS, DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_CHOICE_COUNT, DEFAULT_DATE_FORMAT
+    ANNOTATION_VALUE_FUNCTIONS, ANNOTATION_CHOICE_COUNT, DEFAULT_DATE_FORMAT, DATE_FORMAT_TYPES_DJANGO_FORMAT
 from advanced_report_builder.models import BarChartReport, ReportType, ReportQuery
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_slug, get_django_field, split_attr
@@ -69,8 +69,8 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         if col_type_override:
             field_name = col_type_override.field
 
-        if self.bar_chart_report.date_format is not None:
-            date_format = DATE_FORMAT_TYPES_DJANGO_FORMAT[self.bar_chart_report.date_format]
+        if self.bar_chart_report.show_blank_dates:
+            date_format = '%Y-%m-%d'
         else:
             default_format_type = DEFAULT_DATE_FORMAT[self.bar_chart_report.axis_scale]
             date_format = DATE_FORMAT_TYPES_DJANGO_FORMAT[default_format_type]
@@ -316,7 +316,7 @@ class BarChartModal(QueryBuilderModalBase):
                'negative_bar_colour': ColourPickerWidget,
                'stacked': RBToggle,
                'show_totals': RBToggle,
-               'date_format': Select2}
+               'show_blank_dates': RBToggle}
 
     form_fields = ['name',
                    'report_type',
@@ -324,12 +324,12 @@ class BarChartModal(QueryBuilderModalBase):
                    'axis_value_type',
                    'axis_scale',
                    'date_field',
-                   'date_format',
                    'fields',
                    'x_label',
                    'y_label',
                    'stacked',
                    'show_totals',
+                   'show_blank_dates',
                    ]
 
     def form_setup(self, form, *_args, **_kwargs):
@@ -357,12 +357,12 @@ class BarChartModal(QueryBuilderModalBase):
                 'axis_scale',
                 'axis_value_type',
                 'date_field',
-                'date_format',
                 FieldEx('fields', template='advanced_report_builder/bar_charts/fields/select_column.html'),
                 'x_label',
                 'y_label',
                 'stacked',
                 'show_totals',
+                'show_blank_dates',
                 FieldEx('query_data',
                         template='advanced_report_builder/query_builder.html'),
                 )
