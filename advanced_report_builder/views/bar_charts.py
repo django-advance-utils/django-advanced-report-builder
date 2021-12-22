@@ -240,7 +240,8 @@ class BarChartView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
             field_name = new_field_name
 
             number_function_kwargs.update({'field': field_name,
-                                           'column_name': field_name})
+                                           'column_name': field_name,
+                                           'model_path': ''})
 
             field = self.number_field(**number_function_kwargs)
 
@@ -313,6 +314,7 @@ class BarChartModal(QueryBuilderModalBase):
     model = BarChartReport
     widgets = {'positive_bar_colour': ColourPickerWidget,
                'negative_bar_colour': ColourPickerWidget,
+               'stacked': RBToggle,
                'show_totals': RBToggle,
                'date_format': Select2}
 
@@ -326,6 +328,7 @@ class BarChartModal(QueryBuilderModalBase):
                    'fields',
                    'x_label',
                    'y_label',
+                   'stacked',
                    'show_totals',
                    ]
 
@@ -358,6 +361,7 @@ class BarChartModal(QueryBuilderModalBase):
                 FieldEx('fields', template='advanced_report_builder/bar_charts/fields/select_column.html'),
                 'x_label',
                 'y_label',
+                'stacked',
                 'show_totals',
                 FieldEx('query_data',
                         template='advanced_report_builder/query_builder.html'),

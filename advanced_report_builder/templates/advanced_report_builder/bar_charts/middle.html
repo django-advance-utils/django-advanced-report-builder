@@ -54,9 +54,7 @@
             }
         }
     var x_axis = {
-        {% if targets_data %}
-            stacked: true,
-        {% endif %}
+        {% if datatable.bar_chart_report.stacked %}stacked: true,{% endif %}
         display: true,
         {% if datatable.bar_chart_report.x_label %}
         title: {
@@ -68,18 +66,8 @@
     };
 
     var y_axis = {
-        {% if targets_data %}
-            stacked: true,
-        {% endif %}
-        ticks: {
-            callback: function (value, index, values) {
-                {% if left_symbol %}
-                    return "{{ left_symbol }}" + value;
-                {% elif right_symbol %}
-                    return value + "{{ right_symbol }}";
-                {% endif %}
-            }
-        },
+        {% if datatable.bar_chart_report.stacked %}stacked: true,{% endif %}
+      
         display: true,
         {% if datatable.bar_chart_report.y_label %}
         title: {

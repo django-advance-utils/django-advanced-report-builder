@@ -159,6 +159,7 @@ class BarChartReport(Report):
 
     bar_chart_orientation = models.PositiveSmallIntegerField(choices=BAR_CHART_ORIENTATION_CHOICES,
                                                              default=BAR_CHART_ORIENTATION_VERTICAL)
+    stacked = models.BooleanField(default=False)
     show_totals = models.BooleanField(default=False)
 
     def is_orientation_vertical(self):
