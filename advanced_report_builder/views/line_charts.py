@@ -15,45 +15,32 @@ from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
 from django_modals.widgets.select2 import Select2
 
-from advanced_report_builder.globals import NUMBER_FIELDS, DATE_FIELDS, DEFAULT_DATE_FORMAT, \
-    DATE_FORMAT_TYPES_DJANGO_FORMAT
-from advanced_report_builder.models import BarChartReport, ReportType, ReportQuery
+from advanced_report_builder.globals import NUMBER_FIELDS, DATE_FIELDS
+from advanced_report_builder.models import LineChartReport, ReportType, ReportQuery
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import get_django_field, split_attr
 from advanced_report_builder.views.charts_base import ChartBaseView
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase, QueryBuilderModalBaseMixin
 
 
-class BarChartView(ChartBaseView):
+class LineChartView(ChartBaseView):
 
     def dispatch(self, request, *args, **kwargs):
         self.report = kwargs.get('report')
-        self.chart_report = self.report.barchartreport
+        self.chart_report = self.report.linechartreport
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        self.table.bar_chart_report = self.chart_report
-        self.table.datatable_template = 'advanced_report_builder/charts/bar/middle.html'
-        context['bar_chart_report'] = self.chart_report
+        self.table.line_chart_report = self.chart_report
+        self.table.datatable_template = 'advanced_report_builder/charts/line/middle.html'
+        context['line_chart_report'] = self.chart_report
         return context
 
-    def get_date_format(self):
-        if self.chart_report.show_blank_dates:
-            date_format = '%Y-%m-%d'
-        else:
-            default_format_type = DEFAULT_DATE_FORMAT[self.chart_report.axis_scale]
-            date_format = DATE_FORMAT_TYPES_DJANGO_FORMAT[default_format_type]
-        return date_format
-
     def set_extra_number_field_kwargs(self, data_attr, options, multiple_index):
-        negative_bar_colour = data_attr.get('negative_bar_colour') or '801C70'
-        positive_bar_colour = data_attr.get('positive_bar_colour') or '801C70'
-        negative_bar_colour = self.add_colour_offset(negative_bar_colour, multiple_index=multiple_index)
-        positive_bar_colour = self.add_colour_offset(positive_bar_colour, multiple_index=multiple_index)
-
-        options.update({'colours': {'negative': negative_bar_colour,
-                                    'positive': positive_bar_colour}})
+        line_colour = data_attr.get('line_colour')  or '801C70'
+        line_colour = self.add_colour_offset(line_colour, multiple_index=multiple_index)
+        options.update({'colour': line_colour})
 
     def pod_report_menu(self):
         query_id = self.slug.get(f'query{self.chart_report.id}')
@@ -61,34 +48,28 @@ class BarChartView(ChartBaseView):
         if query_id:
             slug_str = f'-query_id-{query_id}'
 
-        return [MenuItem(f'advanced_report_builder:bar_chart_modal,pk-{self.chart_report.id}{slug_str}',
+        return [MenuItem(f'advanced_report_builder:line_chart_modal,pk-{self.chart_report.id}{slug_str}',
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
 
 
-class BarChartModal(QueryBuilderModalBase):
+class LineChartModal(QueryBuilderModalBase):
     template_name = 'advanced_report_builder/charts/modal.html'
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
-    model = BarChartReport
-    widgets = {'positive_bar_colour': ColourPickerWidget,
-               'negative_bar_colour': ColourPickerWidget,
-               'stacked': RBToggle,
-               'show_totals': RBToggle,
-               'show_blank_dates': RBToggle}
+    model = LineChartReport
+    widgets = {'line_colour': ColourPickerWidget,
+               'show_totals': RBToggle}
 
     form_fields = ['name',
                    'report_type',
-                   ('bar_chart_orientation', {'label': 'Orientation'}),
                    'axis_value_type',
                    'axis_scale',
                    'date_field',
                    'fields',
                    'x_label',
                    'y_label',
-                   'stacked',
                    'show_totals',
-                   'show_blank_dates',
                    ]
 
     def form_setup(self, form, *_args, **_kwargs):
@@ -112,27 +93,24 @@ class BarChartModal(QueryBuilderModalBase):
         self.add_query_data(form, include_extra_query=True)
         return ('name',
                 'report_type',
-                'bar_chart_orientation',
                 'axis_scale',
                 'axis_value_type',
                 'date_field',
-                FieldEx('fields', template='advanced_report_builder/charts/bar/fields/select_column.html'),
+                FieldEx('fields', template='advanced_report_builder/charts/line/fields/select_column.html'),
                 'x_label',
                 'y_label',
-                'stacked',
                 'show_totals',
-                'show_blank_dates',
                 FieldEx('query_data',
                         template='advanced_report_builder/query_builder.html'),
                 )
 
     def form_valid(self, form):
-        bar_chart_report = form.save()
+        line_chart_report = form.save()
 
         if not self.report_query and (form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']):
             ReportQuery(query=form.cleaned_data['query_data'],
                         extra_query=form.cleaned_data['extra_query_data'],
-                        report=bar_chart_report).save()
+                        report=line_chart_report).save()
         elif form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']:
             self.report_query.extra_query = form.cleaned_data['extra_query_data']
             self.report_query.query = form.cleaned_data['query_data']
@@ -221,7 +199,7 @@ class BarChartModal(QueryBuilderModalBase):
         return self.command_response('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
 
 
-class BarChartFieldForm(CrispyForm):
+class LineChartFieldForm(CrispyForm):
 
     def __init__(self, *args, **kwargs):
         self.django_field = None
@@ -250,10 +228,8 @@ class BarChartFieldForm(CrispyForm):
 
         self.fields['title'] = CharField(initial=data['title'])
 
-        self.fields['positive_bar_colour'] = CharField(required=False, widget=ColourPickerWidget)
-        self.fields['negative_bar_colour'] = CharField(required=False, widget=ColourPickerWidget)
-        self.fields['positive_bar_colour'].initial = data_attr.get('positive_bar_colour')
-        self.fields['negative_bar_colour'].initial = data_attr.get('negative_bar_colour')
+        self.fields['line_colour'] = CharField(required=False, widget=ColourPickerWidget)
+        self.fields['line_colour'].initial = data_attr.get('line_colour')
 
         self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
         self.fields['filter'] = CharField(required=False)
@@ -284,8 +260,7 @@ class BarChartFieldForm(CrispyForm):
         attributes = []
         self.get_report_type_details()
 
-        attributes.append(f'positive_bar_colour-{self.cleaned_data["positive_bar_colour"]}')
-        attributes.append(f'negative_bar_colour-{self.cleaned_data["negative_bar_colour"]}')
+        attributes.append(f'line_colour-{self.cleaned_data["line_colour"]}')
 
         if self.cleaned_data['has_filter']:
             attributes.append('has_filter-1')
@@ -317,10 +292,10 @@ class BarChartFieldForm(CrispyForm):
                                                        title_prefix=f"{include['title']} --> ")
 
 
-class BarChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
-    form_class = BarChartFieldForm
+class LineChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
+    form_class = LineChartFieldForm
     size = 'xl'
-    template_name = 'advanced_report_builder/charts/bar/fields/modal.html'
+    template_name = 'advanced_report_builder/charts/line/fields/modal.html'
 
     @property
     def modal_title(self):
@@ -351,8 +326,7 @@ class BarChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
         ])
 
         return ['title',
-                'positive_bar_colour',
-                'negative_bar_colour',
+                'line_colour',
                 Div(FieldEx('has_filter',
                             template='django_modals/fields/label_checkbox.html',
                             field_class='col-6 input-group-sm'),

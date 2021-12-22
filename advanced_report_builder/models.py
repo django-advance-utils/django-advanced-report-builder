@@ -170,6 +170,21 @@ class BarChartReport(Report):
         return ANNOTATION_CHART_SCALE[self.axis_scale]
 
 
+class LineChartReport(Report):
+
+    axis_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES)
+    date_field = models.CharField(max_length=200, blank=True, null=True)
+    axis_value_type = models.PositiveSmallIntegerField(choices=ANNOTATIONS_CHOICES,
+                                                       default=ANNOTATION_CHOICE_COUNT, null=True, blank=True)
+    fields = models.TextField(null=True, blank=True)
+    x_label = models.CharField(max_length=200, blank=True, null=True)
+    y_label = models.CharField(max_length=200, blank=True, null=True)
+    show_totals = models.BooleanField(default=False)
+
+    def get_chart_scale(self):
+        return ANNOTATION_CHART_SCALE[self.axis_scale]
+
+
 class Dashboard(TimeStampedModel):
 
     slug = models.SlugField(unique=True)
