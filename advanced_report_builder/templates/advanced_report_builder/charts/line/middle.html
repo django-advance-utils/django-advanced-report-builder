@@ -26,6 +26,7 @@
                         color: '#000000',
                         anchor: 'end'
                     },
+                    borderColor: '#' + table.initsetup.colOptions[i].colour,
                     lineTension: 0.4,
                     backgroundColor: []
                 };
@@ -59,14 +60,21 @@
                     text: '{{ datatable.line_chart_report.x_label|safe|escapejs }}',
                 },
             {% endif %}
-            {% if datatable.line_chart_report.show_blank_dates %}
                 type: 'time',
                 time: {
-                    unit: '{{ datatable.line_chart_report.get_chart_scale}}'
+                    unit: '{{ datatable.line_chart_report.get_chart_scale}}',
+                    displayFormats: {
+                        millisecond: 'MMM DD',
+                        second: 'MMM DD',
+                        minute: 'MMM DD',
+                        hour: 'MMM DD',
+                        day: 'MMM DD',
+                        week: 'MMM DD',
+                        month: 'MMM DD',
+                        quarter: 'MMM DD',
+                        year: 'MMM DD',
+                    }
                 }
-
-            {% endif %}
-
         };
 
         var y_axis = {
