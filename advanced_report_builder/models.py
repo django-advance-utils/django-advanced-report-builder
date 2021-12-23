@@ -45,7 +45,7 @@ class Report(TimeStampedModel):
     def save(self, *args, **kwargs):
 
         slug_alias = self.slug
-        self.make_new_slug(allow_dashes=False, on_edit=True)
+        self.make_new_slug(obj=Report, allow_dashes=False, on_edit=True)
         if slug_alias != self.slug:
             self.slug_alias = slug_alias
 
