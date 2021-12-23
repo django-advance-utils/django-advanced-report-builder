@@ -63,6 +63,7 @@ class PieChartModal(ChartBaseModal):
 
     form_fields = ['name',
                    'report_type',
+                   'axis_value_type',
                    'style',
                    'fields',
                    ]
@@ -72,6 +73,7 @@ class PieChartModal(ChartBaseModal):
         self.add_query_data(form, include_extra_query=True)
         return ('name',
                 'report_type',
+                'axis_value_type',
                 'style',
                 FieldEx('fields', template='advanced_report_builder/charts/pie/fields/select_column.html'),
                 FieldEx('query_data',
