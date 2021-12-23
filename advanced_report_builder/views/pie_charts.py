@@ -6,6 +6,7 @@ from crispy_forms.layout import Div
 from django.apps import apps
 from django.forms import CharField, ChoiceField, BooleanField
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django_menus.menu import MenuItem
 from django_modals.fields import FieldEx
 from django_modals.forms import CrispyForm
@@ -72,11 +73,17 @@ class PieChartModal(ChartBaseModal):
     def form_setup(self, form, *_args, **_kwargs):
 
         self.add_query_data(form, include_extra_query=True)
+
+        url = reverse('advanced_report_builder:pie_chart_field_modal',
+                      kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
+
         return ('name',
                 'report_type',
                 'axis_value_type',
                 'style',
-                FieldEx('fields', template='advanced_report_builder/charts/pie/fields/select_column.html'),
+                FieldEx('fields',
+                        template='advanced_report_builder/select_column.html',
+                        extra_context={'select_column_url': url}),
                 FieldEx('query_data',
                         template='advanced_report_builder/query_builder.html'),
                 )

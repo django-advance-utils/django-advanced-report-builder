@@ -9,6 +9,7 @@ from django.apps import apps
 from django.forms import CharField, ChoiceField, BooleanField
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django_menus.menu import MenuItem
 from django_modals.fields import FieldEx
 from django_modals.forms import CrispyForm
@@ -141,12 +142,18 @@ class LineChartModal(ChartBaseModal):
         form.fields['date_field'].widget.select_data = date_fields
 
         self.add_query_data(form, include_extra_query=True)
+
+        url = reverse('advanced_report_builder:line_chart_field_modal',
+                      kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
+
         return ('name',
                 'report_type',
                 'axis_scale',
                 'axis_value_type',
                 'date_field',
-                FieldEx('fields', template='advanced_report_builder/charts/line/fields/select_column.html'),
+                FieldEx('fields',
+                        template='advanced_report_builder/select_column.html',
+                        extra_context={'select_column_url': url}),
                 'x_label',
                 'y_label',
                 'show_totals',

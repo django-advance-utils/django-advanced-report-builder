@@ -9,6 +9,7 @@ from django.apps import apps
 from django.db.models import Q
 from django.forms import CharField, ChoiceField, BooleanField, IntegerField
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django_datatables.datatables import DatatableView, ColumnInitialisor
 from django_datatables.plugins.column_totals import ColumnTotals
 from django_menus.menu import MenuMixin, MenuItem
@@ -338,12 +339,17 @@ class TableModal(QueryBuilderModalBase):
 
     def form_setup(self, form, *_args, **_kwargs):
         self.add_query_data(form)
+        url = reverse('advanced_report_builder:table_field_modal',
+                      kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
 
         fields = [FieldEx('name'),
                   FieldEx('report_type'),
                   FieldEx('has_clickable_rows', template='django_modals/fields/label_checkbox.html'),
                   FieldEx('page_length', template='django_modals/fields/label_checkbox.html'),
-                  FieldEx('table_fields', template='advanced_report_builder/datatables/fields/select_column.html')]
+                  FieldEx('table_fields',
+                          template='advanced_report_builder/select_column.html',
+                          extra_context={'select_column_url': url}),
+                  ]
 
         if self.show_query_name:
             fields.append(FieldEx('query_name'))

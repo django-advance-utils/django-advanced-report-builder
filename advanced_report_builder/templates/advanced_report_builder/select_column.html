@@ -2,7 +2,6 @@
     <label for="{{ field.auto_id }}" class="col-form-label col-md-3 col-form-label-sm">
         Display Fields
     </label>
-
     <div class="col-md-9 input-group-sm">
         <style>
             #{{ field.auto_id }}_selection, #{{ field.auto_id }}_available_fields {
@@ -110,7 +109,7 @@
                         parent_li.attr('id', selector);
                         let field_info = get_field_dict(parent_li);
                         let field_info_b64 = (btoa(JSON.stringify(field_info)));
-                        let url = "{% url 'advanced_report_builder:line_chart_field_modal' 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID' %}";
+                        let url = "{{ select_column_url }}";
                         django_modal.show_modal(url.replace('99999', selector).replace('REPORT_TYPE_ID', $('#id_report_type').val()).replace('FIELD_INFO', field_info_b64))
                     });
 
@@ -123,7 +122,7 @@
                     },
                     receive: function (event, ui) { //only when dropped from one to another!
                         let sourceList = ui.sender;
-                        if(sourceList.attr('id') === 'id_fields_available_fields') {
+                        if(sourceList.attr('id') === '{{ field.auto_id }}_available_fields') {
                             let clone = $(ui.item).clone();
                             sourceList.append(clone);  // adds it back to the end
                         } else {
@@ -208,7 +207,6 @@
                     update_selection();
                 };
             });
-
         </script>
 </div>
 <input type="hidden" name="{{ field.name }}" id="{{ field.auto_id }}" value="{% if field.value %}{{ field.value }}{% endif %}">
