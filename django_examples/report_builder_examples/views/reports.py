@@ -1,5 +1,6 @@
 from advanced_report_builder.views.bar_charts import BarChartView
 from advanced_report_builder.views.line_charts import LineChartView
+from advanced_report_builder.views.pie_charts import PieChartView
 from advanced_report_builder.views.single_values import SingleValueView
 from django.forms import CharField, Textarea
 from django.shortcuts import redirect
@@ -28,8 +29,9 @@ class ViewReports(MainIndices):
                                MenuItem('advanced_report_builder:bar_chart_modal,-',
                                         'Add Bar Chart Report'),
                                MenuItem('advanced_report_builder:line_chart_modal,-',
-                                        'Add Line Chart Report')]),
-
+                                        'Add Line Chart Report'),
+                               MenuItem('advanced_report_builder:pie_chart_modal,-',
+                                        'Add Pie Chart Report')]),
         )
 
     @staticmethod
@@ -86,12 +88,19 @@ class ViewLineChartReport(LineChartView):
                 *super().pod_report_menu()]
 
 
+class ViewPieChartReport(PieChartView):
+    def pod_report_menu(self):
+        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
+                *super().pod_report_menu()]
+
+
 class ViewReport(MainMenu, ViewReportBase):
     template_name = 'report_builder_examples/report.html'
     views_overrides = {'tablereport': ViewTableReport,
                        'singlevaluereport': ViewSingleValueReport,
                        'barchartreport': ViewBarChartReport,
-                       'linechartreport': ViewLineChartReport
+                       'linechartreport': ViewLineChartReport,
+                       'piechartreport': ViewPieChartReport,
                        }
 
     def redirect_url(self):

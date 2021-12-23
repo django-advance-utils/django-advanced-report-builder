@@ -1,13 +1,10 @@
 import base64
 import json
-from datetime import datetime
 
 from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Div
-from date_offset.date_offset import DateOffset
 from django.apps import apps
 from django.forms import CharField, ChoiceField, BooleanField
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django_menus.menu import MenuItem
 from django_modals.fields import FieldEx
@@ -15,82 +12,33 @@ from django_modals.forms import CrispyForm
 from django_modals.modals import FormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
-from django_modals.widgets.select2 import Select2
 
-from advanced_report_builder.globals import NUMBER_FIELDS, DATE_FIELDS, ANNOTATION_VALUE_YEAR, \
-    ANNOTATION_VALUE_QUARTER, ANNOTATION_VALUE_MONTH, ANNOTATION_VALUE_WEEK, ANNOTATION_VALUE_DAY
-from advanced_report_builder.models import LineChartReport, ReportType, ReportQuery
+from advanced_report_builder.globals import NUMBER_FIELDS
+from advanced_report_builder.models import PieChartReport, ReportType, ReportQuery
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import get_django_field, split_attr
-from advanced_report_builder.views.charts_base import ChartBaseView, ChartJSTable, ChartBaseModal
+from advanced_report_builder.views.charts_base import ChartBaseView, ChartBaseModal
 from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin
 
 
-class LineChartJSTable(ChartJSTable):
-    def get_table_array(self, request, results):
-        results = super().get_table_array(request, results)
-        if len(results) == 0:
-            return results
-
-        date_offset = DateOffset()
-        record_count = len(results[0]) - 1
-        next_date = datetime.strptime(results[0][0], '%Y-%m-%d').date()
-        new_results = []
-        for record in results:
-
-            current_date = datetime.strptime(record[0], '%Y-%m-%d').date()
-            if current_date != next_date:
-                while next_date < current_date:
-                    row = [next_date.strftime('%Y-%m-%d')] + ['0' for _ in range(record_count)]
-                    new_results.append(row)
-                    next_date = self.get_next_date(date_offset, date_in=next_date)
-
-            row = [record[0]]
-            for x in record[1:]:
-                if x == '':
-                    row.append('')
-                else:
-                    row.append(x)
-            new_results.append(row)
-            next_date = self.get_next_date(date_offset, date_in=next_date)
-
-        return new_results
-
-    def get_next_date(self, date_offset, date_in):
-        if self.axis_scale == ANNOTATION_VALUE_YEAR:
-            next_date = date_offset.get_offset('1y', start_date_time=date_in)
-        elif self.axis_scale == ANNOTATION_VALUE_QUARTER:
-            next_date = date_offset.get_offset('3m', start_date_time=date_in)
-        elif self.axis_scale == ANNOTATION_VALUE_MONTH:
-            next_date = date_offset.get_offset('1m', start_date_time=date_in)
-        elif self.axis_scale == ANNOTATION_VALUE_WEEK:
-            next_date = date_offset.get_offset('1w', start_date_time=date_in)
-        elif self.axis_scale == ANNOTATION_VALUE_DAY:
-            next_date = date_offset.get_offset('1d', start_date_time=date_in)
-        else:
-            assert False
-        return next_date
-
-
-class LineChartView(ChartBaseView):
-    chart_js_table = LineChartJSTable
+class PieChartView(ChartBaseView):
 
     def dispatch(self, request, *args, **kwargs):
         self.report = kwargs.get('report')
-        self.chart_report = self.report.linechartreport
+        self.chart_report = self.report.piechartreport
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        self.table.line_chart_report = self.chart_report
-        self.table.datatable_template = 'advanced_report_builder/charts/line/middle.html'
-        context['line_chart_report'] = self.chart_report
+        self.table.pie_chart_report = self.chart_report
+        self.table.datatable_template = 'advanced_report_builder/charts/pie/middle.html'
+        context['pie_chart_report'] = self.chart_report
         return context
 
     def set_extra_number_field_kwargs(self, data_attr, options, multiple_index):
-        line_colour = data_attr.get('line_colour') or '801C70'
-        line_colour = self.add_colour_offset(line_colour, multiple_index=multiple_index)
-        options.update({'colour': line_colour})
+        pie_colour = data_attr.get('pie_colour') or '801C70'
+        pie_colour = self.add_colour_offset(pie_colour, multiple_index=multiple_index)
+        options.update({'colour': pie_colour})
 
     def pod_report_menu(self):
         query_id = self.slug.get(f'query{self.chart_report.id}')
@@ -98,69 +46,45 @@ class LineChartView(ChartBaseView):
         if query_id:
             slug_str = f'-query_id-{query_id}'
 
-        return [MenuItem(f'advanced_report_builder:line_chart_modal,pk-{self.chart_report.id}{slug_str}',
+        return [MenuItem(f'advanced_report_builder:pie_chart_modal,pk-{self.chart_report.id}{slug_str}',
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
 
+    def get_date_field(self, index, fields, base_model):
+        return None
 
-class LineChartModal(ChartBaseModal):
+
+class PieChartModal(ChartBaseModal):
     template_name = 'advanced_report_builder/charts/modal.html'
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
-    model = LineChartReport
-    widgets = {'line_colour': ColourPickerWidget,
-               'show_totals': RBToggle}
+    model = PieChartReport
+    widgets = {'pie_colour': ColourPickerWidget}
 
     form_fields = ['name',
                    'report_type',
-                   'axis_value_type',
-                   'axis_scale',
-                   'date_field',
+                   'style',
                    'fields',
-                   'x_label',
-                   'y_label',
-                   'show_totals',
                    ]
 
     def form_setup(self, form, *_args, **_kwargs):
 
-        date_fields = []
-        if form.instance.date_field:
-
-            form.fields['fields'].initial = form.instance.fields
-
-            base_model = form.instance.report_type.content_type.model_class()
-            report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
-
-            self._get_date_fields(base_model=base_model,
-                                  fields=date_fields,
-                                  report_builder_fields=report_builder_fields,
-                                  selected_field_id=form.instance.date_field)
-
-        form.fields['date_field'].widget = Select2(attrs={'ajax': True})
-        form.fields['date_field'].widget.select_data = date_fields
-
         self.add_query_data(form, include_extra_query=True)
         return ('name',
                 'report_type',
-                'axis_scale',
-                'axis_value_type',
-                'date_field',
-                FieldEx('fields', template='advanced_report_builder/charts/line/fields/select_column.html'),
-                'x_label',
-                'y_label',
-                'show_totals',
+                'style',
+                FieldEx('fields', template='advanced_report_builder/charts/pie/fields/select_column.html'),
                 FieldEx('query_data',
                         template='advanced_report_builder/query_builder.html'),
                 )
 
     def form_valid(self, form):
-        line_chart_report = form.save()
+        pie_chart_report = form.save()
 
         if not self.report_query and (form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']):
             ReportQuery(query=form.cleaned_data['query_data'],
                         extra_query=form.cleaned_data['extra_query_data'],
-                        report=line_chart_report).save()
+                        report=pie_chart_report).save()
         elif form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']:
             self.report_query.extra_query = form.cleaned_data['extra_query_data']
             self.report_query.query = form.cleaned_data['query_data']
@@ -172,41 +96,8 @@ class LineChartModal(ChartBaseModal):
 
         return self.command_response('reload')
 
-    def select2_date_field(self, **kwargs):
-        fields = []
-        if kwargs['report_type'] != '':
-            report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=kwargs['report_type'])
-            fields = []
-            self._get_date_fields(base_model=base_model,
-                                  fields=fields,
-                                  report_builder_fields=report_builder_fields)
 
-        return JsonResponse({'results': fields})
-
-    def _get_date_fields(self, base_model, fields, report_builder_fields,
-                         prefix='', title_prefix='', selected_field_id=None):
-
-        for report_builder_field in report_builder_fields.fields:
-            django_field, _, columns = get_django_field(base_model=base_model, field=report_builder_field)
-            for column in columns:
-                if isinstance(django_field, DATE_FIELDS):
-                    full_id = prefix + column.column_name
-                    if selected_field_id is None or selected_field_id == full_id:
-                        fields.append({'id': full_id,
-                                       'text': title_prefix + column.title})
-
-        for include in report_builder_fields.includes:
-            app_label, model, report_builder_fields_str = include['model'].split('.')
-            new_model = apps.get_model(app_label, model)
-            new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
-            self._get_date_fields(base_model=new_model,
-                                  fields=fields,
-                                  report_builder_fields=new_report_builder_fields,
-                                  prefix=f"{include['field']}__",
-                                  title_prefix=include['title'] + ' -> ')
-
-
-class LineChartFieldForm(CrispyForm):
+class PieChartFieldForm(CrispyForm):
 
     def __init__(self, *args, **kwargs):
         self.django_field = None
@@ -235,8 +126,8 @@ class LineChartFieldForm(CrispyForm):
 
         self.fields['title'] = CharField(initial=data['title'])
 
-        self.fields['line_colour'] = CharField(required=False, widget=ColourPickerWidget)
-        self.fields['line_colour'].initial = data_attr.get('line_colour')
+        self.fields['pie_colour'] = CharField(required=False, widget=ColourPickerWidget)
+        self.fields['pie_colour'].initial = data_attr.get('pie_colour')
 
         self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
         self.fields['filter'] = CharField(required=False)
@@ -267,7 +158,7 @@ class LineChartFieldForm(CrispyForm):
         attributes = []
         self.get_report_type_details()
 
-        attributes.append(f'line_colour-{self.cleaned_data["line_colour"]}')
+        attributes.append(f'pie_colour-{self.cleaned_data["pie_colour"]}')
 
         if self.cleaned_data['has_filter']:
             attributes.append('has_filter-1')
@@ -299,8 +190,8 @@ class LineChartFieldForm(CrispyForm):
                                                        title_prefix=f"{include['title']} --> ")
 
 
-class LineChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
-    form_class = LineChartFieldForm
+class PieChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
+    form_class = PieChartFieldForm
     size = 'xl'
     template_name = 'advanced_report_builder/charts/modal.html'
 
@@ -333,7 +224,7 @@ class LineChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
         ])
 
         return ['title',
-                'line_colour',
+                'pie_colour',
                 Div(FieldEx('has_filter',
                             template='django_modals/fields/label_checkbox.html',
                             field_class='col-6 input-group-sm'),

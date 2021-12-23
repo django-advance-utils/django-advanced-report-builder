@@ -20,8 +20,8 @@ from advanced_report_builder.globals import NUMBER_FIELDS, DATE_FIELDS, DEFAULT_
 from advanced_report_builder.models import BarChartReport, ReportType, ReportQuery
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import get_django_field, split_attr
-from advanced_report_builder.views.charts_base import ChartBaseView
-from advanced_report_builder.views.modals_base import QueryBuilderModalBase, QueryBuilderModalBaseMixin
+from advanced_report_builder.views.charts_base import ChartBaseView, ChartBaseModal
+from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin
 
 
 class BarChartView(ChartBaseView):
@@ -66,7 +66,7 @@ class BarChartView(ChartBaseView):
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
 
 
-class BarChartModal(QueryBuilderModalBase):
+class BarChartModal(ChartBaseModal):
     template_name = 'advanced_report_builder/charts/modal.html'
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
@@ -177,49 +177,6 @@ class BarChartModal(QueryBuilderModalBase):
                                   prefix=f"{include['field']}__",
                                   title_prefix=include['title'] + ' -> ')
 
-    def _get_fields(self, base_model, fields, tables, report_builder_fields,
-                    prefix='', title_prefix='', title=None, colour=None):
-        if title is None:
-            title = report_builder_fields.title
-        if colour is None:
-            colour = report_builder_fields.colour
-
-        tables.append({'name': title,
-                       'colour': colour})
-
-        for report_builder_field in report_builder_fields.fields:
-            django_field, _, columns = get_django_field(base_model=base_model, field=report_builder_field)
-            for column in columns:
-                if isinstance(django_field, NUMBER_FIELDS):
-                    fields.append({'field': prefix + column.column_name,
-                                   'label': title_prefix + column.title,
-                                   'colour': report_builder_fields.colour})
-
-        for include in report_builder_fields.includes:
-            app_label, model, report_builder_fields_str = include['model'].split('.')
-            new_model = apps.get_model(app_label, model)
-            new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
-            self._get_fields(base_model=new_model,
-                             fields=fields,
-                             tables=tables,
-                             report_builder_fields=new_report_builder_fields,
-                             prefix=f"{include['field']}__",
-                             title_prefix=include['title'] + ' -> ',
-                             title=include.get('title'),
-                             colour=include.get('colour'))
-
-    def ajax_get_fields(self, **kwargs):
-        report_type_id = kwargs['report_type'][0]
-        report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=report_type_id)
-
-        fields = []
-        tables = []
-        self._get_fields(base_model=base_model,
-                         fields=fields,
-                         tables=tables,
-                         report_builder_fields=report_builder_fields)
-        return self.command_response('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
-
 
 class BarChartFieldForm(CrispyForm):
 
@@ -320,7 +277,7 @@ class BarChartFieldForm(CrispyForm):
 class BarChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
     form_class = BarChartFieldForm
     size = 'xl'
-    template_name = 'advanced_report_builder/charts/bar/fields/modal.html'
+    template_name = 'advanced_report_builder/charts/modal.html'
 
     @property
     def modal_title(self):

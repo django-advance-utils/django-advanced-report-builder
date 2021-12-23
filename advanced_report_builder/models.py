@@ -185,6 +185,21 @@ class LineChartReport(Report):
         return ANNOTATION_CHART_SCALE[self.axis_scale]
 
 
+class PieChartReport(Report):
+    PIE_CHART_STYLE_PIE = 1
+    PIE_CHART_STYLE_DOUGHNUT = 2
+
+    PIE_CHART_STYLE_CHOICES = (
+        (PIE_CHART_STYLE_PIE, 'Pie'),
+        (PIE_CHART_STYLE_DOUGHNUT, 'Doughnut')
+    )
+
+    axis_value_type = models.PositiveSmallIntegerField(choices=ANNOTATIONS_CHOICES,
+                                                       default=ANNOTATION_CHOICE_COUNT, null=True, blank=True)
+    fields = models.TextField(null=True, blank=True)
+    style = models.PositiveSmallIntegerField(choices=PIE_CHART_STYLE_CHOICES, default=PIE_CHART_STYLE_PIE)
+
+
 class Dashboard(TimeStampedModel):
 
     slug = models.SlugField(unique=True)

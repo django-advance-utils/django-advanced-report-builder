@@ -2,8 +2,8 @@ import base64
 import copy
 import json
 
-
 from ajax_helpers.mixins import AjaxHelpers
+from django.apps import apps
 from django.db.models import Q
 from django.utils.safestring import mark_safe
 from django.views.generic import TemplateView
@@ -15,6 +15,7 @@ from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_FUNCTIONS, ANNOTATION_VALUE_FUNCTIONS, \
     ANNOTATION_CHOICE_COUNT
 from advanced_report_builder.utils import split_slug, get_django_field, split_attr
+from advanced_report_builder.views.modals_base import QueryBuilderModalBase
 
 
 class ChartJSTable(DatatableTable):
@@ -107,7 +108,8 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
     def process_query_results(self, base_model, table):
         fields = []
         date_field_name = self.get_date_field(0, fields, base_model=base_model)
-        table.order_by = [date_field_name]
+        if date_field_name is not None:
+            table.order_by = [date_field_name]
 
         if not self.chart_report.fields:
             return fields
@@ -262,8 +264,10 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         base_model = self.chart_report.get_base_modal()
 
-        self.table = self.chart_js_table(model=base_model, axis_scale=self.chart_report.axis_scale)
-        self.table.datatable_template = 'advanced_report_builder/bar_charts/middle.html'
+        if hasattr(self.chart_report, 'axis_scale'):
+            self.table = self.chart_js_table(model=base_model, axis_scale=self.chart_report.axis_scale)
+        else:
+            self.table = self.chart_js_table(model=base_model)
         self.table.extra_filters = self.extra_filters
         fields = self.process_query_results(base_model=base_model, table=self.table)
         self.table.add_columns(*fields)
@@ -305,3 +309,48 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
     # noinspection PyMethodMayBeStatic
     def queries_menu(self):
         return []
+
+
+class ChartBaseModal(QueryBuilderModalBase):
+    def _get_fields(self, base_model, fields, tables, report_builder_fields,
+                    prefix='', title_prefix='', title=None, colour=None):
+        if title is None:
+            title = report_builder_fields.title
+        if colour is None:
+            colour = report_builder_fields.colour
+
+        tables.append({'name': title,
+                       'colour': colour})
+
+        for report_builder_field in report_builder_fields.fields:
+            django_field, _, columns = get_django_field(base_model=base_model, field=report_builder_field)
+            for column in columns:
+                if isinstance(django_field, NUMBER_FIELDS):
+                    fields.append({'field': prefix + column.column_name,
+                                   'label': title_prefix + column.title,
+                                   'colour': report_builder_fields.colour})
+
+        for include in report_builder_fields.includes:
+            app_label, model, report_builder_fields_str = include['model'].split('.')
+            new_model = apps.get_model(app_label, model)
+            new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
+            self._get_fields(base_model=new_model,
+                             fields=fields,
+                             tables=tables,
+                             report_builder_fields=new_report_builder_fields,
+                             prefix=f"{include['field']}__",
+                             title_prefix=include['title'] + ' -> ',
+                             title=include.get('title'),
+                             colour=include.get('colour'))
+
+    def ajax_get_fields(self, **kwargs):
+        report_type_id = kwargs['report_type'][0]
+        report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=report_type_id)
+
+        fields = []
+        tables = []
+        self._get_fields(base_model=base_model,
+                         fields=fields,
+                         tables=tables,
+                         report_builder_fields=report_builder_fields)
+        return self.command_response('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))

@@ -4,6 +4,7 @@ from advanced_report_builder.views.bar_charts import BarChartModal, BarChartFiel
 from advanced_report_builder.views.dashboard import DashboardReportModal, DashboardModal, DashboardAddReportModal
 from advanced_report_builder.views.datatables import TableModal, TableFieldModal
 from advanced_report_builder.views.line_charts import LineChartModal, LineChartFieldModal
+from advanced_report_builder.views.pie_charts import PieChartModal, PieChartFieldModal
 from advanced_report_builder.views.single_values import SingleValueModal
 
 app_name = 'advanced_report_builder'
@@ -20,6 +21,9 @@ urlpatterns = [
 
     path('line-chart/modal/<str:slug>/', LineChartModal.as_view(), name='line_chart_modal'),
     path('line-chart/modal/field/<str:slug>/', LineChartFieldModal.as_view(), name='line_chart_field_modal'),
+
+    path('pie-chart/modal/<str:slug>/', PieChartModal.as_view(), name='pie_chart_modal'),
+    path('pie-chart/modal/field/<str:slug>/', PieChartFieldModal.as_view(), name='pie_chart_field_modal'),
 
     path('dashboard/report/<str:slug>/', DashboardReportModal.as_view(), name='dashboard_report_modal'),
     path('dashboard/<str:slug>/', DashboardModal.as_view(), name='dashboard_modal'),

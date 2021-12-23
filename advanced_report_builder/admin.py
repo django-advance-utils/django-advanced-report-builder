@@ -1,6 +1,6 @@
 from django.contrib import admin
 from advanced_report_builder.models import Report, ReportType, TableReport, ReportQuery, SingleValueReport, Dashboard, \
-    DashboardReport, BarChartReport, LineChartReport
+    DashboardReport, BarChartReport, LineChartReport, PieChartReport
 
 
 @admin.register(ReportQuery)
@@ -69,6 +69,17 @@ class BarChartReportAdmin(admin.ModelAdmin):
 
 @admin.register(LineChartReport)
 class LineChartReportAdmin(admin.ModelAdmin):
+    list_display = ('name',
+                    'slug',
+                    )
+    exclude = ('instance_type',
+               'slug',
+               )
+    inlines = [ReportQueryInline]
+
+
+@admin.register(PieChartReport)
+class PieChartReportAdmin(admin.ModelAdmin):
     list_display = ('name',
                     'slug',
                     )
