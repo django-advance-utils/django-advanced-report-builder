@@ -2,22 +2,43 @@ import base64
 import copy
 import json
 
+
 from ajax_helpers.mixins import AjaxHelpers
 from django.db.models import Q
+from django.utils.safestring import mark_safe
 from django.views.generic import TemplateView
-from django_datatables.datatables import HorizontalTable
+from django_datatables.datatables import DatatableTable
 from django_menus.menu import MenuMixin, MenuItem
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn, ReportBuilderDateColumn
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_FUNCTIONS, ANNOTATION_VALUE_FUNCTIONS, \
-    ANNOTATION_CHOICE_COUNT, DEFAULT_DATE_FORMAT, DATE_FORMAT_TYPES_DJANGO_FORMAT
+    ANNOTATION_CHOICE_COUNT
 from advanced_report_builder.utils import split_slug, get_django_field, split_attr
+
+
+class ChartJSTable(DatatableTable):
+
+    def __init__(self, *args, **kwargs):
+        pk = kwargs.pop('pk', None)
+        self.axis_scale = kwargs.pop('axis_scale', None)
+        super().__init__(*args, **kwargs)
+        if pk:
+            self.filter['pk'] = pk
+
+    def model_table_setup(self):
+        return mark_safe(json.dumps({'initsetup': json.loads(self.col_def_str()),
+                                     'data': self.get_table_array(self.kwargs.get('request'), self.get_query()),
+                                     'row_titles': self.all_titles(),
+                                     'table_id': self.table_id,
+                                     }))
 
 
 class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
     number_field = ReportBuilderNumberColumn
     date_field = ReportBuilderDateColumn
+    chart_js_table = ChartJSTable
+
     template_name = 'advanced_report_builder/charts/report.html'
 
     def __init__(self, *args, **kwargs):
@@ -36,11 +57,10 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
 
     def extra_filters(self, query):
         report_query = self.get_report_query(report=self.chart_report)
-        if not report_query:
-            return query
-
-        return self.process_query_filters(query=query,
-                                          search_filter_data=report_query.query)
+        if report_query:
+            query = self.process_query_filters(query=query,
+                                               search_filter_data=report_query.query)
+        return query
 
     def get_date_format(self):
         return '%Y-%m-%d'
@@ -74,6 +94,7 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
 
         field = self.date_field(**date_function_kwargs)
         fields.append(field)
+        return field_name
 
     @staticmethod
     def _set_multiple_title(database_values, value_prefix, fields, text):
@@ -85,7 +106,9 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
 
     def process_query_results(self, base_model, table):
         fields = []
-        self.get_date_field(0, fields, base_model=base_model)
+        date_field_name = self.get_date_field(0, fields, base_model=base_model)
+        table.order_by = [date_field_name]
+
         if not self.chart_report.fields:
             return fields
         bar_chart_fields = json.loads(self.chart_report.fields)
@@ -239,11 +262,12 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         base_model = self.chart_report.get_base_modal()
 
-        self.table = HorizontalTable(model=base_model)
+        self.table = self.chart_js_table(model=base_model, axis_scale=self.chart_report.axis_scale)
         self.table.datatable_template = 'advanced_report_builder/bar_charts/middle.html'
         self.table.extra_filters = self.extra_filters
         fields = self.process_query_results(base_model=base_model, table=self.table)
         self.table.add_columns(*fields)
+
         context['datatable'] = self.table
         context['title'] = self.get_title()
         return context
@@ -281,4 +305,3 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
     # noinspection PyMethodMayBeStatic
     def queries_menu(self):
         return []
-

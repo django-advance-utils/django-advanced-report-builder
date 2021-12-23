@@ -1,8 +1,10 @@
 import base64
 import json
+from datetime import datetime
 
 from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Div
+from date_offset.date_offset import DateOffset
 from django.apps import apps
 from django.forms import CharField, ChoiceField, BooleanField
 from django.http import JsonResponse
@@ -15,15 +17,63 @@ from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
 from django_modals.widgets.select2 import Select2
 
-from advanced_report_builder.globals import NUMBER_FIELDS, DATE_FIELDS
+from advanced_report_builder.globals import NUMBER_FIELDS, DATE_FIELDS, ANNOTATION_VALUE_YEAR, \
+    ANNOTATION_VALUE_QUARTER, ANNOTATION_VALUE_MONTH, ANNOTATION_VALUE_WEEK, ANNOTATION_VALUE_DAY
 from advanced_report_builder.models import LineChartReport, ReportType, ReportQuery
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import get_django_field, split_attr
-from advanced_report_builder.views.charts_base import ChartBaseView
+from advanced_report_builder.views.charts_base import ChartBaseView, ChartJSTable
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase, QueryBuilderModalBaseMixin
 
 
+class LineChartJSTable(ChartJSTable):
+    def get_table_array(self, request, results):
+        results = super().get_table_array(request, results)
+        if len(results) == 0:
+            return results
+
+        date_offset = DateOffset()
+        record_count = len(results[0]) - 1
+        next_date = datetime.strptime(results[0][0], '%Y-%m-%d').date()
+        new_results = []
+        for record in results:
+
+            current_date = datetime.strptime(record[0], '%Y-%m-%d').date()
+            if current_date != next_date:
+                while next_date < current_date:
+                    row = [next_date.strftime('%Y-%m-%d')] + ['0' for _ in range(record_count)]
+                    new_results.append(row)
+                    next_date = self.get_next_date(date_offset, date_in=next_date)
+
+            row = [record[0]]
+            for x in record[1:]:
+                if x == '':
+                    row.append('')
+                else:
+                    row.append(x)
+            new_results.append(row)
+            next_date = self.get_next_date(date_offset, date_in=next_date)
+
+        return new_results
+
+    def get_next_date(self, date_offset, date_in):
+        if self.axis_scale == ANNOTATION_VALUE_YEAR:
+            next_date = date_offset.get_offset('1y', start_date_time=date_in)
+        elif self.axis_scale == ANNOTATION_VALUE_QUARTER:
+            next_date = date_offset.get_offset('3m', start_date_time=date_in)
+        elif self.axis_scale == ANNOTATION_VALUE_MONTH:
+            next_date = date_offset.get_offset('1m', start_date_time=date_in)
+        elif self.axis_scale == ANNOTATION_VALUE_WEEK:
+            next_date = date_offset.get_offset('1w', start_date_time=date_in)
+        elif self.axis_scale == ANNOTATION_VALUE_DAY:
+            next_date = date_offset.get_offset('1d', start_date_time=date_in)
+        else:
+            assert False
+        return next_date
+
+
 class LineChartView(ChartBaseView):
+    chart_js_table = LineChartJSTable
 
     def dispatch(self, request, *args, **kwargs):
         self.report = kwargs.get('report')
@@ -38,7 +88,7 @@ class LineChartView(ChartBaseView):
         return context
 
     def set_extra_number_field_kwargs(self, data_attr, options, multiple_index):
-        line_colour = data_attr.get('line_colour')  or '801C70'
+        line_colour = data_attr.get('line_colour') or '801C70'
         line_colour = self.add_colour_offset(line_colour, multiple_index=multiple_index)
         options.update({'colour': line_colour})
 
