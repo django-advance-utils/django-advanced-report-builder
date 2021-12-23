@@ -153,7 +153,8 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
                                                           text=report_builder_fields.default_multiple_column_text)
                         extra_filter = Q((multiple_column_field, result[multiple_column_field]))
 
-                        self.get_number_field(index=f'{index}_{multiple_index}',
+                        self.get_number_field(annotations_type=self.chart_report.axis_value_type,
+                                              index=f'{index}_{multiple_index}',
                                               data_attr=data_attr,
                                               table_field=table_field,
                                               fields=fields,
@@ -163,7 +164,8 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
                                               multiple_index=multiple_index)
 
                 else:
-                    self.get_number_field(index=index,
+                    self.get_number_field(annotations_type=self.chart_report.axis_value_type,
+                                          index=index,
                                           data_attr=data_attr,
                                           table_field=table_field,
                                           fields=fields,
@@ -186,12 +188,9 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
     def set_extra_number_field_kwargs(self, data_attr, options, multiple_index):
         pass
 
-    def get_number_field(self, index, table_field, data_attr, fields, col_type_override,
-                         extra_filter=None, title_suffix='', multiple_index=0):
+    def get_number_field(self, annotations_type, index, table_field, data_attr, fields, col_type_override,
+                         extra_filter=None, title_suffix='', multiple_index=0, decimal_places=None):
         field_name = table_field['field']
-
-        annotations_type = self.chart_report.axis_value_type
-
         annotation_filter = None
         if annotations_type:
             b64_filter = data_attr.get('filter')
@@ -250,26 +249,26 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
             fields.append(field)
         else:
             number_function_kwargs = {'title': title}
-            decimal_places = data_attr.get('decimal_places')
+            decimal_places = data_attr.get('decimal_places', decimal_places)
             if decimal_places:
                 number_function_kwargs['decimal_places'] = int(decimal_places)
-
-            number_function_kwargs['options'] = {}
-            self.set_extra_number_field_kwargs(data_attr=data_attr,
-                                               options=number_function_kwargs['options'],
-                                               multiple_index=multiple_index)
-            new_field_name = f'{annotations_type}_{field_name}_{index}'
-            function_type = ANNOTATION_FUNCTIONS[annotations_type]
-            if annotation_filter:
-                function = function_type(field_name, filter=annotation_filter)
-            else:
-                function = function_type(field_name)
-            if self.use_annotations:
-                number_function_kwargs['annotations'] = {new_field_name: function}
-            else:
-                number_function_kwargs['options']['calculated'] = True
-                number_function_kwargs['aggregations'] = {new_field_name: function}
-            field_name = new_field_name
+            if annotations_type:
+                number_function_kwargs['options'] = {}
+                self.set_extra_number_field_kwargs(data_attr=data_attr,
+                                                   options=number_function_kwargs['options'],
+                                                   multiple_index=multiple_index)
+                new_field_name = f'{annotations_type}_{field_name}_{index}'
+                function_type = ANNOTATION_FUNCTIONS[annotations_type]
+                if annotation_filter:
+                    function = function_type(field_name, filter=annotation_filter)
+                else:
+                    function = function_type(field_name)
+                if self.use_annotations:
+                    number_function_kwargs['annotations'] = {new_field_name: function}
+                else:
+                    number_function_kwargs['options']['calculated'] = True
+                    number_function_kwargs['aggregations'] = {new_field_name: function}
+                field_name = new_field_name
             number_function_kwargs.update({'field': field_name,
                                            'column_name': field_name,
                                            'model_path': ''})
@@ -288,7 +287,7 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         self.table.extra_filters = self.extra_filters
         fields = self.process_query_results(base_model=base_model, table=self.table)
         self.table.add_columns(*fields)
-
+        context['show_toolbar'] = self.show_toolbar
         context['datatable'] = self.table
         context['title'] = self.get_title()
         return context

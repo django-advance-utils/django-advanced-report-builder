@@ -9,6 +9,7 @@ from django_menus.menu import MenuMixin
 from django_modals.forms import CrispyForm
 from django_modals.modals import ModelFormModal, FormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
+from django_modals.widgets.select2 import Select2
 from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.models import Dashboard, DashboardReport, Report
@@ -149,7 +150,7 @@ class DashboardReportModal(ModelFormModal):
 
 
 class DashboardAddReportForm(CrispyForm):
-    report = ModelChoiceField(queryset=Report.objects.all())
+    report = ModelChoiceField(queryset=Report.objects.all(), widget=Select2)
 
 
 class DashboardAddReportModal(FormModal):

@@ -1,112 +1,48 @@
-import copy
-
-from ajax_helpers.mixins import AjaxHelpers
 from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Sum
 from django.db.models.functions import Coalesce
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from django.views.generic import TemplateView
-from django_datatables.datatables import HorizontalTable
-from django_menus.menu import MenuMixin, MenuItem
+from django_menus.menu import MenuItem
 from django_modals.fields import FieldEx
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
 from django_modals.widgets.select2 import Select2
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
-from advanced_report_builder.filter_query import FilterQueryMixin
-from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_FUNCTIONS, BOOLEAN_FIELD, ANNOTATION_CHOICE_SUM, \
-    ANNOTATION_CHOICE_AVG, ANNOTATION_CHOICE_COUNT
-from advanced_report_builder.models import SingleValueReport, ReportType, ReportQuery
-from advanced_report_builder.utils import split_slug, get_django_field
+from advanced_report_builder.globals import NUMBER_FIELDS, BOOLEAN_FIELD, ANNOTATION_CHOICE_SUM, \
+    ANNOTATION_CHOICE_AVG
+from advanced_report_builder.models import SingleValueReport, ReportQuery
+from advanced_report_builder.utils import get_django_field
+from advanced_report_builder.views.charts_base import ChartBaseView
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
 
 
-class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
+class SingleValueView(ChartBaseView):
     number_field = ReportBuilderNumberColumn
     template_name = 'advanced_report_builder/single_values/report.html'
-
-    def __init__(self, *args, **kwargs):
-        self.single_value_report = None
-        self.show_toolbar = False
-        super().__init__(*args, **kwargs)
+    use_annotations = False
 
     def dispatch(self, request, *args, **kwargs):
-        self.slug = split_slug(kwargs.get('slug'))
         self.report = kwargs.get('report')
-        self.single_value_report = self.report.singlevaluereport
-        self.enable_edit = kwargs.get('enable_edit')
-        self.dashboard_report = kwargs.get('dashboard_report')
-        if self.enable_edit or (self.dashboard_report and not self.dashboard_report.top) or not self.dashboard_report:
-            self.show_toolbar = True
+        self.chart_report = self.report.singlevaluereport
         return super().dispatch(request, *args, **kwargs)
 
-    def extra_filters(self, query):
-        report_query = self.get_report_query(report=self.single_value_report)
-        if not report_query:
-            return query
-
-        return self.process_query_filters(query=query,
-                                          search_filter_data=report_query.query)
-
-    def get_aggregation_field(self, fields, field_name, col_type_override, aggregations_type, decimal_places=0):
-
-        if col_type_override:
-            field = copy.deepcopy(col_type_override)
-            if aggregations_type == ANNOTATION_CHOICE_COUNT:
-                new_field_name = f'{aggregations_type}_{field_name}'
-                number_function_kwargs = {}
-                function = ANNOTATION_FUNCTIONS[aggregations_type]
-                number_function_kwargs['annotations'] = {new_field_name: function(field.field)}
-
-                number_function_kwargs.update({'field': new_field_name,
-                                               'column_name': field_name})
-                field = self.number_field(**number_function_kwargs)
-            else:
-                if aggregations_type:
-                    new_field_name = f'{aggregations_type}_{field_name}'
-
-                    function = ANNOTATION_FUNCTIONS[aggregations_type]
-                    field.aggregations = {new_field_name: function(field.field)}
-                    field.field = new_field_name
-                    field.options['calculated'] = True
-
-            fields.append(field)
-        else:
-            number_function_kwargs = {}
-            if decimal_places:
-                number_function_kwargs = {'decimal_places': int(decimal_places)}
-
-            if aggregations_type:
-                new_field_name = f'{aggregations_type}_{field_name}'
-                function = ANNOTATION_FUNCTIONS[aggregations_type]
-                number_function_kwargs['aggregations'] = {new_field_name: function(field_name)}
-                field_name = new_field_name
-
-            number_function_kwargs.update({'field': field_name,
-                                           'column_name': field_name,
-                                           'options': {'calculated': True},
-                                           'model_path': ''})
-
-            field = self.number_field(**number_function_kwargs)
-            fields.append(field)
-
-        return field_name
-
     def _process_aggregations(self, fields, aggregations_type=ANNOTATION_CHOICE_SUM):
-        field = self.single_value_report.field
-        base_model = self.single_value_report.get_base_modal()
+        field = self.chart_report.field
+        base_model = self.chart_report.get_base_modal()
 
         django_field, col_type_override, _ = get_django_field(base_model=base_model, field=field)
 
         if isinstance(django_field, NUMBER_FIELDS) or isinstance(django_field, BOOLEAN_FIELD):
-            self.get_aggregation_field(fields=fields,
-                                       field_name=field,
-                                       col_type_override=col_type_override,
-                                       aggregations_type=aggregations_type,
-                                       decimal_places=self.single_value_report.decimal_places)
+
+            self.get_number_field(annotations_type=aggregations_type,
+                                  index=0,
+                                  data_attr={},
+                                  table_field={'field': field, 'title': field},
+                                  fields=fields,
+                                  col_type_override=col_type_override,
+                                  decimal_places=self.chart_report.decimal_places)
         else:
             assert False, 'not a number field'
 
@@ -162,9 +98,9 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         return field_name
 
     def _process_percentage(self, fields):
-        denominator_field = self.single_value_report.field
-        numerator_field = self.single_value_report.numerator
-        base_model = self.single_value_report.get_base_modal()
+        denominator_field = self.chart_report.field
+        numerator_field = self.chart_report.numerator
+        base_model = self.chart_report.get_base_modal()
 
         deno_django_field, denominator_col_type_override, _ = get_django_field(base_model=base_model,
                                                                                field=denominator_field)
@@ -175,7 +111,7 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         if ((isinstance(deno_django_field, NUMBER_FIELDS) or isinstance(deno_django_field, BOOLEAN_FIELD)) and
                 (isinstance(num_django_field, NUMBER_FIELDS) or isinstance(num_django_field, BOOLEAN_FIELD))):
             numerator_filter = None
-            report_query = self.get_report_query(report=self.single_value_report)
+            report_query = self.get_report_query(report=self.chart_report)
             if report_query:
                 numerator_filter = self.process_filters(search_filter_data=report_query.extra_query)
 
@@ -185,13 +121,13 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
                                       denominator_field_name=denominator_field,
                                       denominator_col_type_override=denominator_col_type_override,
                                       numerator_filter=numerator_filter,
-                                      decimal_places=self.single_value_report.decimal_places,
+                                      decimal_places=self.chart_report.decimal_places,
                                       )
         else:
             assert False, 'not a number field'
 
     def _process_percentage_from_count(self, fields):
-        report_query = self.get_report_query(report=self.single_value_report)
+        report_query = self.get_report_query(report=self.chart_report)
 
         numerator_filter = None
         if report_query:
@@ -209,15 +145,15 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
                                   'column_name': 'count',
                                   'options': {'calculated': True},
                                   'model_path': ''}
-        decimal_places = self.single_value_report.decimal_places
+        decimal_places = self.chart_report.decimal_places
         if decimal_places:
             number_function_kwargs['decimal_places'] = int(decimal_places)
 
         field = self.number_field(**number_function_kwargs)
         fields.append(field)
 
-    def process_query_results(self):
-        single_value_type = self.single_value_report.single_value_type
+    def process_query_results(self, base_model, table):
+        single_value_type = self.chart_report.single_value_type
         fields = []
         if single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_COUNT:
             self._get_count(fields=fields)
@@ -236,54 +172,22 @@ class SingleValueView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        base_model = self.single_value_report.get_base_modal()
-
-        table = HorizontalTable(model=base_model)
-        table.datatable_template = 'advanced_report_builder/single_values/middle.html'
-        table.extra_filters = self.extra_filters
-        fields = self.process_query_results()
-        table.add_columns(
-            *fields
-        )
-        context['show_toolbar'] = self.show_toolbar
-        context['datatable'] = table
-        context['single_value_report'] = self.single_value_report
-        context['title'] = self.get_title()
+        self.table.single_value = self.chart_report
+        self.table.datatable_template = 'advanced_report_builder/single_values/middle.html'
+        context['single_value_report'] = self.chart_report
         return context
-
-    def setup_menu(self):
-        super().setup_menu()
-        if not self.show_toolbar:
-            return
-
-        if self.dashboard_report and self.enable_edit:
-            report_menu = self.pod_dashboard_edit_menu()
-        elif self.dashboard_report and not self.enable_edit:
-            report_menu = self.pod_dashboard_view_menu()
-        else:
-            report_menu = self.pod_report_menu()
-
-        self.add_menu('button_menu', 'button_group').add_items(
-            *report_menu,
-            *self.queries_menu(),
-        )
-
-    def pod_dashboard_edit_menu(self):
-        return [MenuItem(f'advanced_report_builder:dashboard_report_modal,pk-{self.dashboard_report.id}',
-                         menu_display='Edit',
-                         font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
 
     def pod_dashboard_view_menu(self):
         return []
 
     def pod_report_menu(self):
 
-        query_id = self.slug.get(f'query{self.single_value_report.id}')
+        query_id = self.slug.get(f'query{self.chart_report.id}')
         slug_str = ''
         if query_id:
             slug_str = f'-query_id-{query_id}'
 
-        return [MenuItem(f'advanced_report_builder:single_value_modal,pk-{self.single_value_report.id}{slug_str}',
+        return [MenuItem(f'advanced_report_builder:single_value_modal,pk-{self.chart_report.id}{slug_str}',
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
 
