@@ -11,14 +11,8 @@
         var table = {{ datatable.model_table_setup }};
         table.find_column = django_datatables.PythonTable.prototype.find_column
 
-        var labels = [];
-        var datasets = [];
-
-        for (var i = 0; i < table.initsetup.colOptions.length; i++) {
-
-            if (i > 0) {
-                datasets[i - 1] = {
-                    label: table.row_titles[i],
+        var datasets = {
+                    {#label: table.row_titles,#}
                     data: [],
                     borderWidth: 1,
                     datalabels: {
@@ -26,12 +20,11 @@
                         color: '#000000',
                         anchor: 'end'
                     },
-                    borderColor: '#' + table.initsetup.colOptions[i].colour,
-                    lineTension: 0.4,
+                    borderColor: [],
                     backgroundColor: []
                 };
-            }
 
+        for (var i = 0; i < table.initsetup.colOptions.length; i++) {
             for (var j = 0; j < table.data.length; j++) {
                 if (table.initsetup.colOptions[i]['render'] != undefined) {
                     render = new django_datatables.column_render(i, table.initsetup.colOptions[i]['render'], table);
@@ -42,13 +35,8 @@
                 if (cell_data == null) {
                     cell_data = '';
                 }
-                if (i > 0) {
-                    datasets[i - 1].data.push(cell_data);
-                    datasets[i - 1].backgroundColor.push('#' + table.initsetup.colOptions[i].colour);
-
-                } else {
-                    labels.push(cell_data);
-                }
+                datasets.data.push(cell_data);
+                datasets.backgroundColor.push('#' + table.initsetup.colOptions[i].colour);
             }
         }
 
@@ -56,7 +44,7 @@
         var bar{{ datatable.table_id }} = new Chart(ctx{{ datatable.table_id }}, {
             {% if datatable.line_chart_report.show_totals %}plugins: [ChartDataLabels],{% endif %}
             type: 'pie',
-            data: {labels: labels, datasets: datasets},
+            data: {labels: table.row_titles, datasets: [datasets]},
             options: {
                 maintainAspectRatio: false,
                 responsive: true,

@@ -22,6 +22,7 @@ from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin
 
 
 class PieChartView(ChartBaseView):
+    use_annotations = False
 
     def dispatch(self, request, *args, **kwargs):
         self.report = kwargs.get('report')
