@@ -185,10 +185,13 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
     def process_query_results(self, table):
         first_field_name = None
         base_model = self.table_report.get_base_modal()
-        table_fields = json.loads(self.table_report.table_fields)
         field_name = None
         fields = []
         totals = {}
+        if not self.table_report.table_fields:
+            return fields, totals, first_field_name
+        table_fields = json.loads(self.table_report.table_fields)
+
         for index, table_field in enumerate(table_fields):
             field = table_field['field']
 
