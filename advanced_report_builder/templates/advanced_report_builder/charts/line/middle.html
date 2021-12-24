@@ -89,7 +89,7 @@
             {% endif %}
         };
         var ctx{{ datatable.table_id }} = document.getElementById('{{ datatable.table_id }}').getContext('2d');
-        var bar{{ datatable.table_id }} = new Chart(ctx{{ datatable.table_id }}, {
+        var line{{ datatable.table_id }} = new Chart(ctx{{ datatable.table_id }}, {
             {% if datatable.line_chart_report.show_totals %}plugins: [ChartDataLabels],{% endif %}
             type: 'line',
             data: {labels: labels, datasets: datasets},

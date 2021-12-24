@@ -7,6 +7,7 @@ from advanced_report_builder.models import Report
 from advanced_report_builder.utils import split_slug
 from advanced_report_builder.views.bar_charts import BarChartView
 from advanced_report_builder.views.datatables import TableView
+from advanced_report_builder.views.funnel_charts import FunnelChartView
 from advanced_report_builder.views.line_charts import LineChartView
 from advanced_report_builder.views.pie_charts import PieChartView
 from advanced_report_builder.views.single_values import SingleValueView
@@ -19,6 +20,7 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
              'barchartreport': BarChartView,
              'linechartreport': LineChartView,
              'piechartreport': PieChartView,
+             'funnelchartreport': FunnelChartView,
              }
     views_overrides = {}
 

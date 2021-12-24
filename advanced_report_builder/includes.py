@@ -30,7 +30,18 @@ class ChartJS(SourceBase):
                    'chartjs-plugin-datalabels.min.js']
 
 
+class D3(SourceBase):
+    static_path = '/advanced_report_builder/d3/'
+    js_filename = ['d3.min.js']
+
+
+class D3Funnel(SourceBase):
+    static_path = '/advanced_report_builder/d3-funnel/'
+    js_filename = ['d3-funnel.min.js']
+
+
 packages = {
     'query_builder': [JQueryExtendext, Dot, QueryBuilder],
     'dashboard': [DashboardInclude],
+    'funnel': [D3, D3Funnel],
 }

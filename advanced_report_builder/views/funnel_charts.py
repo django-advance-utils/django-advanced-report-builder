@@ -15,32 +15,34 @@ from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
 
 from advanced_report_builder.globals import NUMBER_FIELDS
-from advanced_report_builder.models import PieChartReport, ReportType, ReportQuery
+from advanced_report_builder.models import ReportType, ReportQuery, FunnelChartReport
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import get_django_field, split_attr
 from advanced_report_builder.views.charts_base import ChartBaseView, ChartBaseModal
 from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin
 
 
-class PieChartView(ChartBaseView):
+class FunnelChartView(ChartBaseView):
     use_annotations = False
+
+    template_name = 'advanced_report_builder/charts/funnel/report.html'
 
     def dispatch(self, request, *args, **kwargs):
         self.report = kwargs.get('report')
-        self.chart_report = self.report.piechartreport
+        self.chart_report = self.report.funnelchartreport
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        self.table.pie_chart_report = self.chart_report
-        self.table.datatable_template = 'advanced_report_builder/charts/pie/middle.html'
-        context['pie_chart_report'] = self.chart_report
+        self.table.funnel_chart_report = self.chart_report
+        self.table.datatable_template = 'advanced_report_builder/charts/funnel/middle.html'
+        context['funnel_chart_report'] = self.chart_report
         return context
 
     def set_extra_number_field_kwargs(self, data_attr, options, multiple_index):
-        pie_colour = data_attr.get('pie_colour') or '801C70'
-        pie_colour = self.add_colour_offset(pie_colour, multiple_index=multiple_index)
-        options.update({'colour': pie_colour})
+        funnel_colour = data_attr.get('funnel_colour') or '801C70'
+        funnel_colour = self.add_colour_offset(funnel_colour, multiple_index=multiple_index)
+        options.update({'colour': funnel_colour})
 
     def pod_report_menu(self):
         query_id = self.slug.get(f'query{self.chart_report.id}')
@@ -48,7 +50,7 @@ class PieChartView(ChartBaseView):
         if query_id:
             slug_str = f'-query_id-{query_id}'
 
-        return [MenuItem(f'advanced_report_builder:pie_chart_modal,pk-{self.chart_report.id}{slug_str}',
+        return [MenuItem(f'advanced_report_builder:funnel_chart_modal,pk-{self.chart_report.id}{slug_str}',
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
 
@@ -56,16 +58,15 @@ class PieChartView(ChartBaseView):
         return None
 
 
-class PieChartModal(ChartBaseModal):
+class FunnelChartModal(ChartBaseModal):
     template_name = 'advanced_report_builder/charts/modal.html'
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
-    model = PieChartReport
+    model = FunnelChartReport
 
     form_fields = ['name',
                    'report_type',
                    'axis_value_type',
-                   'style',
                    'fields',
                    ]
 
@@ -73,13 +74,12 @@ class PieChartModal(ChartBaseModal):
 
         self.add_query_data(form, include_extra_query=True)
 
-        url = reverse('advanced_report_builder:pie_chart_field_modal',
+        url = reverse('advanced_report_builder:funnel_chart_field_modal',
                       kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
 
         return ('name',
                 'report_type',
                 'axis_value_type',
-                'style',
                 FieldEx('fields',
                         template='advanced_report_builder/select_column.html',
                         extra_context={'select_column_url': url}),
@@ -88,12 +88,12 @@ class PieChartModal(ChartBaseModal):
                 )
 
     def form_valid(self, form):
-        pie_chart_report = form.save()
+        funnel_chart_report = form.save()
 
         if not self.report_query and (form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']):
             ReportQuery(query=form.cleaned_data['query_data'],
                         extra_query=form.cleaned_data['extra_query_data'],
-                        report=pie_chart_report).save()
+                        report=funnel_chart_report).save()
         elif form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']:
             self.report_query.extra_query = form.cleaned_data['extra_query_data']
             self.report_query.query = form.cleaned_data['query_data']
@@ -106,7 +106,7 @@ class PieChartModal(ChartBaseModal):
         return self.command_response('reload')
 
 
-class PieChartFieldForm(CrispyForm):
+class FunnelChartFieldForm(CrispyForm):
 
     def __init__(self, *args, **kwargs):
         self.django_field = None
@@ -135,8 +135,8 @@ class PieChartFieldForm(CrispyForm):
 
         self.fields['title'] = CharField(initial=data['title'])
 
-        self.fields['pie_colour'] = CharField(required=False, widget=ColourPickerWidget)
-        self.fields['pie_colour'].initial = data_attr.get('pie_colour')
+        self.fields['funnel_colour'] = CharField(required=False, widget=ColourPickerWidget)
+        self.fields['funnel_colour'].initial = data_attr.get('funnel_colour')
 
         self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
         self.fields['filter'] = CharField(required=False)
@@ -167,7 +167,7 @@ class PieChartFieldForm(CrispyForm):
         attributes = []
         self.get_report_type_details()
 
-        attributes.append(f'pie_colour-{self.cleaned_data["pie_colour"]}')
+        attributes.append(f'funnel_colour-{self.cleaned_data["funnel_colour"]}')
 
         if self.cleaned_data['has_filter']:
             attributes.append('has_filter-1')
@@ -199,8 +199,8 @@ class PieChartFieldForm(CrispyForm):
                                                        title_prefix=f"{include['title']} --> ")
 
 
-class PieChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
-    form_class = PieChartFieldForm
+class FunnelChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
+    form_class = FunnelChartFieldForm
     size = 'xl'
     template_name = 'advanced_report_builder/charts/modal.html'
 
@@ -233,7 +233,7 @@ class PieChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
         ])
 
         return ['title',
-                'pie_colour',
+                'funnel_colour',
                 Div(FieldEx('has_filter',
                             template='django_modals/fields/label_checkbox.html',
                             field_class='col-6 input-group-sm'),

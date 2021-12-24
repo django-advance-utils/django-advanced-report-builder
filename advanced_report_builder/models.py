@@ -199,6 +199,15 @@ class PieChartReport(Report):
     fields = models.TextField(null=True, blank=True)
     style = models.PositiveSmallIntegerField(choices=PIE_CHART_STYLE_CHOICES, default=PIE_CHART_STYLE_PIE)
 
+    def is_pie_chart(self):
+        return self.style == self.PIE_CHART_STYLE_PIE
+
+
+class FunnelChartReport(Report):
+    axis_value_type = models.PositiveSmallIntegerField(choices=ANNOTATIONS_CHOICES,
+                                                       default=ANNOTATION_CHOICE_COUNT, null=True, blank=True)
+    fields = models.TextField(null=True, blank=True)
+
 
 class Dashboard(TimeStampedModel):
 

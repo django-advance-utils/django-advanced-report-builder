@@ -3,6 +3,7 @@ from django.urls import path
 from advanced_report_builder.views.bar_charts import BarChartModal, BarChartFieldModal
 from advanced_report_builder.views.dashboard import DashboardReportModal, DashboardModal, DashboardAddReportModal
 from advanced_report_builder.views.datatables import TableModal, TableFieldModal
+from advanced_report_builder.views.funnel_charts import FunnelChartModal, FunnelChartFieldModal
 from advanced_report_builder.views.line_charts import LineChartModal, LineChartFieldModal
 from advanced_report_builder.views.pie_charts import PieChartModal, PieChartFieldModal
 from advanced_report_builder.views.single_values import SingleValueModal
@@ -24,6 +25,9 @@ urlpatterns = [
 
     path('pie-chart/modal/<str:slug>/', PieChartModal.as_view(), name='pie_chart_modal'),
     path('pie-chart/modal/field/<str:slug>/', PieChartFieldModal.as_view(), name='pie_chart_field_modal'),
+
+    path('funnel-chart/modal/<str:slug>/', FunnelChartModal.as_view(), name='funnel_chart_modal'),
+    path('funnel-chart/modal/field/<str:slug>/', FunnelChartFieldModal.as_view(), name='funnel_chart_field_modal'),
 
     path('dashboard/report/<str:slug>/', DashboardReportModal.as_view(), name='dashboard_report_modal'),
     path('dashboard/<str:slug>/', DashboardModal.as_view(), name='dashboard_modal'),

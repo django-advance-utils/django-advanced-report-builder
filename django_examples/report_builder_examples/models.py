@@ -72,6 +72,8 @@ class Company(TimeStampedModel):
                   'created',
                   'modified',
                   ]
+        default_multiple_column_text = '{name}'
+        default_multiple_column_fields = ['name']
 
     def __str__(self):
         return self.name

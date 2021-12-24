@@ -1,4 +1,5 @@
 from advanced_report_builder.views.bar_charts import BarChartView
+from advanced_report_builder.views.funnel_charts import FunnelChartView
 from advanced_report_builder.views.line_charts import LineChartView
 from advanced_report_builder.views.pie_charts import PieChartView
 from advanced_report_builder.views.single_values import SingleValueView
@@ -31,7 +32,9 @@ class ViewReports(MainIndices):
                                MenuItem('advanced_report_builder:line_chart_modal,-',
                                         'Add Line Chart Report'),
                                MenuItem('advanced_report_builder:pie_chart_modal,-',
-                                        'Add Pie Chart Report')]),
+                                        'Add Pie Chart Report'),
+                               MenuItem('advanced_report_builder:funnel_chart_modal,-',
+                                        'Add Funnel Chart Report')]),
         )
 
     @staticmethod
@@ -94,6 +97,12 @@ class ViewPieChartReport(PieChartView):
                 *super().pod_report_menu()]
 
 
+class ViewFunnelChartReport(FunnelChartView):
+    def pod_report_menu(self):
+        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
+                *super().pod_report_menu()]
+
+
 class ViewReport(MainMenu, ViewReportBase):
     template_name = 'report_builder_examples/report.html'
     views_overrides = {'tablereport': ViewTableReport,
@@ -101,6 +110,7 @@ class ViewReport(MainMenu, ViewReportBase):
                        'barchartreport': ViewBarChartReport,
                        'linechartreport': ViewLineChartReport,
                        'piechartreport': ViewPieChartReport,
+                       'funnelchartreport': ViewFunnelChartReport,
                        }
 
     def redirect_url(self):

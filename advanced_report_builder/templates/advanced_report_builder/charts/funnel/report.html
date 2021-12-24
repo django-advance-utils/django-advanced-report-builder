@@ -1,0 +1,35 @@
+{% load datatable_tags %}
+{% load ajax_helpers %}
+<style>
+
+    .dashboard-tile {
+        background-color: #fff;
+        color: #555;
+        margin-bottom: 15px;
+        padding: 10px;
+        -webkit-border-radius: 3px;
+        -moz-border-radius: 3px;
+        -ms-border-radius: 3px;
+        -o-border-radius: 3px;
+        border-radius: 3px;
+    }
+</style>
+{% lib_include 'datatable' module='django_datatables.includes' %}
+{% lib_include 'funnel' module='advanced_report_builder.includes' %}
+
+    <div class="col-12 float-left">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex align-items-center">
+                    <h5 class="mr-auto">{{ title }}</h5>
+
+                    {% block button_menu %}{{ menus.button_menu.render }}{% endblock %}
+                </div>
+            </div>
+            <div class="dashboard-tile detail">
+                <div class="content" style="padding: 2px;">
+                    {{ datatable.render }}
+                </div>
+            </div>
+        </div>
+    </div>

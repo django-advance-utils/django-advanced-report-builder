@@ -41,7 +41,7 @@
         }
 
         var ctx{{ datatable.table_id }} = document.getElementById('{{ datatable.table_id }}').getContext('2d');
-        var pie{{ datatable.table_id }} = new Chart(ctx{{ datatable.table_id }}, {
+        var bar{{ datatable.table_id }} = new Chart(ctx{{ datatable.table_id }}, {
             type: {% if datatable.pie_chart_report.is_pie_chart %}'pie'{% else %}'doughnut'{% endif %},
             data: {labels: table.row_titles, datasets: [datasets]},
             options: {
