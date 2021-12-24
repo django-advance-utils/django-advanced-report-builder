@@ -1,30 +1,22 @@
 {% load ajax_helpers %}
 
-<canvas id="{{ datatable.table_id }}" width="400" height="400"></canvas>
+<div id="{{ datatable.table_id }}"></div>
 
 <script>
-
-
+    
     (function () {
-
         var cell_data;
         var table = {{ datatable.model_table_setup }};
         table.find_column = django_datatables.PythonTable.prototype.find_column
-
-        var datasets = {
-                    {#label: table.row_titles,#}
-                    data: [],
-                    borderWidth: 1,
-                    datalabels: {
-                        align: 'top',
-                        color: '#000000',
-                        anchor: 'end'
-                    },
-                    borderColor: [],
-                    backgroundColor: []
-                };
-
+        var datasets = [];
         for (var i = 0; i < table.initsetup.colOptions.length; i++) {
+
+            datasets[i] = {
+                label: table.row_titles[i],
+                value: 0,
+                backgroundColor: '#' + table.initsetup.colOptions[i].colour,
+            };
+
             for (var j = 0; j < table.data.length; j++) {
                 if (table.initsetup.colOptions[i]['render'] != undefined) {
                     render = new django_datatables.column_render(i, table.initsetup.colOptions[i]['render'], table);
@@ -32,27 +24,18 @@
                 } else {
                     cell_data = table.data[j][i];
                 }
-                if (cell_data == null) {
-                    cell_data = '';
-                }
-                datasets.data.push(cell_data);
-                datasets.backgroundColor.push('#' + table.initsetup.colOptions[i].colour);
+                datasets[i].value = cell_data;
             }
         }
 
-        var ctx{{ datatable.table_id }} = document.getElementById('{{ datatable.table_id }}').getContext('2d');
-        var bar{{ datatable.table_id }} = new Chart(ctx{{ datatable.table_id }}, {
-            type: {% if datatable.pie_chart_report.is_pie_chart %}'pie'{% else %}'doughnut'{% endif %},
-            data: {labels: table.row_titles, datasets: [datasets]},
-            options: {
-                maintainAspectRatio: false,
-                responsive: true,
-                legend: {
-                    position: 'top',
-                    display: false
-                },
-            }
-        });
-
+    const options = {
+        block: {
+            dynamicHeight: true,
+            minHeight: 100,
+        },
+    };
+    const chart = new D3Funnel('#{{ datatable.table_id }}');
+    chart.draw(datasets, options);
     })();
+
 </script>
