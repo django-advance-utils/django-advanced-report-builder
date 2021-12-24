@@ -3,7 +3,7 @@
 <div id="{{ datatable.table_id }}"></div>
 
 <script>
-    
+
     (function () {
         var cell_data;
         var table = {{ datatable.model_table_setup }};
@@ -36,6 +36,11 @@
     };
     const chart = new D3Funnel('#{{ datatable.table_id }}');
     chart.draw(datasets, options);
+    $( window ).resize ( function () {
+        chart.draw(datasets, options);
+    } );
+
+
     })();
 
 </script>

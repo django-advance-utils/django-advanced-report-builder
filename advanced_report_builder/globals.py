@@ -140,6 +140,7 @@ DISPLAY_OPTION_NONE = 0
 DISPLAY_OPTION_1_PER_ROW = 1
 DISPLAY_OPTION_2_PER_ROW = 2
 DISPLAY_OPTION_3_PER_ROW = 3
+DISPLAY_OPTION_4_PER_ROW = 4
 
 
 DISPLAY_OPTION_CHOICES = [
@@ -147,11 +148,14 @@ DISPLAY_OPTION_CHOICES = [
     (DISPLAY_OPTION_1_PER_ROW, '1 Report per Row'),
     (DISPLAY_OPTION_2_PER_ROW, '2 Reports per Row'),
     (DISPLAY_OPTION_3_PER_ROW, '3 Reports per Row'),
+    (DISPLAY_OPTION_4_PER_ROW, '4 Reports per Row'),
 ]
 
 DISPLAY_OPTION_CLASSES = {DISPLAY_OPTION_1_PER_ROW: ' col-12',
                           DISPLAY_OPTION_2_PER_ROW: ' col-12 col-md-12 col-lg-6',
-                          DISPLAY_OPTION_3_PER_ROW: ' col-12 col-md-12 col-lg-4'}
+                          DISPLAY_OPTION_3_PER_ROW: ' col-12 col-md-12 col-lg-4',
+                          DISPLAY_OPTION_4_PER_ROW: ' col-12 col-md-12 col-lg-3',
+                          }
 
 DEFAULT_DATE_FORMAT = {ANNOTATION_VALUE_YEAR: DATE_FORMAT_TYPE_YYYY,
                        ANNOTATION_VALUE_QUARTER: DATE_FORMAT_TYPE_WORDS_MM_YY,
