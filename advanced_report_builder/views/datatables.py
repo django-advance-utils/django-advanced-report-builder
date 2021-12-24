@@ -17,6 +17,7 @@ from django_modals.fields import FieldEx
 from django_modals.forms import CrispyForm
 from django_modals.modals import FormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
+from django_modals.widgets.select2 import Select2Multiple
 from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.columns import ReportBuilderDateColumn, ReportBuilderNumberColumn
@@ -323,12 +324,15 @@ class TableModal(QueryBuilderModalBase):
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
 
+    widgets = {'report_tags': Select2Multiple}
+
     form_fields = ['name',
                    ('has_clickable_rows', {'widget': Toggle(attrs={'data-onstyle': 'success',
                                                                    'data-on': 'YES',
                                                                    'data-off': 'NO'})}),
                    'page_length',
                    'report_type',
+                   'report_tags',
                    'table_fields',
                    ]
 
@@ -342,8 +346,9 @@ class TableModal(QueryBuilderModalBase):
         url = reverse('advanced_report_builder:table_field_modal',
                       kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
 
-        fields = [FieldEx('name'),
-                  FieldEx('report_type'),
+        fields = ['name',
+                  'report_type',
+                  'report_tags',
                   FieldEx('has_clickable_rows', template='django_modals/fields/label_checkbox.html'),
                   FieldEx('page_length', template='django_modals/fields/label_checkbox.html'),
                   FieldEx('table_fields',

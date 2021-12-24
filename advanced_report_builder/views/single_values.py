@@ -7,7 +7,7 @@ from django_menus.menu import MenuItem
 from django_modals.fields import FieldEx
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
-from django_modals.widgets.select2 import Select2
+from django_modals.widgets.select2 import Select2, Select2Multiple
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.globals import NUMBER_FIELDS, BOOLEAN_FIELD, ANNOTATION_CHOICE_SUM, \
@@ -200,10 +200,12 @@ class SingleValueModal(QueryBuilderModalBase):
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
     model = SingleValueReport
-    widgets = {'tile_colour': ColourPickerWidget}
+    widgets = {'tile_colour': ColourPickerWidget,
+               'report_tags': Select2Multiple}
 
     form_fields = ['name',
                    'report_type',
+                   'report_tags',
                    ('single_value_type', {'label': 'Value type'}),
                    ('numerator', {'label': 'Numerator field'}),
                    'field',
@@ -252,6 +254,7 @@ class SingleValueModal(QueryBuilderModalBase):
 
         return ('name',
                 'report_type',
+                'report_tags',
                 'single_value_type',
                 'numerator',
                 'field',

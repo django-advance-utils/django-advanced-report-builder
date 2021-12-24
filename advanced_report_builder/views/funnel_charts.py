@@ -13,6 +13,7 @@ from django_modals.forms import CrispyForm
 from django_modals.modals import FormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
+from django_modals.widgets.select2 import Select2Multiple
 
 from advanced_report_builder.globals import NUMBER_FIELDS
 from advanced_report_builder.models import ReportType, ReportQuery, FunnelChartReport
@@ -63,9 +64,11 @@ class FunnelChartModal(ChartBaseModal):
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
     model = FunnelChartReport
+    widgets = {'report_tags': Select2Multiple}
 
     form_fields = ['name',
                    'report_type',
+                   'report_tags',
                    'axis_value_type',
                    'fields',
                    ]
@@ -79,6 +82,7 @@ class FunnelChartModal(ChartBaseModal):
 
         return ('name',
                 'report_type',
+                'report_tags',
                 'axis_value_type',
                 FieldEx('fields',
                         template='advanced_report_builder/select_column.html',

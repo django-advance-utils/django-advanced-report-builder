@@ -13,6 +13,7 @@ from django_modals.forms import CrispyForm
 from django_modals.modals import FormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
+from django_modals.widgets.select2 import Select2Multiple
 
 from advanced_report_builder.globals import NUMBER_FIELDS
 from advanced_report_builder.models import PieChartReport, ReportType, ReportQuery
@@ -61,9 +62,11 @@ class PieChartModal(ChartBaseModal):
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
     model = PieChartReport
+    widgets = {'report_tags': Select2Multiple}
 
     form_fields = ['name',
                    'report_type',
+                   'report_tags',
                    'axis_value_type',
                    'style',
                    'fields',
@@ -78,6 +81,7 @@ class PieChartModal(ChartBaseModal):
 
         return ('name',
                 'report_type',
+                'report_tags',
                 'axis_value_type',
                 'style',
                 FieldEx('fields',

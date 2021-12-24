@@ -14,7 +14,7 @@ from django_modals.forms import CrispyForm
 from django_modals.modals import FormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
-from django_modals.widgets.select2 import Select2
+from django_modals.widgets.select2 import Select2, Select2Multiple
 
 from advanced_report_builder.globals import NUMBER_FIELDS, DATE_FIELDS, DEFAULT_DATE_FORMAT, \
     DATE_FORMAT_TYPES_DJANGO_FORMAT
@@ -76,10 +76,12 @@ class BarChartModal(ChartBaseModal):
                'negative_bar_colour': ColourPickerWidget,
                'stacked': RBToggle,
                'show_totals': RBToggle,
-               'show_blank_dates': RBToggle}
+               'show_blank_dates': RBToggle,
+               'report_tags': Select2Multiple}
 
     form_fields = ['name',
                    'report_type',
+                   'report_tags',
                    ('bar_chart_orientation', {'label': 'Orientation'}),
                    'axis_value_type',
                    'axis_scale',
@@ -116,6 +118,7 @@ class BarChartModal(ChartBaseModal):
 
         return ('name',
                 'report_type',
+                'report_tags',
                 'bar_chart_orientation',
                 'axis_scale',
                 'axis_value_type',

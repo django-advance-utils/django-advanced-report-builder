@@ -11,6 +11,17 @@ from advanced_report_builder.globals import DISPLAY_OPTION_CHOICES, DISPLAY_OPTI
     ANNOTATION_CHART_SCALE
 
 
+class ReportTag(TimeStampedModel):
+    name = models.CharField(max_length=128, unique=True)
+    order = models.PositiveSmallIntegerField()
+
+    class Meta:
+        ordering = ('order',)
+
+    def __str__(self):
+        return self.name
+
+
 class ReportType(TimeStampedModel):
     name = models.CharField(max_length=200)
     content_type = models.ForeignKey(ContentType, null=False, blank=False, on_delete=models.PROTECT)
@@ -29,6 +40,7 @@ class Report(TimeStampedModel):
     slug_alias = models.SlugField(blank=True, null=True)  # used if the slug changes
     report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
     instance_type = models.CharField(null=True, max_length=255)
+    report_tags = models.ManyToManyField(ReportTag, blank=True)
 
     def __str__(self):
         return self.name
@@ -93,6 +105,7 @@ class ReportQuery(TimeStampedModel):
         ordering = ['name']
         unique_together = ('name', 'report')
         verbose_name_plural = 'Report queries'
+
 
 
 class TableReport(Report):

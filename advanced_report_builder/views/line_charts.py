@@ -16,7 +16,7 @@ from django_modals.forms import CrispyForm
 from django_modals.modals import FormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
-from django_modals.widgets.select2 import Select2
+from django_modals.widgets.select2 import Select2, Select2Multiple
 
 from advanced_report_builder.globals import NUMBER_FIELDS, DATE_FIELDS, ANNOTATION_VALUE_YEAR, \
     ANNOTATION_VALUE_QUARTER, ANNOTATION_VALUE_MONTH, ANNOTATION_VALUE_WEEK, ANNOTATION_VALUE_DAY
@@ -110,10 +110,12 @@ class LineChartModal(ChartBaseModal):
     permission_delete = PERMISSION_OFF
     model = LineChartReport
     widgets = {'line_colour': ColourPickerWidget,
-               'show_totals': RBToggle}
+               'show_totals': RBToggle,
+               'report_tags': Select2Multiple}
 
     form_fields = ['name',
                    'report_type',
+                   'report_tags',
                    'axis_value_type',
                    'axis_scale',
                    'date_field',
@@ -148,6 +150,7 @@ class LineChartModal(ChartBaseModal):
 
         return ('name',
                 'report_type',
+                'report_tags',
                 'axis_scale',
                 'axis_value_type',
                 'date_field',
