@@ -83,8 +83,9 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
         super().__init__(*args, **kwargs)
 
     def ajax_get_query_builder_fields(self, **kwargs):
-        report_type_id = kwargs['report_type'][0]
-        field_auto_id = kwargs['field_auto_id'][0]
+        report_type_id = kwargs['report_type']
+
+        field_auto_id = kwargs['field_auto_id']
         if report_type_id:
             query_builder_filters = self.get_query_builder_report_type_field(report_type_id=report_type_id)
 
