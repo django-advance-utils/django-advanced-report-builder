@@ -12,5 +12,5 @@ git+https://github.com/jonesim/django-modals.git@8561b9ea665aa143b5fc5096cb6a46c
 git+https://github.com/jonesim/ajax-helpers.git@3ab5d5310398bb213a3dd50edae8813983562f55
 # django-ajax-helpers==0.0.15
 time-stamped-model==0.2.2
-date-offset==0.0.1
+date-offset==0.0.2
 django-debug-toolbar==3.2.4

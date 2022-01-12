@@ -1,6 +1,6 @@
 from ajax_helpers.mixins import AjaxHelpers
 from django_datatables.datatables import DatatableView
-from django_menus.menu import MenuMixin
+from django_menus.menu import MenuMixin, MenuItem
 
 
 class MainMenu(AjaxHelpers, MenuMixin):
@@ -10,6 +10,10 @@ class MainMenu(AjaxHelpers, MenuMixin):
         self.add_menu('main_menu').add_items(
             ('report_builder_examples:index', 'Reports'),
             ('report_builder_examples:dashboards_index', 'Dashboard'),
+            MenuItem(url='admin:index',
+                     menu_display='Admin',
+                     visible=self.request.user.is_superuser),
+
         )
 
 
