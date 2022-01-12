@@ -2,7 +2,7 @@ import json
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django_datatables.columns import DatatableColumn, NoHeadingColumn
+from django_datatables.columns import DatatableColumn, NoHeadingColumn, ManyToManyColumn
 from django_datatables.model_def import DatatableModel
 from time_stamped_model.models import TimeStampedModel
 
@@ -93,6 +93,10 @@ class Report(TimeStampedModel):
             def row_result(self, data, _page_data):
                 instance_type = data[self.model_path + 'instance_type']
                 return self.output_types.get(instance_type, '')
+
+        report_tags_badge = ManyToManyColumn(field='report_tags__name',
+                                             html='<span class="badge badge-primary"> %1% </span>',
+                                             title='Tags')
 
 
 class ReportQuery(TimeStampedModel):
