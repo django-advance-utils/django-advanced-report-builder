@@ -10,7 +10,7 @@ from django.db.models import Q
 from django.forms import CharField, ChoiceField, BooleanField, IntegerField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
-from django_datatables.datatables import DatatableView, ColumnInitialisor
+from django_datatables.datatables import DatatableView, ColumnInitialisor, DatatableError
 from django_datatables.plugins.column_totals import ColumnTotals
 from django_menus.menu import MenuMixin, MenuItem
 from django_modals.fields import FieldEx
@@ -21,6 +21,7 @@ from django_modals.widgets.select2 import Select2Multiple
 from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.columns import ReportBuilderDateColumn, ReportBuilderNumberColumn
+from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, \
     DATE_FORMAT_TYPES, ANNOTATION_CHOICE_COUNT
@@ -56,7 +57,10 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
 
         self.base_model = self.table_report.get_base_modal()
         self.add_table(table_id, model=self.base_model)
-        return super().dispatch(request, *args, **kwargs)
+        try:
+            return super().dispatch(request, *args, **kwargs)
+        except DatatableError as de:
+            raise ReportError(de.value)
 
     def get_date_field(self, index, col_type_override, table_field, fields):
         data_attr = split_attr(table_field)
