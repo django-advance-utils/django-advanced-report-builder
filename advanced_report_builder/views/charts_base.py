@@ -319,7 +319,14 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         return []
 
     def pod_report_menu(self):
+        query_id = self.slug.get(f'query{self.chart_report.id}')
+        slug_str = ''
+        if query_id:
+            slug_str = f'-query_id-{query_id}'
+        return self.edit_report_menu(chart_report_id=self.chart_report.id, slug_str=slug_str)
 
+    @staticmethod
+    def edit_report_menu(chart_report_id, slug_str):
         return []
 
     # noinspection PyMethodMayBeStatic

@@ -43,13 +43,9 @@ class PieChartView(ChartBaseView):
         pie_colour = self.add_colour_offset(pie_colour, multiple_index=multiple_index)
         options.update({'colour': pie_colour})
 
-    def pod_report_menu(self):
-        query_id = self.slug.get(f'query{self.chart_report.id}')
-        slug_str = ''
-        if query_id:
-            slug_str = f'-query_id-{query_id}'
-
-        return [MenuItem(f'advanced_report_builder:pie_chart_modal,pk-{self.chart_report.id}{slug_str}',
+    @staticmethod
+    def edit_report_menu(chart_report_id, slug_str):
+        return [MenuItem(f'advanced_report_builder:pie_chart_modal,pk-{chart_report_id}{slug_str}',
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
 
