@@ -60,7 +60,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         try:
             return super().dispatch(request, *args, **kwargs)
         except DatatableError as de:
-            raise ReportError(de.value)
+            raise ReportError(de.args[0])
 
     def get_date_field(self, index, col_type_override, table_field, fields):
         data_attr = split_attr(table_field)
