@@ -1,6 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.db.models import Count
+from django.db.models import Count, Sum
 from django_datatables.columns import ColumnLink, DatatableColumn, CurrencyPenceColumn
 from django_datatables.model_def import DatatableModel
 from report_builder_examples.report_overrides import CustomDateColumn
@@ -38,6 +38,8 @@ class Company(TimeStampedModel):
     class Datatable(DatatableModel):
         people = DatatableColumn(annotations={'people': Count('person__id', distinct=True)})
 
+        payments = CurrencyPenceColumn(annotations={'payments': Sum('payment__amount', distinct=True)})
+
         # people = {'annotations': {'people': Count('person__id')}}
         collink_1 = ColumnLink(title='Defined in Model', field='name', url_name='report_builder_examples:example_link')
 
@@ -69,6 +71,7 @@ class Company(TimeStampedModel):
                   'people',
                   ('sector__name', {'title': 'Sector Name'}),
                   'collink_1',
+                  'payments',
                   'created',
                   'modified',
                   ]
@@ -165,6 +168,7 @@ class Payment(TimeStampedModel):
         fields = ['date',
                   'currency_amount',
                   'quantity',
+                  'received',
                   'created_field',
                   'modified_field',
                   ]
