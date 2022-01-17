@@ -54,7 +54,8 @@ def get_django_field(base_model, field):
 
     if django_field is None and columns:
         col_type_override = columns[0]
-        column_initialisor = ColumnInitialisor(start_model=base_model, path=col_type_override.field)
-        column_initialisor.get_columns()
-        django_field = column_initialisor.django_field
+        if isinstance(col_type_override.field, str):
+            column_initialisor = ColumnInitialisor(start_model=base_model, path=col_type_override.field)
+            column_initialisor.get_columns()
+            django_field = column_initialisor.django_field
     return django_field, col_type_override, columns
