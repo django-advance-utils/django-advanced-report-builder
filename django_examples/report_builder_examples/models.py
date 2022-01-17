@@ -1,13 +1,13 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Count
-from django_datatables.columns import ColumnLink, DatatableColumn, ChoiceColumn, CurrencyPenceColumn
+from django_datatables.columns import ColumnLink, DatatableColumn, CurrencyPenceColumn
 from django_datatables.model_def import DatatableModel
+from report_builder_examples.report_overrides import CustomDateColumn
 from time_stamped_model.models import TimeStampedModel
 
 from advanced_report_builder.models import Report
 from advanced_report_builder.report_builder import ReportBuilderFields
-from report_builder_examples.report_overrides import CustomDateColumn
 
 
 class UserProfile(AbstractUser):
@@ -72,6 +72,7 @@ class Company(TimeStampedModel):
                   'created',
                   'modified',
                   ]
+        default_columns = ['.id']
         default_multiple_column_text = '{name}'
         default_multiple_column_fields = ['name']
 
@@ -80,9 +81,6 @@ class Company(TimeStampedModel):
 
 
 class Person(models.Model):
-
-    class Datatable(DatatableModel):
-        title_model = ChoiceColumn('title', choices=((0, 'Mr'), (1, 'Mrs'), (2, 'Miss')))
 
     title_choices = ((0, 'Mr'), (1, 'Mrs'), (2, 'Miss'))
     title = models.IntegerField(choices=title_choices, null=True)
@@ -94,7 +92,8 @@ class Person(models.Model):
     class ReportBuilder(ReportBuilderFields):
         colour = '#FF0000'
         title = 'Person'
-        fields = ['title',
+        fields = ['id',
+                  'title',
                   'first_name',
                   'surname',
                   'date_entered']

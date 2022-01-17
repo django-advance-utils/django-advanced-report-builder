@@ -111,7 +111,6 @@ class ReportQuery(TimeStampedModel):
         verbose_name_plural = 'Report queries'
 
 
-
 class TableReport(Report):
     table_fields = models.TextField(null=True, blank=True)
     has_clickable_rows = models.BooleanField(default=False)  # This is for standard tables.
@@ -264,4 +263,3 @@ class DashboardReport(TimeStampedModel):
 
     class Meta:
         ordering = ['order']
-

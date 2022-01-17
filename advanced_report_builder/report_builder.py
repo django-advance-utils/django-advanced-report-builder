@@ -7,6 +7,7 @@ class ReportBuilderFields:
     exclude_display_fields = []
     url = None
     includes = []
+    default_columns = []
 
     default_multiple_column_text = ''
     default_multiple_column_fields = []

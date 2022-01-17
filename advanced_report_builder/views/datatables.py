@@ -194,6 +194,13 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         field_name = None
         fields = []
         totals = {}
+
+        report_builder_fields = getattr(self.base_model,
+                                        self.table_report.report_type.report_builder_class_name, None)
+
+        if len(report_builder_fields.default_columns) > 0:
+            fields += report_builder_fields.default_columns
+
         if not self.table_report.table_fields:
             return fields, totals, first_field_name
         table_fields = json.loads(self.table_report.table_fields)
@@ -209,14 +216,13 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
                                                  table_field=table_field,
                                                  fields=fields)
 
-            elif isinstance(django_field, NUMBER_FIELDS):
+            elif isinstance(django_field, NUMBER_FIELDS) and (django_field is None or django_field.choices is None):
                 data_attr = split_attr(table_field)
 
                 if data_attr.get('annotations_type') and data_attr.get('multiple_columns') == '1':
                     query = self.extra_filters(query=table.model.objects)
                     multiple_column_field = data_attr.get('multiple_column_field')
-                    report_builder_fields = getattr(self.base_model,
-                                                    self.table_report.report_type.report_builder_class_name, None)
+
 
                     report_builder_fields = self._get_report_builder_fields(field_str=multiple_column_field,
                                                                             report_builder_fields=report_builder_fields)
