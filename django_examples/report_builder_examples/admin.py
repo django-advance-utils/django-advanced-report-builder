@@ -15,8 +15,8 @@ class SectorAdmin(admin.ModelAdmin):
 class CompanyAdmin(admin.ModelAdmin):
     list_display = ('name',
                     'active',
-                    'importance'
-                    )
+                    'importance',
+                    'modified')
 
 
 @admin.register(Person)

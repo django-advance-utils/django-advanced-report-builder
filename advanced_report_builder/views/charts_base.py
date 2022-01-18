@@ -131,7 +131,8 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
 
             django_field, col_type_override, _ = get_django_field(base_model=base_model, field=field)
 
-            if isinstance(django_field, NUMBER_FIELDS):
+            if (isinstance(django_field, NUMBER_FIELDS) or
+                    (col_type_override is not None and col_type_override.annotations)):
                 data_attr = split_attr(table_field)
                 if data_attr.get('multiple_columns') == '1':
                     query = self.extra_filters(query=table.model.objects)
@@ -207,6 +208,12 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
                 if not self.use_annotations:
                     field.options['calculated'] = True
                     field.aggregations = col_type_override.annotations
+                number_function_kwargs = {}
+                if title:
+                    number_function_kwargs['title'] = title
+                self.set_extra_number_field_kwargs(data_attr=data_attr,
+                                                   options=field.options,
+                                                   multiple_index=multiple_index)
 
             elif annotations_type == ANNOTATION_CHOICE_COUNT:
                 new_field_name = f'{annotations_type}_{field_name}_{index}'

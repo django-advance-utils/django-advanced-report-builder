@@ -43,7 +43,10 @@
                 if (i > 0) {
                     datasets[i - 1].data.push(cell_data);
                     var colours = table.initsetup.colOptions[i].colours;
-                    if (cell_data < 0) {
+                    if (table.initsetup.colOptions[i].colours === undefined) {
+                        datasets[i - 1].backgroundColor.push('#FF0000')
+                    }
+                    else if (cell_data < 0) {
                         datasets[i - 1].backgroundColor.push('#' + colours.negative);
                     } else {
                         datasets[i - 1].backgroundColor.push('#' + colours.positive);
@@ -53,6 +56,9 @@
                 }
             }
         }
+
+        console.log(datasets);
+
         var x_axis = {
             {% if datatable.bar_chart_report.stacked %}stacked: true,{% endif %}
             display: true,
@@ -84,6 +90,9 @@
             {% endif %}
         };
         var ctx{{ datatable.table_id }} = document.getElementById('{{ datatable.table_id }}').getContext('2d');
+
+
+
         var bar{{ datatable.table_id }} = new Chart(ctx{{ datatable.table_id }}, {
             {% if datatable.bar_chart_report.show_totals %}plugins: [ChartDataLabels],{% endif %}
             type: 'bar',
