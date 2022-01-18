@@ -367,7 +367,7 @@ class ChartBaseModal(QueryBuilderModalBase):
                              colour=include.get('colour'))
 
     def ajax_get_fields(self, **kwargs):
-        report_type_id = kwargs['report_type'][0]
+        report_type_id = kwargs['report_type']
         report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=report_type_id)
 
         fields = []

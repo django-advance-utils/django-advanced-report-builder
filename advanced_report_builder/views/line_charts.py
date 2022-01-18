@@ -357,7 +357,7 @@ class LineChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
                 ]
 
     def ajax_get_query_builder_fields(self, **kwargs):
-        field_auto_id = kwargs['field_auto_id'][0]
+        field_auto_id = kwargs['field_auto_id']
 
         report_type_id = self.slug['report_type_id']
         query_builder_filters = self.get_query_builder_report_type_field(report_type_id=report_type_id)

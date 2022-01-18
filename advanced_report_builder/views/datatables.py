@@ -223,7 +223,6 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
                     query = self.extra_filters(query=table.model.objects)
                     multiple_column_field = data_attr.get('multiple_column_field')
 
-
                     report_builder_fields = self._get_report_builder_fields(field_str=multiple_column_field,
                                                                             report_builder_fields=report_builder_fields)
                     _fields = report_builder_fields.default_multiple_column_fields
@@ -329,7 +328,6 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
 
-
     def queries_menu(self):
         return []
 
@@ -428,7 +426,7 @@ class TableModal(QueryBuilderModalBase):
                              colour=include.get('colour'))
 
     def ajax_get_fields(self, **kwargs):
-        report_type_id = kwargs['report_type'][0]
+        report_type_id = kwargs['report_type']
         report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=report_type_id)
         fields = []
         tables = []
@@ -443,10 +441,12 @@ class TableFieldForm(CrispyForm):
 
     def __init__(self, *args, **kwargs):
         self.django_field = None
+        self.col_type_override = None
         super().__init__(*args, **kwargs)
 
     def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
-        if isinstance(self.django_field, NUMBER_FIELDS):
+        if((self.django_field is not None and isinstance(self.django_field, NUMBER_FIELDS)) or
+           (self.col_type_override is not None and self.col_type_override.annotations)):
             return StrictButton(button_text, onclick=f'save_modal_{self.form_id}()', css_class=css_class, **kwargs)
         else:
             return super().submit_button(css_class, button_text, **kwargs)
@@ -456,7 +456,7 @@ class TableFieldForm(CrispyForm):
 
         report_type = get_object_or_404(ReportType, pk=self.slug['report_type_id'])
         base_model = report_type.content_type.model_class()
-        self.django_field, _, _ = get_django_field(base_model=base_model, field=data['field'])
+        self.django_field, self.col_type_override, _ = get_django_field(base_model=base_model, field=data['field'])
 
         return report_type, base_model
 
@@ -465,80 +465,81 @@ class TableFieldForm(CrispyForm):
         report_type, base_model = self.get_report_type_details()
 
         self.fields['title'] = CharField(initial=data['title'])
-        if self.django_field is not None:
-            data_attr = split_attr(data)
-            if isinstance(self.django_field, DATE_FIELDS):
-                self.fields['annotations_value'] = ChoiceField(choices=[(0, '-----')] + ANNOTATION_VALUE_CHOICES,
-                                                               required=False)
-                if 'annotations_value' in data_attr:
-                    self.fields['annotations_value'].initial = data_attr['annotations_value']
-                self.fields['date_format'] = ChoiceField(choices=[(0, '-----')] + DATE_FORMAT_TYPES, required=False)
-                if 'date_format' in data_attr:
-                    self.fields['date_format'].initial = data_attr['date_format']
-            elif isinstance(self.django_field, NUMBER_FIELDS):
-                self.fields['annotations_type'] = ChoiceField(choices=[(0, '-----')] + ANNOTATIONS_CHOICES,
-                                                              required=False)
-                if 'annotations_type' in data_attr:
-                    self.fields['annotations_type'].initial = data_attr['annotations_type']
-                self.fields['show_totals'] = BooleanField(required=False, widget=RBToggle())
-                if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
-                    self.fields['show_totals'].initial = True
-                self.fields['decimal_places'] = IntegerField()
-                self.fields['decimal_places'].initial = int(data_attr.get('decimal_places', 0))
-                self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
 
-                self.fields['filter'] = CharField(required=False)
+        data_attr = split_attr(data)
+        if self.django_field is not None and isinstance(self.django_field, DATE_FIELDS):
+            self.fields['annotations_value'] = ChoiceField(choices=[(0, '-----')] + ANNOTATION_VALUE_CHOICES,
+                                                           required=False)
+            if 'annotations_value' in data_attr:
+                self.fields['annotations_value'].initial = data_attr['annotations_value']
+            self.fields['date_format'] = ChoiceField(choices=[(0, '-----')] + DATE_FORMAT_TYPES, required=False)
+            if 'date_format' in data_attr:
+                self.fields['date_format'].initial = data_attr['date_format']
+        elif ((self.django_field is not None and isinstance(self.django_field, NUMBER_FIELDS)) or
+              (self.col_type_override is not None and self.col_type_override.annotations)):
+            self.fields['annotations_type'] = ChoiceField(choices=[(0, '-----')] + ANNOTATIONS_CHOICES,
+                                                          required=False)
+            if 'annotations_type' in data_attr:
+                self.fields['annotations_type'].initial = data_attr['annotations_type']
+            self.fields['show_totals'] = BooleanField(required=False, widget=RBToggle())
+            if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
+                self.fields['show_totals'].initial = True
+            self.fields['decimal_places'] = IntegerField()
+            self.fields['decimal_places'].initial = int(data_attr.get('decimal_places', 0))
+            self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
 
-                if data_attr.get('has_filter') == '1':
-                    self.fields['has_filter'].initial = True
-                    if 'filter' in data_attr:
-                        _filter = base64.urlsafe_b64decode(data_attr['filter'])
-                        _filter = _filter.decode('utf-8', 'ignore')
-                        self.fields['filter'].initial = _filter
+            self.fields['filter'] = CharField(required=False)
 
-                self.fields['multiple_columns'] = BooleanField(required=False, widget=RBToggle())
+            if data_attr.get('has_filter') == '1':
+                self.fields['has_filter'].initial = True
+                if 'filter' in data_attr:
+                    _filter = base64.urlsafe_b64decode(data_attr['filter'])
+                    _filter = _filter.decode('utf-8', 'ignore')
+                    self.fields['filter'].initial = _filter
 
-                report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
-                fields = []
-                self._get_query_builder_foreign_key_fields(report_builder_fields=report_builder_fields,
-                                                           fields=fields)
+            self.fields['multiple_columns'] = BooleanField(required=False, widget=RBToggle())
 
-                self.fields['multiple_column_field'] = ChoiceField(choices=fields, required=False)
+            report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
+            fields = []
+            self._get_query_builder_foreign_key_fields(report_builder_fields=report_builder_fields,
+                                                       fields=fields)
 
-                if data_attr.get('multiple_columns') == '1':
-                    self.fields['multiple_columns'].initial = True
-                    self.fields['multiple_column_field'].initial = data_attr.get('multiple_column_field')
+            self.fields['multiple_column_field'] = ChoiceField(choices=fields, required=False)
+
+            if data_attr.get('multiple_columns') == '1':
+                self.fields['multiple_columns'].initial = True
+                self.fields['multiple_column_field'].initial = data_attr.get('multiple_column_field')
 
         super().setup_modal(*args, **kwargs)
 
     def get_additional_attributes(self):
         attributes = []
         self.get_report_type_details()
-        if self.django_field is not None:
-            if isinstance(self.django_field, DATE_FIELDS):
-                if self.cleaned_data['annotations_value']:
-                    attributes.append(f'annotations_value-{self.cleaned_data["annotations_value"]}')
-                if self.cleaned_data['date_format']:
-                    attributes.append(f'date_format-{self.cleaned_data["date_format"]}')
-            elif isinstance(self.django_field, NUMBER_FIELDS):
-                if int(self.cleaned_data['annotations_type']) != 0:
-                    attributes.append(f'annotations_type-{self.cleaned_data["annotations_type"]}')
-                if self.cleaned_data['show_totals'] and self.cleaned_data["show_totals"]:
-                    attributes.append('show_totals-1')
-                if self.cleaned_data['decimal_places'] > 0:
-                    attributes.append(f'decimal_places-{self.cleaned_data["decimal_places"]}')
+        if self.django_field is not None and isinstance(self.django_field, DATE_FIELDS):
+            if self.cleaned_data['annotations_value']:
+                attributes.append(f'annotations_value-{self.cleaned_data["annotations_value"]}')
+            if self.cleaned_data['date_format']:
+                attributes.append(f'date_format-{self.cleaned_data["date_format"]}')
+        elif ((self.django_field is not None and isinstance(self.django_field, NUMBER_FIELDS)) or
+              (self.col_type_override is not None and self.col_type_override.annotations)):
+            if int(self.cleaned_data['annotations_type']) != 0:
+                attributes.append(f'annotations_type-{self.cleaned_data["annotations_type"]}')
+            if self.cleaned_data['show_totals'] and self.cleaned_data["show_totals"]:
+                attributes.append('show_totals-1')
+            if self.cleaned_data['decimal_places'] > 0:
+                attributes.append(f'decimal_places-{self.cleaned_data["decimal_places"]}')
 
-                if self.cleaned_data['has_filter']:
-                    attributes.append(f'has_filter-1')
+            if self.cleaned_data['has_filter']:
+                attributes.append(f'has_filter-1')
 
-                    if self.cleaned_data['filter']:
-                        _filter = self.cleaned_data['filter'].encode('utf-8', 'ignore')
-                        b64_filter = base64.urlsafe_b64encode(_filter).decode('utf-8', 'ignore')
-                        attributes.append(f'filter-{b64_filter}')
+                if self.cleaned_data['filter']:
+                    _filter = self.cleaned_data['filter'].encode('utf-8', 'ignore')
+                    b64_filter = base64.urlsafe_b64encode(_filter).decode('utf-8', 'ignore')
+                    attributes.append(f'filter-{b64_filter}')
 
-                    if self.cleaned_data['multiple_columns']:
-                        attributes.append('multiple_columns-1')
-                        attributes.append(f'multiple_column_field-{self.cleaned_data["multiple_column_field"]}')
+                if self.cleaned_data['multiple_columns']:
+                    attributes.append('multiple_columns-1')
+                    attributes.append(f'multiple_column_field-{self.cleaned_data["multiple_column_field"]}')
 
         if attributes:
             return '-'.join(attributes)
@@ -586,41 +587,41 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
 
         data = json.loads(base64.b64decode(self.slug['data']))
         report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=self.slug['report_type_id'])
-        django_field, _, _ = get_django_field(base_model=base_model, field=data['field'])
-        if django_field is not None:
-            if isinstance(django_field, NUMBER_FIELDS):
-                form.add_trigger('annotations_type', 'onchange', [
-                    {'selector': '#annotations_fields_div', 'values': {'': 'hide'}, 'default': 'show'}])
+        django_field, col_type_override, _ = get_django_field(base_model=base_model, field=data['field'])
+        if ((django_field is not None and isinstance(django_field, NUMBER_FIELDS)) or
+                (col_type_override is not None and col_type_override.annotations)):
+            form.add_trigger('annotations_type', 'onchange', [
+                {'selector': '#annotations_fields_div', 'values': {'': 'hide'}, 'default': 'show'}])
 
-                form.add_trigger('has_filter', 'onchange', [
-                    {'selector': '#filter_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'}])
+            form.add_trigger('has_filter', 'onchange', [
+                {'selector': '#filter_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'}])
 
-                form.add_trigger('multiple_columns', 'onchange', [
-                    {'selector': '#multiple_columns_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'},
-                ])
+            form.add_trigger('multiple_columns', 'onchange', [
+                {'selector': '#multiple_columns_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'},
+            ])
 
-                return ['title',
-                        'annotations_type',
-                        'show_totals',
-                        'decimal_places',
-                        Div(FieldEx('has_filter',
+            return ['title',
+                    'annotations_type',
+                    'show_totals',
+                    'decimal_places',
+                    Div(FieldEx('has_filter',
+                                template='django_modals/fields/label_checkbox.html',
+                                field_class='col-6 input-group-sm'),
+                        Div(
+                            FieldEx('filter',
+                                    template='advanced_report_builder/datatables/fields/single_query_builder.html'),
+                            FieldEx('multiple_columns',
                                     template='django_modals/fields/label_checkbox.html',
                                     field_class='col-6 input-group-sm'),
                             Div(
-                                FieldEx('filter',
-                                        template='advanced_report_builder/datatables/fields/single_query_builder.html'),
-                                FieldEx('multiple_columns',
-                                        template='django_modals/fields/label_checkbox.html',
-                                        field_class='col-6 input-group-sm'),
-                                Div(
-                                    FieldEx('multiple_column_field'),
-                                    css_id='multiple_columns_fields_div'),
-                                css_id='filter_fields_div'),
-                            css_id='annotations_fields_div')
-                        ]
+                                FieldEx('multiple_column_field'),
+                                css_id='multiple_columns_fields_div'),
+                            css_id='filter_fields_div'),
+                        css_id='annotations_fields_div')
+                    ]
 
     def ajax_get_query_builder_fields(self, **kwargs):
-        field_auto_id = kwargs['field_auto_id'][0]
+        field_auto_id = kwargs['field_auto_id']
 
         report_type_id = self.slug['report_type_id']
         query_builder_filters = self.get_query_builder_report_type_field(report_type_id=report_type_id)
