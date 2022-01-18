@@ -6,7 +6,7 @@ from functools import reduce
 
 from ajax_helpers.mixins import AjaxHelpers
 from django.apps import apps
-from django.db.models import Q
+from django.db.models import Q, ExpressionWrapper, FloatField
 from django.utils.safestring import mark_safe
 from django.views.generic import TemplateView
 from django_datatables.datatables import DatatableTable
@@ -203,7 +203,12 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         if col_type_override:
             field = copy.deepcopy(col_type_override)
 
-            if annotations_type == ANNOTATION_CHOICE_COUNT:
+            if field.annotations:
+                if not self.use_annotations:
+                    field.options['calculated'] = True
+                    field.aggregations = col_type_override.annotations
+
+            elif annotations_type == ANNOTATION_CHOICE_COUNT:
                 new_field_name = f'{annotations_type}_{field_name}_{index}'
                 number_function_kwargs = {}
                 if title:
@@ -346,9 +351,9 @@ class ChartBaseModal(QueryBuilderModalBase):
                        'colour': colour})
 
         for report_builder_field in report_builder_fields.fields:
-            django_field, _, columns = get_django_field(base_model=base_model, field=report_builder_field)
+            django_field, col_type_override, columns = get_django_field(base_model=base_model, field=report_builder_field)
             for column in columns:
-                if isinstance(django_field, NUMBER_FIELDS):
+                if isinstance(django_field, NUMBER_FIELDS) or column.annotations:
                     fields.append({'field': prefix + column.column_name,
                                    'label': title_prefix + column.title,
                                    'colour': report_builder_fields.colour})

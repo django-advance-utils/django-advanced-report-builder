@@ -1,7 +1,7 @@
 from django.apps import apps
 from django.core.exceptions import ValidationError
-from django.db.models import Count, Sum
-from django.db.models.functions import Coalesce
+from django.db.models import Count, Sum, ExpressionWrapper, FloatField
+from django.db.models.functions import Coalesce, NullIf
 from django.http import JsonResponse
 from django_menus.menu import MenuItem
 from django_modals.fields import FieldEx
@@ -10,7 +10,8 @@ from django_modals.widgets.colour_picker import ColourPickerWidget
 from django_modals.widgets.select2 import Select2, Select2Multiple
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
-from advanced_report_builder.globals import NUMBER_FIELDS, BOOLEAN_FIELD, ANNOTATION_CHOICE_SUM, \
+from advanced_report_builder.exceptions import ReportError
+from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_CHOICE_SUM, \
     ANNOTATION_CHOICE_AVG
 from advanced_report_builder.models import SingleValueReport, ReportQuery
 from advanced_report_builder.utils import get_django_field
@@ -34,7 +35,8 @@ class SingleValueView(ChartBaseView):
 
         django_field, col_type_override, _ = get_django_field(base_model=base_model, field=field)
 
-        if isinstance(django_field, NUMBER_FIELDS) or isinstance(django_field, BOOLEAN_FIELD):
+        if (isinstance(django_field, NUMBER_FIELDS) or
+                col_type_override is not None and col_type_override.annotations):
 
             self.get_number_field(annotations_type=aggregations_type,
                                   index=0,
@@ -44,7 +46,7 @@ class SingleValueView(ChartBaseView):
                                   col_type_override=col_type_override,
                                   decimal_places=self.chart_report.decimal_places)
         else:
-            assert False, 'not a number field'
+            raise ReportError('not a number field')
 
     def _get_count(self, fields):
 
@@ -77,13 +79,35 @@ class SingleValueView(ChartBaseView):
 
         new_field_name = f'{actual_numerator_field_name}_{actual_denominator_field_name}'
 
-        if numerator_filter:
-            numerator = Coalesce((Sum(actual_numerator_field_name, filter=numerator_filter)+0.0), 0.0)
-        else:
-            numerator = Coalesce((Sum(actual_numerator_field_name) + 0.0), 0.0)
-        denominator = Coalesce(Sum(actual_denominator_field_name) + 0.0, 0.0)
+        if numerator_col_type_override is not None and numerator_col_type_override.annotations:
 
-        number_function_kwargs['aggregations'] = {new_field_name: (numerator / denominator) * 100.0}
+            if not isinstance(numerator_col_type_override.annotations, dict):
+                raise ReportError('Unknown annotation type')
+
+            annotations = list(numerator_col_type_override.annotations.values())[0]
+            if numerator_filter and isinstance(annotations, (Sum, Count)):
+                annotations.filter = numerator_filter
+                numerator = Coalesce(annotations + 0.0, 0.0)
+            else:
+                numerator = Coalesce(annotations + 0.0, 0.0)
+        else:
+            if numerator_filter:
+                numerator = Coalesce((Sum(actual_numerator_field_name, filter=numerator_filter)+0.0), 0.0)
+            else:
+                numerator = Coalesce((Sum(actual_numerator_field_name) + 0.0), 0.0)
+
+        if denominator_col_type_override is not None and denominator_col_type_override.annotations:
+            if not isinstance(denominator_col_type_override.annotations, dict):
+                raise ReportError('Unknown annotation type')
+
+            annotations = list(denominator_col_type_override.annotations.values())[0]
+
+            denominator = Coalesce(annotations + 0.0, 0.0)
+        else:
+            denominator = Coalesce(Sum(actual_denominator_field_name) + 0.0, 0.0)
+
+        number_function_kwargs['aggregations'] = {new_field_name: ExpressionWrapper((numerator / NullIf(denominator, 0)) * 100.0,
+                                                                                    output_field=FloatField())}
         field_name = new_field_name
 
         number_function_kwargs.update({'field': field_name,
@@ -104,27 +128,29 @@ class SingleValueView(ChartBaseView):
 
         deno_django_field, denominator_col_type_override, _ = get_django_field(base_model=base_model,
                                                                                field=denominator_field)
+        if (not isinstance(deno_django_field, NUMBER_FIELDS) and
+                (denominator_col_type_override is not None and not denominator_col_type_override.annotations)):
+            raise ReportError('denominator is not a number field')
 
         num_django_field, numerator_col_type_override, _ = get_django_field(base_model=base_model,
                                                                             field=denominator_field)
 
-        if ((isinstance(deno_django_field, NUMBER_FIELDS) or isinstance(deno_django_field, BOOLEAN_FIELD)) and
-                (isinstance(num_django_field, NUMBER_FIELDS) or isinstance(num_django_field, BOOLEAN_FIELD))):
-            numerator_filter = None
-            report_query = self.get_report_query(report=self.chart_report)
-            if report_query:
-                numerator_filter = self.process_filters(search_filter_data=report_query.extra_query)
+        if (not isinstance(num_django_field, NUMBER_FIELDS) and
+                (numerator_col_type_override is not None and not numerator_col_type_override.annotations)):
+            raise ReportError('numerator is not a number field')
 
-            self.get_percentage_field(fields=fields,
-                                      numerator_field_name=numerator_field,
-                                      numerator_col_type_override=numerator_col_type_override,
-                                      denominator_field_name=denominator_field,
-                                      denominator_col_type_override=denominator_col_type_override,
-                                      numerator_filter=numerator_filter,
-                                      decimal_places=self.chart_report.decimal_places,
-                                      )
-        else:
-            assert False, 'not a number field'
+        numerator_filter = None
+        report_query = self.get_report_query(report=self.chart_report)
+        if report_query:
+            numerator_filter = self.process_filters(search_filter_data=report_query.extra_query)
+
+        self.get_percentage_field(fields=fields,
+                                  numerator_field_name=numerator_field,
+                                  numerator_col_type_override=numerator_col_type_override,
+                                  denominator_field_name=denominator_field,
+                                  denominator_col_type_override=denominator_col_type_override,
+                                  numerator_filter=numerator_filter,
+                                  decimal_places=self.chart_report.decimal_places)
 
     def _process_percentage_from_count(self, fields):
         report_query = self.get_report_query(report=self.chart_report)
@@ -282,10 +308,11 @@ class SingleValueModal(QueryBuilderModalBase):
 
         for report_builder_field in report_builder_fields.fields:
 
-            django_field, _, columns = get_django_field(base_model=base_model, field=report_builder_field)
+            django_field, col_type_override, columns = get_django_field(base_model=base_model, field=report_builder_field)
 
             for column in columns:
-                if isinstance(django_field, NUMBER_FIELDS) or isinstance(django_field, BOOLEAN_FIELD):
+                if (isinstance(django_field, NUMBER_FIELDS) or
+                        (col_type_override is not None and col_type_override.annotations)):
                     full_id = prefix + column.column_name
                     if selected_field_id is None or selected_field_id == full_id:
                         fields.append({'id': full_id,

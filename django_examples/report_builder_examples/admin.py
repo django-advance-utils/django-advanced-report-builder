@@ -15,6 +15,7 @@ class SectorAdmin(admin.ModelAdmin):
 class CompanyAdmin(admin.ModelAdmin):
     list_display = ('name',
                     'active',
+                    'importance'
                     )
 
 
