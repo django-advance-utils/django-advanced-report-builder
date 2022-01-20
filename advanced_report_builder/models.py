@@ -72,7 +72,11 @@ class Report(TimeStampedModel):
 
         class OutputType(DatatableColumn):
             output_types = {'tablereport': 'Table',
-                            'singlevaluereport': 'Single Value'}
+                            'singlevaluereport': 'Single Value',
+                            'barchartreport': 'Bar Chart',
+                            'linechartreport': 'Line Chart',
+                            'piechartreport': 'Pie Chart',
+                            'funnelchartreport': 'Funnel Chart'}
 
             def col_setup(self):
                 self.field = ['instance_type']
@@ -84,7 +88,12 @@ class Report(TimeStampedModel):
 
         class OutputTypeIcon(NoHeadingColumn):
             output_types = {'tablereport': '<i class="fas fa-table"></i>',
-                            'singlevaluereport': '<i class="fas fa-box-open"></i>'}
+                            'singlevaluereport': '<i class="fas fa-box-open"></i>',
+                            'barchartreport': '<i class="fas fa-chart-bar"></i>',
+                            'linechartreport': '<i class="fas fa-chart-line"></i>',
+                            'piechartreport': '<i class="fas fa-chart-pie"></i>',
+                            'funnelchartreport': '<i class="fas fa-filter"></i>',
+                            }
 
             def col_setup(self):
                 self.field = ['instance_type']
