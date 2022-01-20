@@ -1,4 +1,5 @@
-from django_datatables.columns import ColumnBase
+from django.contrib.humanize.templatetags.humanize import intcomma
+from django_datatables.columns import ColumnBase, CurrencyPenceColumn, CurrencyColumn
 
 
 class ReportBuilderDateColumn(ColumnBase):
@@ -38,3 +39,23 @@ class ReportBuilderNumberColumn(ColumnBase):
             return number.rstrip('0').rstrip('.')
         else:
             return number
+
+
+class ReportBuilderCurrencyPenceColumn(CurrencyPenceColumn):
+
+    def row_result(self, data, _page_data):
+        try:
+            return intcomma('{:.2f}'.format(data[self.field] / 100.0))
+        except (KeyError, TypeError):
+            return
+
+
+class ReportBuilderCurrencyColumn(CurrencyColumn):
+
+    def row_result(self, data, _page_data):
+        try:
+            return intcomma('{:.2f}'.format(data[self.field]))
+        except (KeyError, TypeError):
+            return
+
+

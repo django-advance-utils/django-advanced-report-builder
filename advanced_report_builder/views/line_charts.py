@@ -18,6 +18,7 @@ from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
 from django_modals.widgets.select2 import Select2, Select2Multiple
 
+from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import NUMBER_FIELDS, DATE_FIELDS, ANNOTATION_VALUE_YEAR, \
     ANNOTATION_VALUE_QUARTER, ANNOTATION_VALUE_MONTH, ANNOTATION_VALUE_WEEK, ANNOTATION_VALUE_DAY
 from advanced_report_builder.models import LineChartReport, ReportType, ReportQuery
@@ -35,7 +36,11 @@ class LineChartJSTable(ChartJSTable):
 
         date_offset = DateOffset()
         record_count = len(results[0]) - 1
-        next_date = datetime.strptime(results[0][0], '%Y-%m-%d').date()
+        try:
+            next_date = datetime.strptime(results[0][0], '%Y-%m-%d').date()
+        except ValueError as e:
+            raise ReportError(e)
+
         new_results = []
         for record in results:
 

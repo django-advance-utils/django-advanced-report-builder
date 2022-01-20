@@ -1,6 +1,9 @@
 from django.conf import settings
 from django.utils.module_loading import import_string
+from django_datatables.columns import ColumnNameError
 from django_datatables.datatables import ColumnInitialisor
+
+from advanced_report_builder.exceptions import ReportError
 
 
 def split_attr(data):
@@ -48,7 +51,10 @@ def get_custom_report_builder():
 
 def get_django_field(base_model, field):
     original_column_initialisor = ColumnInitialisor(start_model=base_model, path=field)
-    columns = original_column_initialisor.get_columns()
+    try:
+        columns = original_column_initialisor.get_columns()
+    except ColumnNameError as e:
+        raise ReportError(e)
     django_field = original_column_initialisor.django_field
     col_type_override = None
 

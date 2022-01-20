@@ -106,8 +106,8 @@ class SingleValueView(ChartBaseView):
         else:
             denominator = Coalesce(Sum(actual_denominator_field_name) + 0.0, 0.0)
 
-        number_function_kwargs['aggregations'] = {new_field_name: ExpressionWrapper((numerator / NullIf(denominator, 0)) * 100.0,
-                                                                                    output_field=FloatField())}
+        number_function_kwargs['aggregations'] = {
+            new_field_name: ExpressionWrapper((numerator / NullIf(denominator, 0)) * 100.0, output_field=FloatField())}
         field_name = new_field_name
 
         number_function_kwargs.update({'field': field_name,
@@ -230,6 +230,7 @@ class SingleValueModal(QueryBuilderModalBase):
                    ('single_value_type', {'label': 'Value type'}),
                    ('numerator', {'label': 'Numerator field'}),
                    'field',
+                   'prefix',
                    'tile_colour',
                    ('decimal_places', {'field_class': 'col-md-5 col-lg-3 input-group-sm'})
                    ]
@@ -237,6 +238,10 @@ class SingleValueModal(QueryBuilderModalBase):
     def form_setup(self, form, *_args, **_kwargs):
         form.add_trigger('single_value_type', 'onchange', [
             {'selector': '#div_id_field',
+             'values': {SingleValueReport.SINGLE_VALUE_TYPE_COUNT: 'hide',
+                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'hide'},
+             'default': 'show'},
+            {'selector': '#div_id_prefix',
              'values': {SingleValueReport.SINGLE_VALUE_TYPE_COUNT: 'hide',
                         SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'hide'},
              'default': 'show'},
@@ -279,6 +284,7 @@ class SingleValueModal(QueryBuilderModalBase):
                 'single_value_type',
                 'numerator',
                 'field',
+                'prefix',
                 FieldEx('extra_query_data',
                         template='advanced_report_builder/query_builder.html',
                         ),
@@ -308,7 +314,8 @@ class SingleValueModal(QueryBuilderModalBase):
 
         for report_builder_field in report_builder_fields.fields:
 
-            django_field, col_type_override, columns = get_django_field(base_model=base_model, field=report_builder_field)
+            django_field, col_type_override, columns = get_django_field(base_model=base_model,
+                                                                        field=report_builder_field)
 
             for column in columns:
                 if (isinstance(django_field, NUMBER_FIELDS) or

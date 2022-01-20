@@ -161,6 +161,7 @@ class SingleValueReport(Report):
     numerator = models.CharField(max_length=200, blank=True, null=True)
     single_value_type = models.PositiveSmallIntegerField(choices=SINGLE_VALUE_TYPE_CHOICES,
                                                          default=SINGLE_VALUE_TYPE_COUNT)
+    prefix = models.CharField(max_length=64, blank=True, null=True)
     decimal_places = models.IntegerField(default=0)
 
 
@@ -175,7 +176,7 @@ class BarChartReport(Report):
     )
 
     axis_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES)
-    date_field = models.CharField(max_length=200, blank=True, null=True)
+    date_field = models.CharField(max_length=200)
     axis_value_type = models.PositiveSmallIntegerField(choices=ANNOTATIONS_CHOICES,
                                                        default=ANNOTATION_CHOICE_COUNT, null=True, blank=True)
     fields = models.TextField(null=True, blank=True)
@@ -198,7 +199,7 @@ class BarChartReport(Report):
 class LineChartReport(Report):
 
     axis_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES)
-    date_field = models.CharField(max_length=200, blank=True, null=True)
+    date_field = models.CharField(max_length=200)
     axis_value_type = models.PositiveSmallIntegerField(choices=ANNOTATIONS_CHOICES,
                                                        default=ANNOTATION_CHOICE_COUNT, null=True, blank=True)
     fields = models.TextField(null=True, blank=True)

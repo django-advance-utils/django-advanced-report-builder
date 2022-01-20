@@ -40,6 +40,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
 
     date_field = ReportBuilderDateColumn
     number_field = ReportBuilderNumberColumn
+    menu_display = ''
 
     def add_tables(self):
         return None

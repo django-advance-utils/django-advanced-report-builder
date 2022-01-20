@@ -6,13 +6,17 @@ from functools import reduce
 
 from ajax_helpers.mixins import AjaxHelpers
 from django.apps import apps
-from django.db.models import Q, ExpressionWrapper, FloatField
+from django.db import ProgrammingError
+from django.db.models import Q
 from django.utils.safestring import mark_safe
 from django.views.generic import TemplateView
+from django_datatables.columns import CurrencyPenceColumn, CurrencyColumn
 from django_datatables.datatables import DatatableTable
 from django_menus.menu import MenuMixin, MenuItem
 
-from advanced_report_builder.columns import ReportBuilderNumberColumn, ReportBuilderDateColumn
+from advanced_report_builder.columns import ReportBuilderNumberColumn, ReportBuilderDateColumn, \
+    ReportBuilderCurrencyPenceColumn, ReportBuilderCurrencyColumn
+from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_FUNCTIONS, ANNOTATION_VALUE_FUNCTIONS, \
     ANNOTATION_CHOICE_COUNT
@@ -29,19 +33,15 @@ class ChartJSTable(DatatableTable):
         if pk:
             self.filter['pk'] = pk
 
-    def get_table_array(self, request, results):
-        tom = []
-        for x in results:
-            tom.append(x)
-
-        return super().get_table_array(request, results)
-
     def model_table_setup(self):
-        return mark_safe(json.dumps({'initsetup': json.loads(self.col_def_str()),
-                                     'data': self.get_table_array(self.kwargs.get('request'), self.get_query()),
-                                     'row_titles': self.all_titles(),
-                                     'table_id': self.table_id,
-                                     }))
+        try:
+            return mark_safe(json.dumps({'initsetup': json.loads(self.col_def_str()),
+                                         'data': self.get_table_array(self.kwargs.get('request'), self.get_query()),
+                                         'row_titles': self.all_titles(),
+                                         'table_id': self.table_id,
+                                         }))
+        except ProgrammingError as e:
+            raise ReportError(e)
 
 
 class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
@@ -204,6 +204,11 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         if col_type_override:
             field = copy.deepcopy(col_type_override)
 
+            if isinstance(field, CurrencyPenceColumn):
+                field.__class__ = ReportBuilderCurrencyPenceColumn
+            elif isinstance(field, CurrencyColumn):
+                field.__class__ = ReportBuilderCurrencyColumn
+
             if field.annotations:
                 if not self.use_annotations:
                     field.options['calculated'] = True
@@ -358,7 +363,8 @@ class ChartBaseModal(QueryBuilderModalBase):
                        'colour': colour})
 
         for report_builder_field in report_builder_fields.fields:
-            django_field, col_type_override, columns = get_django_field(base_model=base_model, field=report_builder_field)
+            django_field, col_type_override, columns = get_django_field(base_model=base_model,
+                                                                        field=report_builder_field)
             for column in columns:
                 if isinstance(django_field, NUMBER_FIELDS) or column.annotations:
                     fields.append({'field': prefix + column.column_name,

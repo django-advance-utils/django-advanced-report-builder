@@ -63,10 +63,6 @@ def import_companies(path):
                                amount=amount,
                                quantity=quantity).save()
 
-
-
-
-
             for tag in r['tags'].split(','):
                 if tag != '':
                     tag = models.Tags.objects.get_or_create(tag=tag)[0]

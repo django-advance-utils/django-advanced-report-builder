@@ -1,4 +1,5 @@
-<div id="{{ datatable.table_id }}">
+<div>
+    <h1 id="{{ datatable.table_id }}"></h1>
 </div>
 
 <script>
@@ -9,8 +10,13 @@
         table.find_column = django_datatables.PythonTable.prototype.find_column
         for (var i = 0; i < table.initsetup.colOptions.length; i++) {
             var row = '';
+            var prefix = '';
+            if(i === table.initsetup.colOptions.length-1) {
+                prefix = '{{ datatable.single_value.prefix|default_if_none:"" }}';
+            }
+
             if(i > 0) {
-                row += '<div class="single_value_separator"> | </div>';
+                row += '<span class="single_value_separator"> | </span>';
             }
             if (table.initsetup.colOptions[i].row_class !== undefined){
                 row_class = ' class="' + table.initsetup.colOptions[i].row_class + '"'
@@ -28,7 +34,7 @@
                 if (cell_data == null) {
                     cell_data = '';
                 }
-                row += '<div' + row_class + '>' + cell_data + '</div>';
+                row += '<span' + row_class + '>' + prefix + cell_data + '</span>';
             }
             $('#' + table.table_id).append(row);
         }
