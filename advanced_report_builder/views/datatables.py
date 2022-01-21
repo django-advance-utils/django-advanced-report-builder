@@ -113,7 +113,6 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         title = title_suffix + ' ' + table_field.get('title')
         if col_type_override:
             field = copy.deepcopy(col_type_override)
-
             model_parts = field_name.split('__')[:-1]
             if model_parts:
                 if isinstance(field.field, str):

@@ -206,6 +206,10 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         title = title_suffix + ' ' + table_field.get('title')
         if col_type_override:
             field = copy.deepcopy(col_type_override)
+            model_parts = field_name.split('__')[:-1]
+            if model_parts:
+                if isinstance(field.field, str):
+                    field.field = '__'.join(model_parts + [field.field])
 
             if isinstance(field, CurrencyPenceColumn):
                 field.__class__ = ReportBuilderCurrencyPenceColumn
