@@ -264,11 +264,13 @@ class SingleValueModal(QueryBuilderModalBase):
 
             base_model = form.instance.report_type.content_type.model_class()
             report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
-
+            tables = []
             self._get_fields(base_model=base_model,
                              fields=fields,
+                             tables=tables,
                              report_builder_fields=report_builder_fields,
-                             selected_field_id=form.instance.field)
+                             selected_field_id=form.instance.field,
+                             for_select2=True)
 
         form.fields['field'].widget = Select2(attrs={'ajax': True})
         form.fields['field'].widget.select_data = fields
@@ -300,40 +302,17 @@ class SingleValueModal(QueryBuilderModalBase):
         if kwargs['report_type'] != '':
             report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=kwargs['report_type'])
             fields = []
+            tables = []
             self._get_fields(base_model=base_model,
                              fields=fields,
-                             report_builder_fields=report_builder_fields)
+                             tables=tables,
+                             report_builder_fields=report_builder_fields,
+                             for_select2=True)
 
         return JsonResponse({'results': fields})
 
     def select2_numerator(self, **kwargs):
         return self.select2_field(**kwargs)
-
-    def _get_fields(self, base_model, fields, report_builder_fields,
-                    prefix='', title_prefix='', selected_field_id=None):
-
-        for report_builder_field in report_builder_fields.fields:
-
-            django_field, col_type_override, columns = get_django_field(base_model=base_model,
-                                                                        field=report_builder_field)
-
-            for column in columns:
-                if (isinstance(django_field, NUMBER_FIELDS) or
-                        (col_type_override is not None and col_type_override.annotations)):
-                    full_id = prefix + column.column_name
-                    if selected_field_id is None or selected_field_id == full_id:
-                        fields.append({'id': full_id,
-                                       'text': title_prefix + column.title})
-
-        for include in report_builder_fields.includes:
-            app_label, model, report_builder_fields_str = include['model'].split('.')
-            new_model = apps.get_model(app_label, model)
-            new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
-            self._get_fields(base_model=new_model,
-                             fields=fields,
-                             report_builder_fields=new_report_builder_fields,
-                             prefix=f"{include['field']}__",
-                             title_prefix=include['title'] + ' -> ')
 
     def form_valid(self, form):
         single_value_report = form.save()

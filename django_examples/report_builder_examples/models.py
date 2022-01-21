@@ -79,8 +79,32 @@ class Company(TimeStampedModel):
         default_multiple_column_text = '{name}'
         default_multiple_column_fields = ['name']
 
+        includes = [{'field': 'companyinformation',
+                     'title': 'Company Information',
+                     'model': 'report_builder_examples.CompanyInformation.ReportBuilder',
+                     'reversed': True}]
+
     def __str__(self):
         return self.name
+
+
+class CompanyInformation(models.Model):
+    company = models.OneToOneField(Company, primary_key=True,
+                                   related_name='companyinformation', on_delete=models.CASCADE)
+    value = models.IntegerField()
+    incorporated_date = models.DateField()
+
+    class Datatable(DatatableModel):
+        company_value = CurrencyPenceColumn(column_name='company_value', field='value')
+
+    class ReportBuilder(ReportBuilderFields):
+        colour = '#F0008b'
+        title = 'Company Information'
+        fields = ['company_value',
+                  'incorporated_date']
+        includes = [{'field': 'company',
+                     'title': 'Company',
+                     'model': 'report_builder_examples.Company.ReportBuilder'}]
 
 
 class Person(models.Model):

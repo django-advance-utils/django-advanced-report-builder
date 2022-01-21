@@ -5,14 +5,17 @@ import operator
 from functools import reduce
 
 from ajax_helpers.mixins import AjaxHelpers
+from crispy_forms.bootstrap import StrictButton
 from django.apps import apps
 from django.db import ProgrammingError
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 from django.utils.safestring import mark_safe
 from django.views.generic import TemplateView
 from django_datatables.columns import CurrencyPenceColumn, CurrencyColumn
 from django_datatables.datatables import DatatableTable
 from django_menus.menu import MenuMixin, MenuItem
+from django_modals.forms import CrispyForm
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn, ReportBuilderDateColumn, \
     ReportBuilderCurrencyPenceColumn, ReportBuilderCurrencyColumn
@@ -20,8 +23,8 @@ from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_FUNCTIONS, ANNOTATION_VALUE_FUNCTIONS, \
     ANNOTATION_CHOICE_COUNT
+from advanced_report_builder.models import ReportType
 from advanced_report_builder.utils import split_slug, get_django_field, split_attr
-from advanced_report_builder.views.modals_base import QueryBuilderModalBase
 
 
 class ChartJSTable(DatatableTable):
@@ -351,47 +354,39 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         return []
 
 
-class ChartBaseModal(QueryBuilderModalBase):
-    def _get_fields(self, base_model, fields, tables, report_builder_fields,
-                    prefix='', title_prefix='', title=None, colour=None):
-        if title is None:
-            title = report_builder_fields.title
-        if colour is None:
-            colour = report_builder_fields.colour
+class ChartBaseFieldForm(CrispyForm):
 
-        tables.append({'name': title,
-                       'colour': colour})
+    def __init__(self, *args, **kwargs):
+        self.django_field = None
+        self.col_type_override = None
+        super().__init__(*args, **kwargs)
 
-        for report_builder_field in report_builder_fields.fields:
-            django_field, col_type_override, columns = get_django_field(base_model=base_model,
-                                                                        field=report_builder_field)
-            for column in columns:
-                if isinstance(django_field, NUMBER_FIELDS) or column.annotations:
-                    fields.append({'field': prefix + column.column_name,
-                                   'label': title_prefix + column.title,
-                                   'colour': report_builder_fields.colour})
+    def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
+        if isinstance(self.django_field, NUMBER_FIELDS):
+            return StrictButton(button_text, onclick=f'save_modal_{self.form_id}()', css_class=css_class, **kwargs)
+        else:
+            return super().submit_button(css_class, button_text, **kwargs)
 
+    def get_report_type_details(self):
+        data = json.loads(base64.b64decode(self.slug['data']))
+
+        report_type = get_object_or_404(ReportType, pk=self.slug['report_type_id'])
+        base_model = report_type.content_type.model_class()
+        self.django_field, self.col_type_override, _ = get_django_field(base_model=base_model, field=data['field'])
+
+        return report_type, base_model
+
+    def _get_query_builder_foreign_key_fields(self, base_model, report_builder_fields, fields,
+                                              prefix='', title_prefix='', previous_base_model=None):
         for include in report_builder_fields.includes:
             app_label, model, report_builder_fields_str = include['model'].split('.')
             new_model = apps.get_model(app_label, model)
-            new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
-            self._get_fields(base_model=new_model,
-                             fields=fields,
-                             tables=tables,
-                             report_builder_fields=new_report_builder_fields,
-                             prefix=f"{include['field']}__",
-                             title_prefix=include['title'] + ' -> ',
-                             title=include.get('title'),
-                             colour=include.get('colour'))
-
-    def ajax_get_fields(self, **kwargs):
-        report_type_id = kwargs['report_type']
-        report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=report_type_id)
-
-        fields = []
-        tables = []
-        self._get_fields(base_model=base_model,
-                         fields=fields,
-                         tables=tables,
-                         report_builder_fields=report_builder_fields)
-        return self.command_response('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
+            if new_model != previous_base_model:
+                new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
+                fields.append((prefix + include['field'], title_prefix + include['title']))
+                self._get_query_builder_foreign_key_fields(base_model=new_model,
+                                                           report_builder_fields=new_report_builder_fields,
+                                                           fields=fields,
+                                                           prefix=f"{prefix}{include['field']}__",
+                                                           title_prefix=f"{title_prefix}{include['title']} --> ",
+                                                           previous_base_model=base_model)

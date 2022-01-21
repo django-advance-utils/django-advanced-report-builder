@@ -1,28 +1,24 @@
 import base64
 import json
 
-from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Div
-from django.apps import apps
 from django.forms import CharField, ChoiceField, BooleanField
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_menus.menu import MenuItem
 from django_modals.fields import FieldEx
-from django_modals.forms import CrispyForm
 from django_modals.modals import FormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
 from django_modals.widgets.select2 import Select2, Select2Multiple
 
-from advanced_report_builder.globals import NUMBER_FIELDS, DATE_FIELDS, DEFAULT_DATE_FORMAT, \
+from advanced_report_builder.globals import DEFAULT_DATE_FORMAT, \
     DATE_FORMAT_TYPES_DJANGO_FORMAT
-from advanced_report_builder.models import BarChartReport, ReportType, ReportQuery
+from advanced_report_builder.models import BarChartReport, ReportQuery
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import get_django_field, split_attr
-from advanced_report_builder.views.charts_base import ChartBaseView, ChartBaseModal
-from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin
+from advanced_report_builder.utils import split_attr
+from advanced_report_builder.views.charts_base import ChartBaseView, ChartBaseFieldForm
+from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin, QueryBuilderModalBase
 
 
 class BarChartView(ChartBaseView):
@@ -63,7 +59,7 @@ class BarChartView(ChartBaseView):
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
 
 
-class BarChartModal(ChartBaseModal):
+class BarChartModal(QueryBuilderModalBase):
     template_name = 'advanced_report_builder/charts/modal.html'
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
@@ -160,49 +156,8 @@ class BarChartModal(ChartBaseModal):
 
         return JsonResponse({'results': fields})
 
-    def _get_date_fields(self, base_model, fields, report_builder_fields,
-                         prefix='', title_prefix='', selected_field_id=None):
 
-        for report_builder_field in report_builder_fields.fields:
-            django_field, _, columns = get_django_field(base_model=base_model, field=report_builder_field)
-            for column in columns:
-                if isinstance(django_field, DATE_FIELDS):
-                    full_id = prefix + column.column_name
-                    if selected_field_id is None or selected_field_id == full_id:
-                        fields.append({'id': full_id,
-                                       'text': title_prefix + column.title})
-
-        for include in report_builder_fields.includes:
-            app_label, model, report_builder_fields_str = include['model'].split('.')
-            new_model = apps.get_model(app_label, model)
-            new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
-            self._get_date_fields(base_model=new_model,
-                                  fields=fields,
-                                  report_builder_fields=new_report_builder_fields,
-                                  prefix=f"{include['field']}__",
-                                  title_prefix=include['title'] + ' -> ')
-
-
-class BarChartFieldForm(CrispyForm):
-
-    def __init__(self, *args, **kwargs):
-        self.django_field = None
-        super().__init__(*args, **kwargs)
-
-    def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
-        if isinstance(self.django_field, NUMBER_FIELDS):
-            return StrictButton(button_text, onclick=f'save_modal_{self.form_id}()', css_class=css_class, **kwargs)
-        else:
-            return super().submit_button(css_class, button_text, **kwargs)
-
-    def get_report_type_details(self):
-        data = json.loads(base64.b64decode(self.slug['data']))
-
-        report_type = get_object_or_404(ReportType, pk=self.slug['report_type_id'])
-        base_model = report_type.content_type.model_class()
-        self.django_field, _, _ = get_django_field(base_model=base_model, field=data['field'])
-
-        return report_type, base_model
+class BarChartFieldForm(ChartBaseFieldForm):
 
     def setup_modal(self, *args, **kwargs):
         data = json.loads(base64.b64decode(self.slug['data']))
@@ -231,7 +186,8 @@ class BarChartFieldForm(CrispyForm):
 
         report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
         fields = []
-        self._get_query_builder_foreign_key_fields(report_builder_fields=report_builder_fields,
+        self._get_query_builder_foreign_key_fields(base_model=base_model,
+                                                   report_builder_fields=report_builder_fields,
                                                    fields=fields)
 
         self.fields['multiple_column_field'] = ChoiceField(choices=fields, required=False)
@@ -264,19 +220,6 @@ class BarChartFieldForm(CrispyForm):
         if attributes:
             return '-'.join(attributes)
         return None
-
-    def _get_query_builder_foreign_key_fields(self, report_builder_fields, fields,
-                                              prefix='', title_prefix=''):
-        for include in report_builder_fields.includes:
-            app_label, model, report_builder_fields_str = include['model'].split('.')
-            new_model = apps.get_model(app_label, model)
-            new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
-            fields.append((prefix + include['field'], title_prefix + include['title']))
-
-            self._get_query_builder_foreign_key_fields(report_builder_fields=new_report_builder_fields,
-                                                       fields=fields,
-                                                       prefix=f"{include['field']}__",
-                                                       title_prefix=f"{include['title']} --> ")
 
 
 class BarChartFieldModal(QueryBuilderModalBaseMixin, FormModal):

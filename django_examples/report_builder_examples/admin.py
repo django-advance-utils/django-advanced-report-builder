@@ -1,5 +1,5 @@
 from django.contrib import admin
-from report_builder_examples.models import Company, Person, Tags, Sector, Tally, Payment
+from report_builder_examples.models import Company, Person, Tags, Sector, Tally, Payment, CompanyInformation
 from django.contrib.auth.admin import UserAdmin
 
 from report_builder_examples.models import UserProfile
@@ -17,6 +17,12 @@ class CompanyAdmin(admin.ModelAdmin):
                     'active',
                     'importance',
                     'modified')
+
+
+@admin.register(CompanyInformation)
+class CompanyInformation(admin.ModelAdmin):
+    list_display = ('value',
+                    'incorporated_date')
 
 
 @admin.register(Person)

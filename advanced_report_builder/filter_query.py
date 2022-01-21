@@ -176,3 +176,19 @@ class FilterQueryMixin:
             if result:
                 return result
         return None
+
+    def _get_query_builder_foreign_key_fields(self, base_model, report_builder_fields, fields,
+                                              prefix='', title_prefix='', previous_base_model=None):
+        for include in report_builder_fields.includes:
+            app_label, model, report_builder_fields_str = include['model'].split('.')
+            new_model = apps.get_model(app_label, model)
+            if new_model != previous_base_model:
+                new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
+                fields.append((prefix + include['field'], title_prefix + include['title']))
+
+                self._get_query_builder_foreign_key_fields(base_model=new_model,
+                                                           report_builder_fields=new_report_builder_fields,
+                                                           fields=fields,
+                                                           prefix=f"{prefix}{include['field']}__",
+                                                           title_prefix=f"{title_prefix}{include['title']} --> ",
+                                                           previous_base_model=base_model)

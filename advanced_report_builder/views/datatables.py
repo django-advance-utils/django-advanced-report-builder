@@ -5,16 +5,13 @@ import json
 from ajax_helpers.mixins import AjaxHelpers
 from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Div
-from django.apps import apps
 from django.db.models import Q
 from django.forms import CharField, ChoiceField, BooleanField, IntegerField
-from django.shortcuts import get_object_or_404
 from django.urls import reverse
-from django_datatables.datatables import DatatableView, ColumnInitialisor, DatatableError
+from django_datatables.datatables import DatatableView, DatatableError
 from django_datatables.plugins.column_totals import ColumnTotals
 from django_menus.menu import MenuMixin, MenuItem
 from django_modals.fields import FieldEx
-from django_modals.forms import CrispyForm
 from django_modals.modals import FormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.select2 import Select2Multiple
@@ -27,12 +24,12 @@ from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATI
     DATE_FORMAT_TYPES, ANNOTATION_CHOICE_COUNT
 from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_FUNCTIONS, \
     ANNOTATION_FUNCTIONS
-from advanced_report_builder.models import ReportType
 from advanced_report_builder.models import TableReport, ReportQuery
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr, get_django_field
 from advanced_report_builder.utils import split_slug
-from advanced_report_builder.views.modals_base import QueryBuilderModalBase, QueryBuilderModalBaseMixin
+from advanced_report_builder.views.charts_base import ChartBaseFieldForm
+from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin, QueryBuilderModalBase
 
 
 class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
@@ -116,6 +113,8 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         title = title_suffix + ' ' + table_field.get('title')
         if col_type_override:
             field = copy.deepcopy(col_type_override)
+            
+            
 
             if annotations_type == ANNOTATION_CHOICE_COUNT:
                 new_field_name = f'{annotations_type}_{field_name}_{index}'
@@ -309,6 +308,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
 
+    # noinspection PyMethodMayBeStatic
     def pod_dashboard_view_menu(self):
         return []
 
@@ -394,38 +394,6 @@ class TableModal(QueryBuilderModalBase):
 
         return self.command_response('reload')
 
-    def _get_fields(self, base_model, fields, tables, report_builder_fields,
-                    prefix='', title_prefix='', title=None, colour=None):
-        if title is None:
-            title = report_builder_fields.title
-        if colour is None:
-            colour = report_builder_fields.colour
-
-        tables.append({'name': title,
-                       'colour': colour})
-
-        for report_builder_field in report_builder_fields.fields:
-
-            column_initialisor = ColumnInitialisor(start_model=base_model, path=report_builder_field)
-            columns = column_initialisor.get_columns()
-            for column in columns:
-                fields.append({'field': prefix + column.column_name,
-                               'label': title_prefix + column.title,
-                               'colour': report_builder_fields.colour})
-
-        for include in report_builder_fields.includes:
-            app_label, model, report_builder_fields_str = include['model'].split('.')
-            new_model = apps.get_model(app_label, model)
-            new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
-            self._get_fields(base_model=new_model,
-                             fields=fields,
-                             tables=tables,
-                             report_builder_fields=new_report_builder_fields,
-                             prefix=f"{include['field']}__",
-                             title_prefix=include['title'] + ' -> ',
-                             title=include.get('title'),
-                             colour=include.get('colour'))
-
     def ajax_get_fields(self, **kwargs):
         report_type_id = kwargs['report_type']
         report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=report_type_id)
@@ -434,16 +402,12 @@ class TableModal(QueryBuilderModalBase):
         self._get_fields(base_model=base_model,
                          fields=fields,
                          tables=tables,
-                         report_builder_fields=report_builder_fields)
+                         report_builder_fields=report_builder_fields,
+                         all_fields=True)
         return self.command_response('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
 
 
-class TableFieldForm(CrispyForm):
-
-    def __init__(self, *args, **kwargs):
-        self.django_field = None
-        self.col_type_override = None
-        super().__init__(*args, **kwargs)
+class TableFieldForm(ChartBaseFieldForm):
 
     def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
         if((self.django_field is not None and isinstance(self.django_field, NUMBER_FIELDS)) or
@@ -451,15 +415,6 @@ class TableFieldForm(CrispyForm):
             return StrictButton(button_text, onclick=f'save_modal_{self.form_id}()', css_class=css_class, **kwargs)
         else:
             return super().submit_button(css_class, button_text, **kwargs)
-
-    def get_report_type_details(self):
-        data = json.loads(base64.b64decode(self.slug['data']))
-
-        report_type = get_object_or_404(ReportType, pk=self.slug['report_type_id'])
-        base_model = report_type.content_type.model_class()
-        self.django_field, self.col_type_override, _ = get_django_field(base_model=base_model, field=data['field'])
-
-        return report_type, base_model
 
     def setup_modal(self, *args, **kwargs):
         data = json.loads(base64.b64decode(self.slug['data']))
@@ -502,7 +457,8 @@ class TableFieldForm(CrispyForm):
 
             report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
             fields = []
-            self._get_query_builder_foreign_key_fields(report_builder_fields=report_builder_fields,
+            self._get_query_builder_foreign_key_fields(base_model=base_model,
+                                                       report_builder_fields=report_builder_fields,
                                                        fields=fields)
 
             self.fields['multiple_column_field'] = ChoiceField(choices=fields, required=False)
@@ -545,19 +501,6 @@ class TableFieldForm(CrispyForm):
         if attributes:
             return '-'.join(attributes)
         return None
-
-    def _get_query_builder_foreign_key_fields(self, report_builder_fields, fields,
-                                              prefix='', title_prefix=''):
-        for include in report_builder_fields.includes:
-            app_label, model, report_builder_fields_str = include['model'].split('.')
-            new_model = apps.get_model(app_label, model)
-            new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
-            fields.append((prefix + include['field'], title_prefix + include['title']))
-
-            self._get_query_builder_foreign_key_fields(report_builder_fields=new_report_builder_fields,
-                                                       fields=fields,
-                                                       prefix=f"{include['field']}__",
-                                                       title_prefix=f"{include['title']} --> ")
 
 
 class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
