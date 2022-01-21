@@ -62,7 +62,7 @@ def get_django_field(base_model, field):
         col_type_override = columns[0]
         if isinstance(col_type_override.field, str):
             path_parts = field.split('__')[:-1]
-            path_parts.append(col_type_override.field)
+            path_parts.append(col_type_override.field.split('__')[-1])
             path = '__'.join(path_parts)
             column_initialisor = ColumnInitialisor(start_model=base_model, path=path)
             column_initialisor.get_columns()
