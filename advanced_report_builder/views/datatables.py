@@ -205,10 +205,14 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
 
         if not self.table_report.table_fields:
             return fields, totals, first_field_name
-        table_fields = json.loads(self.table_report.table_fields)
+        table_fields = self.table_report.get_table_fields()
 
+        pivot_fields = self.table_report.get_pivot_fields()
+
+        fields_used = set()
         for index, table_field in enumerate(table_fields):
             field = table_field['field']
+            fields_used.add(field)
 
             django_field, col_type_override, _ = get_django_field(base_model=base_model, field=field)
 
@@ -264,6 +268,13 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
                 fields.append(field)
             if not first_field_name:
                 first_field_name = field_name
+
+        if pivot_fields is not None:
+            for pivot_field in pivot_fields:
+                # report_builder_fields = self._get_report_builder_fields(field_str=pivot_field['field'],
+                #                                                         report_builder_fields=report_builder_fields)
+                # django_field, col_type_override, _ = get_django_field(base_model=base_model, field=fio)
+                tom = 100
         return fields, totals, first_field_name
 
     def setup_table(self, table):
@@ -352,6 +363,7 @@ class TableModal(QueryBuilderModalBase):
                    'report_type',
                    'report_tags',
                    'table_fields',
+                   'pivot_fields',
                    ]
 
     def __init__(self, *args, **kwargs):
@@ -364,6 +376,9 @@ class TableModal(QueryBuilderModalBase):
         url = reverse('advanced_report_builder:table_field_modal',
                       kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
 
+        pivot_url = reverse('advanced_report_builder:table_pivot_modal',
+                            kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
+
         fields = ['name',
                   'report_type',
                   'report_tags',
@@ -372,6 +387,9 @@ class TableModal(QueryBuilderModalBase):
                   FieldEx('table_fields',
                           template='advanced_report_builder/select_column.html',
                           extra_context={'select_column_url': url}),
+                  FieldEx('pivot_fields',
+                          template='advanced_report_builder/datatables/select_pivot.html',
+                          extra_context={'select_column_url': pivot_url}),
                   ]
 
         if self.show_query_name:
@@ -401,12 +419,18 @@ class TableModal(QueryBuilderModalBase):
         report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=report_type_id)
         fields = []
         tables = []
+        pivot_fields = []
         self._get_fields(base_model=base_model,
                          fields=fields,
                          tables=tables,
                          report_builder_fields=report_builder_fields,
-                         all_fields=True)
-        return self.command_response('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
+                         all_fields=True,
+                         pivot_fields=pivot_fields)
+
+        self.add_command('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
+        self.add_command('report_pivots', data=json.dumps({'pivot_fields': pivot_fields}))
+
+        return self.command_response()
 
 
 class TableFieldForm(ChartBaseFieldForm):
@@ -573,3 +597,28 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
         query_builder_filters = self.get_query_builder_report_type_field(report_type_id=report_type_id)
 
         return self.command_response(f'query_builder_{field_auto_id}', data=json.dumps(query_builder_filters))
+
+
+class TablePivotForm(ChartBaseFieldForm):
+    def setup_modal(self, *args, **kwargs):
+        data = json.loads(base64.b64decode(self.slug['data']))
+        self.fields['title'] = CharField(initial=data['title'])
+        super().setup_modal(*args, **kwargs)
+
+
+class TablePivotModal(QueryBuilderModalBaseMixin, FormModal):
+    form_class = TablePivotForm
+    size = 'xl'
+
+    @property
+    def modal_title(self):
+        data = json.loads(base64.b64decode(self.slug['data']))
+        return f'Edit {data["title"]}'
+
+    def form_valid(self, form):
+        selector = self.slug['selector']
+
+        self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
+        self.add_command({'function': 'save_query_builder_id_query_data'})
+        self.add_command({'function': 'update_selection'})
+        return self.command_response('close')

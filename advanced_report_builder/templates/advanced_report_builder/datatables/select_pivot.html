@@ -1,0 +1,195 @@
+<div id="div_{{ field.auto_id }}" class="form-group row">
+    <label for="{{ field.auto_id }}" class="col-form-label col-md-3 col-form-label-sm">
+        Pivot Types
+    </label>
+    <div class="col-md-9 input-group-sm">
+        <style>
+            #{{ field.auto_id }}_selection, #{{ field.auto_id }}_available_pivots {
+                border: 1px solid #eee;
+                width: 100%;
+                height: 300px;
+                overflow: scroll;
+                list-style-type: none;
+                padding: 5px 0 0 0;
+                float: left;
+                margin: 0 10px 0 0;
+                color: white;
+            }
+
+            #{{ field.auto_id }}_selection li, #{{ field.auto_id }}_available_pivots li {
+                margin: 0 5px 5px 5px;
+                padding: 5px;
+                font-size: 1.2em;
+                width: 98%;
+                color: white;
+            }
+
+            #{{ field.auto_id }}_available_pivots .edit-field {
+                visibility: hidden;
+            }
+        </style>
+
+        <div class="row">
+
+            <div class="col-5" id="selection_div">
+                <h6><strong>Selection</strong>
+                </h6> <input type="text"
+                             id="{{ field.auto_id }}_selected_search_input"
+                             placeholder="Search selected fields"
+                             class="form-control"
+                             style="width: 100%!important;">
+                <br>
+                <ol id="{{ field.auto_id }}_selection" class="connectedSortable ui-sortable ui-droppable"
+                    data-empty-message="Drag available fields from the right to this area." style="font-size: 12px">
+                </ol>
+            </div>
+
+            <div class="col-4" id="{{ field.auto_id }}_available_pivots_div">
+                <h6><strong>Available Pivots</strong>
+                </h6> <input
+                    type="text" id="{{ field.auto_id }}_field_search_input"
+
+                    placeholder="Search available pivots"
+                    class="form-control" style="width: 100%px!important;"> <br>
+                <ul id="{{ field.auto_id }}_available_pivots" class="connectedSortable ui-sortable ui-droppable"
+                    style="font-size: 12px">
+                </ul>
+            </div>
+
+            <div id="{{ field.auto_id }}_keys" class="col-3">
+            </div>
+        </div>
+    </div>
+    <script>
+        $(function () {
+            let selection_pivots_id_name = '#{{ field.auto_id }}_selection';
+            let available_pivots_id_name = '#{{ field.auto_id }}_available_pivots';
+            let main_field = '#{{ field.auto_id }}';
+            let main_div = '#div_{{ field.auto_id }}';
+            let available_fields_data = {};
+            let initial = true;
+
+            function get_field_html(field_id, label, colour, attr) {
+                let data_attr = '';
+                if (attr !== undefined && attr !== '') {
+                    data_attr = ` data-attr="${attr}"`
+                }
+                return `<li class="ui-state-default" data-origin="${field_id}" style="background-color: ${colour}"${data_attr}>
+                            <a href="#" class="edit_field_link"><i class="edit-field fas fa-pencil-alt float-right" style="color:white;"></i></a><span>${label}</span></li>`
+            }
+
+            ajax_helpers.command_functions.report_pivots = function (command) {
+                let data = jQuery.parseJSON(command.data);
+                $(selection_pivots_id_name).empty();
+                $(available_pivots_id_name).empty();
+                available_fields_data = {};
+
+                if (data['pivot_fields'].length > 0) {
+                    $.each(data['pivot_fields'], function (key, value) {
+                        available_fields_data[value.field] = value;
+                        $(available_pivots_id_name).append(get_field_html(value.field, value.label, value.colour, ''));
+                    });
+                    if (initial) {
+                        load_section();
+                        initial = false;
+                    } else {
+                        $(main_field).val('[]')
+                    }
+                    $(main_div).show();
+                } else {
+                    $(main_div).hide();
+                }
+
+
+                $('.edit_field_link').click(function(){
+                    let selector = 's' + String(new Date().getTime());
+                    let parent_li = $(this).parent()
+                    parent_li.attr('id', selector);
+                    let field_info = get_field_dict(parent_li);
+                    let field_info_b64 = (btoa(JSON.stringify(field_info)));
+                    let url = "{{ select_column_url }}";
+                        django_modal.show_modal(url.replace('99999', selector).replace('REPORT_TYPE_ID', $('#id_report_type').val()).replace('FIELD_INFO', field_info_b64))
+                    });
+
+            }
+
+            $(selection_pivots_id_name + ', ' + available_pivots_id_name).sortable({
+                connectWith: ".connectedSortable",
+                stop: function () {
+                    update_selection();
+                },
+                receive: function (event, ui) { //only when dropped from one to another!
+                    let sourceList = ui.sender;
+                    if (sourceList.attr('id') === '{{ field.auto_id }}_available_pivots') {
+                        let clone = $(ui.item).clone();
+                        sourceList.append(clone);  // adds it back to the end
+                    } else {
+                        ui.item.remove();  // removes it as it already in the list
+                    }
+                }
+
+            });
+
+
+            function update_selection() {
+                let fields_selection = [];
+                $(selection_pivots_id_name).children().each(function () {
+                    fields_selection.push(get_field_dict($(this)))
+                });
+                $(main_field).val(JSON.stringify(fields_selection))
+            }
+
+            function get_field_dict(field) {
+                let data_origin = field.attr('data-origin');
+                let title = field.children("span").text()
+                let result = {
+                    'field': data_origin,
+                    'title': title,
+                };
+                let data_attr = field.attr('data-attr');
+
+                if (data_attr) {
+                    result['data_attr'] = data_attr;
+                }
+                return result;
+            }
+
+            function load_section() {
+                if ($(main_field).val() !== '') {
+                    let fields = JSON.parse($(main_field).val())
+                    $.each(fields, function (key, value) {
+                        let field_data = available_fields_data[value.field];
+                        $(selection_pivots_id_name).append(get_field_html(value.field, value.title, field_data.colour, value.data_attr));
+                    });
+                }
+            }
+
+            $('#{{ field.auto_id }}_selected_search_input').keyup(function () {
+                search_fields(this.value, selection_pivots_id_name);
+            })
+            $('#{{ field.auto_id }}_field_search_input').keyup(function () {
+                search_fields(this.value, available_pivots_id_name);
+            })
+
+
+            function search_fields(searchString, area_id) {
+                searchString = searchString.toUpperCase();
+                $(area_id + " li").each(function (index, value) {
+                    let currentName = $(value).text()
+                    if (currentName.toUpperCase().indexOf(searchString) > -1) {
+                        $(value).show();
+                    } else {
+                        $(value).hide();
+                    }
+                });
+            }
+
+            ajax_helpers.command_functions.update_selection = function (command) {
+
+                update_selection();
+            };
+        });
+    </script>
+</div>
+<input type="hidden" name="{{ field.name }}" id="{{ field.auto_id }}"
+       value="{% if field.value %}{{ field.value }}{% endif %}">

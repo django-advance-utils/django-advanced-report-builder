@@ -129,7 +129,8 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
 
     def _get_fields(self, base_model, fields, tables, report_builder_fields,
                     prefix='', title_prefix='', title=None, colour=None,
-                    previous_base_model=None, selected_field_id=None, for_select2=False, all_fields=False):
+                    previous_base_model=None, selected_field_id=None, for_select2=False,
+                    all_fields=False, pivot_fields=None):
         if title is None:
             title = report_builder_fields.title
         if colour is None:
@@ -153,6 +154,13 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                                            'label': title_prefix + column.title,
                                            'colour': report_builder_fields.colour})
 
+        if not for_select2 and pivot_fields is not None:
+            for pivot_field in report_builder_fields.pivot_fields:
+                full_id = prefix + pivot_field['field']
+                pivot_fields.append({'field': full_id,
+                                     'label': title_prefix + pivot_field['title'],
+                                     'colour': report_builder_fields.colour})
+
         for include in report_builder_fields.includes:
             app_label, model, report_builder_fields_str = include['model'].split('.')
 
@@ -170,7 +178,8 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                                  previous_base_model=base_model,
                                  selected_field_id=selected_field_id,
                                  for_select2=for_select2,
-                                 all_fields=all_fields)
+                                 all_fields=all_fields,
+                                 pivot_fields=pivot_fields)
 
     def ajax_get_fields(self, **kwargs):
         report_type_id = kwargs['report_type']

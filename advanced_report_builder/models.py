@@ -131,12 +131,17 @@ class TableReport(Report):
                                                             (150, '150'),
                                                             (200, '200')), default=100)
 
+    def get_table_fields(self):
+        return json.loads(self.table_fields)
+
     def has_pivot_data(self):
         return self.pivot_fields is not None and self.pivot_fields != ''
 
     def get_pivot_fields(self):
-        pivot_data = json.loads(self.pivot_fields)
-        return pivot_data
+        if self.has_pivot_data():
+            pivot_data = json.loads(self.pivot_fields)
+            return pivot_data
+        return None
 
 
 class SingleValueReport(Report):

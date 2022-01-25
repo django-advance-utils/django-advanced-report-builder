@@ -74,6 +74,7 @@ class Company(TimeStampedModel):
                   'payments',
                   'created',
                   'modified',
+                  'tag',
                   ]
         default_columns = ['.id']
         default_multiple_column_text = '{name}'
@@ -83,6 +84,13 @@ class Company(TimeStampedModel):
                      'title': 'Company Information',
                      'model': 'report_builder_examples.CompanyInformation.ReportBuilder',
                      'reversed': True}]
+
+        pivot_fields = [
+            {'title': 'Tag',
+             'type': 'tag',
+             'field': 'tag',
+             'kwargs': {'collapsed': False}},
+        ]
 
     def __str__(self):
         return self.name
