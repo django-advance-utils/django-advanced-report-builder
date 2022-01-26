@@ -66,7 +66,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         date_format = data_attr.get('date_format')
 
         if date_format:
-            date_format = DATE_FORMAT_TYPES_DJANGO_FORMAT[int(date_format)]
+            date_format = DATE_FORMAT_TYPES_DJANGO_FORMAT.get(int(date_format))
         title = table_field.get('title')
 
         annotations_value = int(data_attr.get('annotations_value', 0))
@@ -139,16 +139,20 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
                 if title:
                     field.title = title
                 if annotations_type:
-                    new_field_name = f'{annotations_type}_{field_name}_{index}'
-
-                    function_type = ANNOTATION_FUNCTIONS[annotations_type]
-                    if annotation_filter:
-                        function = function_type(field.field, filter=annotation_filter)
+                    if field.annotations:
+                        pass
+                        # make this work if the field has already got annotations
                     else:
-                        function = function_type(field.field)
+                        new_field_name = f'{annotations_type}_{field_name}_{index}'
 
-                    field.annotations = {new_field_name: function}
-                    field.field = new_field_name
+                        function_type = ANNOTATION_FUNCTIONS[annotations_type]
+                        if annotation_filter:
+                            function = function_type(field.field, filter=annotation_filter)
+                        else:
+                            function = function_type(field.field)
+
+                        field.annotations = {new_field_name: function}
+                        field.field = new_field_name
 
             fields.append(field)
         else:
@@ -222,7 +226,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
                                                  table_field=table_field,
                                                  fields=fields)
 
-            elif isinstance(django_field, NUMBER_FIELDS) and (django_field is None or django_field.choices is None):
+            elif isinstance(django_field, NUMBER_FIELDS) or (django_field is None or django_field.choices is None):
                 data_attr = split_attr(table_field)
 
                 if data_attr.get('annotations_type') and data_attr.get('multiple_columns') == '1':
@@ -271,6 +275,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
 
         if pivot_fields is not None:
             for pivot_field in pivot_fields:
+
                 # report_builder_fields = self._get_report_builder_fields(field_str=pivot_field['field'],
                 #                                                         report_builder_fields=report_builder_fields)
                 # django_field, col_type_override, _ = get_django_field(base_model=base_model, field=fio)
@@ -457,8 +462,7 @@ class TableFieldForm(ChartBaseFieldForm):
             self.fields['date_format'] = ChoiceField(choices=[(0, '-----')] + DATE_FORMAT_TYPES, required=False)
             if 'date_format' in data_attr:
                 self.fields['date_format'].initial = data_attr['date_format']
-        elif ((self.django_field is not None and isinstance(self.django_field, NUMBER_FIELDS)) or
-              (self.col_type_override is not None and self.col_type_override.annotations)):
+        elif self.django_field is not None and isinstance(self.django_field, NUMBER_FIELDS):
             self.fields['annotations_type'] = ChoiceField(choices=[(0, '-----')] + ANNOTATIONS_CHOICES,
                                                           required=False)
             if 'annotations_type' in data_attr:
@@ -503,8 +507,7 @@ class TableFieldForm(ChartBaseFieldForm):
                 attributes.append(f'annotations_value-{self.cleaned_data["annotations_value"]}')
             if self.cleaned_data['date_format']:
                 attributes.append(f'date_format-{self.cleaned_data["date_format"]}')
-        elif ((self.django_field is not None and isinstance(self.django_field, NUMBER_FIELDS)) or
-              (self.col_type_override is not None and self.col_type_override.annotations)):
+        elif self.django_field is not None and isinstance(self.django_field, NUMBER_FIELDS):
             if int(self.cleaned_data['annotations_type']) != 0:
                 attributes.append(f'annotations_type-{self.cleaned_data["annotations_type"]}')
             if self.cleaned_data['show_totals'] and self.cleaned_data["show_totals"]:
@@ -558,8 +561,7 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
         data = json.loads(base64.b64decode(self.slug['data']))
         report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=self.slug['report_type_id'])
         django_field, col_type_override, _ = get_django_field(base_model=base_model, field=data['field'])
-        if ((django_field is not None and isinstance(django_field, NUMBER_FIELDS)) or
-                (col_type_override is not None and col_type_override.annotations)):
+        if django_field is not None and isinstance(django_field, NUMBER_FIELDS):
             form.add_trigger('annotations_type', 'onchange', [
                 {'selector': '#annotations_fields_div', 'values': {'': 'hide'}, 'default': 'show'}])
 
@@ -620,5 +622,5 @@ class TablePivotModal(QueryBuilderModalBaseMixin, FormModal):
 
         self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
         self.add_command({'function': 'save_query_builder_id_query_data'})
-        self.add_command({'function': 'update_selection'})
+        self.add_command({'function': 'update_pivot_selection'})
         return self.command_response('close')

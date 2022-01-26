@@ -75,7 +75,7 @@
                     data_attr = ` data-attr="${attr}"`
                 }
                 return `<li class="ui-state-default" data-origin="${field_id}" style="background-color: ${colour}"${data_attr}>
-                            <a href="#" class="edit_field_link"><i class="edit-field fas fa-pencil-alt float-right" style="color:white;"></i></a><span>${label}</span></li>`
+                            <a href="#" class="edit_pivot_field_link"><i class="edit-field fas fa-pencil-alt float-right" style="color:white;"></i></a><span>${label}</span></li>`
             }
 
             ajax_helpers.command_functions.report_pivots = function (command) {
@@ -101,7 +101,7 @@
                 }
 
 
-                $('.edit_field_link').click(function(){
+                $('.edit_pivot_field_link').click(function(){
                     let selector = 's' + String(new Date().getTime());
                     let parent_li = $(this).parent()
                     parent_li.attr('id', selector);
@@ -184,7 +184,7 @@
                 });
             }
 
-            ajax_helpers.command_functions.update_selection = function (command) {
+            ajax_helpers.command_functions.update_pivot_selection = function (command) {
 
                 update_selection();
             };
