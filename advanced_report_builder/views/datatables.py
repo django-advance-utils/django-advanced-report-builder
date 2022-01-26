@@ -226,7 +226,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
                                                  table_field=table_field,
                                                  fields=fields)
 
-            elif isinstance(django_field, NUMBER_FIELDS) or (django_field is None or django_field.choices is None):
+            elif isinstance(django_field, NUMBER_FIELDS) and (django_field is None or django_field.choices is None):
                 data_attr = split_attr(table_field)
 
                 if data_attr.get('annotations_type') and data_attr.get('multiple_columns') == '1':
