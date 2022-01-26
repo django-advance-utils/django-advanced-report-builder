@@ -2,8 +2,7 @@
 {% load ajax_helpers %}
 
 {% lib_include 'datatable' module='django_datatables.includes' %}
-
-{% if show_pivot_table %}
+{% if datatable.show_pivot_table %}
     <div class="col-12 col-sm-6 col-md-5 col-lg-4 col-xl-2 float-left">
         <div class="card jms-card">
             {% filter_control datatable %}

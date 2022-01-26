@@ -143,8 +143,9 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
                     report_builder_fields = getattr(base_model,
                                                     self.chart_report.report_type.report_builder_class_name, None)
 
-                    report_builder_fields = self._get_report_builder_fields(field_str=multiple_column_field,
-                                                                            report_builder_fields=report_builder_fields)
+                    report_builder_fields = self._get_report_builder_class(base_model=base_model,
+                                                                           field_str=multiple_column_field,
+                                                                           report_builder_class=report_builder_fields)
                     _fields = report_builder_fields.default_multiple_column_fields
                     default_multiple_column_fields = [multiple_column_field + '__' + x for x in _fields]
                     results = query.distinct(multiple_column_field).values(multiple_column_field,

@@ -201,11 +201,11 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         fields = []
         totals = {}
 
-        report_builder_fields = getattr(self.base_model,
+        report_builder_class = getattr(self.base_model,
                                         self.table_report.report_type.report_builder_class_name, None)
 
-        if len(report_builder_fields.default_columns) > 0:
-            fields += report_builder_fields.default_columns
+        if len(report_builder_class.default_columns) > 0:
+            fields += report_builder_class.default_columns
 
         if not self.table_report.table_fields:
             return fields, totals, first_field_name
@@ -233,9 +233,11 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
                     query = self.extra_filters(query=table.model.objects)
                     multiple_column_field = data_attr.get('multiple_column_field')
 
-                    report_builder_fields = self._get_report_builder_fields(field_str=multiple_column_field,
-                                                                            report_builder_fields=report_builder_fields)
-                    _fields = report_builder_fields.default_multiple_column_fields
+                    field_report_builder_class = self._get_report_builder_class(
+                        base_model=base_model,
+                        field_str=multiple_column_field,
+                        report_builder_class=report_builder_class)
+                    _fields = field_report_builder_class.default_multiple_column_fields
                     default_multiple_column_fields = [multiple_column_field + '__' + x for x in _fields]
                     results = query.distinct(multiple_column_field).values(multiple_column_field,
                                                                            *default_multiple_column_fields)
@@ -244,7 +246,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
                         suffix = self._set_multiple_title(database_values=result,
                                                           value_prefix=multiple_column_field,
                                                           fields=_fields,
-                                                          text=report_builder_fields.default_multiple_column_text)
+                                                          text=field_report_builder_class.default_multiple_column_text)
                         extra_filter = Q((multiple_column_field, result[multiple_column_field]))
 
                         field_name = self.get_number_field(index=f'{index}_{multiple_index}',
@@ -272,28 +274,33 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
                 fields.append(field)
             if not first_field_name:
                 first_field_name = field_name
-
+        table.add_columns(*fields)
+        table.show_pivot_table = False
         if pivot_fields is not None:
             for pivot_field in pivot_fields:
-
-                # report_builder_fields = self._get_report_builder_fields(field_str=pivot_field['field'],
-                #                                                         report_builder_fields=report_builder_fields)
-                # django_field, col_type_override, _ = get_django_field(base_model=base_model, field=fio)
-                tom = 100
-        return fields, totals, first_field_name
-
-    def setup_table(self, table):
-        table.extra_filters = self.extra_filters
-
-        fields, totals, first_field_name = self.process_query_results(table=table)
-
-        table.add_columns(*fields)
-        table.table_options['pageLength'] = self.table_report.page_length
-        table.table_options['bStateSave'] = False
+                pivot_field_data = self._get_pivot_details(base_model=base_model,
+                                                           pivot_str=pivot_field['field'],
+                                                           report_builder_class=report_builder_class)
+                if pivot_field['field'] != fields_used:
+                    table.add_columns('.' + pivot_field['field'])
+                    fields_used.add(pivot_field['field'])
+                table.add_js_filters(pivot_field_data['type'],
+                                     pivot_field['field'],
+                                     filter_title=pivot_field['title'],
+                                     **pivot_field_data['kwargs'])
+                table.show_pivot_table = True
 
         if totals:
             totals[first_field_name] = {'text': 'Totals'}
             table.add_plugin(ColumnTotals, totals)
+
+    def setup_table(self, table):
+        table.extra_filters = self.extra_filters
+
+        self.process_query_results(table=table)
+
+        table.table_options['pageLength'] = self.table_report.page_length
+        table.table_options['bStateSave'] = False
 
     def extra_filters(self, query):
         report_query = self.get_report_query(report=self.table_report)

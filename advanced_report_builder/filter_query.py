@@ -162,33 +162,54 @@ class FilterQueryMixin:
         else:
             return self.report.name
 
-    def _get_report_builder_fields(self, field_str, report_builder_fields):
-        for include in report_builder_fields.includes:
-            app_label, model, report_builder_fields_str = include['model'].split('.')
-            new_model = apps.get_model(app_label, model)
-            new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
+    def _get_report_builder_class(self, base_model, field_str, report_builder_class, previous_base_model=None):
+        if '__' in field_str:
+            field_parts = field_str.split('__')
+            include_str = field_parts[0]
+            new_field_str = '__'.join(field_parts[1:])
 
-            if field_str == include['field']:
-                return new_report_builder_fields
+            for include in report_builder_class.includes:
+                app_label, model, report_builder_fields_str = include['model'].split('.')
+                new_model = apps.get_model(app_label, model)
+                new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
 
-            result = self._get_report_builder_fields(field_str=field_str,
-                                                     report_builder_fields=new_report_builder_fields)
-            if result:
-                return result
+                if new_model != previous_base_model and include_str == include['field']:
+                    result = self._get_report_builder_class(base_model=new_model,
+                                                            field_str=new_field_str,
+                                                            report_builder_class=new_report_builder_fields,
+                                                            previous_base_model=base_model)
+                    if result:
+                        return result
+        else:
+            for include in report_builder_class.includes:
+                app_label, model, report_builder_fields_str = include['model'].split('.')
+                new_model = apps.get_model(app_label, model)
+                new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
+                if field_str == include['field']:
+                    return new_report_builder_fields
         return None
 
-    def _get_query_builder_foreign_key_fields(self, base_model, report_builder_fields, fields,
-                                              prefix='', title_prefix='', previous_base_model=None):
-        for include in report_builder_fields.includes:
-            app_label, model, report_builder_fields_str = include['model'].split('.')
-            new_model = apps.get_model(app_label, model)
-            if new_model != previous_base_model:
-                new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
-                fields.append((prefix + include['field'], title_prefix + include['title']))
+    def _get_pivot_details(self, base_model, pivot_str, report_builder_class, previous_base_model=None):
 
-                self._get_query_builder_foreign_key_fields(base_model=new_model,
-                                                           report_builder_fields=new_report_builder_fields,
-                                                           fields=fields,
-                                                           prefix=f"{prefix}{include['field']}__",
-                                                           title_prefix=f"{title_prefix}{include['title']} --> ",
-                                                           previous_base_model=base_model)
+        if '__' in pivot_str:
+            pivot_parts = pivot_str.split('__')
+            include_str = pivot_parts[0]
+            new_pivot_str = '__'.join(pivot_parts[1:])
+
+            for include in report_builder_class.includes:
+                app_label, model, report_builder_fields_str = include['model'].split('.')
+                new_model = apps.get_model(app_label, model)
+                new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
+
+                if new_model != previous_base_model and include_str == include['field']:
+                    result = self._get_pivot_details(base_model=new_model,
+                                                     pivot_str=new_pivot_str,
+                                                     report_builder_class=new_report_builder_fields,
+                                                     previous_base_model=base_model)
+                    if result:
+                        return result
+        else:
+            for pivot_field in report_builder_class.pivot_fields:
+                if pivot_field['field'] == pivot_str:
+                    return pivot_field
+        return None

@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Count, Sum
-from django_datatables.columns import ColumnLink, DatatableColumn, CurrencyPenceColumn
+from django_datatables.columns import ColumnLink, DatatableColumn, CurrencyPenceColumn, ColumnBase
 from django_datatables.model_def import DatatableModel
 from report_builder_examples.report_overrides import CustomDateColumn
 from time_stamped_model.models import TimeStampedModel
@@ -51,9 +51,8 @@ class Company(TimeStampedModel):
                     tag_dict.setdefault(t[0], []).append(t[1])
                 all_results['tags'] = tag_dict
 
-            @staticmethod
-            def proc_result(data_dict, page_results):
-                return page_results['tags'].get(data_dict['id'], [])
+            def proc_result(self, data_dict, page_results):
+                return page_results['tags'].get(data_dict[self.model_path + 'id'], [])
 
             def col_setup(self):
                 self.options['render'] = [
@@ -74,7 +73,7 @@ class Company(TimeStampedModel):
                   'payments',
                   'created',
                   'modified',
-                  'tag',
+                  'Tags',
                   ]
         default_columns = ['.id']
         default_multiple_column_text = '{name}'
@@ -86,9 +85,9 @@ class Company(TimeStampedModel):
                      'reversed': True}]
 
         pivot_fields = [
-            {'title': 'Tag',
+            {'title': 'Tags',
              'type': 'tag',
-             'field': 'tag',
+             'field': 'Tags',
              'kwargs': {'collapsed': False}},
         ]
 
@@ -104,12 +103,15 @@ class CompanyInformation(models.Model):
 
     class Datatable(DatatableModel):
         company_value = CurrencyPenceColumn(column_name='company_value', field='value')
+        id = ColumnBase(column_name='id', field='company__id', hidden=True)
 
     class ReportBuilder(ReportBuilderFields):
         colour = '#F0008b'
         title = 'Company Information'
         fields = ['company_value',
                   'incorporated_date']
+
+        default_columns = ['.id']
         includes = [{'field': 'company',
                      'title': 'Company',
                      'model': 'report_builder_examples.Company.ReportBuilder'}]
