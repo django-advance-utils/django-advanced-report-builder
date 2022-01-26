@@ -52,7 +52,7 @@ class Company(TimeStampedModel):
                 all_results['tags'] = tag_dict
 
             def proc_result(self, data_dict, page_results):
-                return page_results['tags'].get(data_dict[self.model_path + 'id'], [])
+                return page_results['tags'].get(data_dict.get(self.model_path + 'id'), [])
 
             def col_setup(self):
                 self.options['render'] = [
