@@ -55,6 +55,8 @@ class Company(TimeStampedModel):
                 return page_results['tags'].get(data_dict.get(self.model_path + 'id'), [])
 
             def col_setup(self):
+                self.field = ['id']
+
                 self.options['render'] = [
                     {'var': '%1%', 'html': '%1%', 'function': 'ReplaceLookup'},
                 ]
