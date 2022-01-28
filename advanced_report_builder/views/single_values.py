@@ -1,4 +1,3 @@
-from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Sum, ExpressionWrapper, FloatField
 from django.db.models.functions import Coalesce, NullIf
@@ -259,9 +258,7 @@ class SingleValueModal(QueryBuilderModalBase):
 
         fields = []
         if form.instance.field:
-
             form.fields['field'].initial = form.instance.field
-
             base_model = form.instance.report_type.content_type.model_class()
             report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
             tables = []
@@ -271,12 +268,24 @@ class SingleValueModal(QueryBuilderModalBase):
                              report_builder_fields=report_builder_fields,
                              selected_field_id=form.instance.field,
                              for_select2=True)
-
         form.fields['field'].widget = Select2(attrs={'ajax': True})
         form.fields['field'].widget.select_data = fields
 
+        numerator_fields = []
+        if form.instance.numerator:
+            form.fields['numerator'].initial = form.instance.numerator
+            base_model = form.instance.report_type.content_type.model_class()
+            report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
+            tables = []
+            self._get_fields(base_model=base_model,
+                             fields=numerator_fields,
+                             tables=tables,
+                             report_builder_fields=report_builder_fields,
+                             selected_field_id=form.instance.numerator,
+                             for_select2=True)
+
         form.fields['numerator'].widget = Select2(attrs={'ajax': True})
-        form.fields['numerator'].widget.select_data = fields
+        form.fields['numerator'].widget.select_data = numerator_fields
 
         self.add_query_data(form, include_extra_query=True)
 
