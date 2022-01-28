@@ -60,7 +60,7 @@ def get_data_merge_columns(base_model, report_builder_class, html):
     for variable in variables:
         for field in variable.split(' '):
 
-            if field not in ['', 'not', 'and' 'or'] and field[0] not in ['=', '<', '>', '(', ')']:
+            if field not in ['', 'not', 'and' 'or'] and field[0] not in ['=', '<', '>', '(', ')', '"', "'"]:
                 if field in fields:
                     columns.add('.' + field)
     return columns

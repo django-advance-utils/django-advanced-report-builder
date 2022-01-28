@@ -261,13 +261,10 @@ class SingleValueModal(QueryBuilderModalBase):
             form.fields['field'].initial = form.instance.field
             base_model = form.instance.report_type.content_type.model_class()
             report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
-            tables = []
-            self._get_fields(base_model=base_model,
-                             fields=fields,
-                             tables=tables,
-                             report_builder_class=report_builder_fields,
-                             selected_field_id=form.instance.field,
-                             for_select2=True)
+            self._get_number_fields(base_model=base_model,
+                                    fields=fields,
+                                    report_builder_class=report_builder_fields,
+                                    selected_field_id=form.instance.field)
         form.fields['field'].widget = Select2(attrs={'ajax': True})
         form.fields['field'].widget.select_data = fields
 
@@ -276,15 +273,12 @@ class SingleValueModal(QueryBuilderModalBase):
             form.fields['numerator'].initial = form.instance.numerator
             base_model = form.instance.report_type.content_type.model_class()
             report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
-            tables = []
-            self._get_fields(base_model=base_model,
-                             fields=numerator_fields,
-                             tables=tables,
-                             report_builder_class=report_builder_fields,
-                             selected_field_id=form.instance.numerator,
-                             for_select2=True)
+            self._get_number_fields(base_model=base_model,
+                                    fields=numerator_fields,
+                                    report_builder_class=report_builder_fields,
+                                    selected_field_id=form.instance.numerator)
 
-        form.fields['numerator'].widget = Select2(attrs={'ajax': True})
+            form.fields['numerator'].widget = Select2(attrs={'ajax': True})
         form.fields['numerator'].widget.select_data = numerator_fields
 
         self.add_query_data(form, include_extra_query=True)
@@ -311,12 +305,9 @@ class SingleValueModal(QueryBuilderModalBase):
         if kwargs['report_type'] != '':
             report_builder_fields, base_model = self.get_report_builder_class(report_type_id=kwargs['report_type'])
             fields = []
-            tables = []
-            self._get_fields(base_model=base_model,
-                             fields=fields,
-                             tables=tables,
-                             report_builder_class=report_builder_fields,
-                             for_select2=True)
+            self._get_number_fields(base_model=base_model,
+                                    fields=fields,
+                                    report_builder_class=report_builder_fields)
 
         return JsonResponse({'results': fields})
 

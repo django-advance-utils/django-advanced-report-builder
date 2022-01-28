@@ -1,5 +1,4 @@
 import json
-import re
 
 from ajax_helpers.mixins import AjaxHelpers
 from django.forms import CharField
@@ -20,6 +19,7 @@ from advanced_report_builder.data_merge.utils import get_menu_fields, get_data_m
 from advanced_report_builder.data_merge.widget import DataMergeWidget
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.models import KanbanReport, KanbanReportLane
+from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import crispy_modal_link_args
 from advanced_report_builder.views.charts_base import ChartJSTable
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
@@ -62,7 +62,6 @@ class KanbanView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         self.report = kwargs.get('report')
         self.chart_report = self.report.kanbanreport
         return super().dispatch(request, *args, **kwargs)
-
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -162,37 +161,49 @@ class KanbanLaneModal(QueryBuilderModalBase):
     permission_delete = PERMISSION_OFF
     model = KanbanReportLane
 
-    widgets = {'report_tags': Select2Multiple}
+    widgets = {'report_tags': Select2Multiple,
+               'order_by_ascending': RBToggle}
 
     form_fields = ['name',
                    'report_type',
                    'heading_field',
+                   'order_by_field',
+                   'order_by_ascending',
                    'description',
                    'query_data']
 
     def form_setup(self, form, *_args, **_kwargs):
-        fields = []
+        heading_fields = []
         if form.instance.heading_field:
             form.fields['heading_field'].initial = form.instance.heading_field
             base_model = form.instance.report_type.content_type.model_class()
             report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
-            tables = []
             self._get_fields(base_model=base_model,
-                             fields=fields,
-                             tables=tables,
+                             fields=heading_fields,
                              report_builder_class=report_builder_fields,
-                             selected_field_id=form.instance.heading_field,
-                             for_select2=True,
-                             all_fields=True)
-
+                             selected_field_id=form.instance.heading_field)
         form.fields['heading_field'].widget = Select2(attrs={'ajax': True})
-        form.fields['heading_field'].widget.select_data = fields
+        form.fields['heading_field'].widget.select_data = heading_fields
+
+        order_by_fields = []
+        if form.instance.order_by_field:
+            form.fields['order_by_field'].initial = form.instance.order_by_field
+            base_model = form.instance.report_type.content_type.model_class()
+            report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
+            self._get_number_fields(base_model=base_model,
+                                    fields=order_by_fields,
+                                    report_builder_class=report_builder_fields,
+                                    selected_field_id=form.instance.order_by_field)
+        form.fields['order_by_field'].widget = Select2(attrs={'ajax': True})
+        form.fields['order_by_field'].widget.select_data = order_by_fields
 
         form.fields['description'].widget = DataMergeWidget()
 
         return ('name',
                 'report_type',
                 'heading_field',
+                'order_by_field',
+                'order_by_ascending',
                 'description',
                 FieldEx('query_data',
                         template='advanced_report_builder/query_builder.html'),
@@ -203,14 +214,20 @@ class KanbanLaneModal(QueryBuilderModalBase):
         if kwargs['report_type'] != '':
             report_builder_fields, base_model = self.get_report_builder_class(report_type_id=kwargs['report_type'])
             fields = []
-            tables = []
             self._get_fields(base_model=base_model,
                              fields=fields,
-                             tables=tables,
-                             report_builder_class=report_builder_fields,
-                             for_select2=True,
-                             all_fields=True)
+                             report_builder_class=report_builder_fields)
 
+        return JsonResponse({'results': fields})
+
+    def select2_order_by_field(self, **kwargs):
+        fields = []
+        if kwargs['report_type'] != '':
+            report_builder_fields, base_model = self.get_report_builder_class(report_type_id=kwargs['report_type'])
+            fields = []
+            self._get_date_fields(base_model=base_model,
+                                  fields=fields,
+                                  report_builder_class=report_builder_fields)
         return JsonResponse({'results': fields})
 
     def ajax_get_data_merge_menu(self, **kwargs):

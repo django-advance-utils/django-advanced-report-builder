@@ -127,23 +127,25 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                 if include_extra_query:
                     form.fields['extra_query_data'].initial = self.report_query.extra_query
 
-    def _get_fields(self, base_model, fields, tables, report_builder_class,
+    def _get_fields(self, base_model, fields, report_builder_class, tables=None,
                     prefix='', title_prefix='', title=None, colour=None,
                     previous_base_model=None, selected_field_id=None, for_select2=False,
-                    all_fields=False, pivot_fields=None):
+                    pivot_fields=None, allow_annotations_fields=True, field_types=None):
         if title is None:
             title = report_builder_class.title
         if colour is None:
             colour = report_builder_class.colour
 
-        tables.append({'name': title,
-                       'colour': colour})
+        if tables is not None:
+            tables.append({'name': title,
+                           'colour': colour})
 
         for report_builder_field in report_builder_class.fields:
             django_field, col_type_override, columns = get_django_field(base_model=base_model,
                                                                         field=report_builder_field)
             for column in columns:
-                if all_fields or isinstance(django_field, NUMBER_FIELDS) or column.annotations:
+                if (field_types is None or isinstance(django_field, field_types) or
+                        (allow_annotations_fields and column.annotations)):
                     full_id = prefix + column.column_name
                     if selected_field_id is None or selected_field_id == full_id:
                         if for_select2:
@@ -169,8 +171,8 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                 new_report_builder_class = getattr(new_model, report_builder_fields_str, None)
                 self._get_fields(base_model=new_model,
                                  fields=fields,
-                                 tables=tables,
                                  report_builder_class=new_report_builder_class,
+                                 tables=tables,
                                  prefix=f"{prefix}{include['field']}__",
                                  title_prefix=f"{title_prefix}{include['title']} -> ",
                                  title=include.get('title'),
@@ -178,8 +180,9 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                                  previous_base_model=base_model,
                                  selected_field_id=selected_field_id,
                                  for_select2=for_select2,
-                                 all_fields=all_fields,
-                                 pivot_fields=pivot_fields)
+                                 pivot_fields=pivot_fields,
+                                 allow_annotations_fields=allow_annotations_fields,
+                                 field_types=field_types,)
 
     def ajax_get_fields(self, **kwargs):
         report_type_id = kwargs['report_type']
@@ -189,29 +192,22 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
         self._get_fields(base_model=base_model,
                          fields=fields,
                          tables=tables,
-                         report_builder_class=report_builder_fields)
+                         report_builder_class=report_builder_fields,
+                         field_types=NUMBER_FIELDS)
         return self.command_response('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
 
-    def _get_date_fields(self, base_model, fields, report_builder_class,
-                         prefix='', title_prefix='', selected_field_id=None, previous_base_model=None):
+    def _get_date_fields(self, base_model, fields, report_builder_class, selected_field_id=None):
+        return self._get_fields(base_model=base_model,
+                                fields=fields,
+                                report_builder_class=report_builder_class,
+                                selected_field_id=selected_field_id,
+                                field_types=DATE_FIELDS,
+                                for_select2=True)
 
-        for report_builder_field in report_builder_class.fields:
-            django_field, _, columns = get_django_field(base_model=base_model, field=report_builder_field)
-            for column in columns:
-                if isinstance(django_field, DATE_FIELDS):
-                    full_id = prefix + column.column_name
-                    if selected_field_id is None or selected_field_id == full_id:
-                        fields.append({'id': full_id,
-                                       'text': title_prefix + column.title})
-
-        for include in report_builder_class.includes:
-            app_label, model, report_builder_fields_str = include['model'].split('.')
-            new_model = apps.get_model(app_label, model)
-            if new_model != previous_base_model:
-                new_report_builder_class = getattr(new_model, report_builder_fields_str, None)
-                self._get_date_fields(base_model=new_model,
-                                      fields=fields,
-                                      report_builder_class=new_report_builder_class,
-                                      prefix=f"{include['field']}__",
-                                      title_prefix=f"{include['title']} -> ",
-                                      previous_base_model=base_model)
+    def _get_number_fields(self, base_model, fields, report_builder_class, selected_field_id=None):
+        return self._get_fields(base_model=base_model,
+                                fields=fields,
+                                report_builder_class=report_builder_class,
+                                selected_field_id=selected_field_id,
+                                field_types=NUMBER_FIELDS,
+                                for_select2=True)

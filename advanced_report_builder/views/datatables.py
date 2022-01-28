@@ -436,7 +436,6 @@ class TableModal(QueryBuilderModalBase):
                          fields=fields,
                          tables=tables,
                          report_builder_class=report_builder_class,
-                         all_fields=True,
                          pivot_fields=pivot_fields)
 
         self.add_command('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
