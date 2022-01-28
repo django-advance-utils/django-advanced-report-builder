@@ -2,6 +2,7 @@ import json
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.db.models import CASCADE
 from django_datatables.columns import DatatableColumn, NoHeadingColumn, ManyToManyColumn
 from django_datatables.model_def import DatatableModel
 from time_stamped_model.models import TimeStampedModel
@@ -76,7 +77,9 @@ class Report(TimeStampedModel):
                             'barchartreport': 'Bar Chart',
                             'linechartreport': 'Line Chart',
                             'piechartreport': 'Pie Chart',
-                            'funnelchartreport': 'Funnel Chart'}
+                            'funnelchartreport': 'Funnel Chart',
+                            'kanbanreport': 'Kanban',
+                            }
 
             def col_setup(self):
                 self.field = ['instance_type']
@@ -93,6 +96,7 @@ class Report(TimeStampedModel):
                             'linechartreport': '<i class="fas fa-chart-line"></i>',
                             'piechartreport': '<i class="fas fa-chart-pie"></i>',
                             'funnelchartreport': '<i class="fas fa-filter"></i>',
+                            'kanbanreport': '<i class="fas fa-chart-bar fa-flip-vertical"></i>',
                             }
 
             def col_setup(self):
@@ -238,6 +242,24 @@ class FunnelChartReport(Report):
     axis_value_type = models.PositiveSmallIntegerField(choices=ANNOTATIONS_CHOICES,
                                                        default=ANNOTATION_CHOICE_COUNT, null=True, blank=True)
     fields = models.TextField(null=True, blank=True)
+
+
+class KanbanReport(Report):
+    pass
+
+
+class KanbanReportLane(TimeStampedModel):
+    kanban_report = models.ForeignKey(KanbanReport, on_delete=CASCADE)
+    name = models.CharField(max_length=200)
+    order = models.PositiveSmallIntegerField()
+    report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
+    heading_field = models.CharField(max_length=200, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    query_data = models.JSONField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        self.set_order_field(extra_filters={'kanban_report': self.kanban_report})
+        return super().save(*args, **kwargs)
 
 
 class Dashboard(TimeStampedModel):

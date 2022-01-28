@@ -23,18 +23,29 @@ class ViewReports(MainIndices):
     def setup_menu(self):
         super().setup_menu()
         self.add_menu('table_menu', 'button_group').add_items(
-            MenuItem(menu_display='Add', no_hover=True, css_classes='btn-secondary',
-                     dropdown=[MenuItem('advanced_report_builder:table_modal,-', 'Add Table Report'),
+            MenuItem(menu_display='Add Report', no_hover=True, css_classes='btn-secondary',
+                     dropdown=[MenuItem('advanced_report_builder:table_modal,-',
+                                        'Table',
+                                        font_awesome='fas fa-table'),
                                MenuItem('advanced_report_builder:single_value_modal,-',
-                                        'Add Single Value Report'),
+                                        'Single Value',
+                                        font_awesome='fas fa-box-open'),
                                MenuItem('advanced_report_builder:bar_chart_modal,-',
-                                        'Add Bar Chart Report'),
+                                        'Bar Chart',
+                                        font_awesome='fas fa-chart-bar'),
                                MenuItem('advanced_report_builder:line_chart_modal,-',
-                                        'Add Line Chart Report'),
+                                        'Line Chart',
+                                        font_awesome='fas fa-chart-line'),
                                MenuItem('advanced_report_builder:pie_chart_modal,-',
-                                        'Add Pie Chart Report'),
+                                        'Pie Chart',
+                                        font_awesome='fas fa-chart-pie'),
                                MenuItem('advanced_report_builder:funnel_chart_modal,-',
-                                        'Add Funnel Chart Report')]),
+                                        'Funnel Chart',
+                                        font_awesome='fas fa-filter'),
+                               MenuItem('advanced_report_builder:kanban_modal,-',
+                                        'Kanban',
+                                        font_awesome='fas fa-chart-bar fa-flip-vertical'),
+                               ]),
         )
 
     @staticmethod
@@ -44,6 +55,7 @@ class ViewReports(MainIndices):
             'slug',
             'name',
             'instance_type',
+            'OutputTypeIcon',
             'OutputType',
             ColumnLink(column_name='view_report',
                        field='name',
@@ -112,6 +124,9 @@ class ViewReport(MainMenu, ViewReportBase):
                        'piechartreport': ViewPieChartReport,
                        'funnelchartreport': ViewFunnelChartReport,
                        }
+
+    def report_not_found(self):
+        return redirect('report_builder_examples:index')
 
     def redirect_url(self):
         return redirect('report_builder_examples:view_report', slug=self.report.slug)

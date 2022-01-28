@@ -4,6 +4,7 @@ from advanced_report_builder.views.bar_charts import BarChartModal, BarChartFiel
 from advanced_report_builder.views.dashboard import DashboardReportModal, DashboardModal, DashboardAddReportModal
 from advanced_report_builder.views.datatables import TableModal, TableFieldModal, TablePivotModal
 from advanced_report_builder.views.funnel_charts import FunnelChartModal, FunnelChartFieldModal
+from advanced_report_builder.views.kanban import KanbanModal, KanbanLaneModal
 from advanced_report_builder.views.line_charts import LineChartModal, LineChartFieldModal
 from advanced_report_builder.views.pie_charts import PieChartModal, PieChartFieldModal
 from advanced_report_builder.views.single_values import SingleValueModal
@@ -29,6 +30,9 @@ urlpatterns = [
 
     path('funnel-chart/modal/<str:slug>/', FunnelChartModal.as_view(), name='funnel_chart_modal'),
     path('funnel-chart/modal/field/<str:slug>/', FunnelChartFieldModal.as_view(), name='funnel_chart_field_modal'),
+
+    path('kanban/modal/<str:slug>/', KanbanModal.as_view(), name='kanban_modal'),
+    path('kanban/modal/lane/<str:slug>/', KanbanLaneModal.as_view(), name='kanban_lane_modal'),
 
     path('dashboard/report/<str:slug>/', DashboardReportModal.as_view(), name='dashboard_report_modal'),
     path('dashboard/<str:slug>/', DashboardModal.as_view(), name='dashboard_modal'),

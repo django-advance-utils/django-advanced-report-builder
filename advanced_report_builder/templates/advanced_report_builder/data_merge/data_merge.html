@@ -1,0 +1,81 @@
+<textarea name="{{ widget.name }}" id="{{ widget.attrs.id }}_textarea">{{ widget.value }}</textarea>
+
+<script>
+
+    function setup_tiny_{{ widget.attrs.id }}() {
+        tinymce.init({
+            selector: '#{{ widget.attrs.id }}_textarea',
+            height: 150,
+            forced_root_block: '',
+            force_br_newlines: true,
+            force_p_newlines: false,
+            convert_newlines_to_brs: true,
+            branding: false,
+            cleanup: true,
+            plugins: [
+                'searchreplace',
+                'code'
+            ],
+            toolbar: 'bold italic | bullist numlist | standardparagraphbutton',
+            menubar: false,
+            content_css: [
+                '//fonts.googleapis.com/css?family=Lato:300,300i,400,400i'],
+
+            setup: function (editor) {
+                 django_modal.send_inputs({'ajax': 'get_data_merge_menu', 'field_auto_id': '{{ widget.attrs.id }}'});
+            }
+        });
+    }
+
+
+function reset_{{ widget.attrs.id }}() {
+    var t = tinymce.get('{{ widget.attrs.id }}_textarea')
+    if(t != null) {
+        tinymce.get('{{ widget.attrs.id }}_textarea').remove();
+    }
+
+    setup_tiny_{{ widget.attrs.id }}();
+
+}
+
+    function build_menu(editor, menu_data) {
+        $.each(menu_data, function (index, menu) {
+
+            if ('menu' in menu) {
+                build_menu(editor, menu['menu']);
+            } else {
+                menu['onclick'] = function () {
+                    editor.insertContent('{% templatetag openvariable %} ' + menu['code'] + ' {% templatetag closevariable %}');
+                }
+            }
+        });
+        return menu_data;
+    }
+    reset_{{ widget.attrs.id }}();
+
+     ajax_helpers.command_functions.build_data_merge_menu_{{ widget.attrs.id }} = function (command) {
+        var editor = tinymce.get('{{ widget.attrs.id }}_textarea');
+        let menus = jQuery.parseJSON(command.data);
+
+        $.each(menus, function( index, menu ) {
+            var menu_data = build_menu(editor, menu['menu']);
+            editor.addButton(menu['code'], {
+                    type: 'menubutton',
+                    text: menu['text'],
+                    icon: false,
+                    menu: menu_data
+                });
+            var button=editor.buttons[menu['code']];
+            //find the buttongroup in the toolbar found in the panel of the theme
+            var bg=editor.theme.panel.find('toolbar buttongroup')[0];
+            //without this, the buttons look weird after that
+            bg._lastRepaintRect=bg._layoutRect;
+            //append the button to the group
+            bg.append(button);
+        })
+     };
+
+</script>
+
+
+

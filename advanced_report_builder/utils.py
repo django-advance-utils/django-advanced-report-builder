@@ -1,7 +1,9 @@
+from crispy_forms.layout import HTML, Div
 from django.conf import settings
 from django.utils.module_loading import import_string
 from django_datatables.columns import ColumnNameError
 from django_datatables.datatables import ColumnInitialisor
+from django_modals.helper import show_modal
 
 from advanced_report_builder.exceptions import ReportError
 
@@ -68,3 +70,10 @@ def get_django_field(base_model, field):
             column_initialisor.get_columns()
             django_field = column_initialisor.django_field
     return django_field, col_type_override, columns
+
+
+def crispy_modal_link_args(modal_name, text, *args, div=False, div_classes='', button_classes='', font_awesome=None):
+    link = HTML(show_modal(modal_name, *args, button=text, button_classes=button_classes, font_awesome=font_awesome))
+    if div:
+        link = Div(link, css_class=div_classes)
+    return link

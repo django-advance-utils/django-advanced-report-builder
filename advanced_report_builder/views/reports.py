@@ -8,6 +8,7 @@ from advanced_report_builder.utils import split_slug
 from advanced_report_builder.views.bar_charts import BarChartView
 from advanced_report_builder.views.datatables import TableView
 from advanced_report_builder.views.funnel_charts import FunnelChartView
+from advanced_report_builder.views.kanban import KanbanView
 from advanced_report_builder.views.line_charts import LineChartView
 from advanced_report_builder.views.pie_charts import PieChartView
 from advanced_report_builder.views.single_values import SingleValueView
@@ -21,6 +22,7 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
              'linechartreport': LineChartView,
              'piechartreport': PieChartView,
              'funnelchartreport': FunnelChartView,
+             'kanbanreport': KanbanView,
              }
     views_overrides = {}
 
@@ -39,13 +41,16 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         if self.report is None:
             self.report = self.model.objects.filter(slug_alias=slug['pk']).first()
             if self.report is None:
-                raise Http404
+                return self.report_not_found()
             else:
                 redirect_url = self.redirect_url()
                 if redirect_url:
                     return redirect_url
 
         return super().dispatch(request, *args, **kwargs)
+
+    def report_not_found(self):
+        raise Http404
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

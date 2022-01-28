@@ -2,7 +2,6 @@ import json
 
 from crispy_forms.bootstrap import StrictButton
 from django.apps import apps
-from django.db.models.fields.related_descriptors import ReverseOneToOneDescriptor
 from django.forms import CharField
 from django.shortcuts import get_object_or_404
 from django_datatables.datatables import ColumnInitialisor
@@ -36,6 +35,7 @@ class QueryBuilderModalBaseMixin:
 
         report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=report_type_id)
         if report_builder_fields is None:
+            # noinspection PyUnresolvedReferences
             return self.command_response()
         query_builder_filters = []
         self._get_query_builder_fields(base_model=base_model,
