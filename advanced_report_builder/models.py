@@ -261,6 +261,12 @@ class KanbanReportLane(TimeStampedModel):
         self.set_order_field(extra_filters={'kanban_report': self.kanban_report})
         return super().save(*args, **kwargs)
 
+    def get_base_modal(self):
+        return self.report_type.content_type.model_class()
+
+    class Meta:
+        ordering = ('name',)
+
 
 class Dashboard(TimeStampedModel):
 

@@ -1,4 +1,5 @@
 from crispy_forms.layout import HTML, Div
+from django.apps import apps
 from django.conf import settings
 from django.utils.module_loading import import_string
 from django_datatables.columns import ColumnNameError
@@ -77,3 +78,4 @@ def crispy_modal_link_args(modal_name, text, *args, div=False, div_classes='', b
     if div:
         link = Div(link, css_class=div_classes)
     return link
+

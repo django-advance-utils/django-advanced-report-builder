@@ -1,0 +1,16 @@
+<div>
+    <h1 id="{{ datatable.table_id }}"></h1>
+</div>
+<script>
+    (function () {
+
+        var table = {{ datatable.model_table_setup }};
+        $.each(table.data, function( index, card ) {
+            var html = '<div class="alert-success">';
+            html += '<h5>' + card[0] + '</h5>'
+            html += '<h5>' + card[1] + '</h5>'
+            html += '</div>';
+            $('#' + table.table_id).append(html);
+        })
+    })();
+</script>

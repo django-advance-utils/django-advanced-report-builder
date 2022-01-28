@@ -22,18 +22,18 @@ class QueryBuilderModelForm(ModelCrispyForm):
 class QueryBuilderModalBaseMixin:
 
     @staticmethod
-    def get_report_builder_fields(report_type_id):
+    def get_report_builder_class(report_type_id):
         if not report_type_id:
             return None, None
 
         report_type = get_object_or_404(ReportType, pk=report_type_id)
         base_model = report_type.content_type.model_class()
-        report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
-        return report_builder_fields, base_model
+        report_builder_class = getattr(base_model, report_type.report_builder_class_name, None)
+        return report_builder_class, base_model
 
     def get_query_builder_report_type_field(self, report_type_id):
 
-        report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=report_type_id)
+        report_builder_fields, base_model = self.get_report_builder_class(report_type_id=report_type_id)
         if report_builder_fields is None:
             # noinspection PyUnresolvedReferences
             return self.command_response()
@@ -127,19 +127,19 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                 if include_extra_query:
                     form.fields['extra_query_data'].initial = self.report_query.extra_query
 
-    def _get_fields(self, base_model, fields, tables, report_builder_fields,
+    def _get_fields(self, base_model, fields, tables, report_builder_class,
                     prefix='', title_prefix='', title=None, colour=None,
                     previous_base_model=None, selected_field_id=None, for_select2=False,
                     all_fields=False, pivot_fields=None):
         if title is None:
-            title = report_builder_fields.title
+            title = report_builder_class.title
         if colour is None:
-            colour = report_builder_fields.colour
+            colour = report_builder_class.colour
 
         tables.append({'name': title,
                        'colour': colour})
 
-        for report_builder_field in report_builder_fields.fields:
+        for report_builder_field in report_builder_class.fields:
             django_field, col_type_override, columns = get_django_field(base_model=base_model,
                                                                         field=report_builder_field)
             for column in columns:
@@ -152,25 +152,25 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                         else:
                             fields.append({'field': full_id,
                                            'label': title_prefix + column.title,
-                                           'colour': report_builder_fields.colour})
+                                           'colour': report_builder_class.colour})
 
         if not for_select2 and pivot_fields is not None:
-            for pivot_field in report_builder_fields.pivot_fields:
+            for pivot_field in report_builder_class.pivot_fields:
                 full_id = prefix + pivot_field['field']
                 pivot_fields.append({'field': full_id,
                                      'label': title_prefix + pivot_field['title'],
-                                     'colour': report_builder_fields.colour})
+                                     'colour': report_builder_class.colour})
 
-        for include in report_builder_fields.includes:
+        for include in report_builder_class.includes:
             app_label, model, report_builder_fields_str = include['model'].split('.')
 
             new_model = apps.get_model(app_label, model)
             if new_model != previous_base_model:
-                new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
+                new_report_builder_class = getattr(new_model, report_builder_fields_str, None)
                 self._get_fields(base_model=new_model,
                                  fields=fields,
                                  tables=tables,
-                                 report_builder_fields=new_report_builder_fields,
+                                 report_builder_class=new_report_builder_class,
                                  prefix=f"{prefix}{include['field']}__",
                                  title_prefix=f"{title_prefix}{include['title']} -> ",
                                  title=include.get('title'),
@@ -183,19 +183,19 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
 
     def ajax_get_fields(self, **kwargs):
         report_type_id = kwargs['report_type']
-        report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=report_type_id)
+        report_builder_fields, base_model = self.get_report_builder_class(report_type_id=report_type_id)
         fields = []
         tables = []
         self._get_fields(base_model=base_model,
                          fields=fields,
                          tables=tables,
-                         report_builder_fields=report_builder_fields)
+                         report_builder_class=report_builder_fields)
         return self.command_response('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
 
-    def _get_date_fields(self, base_model, fields, report_builder_fields,
+    def _get_date_fields(self, base_model, fields, report_builder_class,
                          prefix='', title_prefix='', selected_field_id=None, previous_base_model=None):
 
-        for report_builder_field in report_builder_fields.fields:
+        for report_builder_field in report_builder_class.fields:
             django_field, _, columns = get_django_field(base_model=base_model, field=report_builder_field)
             for column in columns:
                 if isinstance(django_field, DATE_FIELDS):
@@ -204,14 +204,14 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                         fields.append({'id': full_id,
                                        'text': title_prefix + column.title})
 
-        for include in report_builder_fields.includes:
+        for include in report_builder_class.includes:
             app_label, model, report_builder_fields_str = include['model'].split('.')
             new_model = apps.get_model(app_label, model)
             if new_model != previous_base_model:
-                new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
+                new_report_builder_class = getattr(new_model, report_builder_fields_str, None)
                 self._get_date_fields(base_model=new_model,
                                       fields=fields,
-                                      report_builder_fields=new_report_builder_fields,
+                                      report_builder_class=new_report_builder_class,
                                       prefix=f"{include['field']}__",
                                       title_prefix=f"{include['title']} -> ",
                                       previous_base_model=base_model)

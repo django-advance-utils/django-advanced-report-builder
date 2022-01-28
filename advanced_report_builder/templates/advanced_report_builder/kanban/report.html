@@ -2,31 +2,63 @@
 {% load ajax_helpers %}
 <style>
 
-    .dashboard-tile {
-        background-color: #fff;
-        color: #555;
-        margin-bottom: 15px;
-        padding: 10px;
-        -webkit-border-radius: 3px;
-        -moz-border-radius: 3px;
-        -ms-border-radius: 3px;
-        -o-border-radius: 3px;
-        border-radius: 3px;
+    .kanban_summary td {
+        padding: 2px 5px;
+    }
+
+    .kanban_summary div {
+        font-size: 10px;
+        padding: 8px;
+        margin-top: 5px;
+        margin-bottom: 5px;
+
+    }
+
+    .kanban_summary h5 {
+        font-size: 15px;
+        font-weight: bold;
+    }
+
+    .kanban_summary h6 {
+        font-size: 12px;
     }
 </style>
+
+
 {% lib_include 'datatable' module='django_datatables.includes' %}
 
-        <div class="card">
-            <div class="card-header">
-                <div class="d-flex align-items-center">
-                    <h5 class="mr-auto">{{ title }}</h5>
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex align-items-center">
+            <h5 class="mr-auto">{{ title }}</h5>
 
-                    {% block button_menu %}{{ menus.button_menu.render }}{% endblock %}
-                </div>
-            </div>
-            <div class="dashboard-tile detail" style="background-color: {% if single_value_report.tile_colour %}#{{ single_value_report.tile_colour }}{% else %}#23527c{% endif %}; color: white;">
-                <div class="content" style="padding: 2px;">
-                    {{ datatable.render }}
-                </div>
+            {% block button_menu %}{{ menus.button_menu.render }}{% endblock %}
+        </div>
+    </div>
+    <div class="dashboard-tile detail">
+
+
+        <div class="content" style="padding: 2px;">
+
+            <div class="col-xs-12" style="overflow: auto;">
+                <table class="table table-bordered kanban_summary">
+                    <thead>
+                    <tr class="active">
+                        {% for lane in lanes %}
+                            <th class="col-xs-1 text-center">{{ lane.kanban_report_lane.name|safe }}</th>
+                        {% endfor %}
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        {% for lane in lanes %}
+                            <td>
+                                {{ lane.datatable.render }}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                </table>
             </div>
         </div>
+    </div>
+</div>

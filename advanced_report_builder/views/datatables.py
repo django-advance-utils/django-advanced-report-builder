@@ -202,7 +202,7 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         totals = {}
 
         report_builder_class = getattr(self.base_model,
-                                        self.table_report.report_type.report_builder_class_name, None)
+                                       self.table_report.report_type.report_builder_class_name, None)
 
         if len(report_builder_class.default_columns) > 0:
             fields += report_builder_class.default_columns
@@ -428,14 +428,14 @@ class TableModal(QueryBuilderModalBase):
 
     def ajax_get_fields(self, **kwargs):
         report_type_id = kwargs['report_type']
-        report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=report_type_id)
+        report_builder_class, base_model = self.get_report_builder_class(report_type_id=report_type_id)
         fields = []
         tables = []
         pivot_fields = []
         self._get_fields(base_model=base_model,
                          fields=fields,
                          tables=tables,
-                         report_builder_fields=report_builder_fields,
+                         report_builder_class=report_builder_class,
                          all_fields=True,
                          pivot_fields=pivot_fields)
 
@@ -566,7 +566,7 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
     def form_setup(self, form, *_args, **_kwargs):
 
         data = json.loads(base64.b64decode(self.slug['data']))
-        report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=self.slug['report_type_id'])
+        report_builder_fields, base_model = self.get_report_builder_class(report_type_id=self.slug['report_type_id'])
         django_field, col_type_override, _ = get_django_field(base_model=base_model, field=data['field'])
         if django_field is not None and isinstance(django_field, NUMBER_FIELDS):
             form.add_trigger('annotations_type', 'onchange', [

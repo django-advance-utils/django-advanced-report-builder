@@ -1,10 +1,12 @@
 import json
+import re
 
 from ajax_helpers.mixins import AjaxHelpers
-from django.apps import apps
 from django.forms import CharField
 from django.http import JsonResponse
+from django.template import Template, Context, TemplateSyntaxError
 from django.views.generic import TemplateView
+from django_datatables.columns import ColumnBase
 from django_datatables.widgets import DataTableReorderWidget
 from django_menus.menu import MenuItem, MenuMixin
 from django_modals.datatables import EditColumn
@@ -14,16 +16,30 @@ from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.select2 import Select2Multiple, Select2
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
+from advanced_report_builder.data_merge.utils import get_menu_fields, get_data_merge_columns
 from advanced_report_builder.data_merge.widget import DataMergeWidget
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.models import KanbanReport, KanbanReportLane
-from advanced_report_builder.utils import crispy_modal_link_args, get_django_field
+from advanced_report_builder.utils import crispy_modal_link_args
+from advanced_report_builder.views.charts_base import ChartJSTable
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
+
+
+class DescriptionColumn(ColumnBase):
+    def row_result(self, data, _page_data):
+        html = self.options['html']
+        try:
+            template = Template(html)
+            context = Context(data)
+            return template.render(context)
+        except TemplateSyntaxError:
+            return 'Error in description'
 
 
 class KanbanView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
     number_field = ReportBuilderNumberColumn
     template_name = 'advanced_report_builder/kanban/report.html'
+    chart_js_table = ChartJSTable
 
     def __init__(self, *args, **kwargs):
         self.chart_report = None
@@ -31,14 +47,12 @@ class KanbanView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
 
     def setup_menu(self):
         super().setup_menu()
-
         if self.dashboard_report and self.enable_edit:
             report_menu = self.pod_dashboard_edit_menu()
         elif self.dashboard_report and not self.enable_edit:
             report_menu = self.pod_dashboard_view_menu()
         else:
             report_menu = self.pod_report_menu()
-
         self.add_menu('button_menu', 'button_group').add_items(
             *report_menu,
             *self.queries_menu(),
@@ -49,13 +63,31 @@ class KanbanView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         self.chart_report = self.report.kanbanreport
         return super().dispatch(request, *args, **kwargs)
 
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
         context['title'] = self.get_title()
-        # self.table.single_value = self.chart_report
-        # self.table.datatable_template = 'advanced_report_builder/single_values/middle.html'
+        kanban_report_lanes = self.chart_report.kanbanreportlane_set.all()
+        lanes = []
+        for kanban_report_lane in kanban_report_lanes:
+            base_model = kanban_report_lane.get_base_modal()
+            table = self.chart_js_table(model=base_model)
+
+            report_builder_class = getattr(base_model, kanban_report_lane.report_type.report_builder_class_name, None)
+
+            columns = get_data_merge_columns(base_model=base_model,
+                                             report_builder_class=report_builder_class,
+                                             html=kanban_report_lane.description)
+
+            table.add_columns(kanban_report_lane.heading_field,
+                              DescriptionColumn(column_name='test', field='', html=kanban_report_lane.description),
+                              *columns,
+                              )
+            table.datatable_template = 'advanced_report_builder/kanban/middle.html'
+            lanes.append({'datatable': table,
+                          'kanban_report_lane': kanban_report_lane})
         context['kanban_report'] = self.chart_report
+        context['lanes'] = lanes
         return context
 
     def pod_dashboard_view_menu(self):
@@ -148,7 +180,7 @@ class KanbanLaneModal(QueryBuilderModalBase):
             self._get_fields(base_model=base_model,
                              fields=fields,
                              tables=tables,
-                             report_builder_fields=report_builder_fields,
+                             report_builder_class=report_builder_fields,
                              selected_field_id=form.instance.heading_field,
                              for_select2=True,
                              all_fields=True)
@@ -169,51 +201,27 @@ class KanbanLaneModal(QueryBuilderModalBase):
     def select2_heading_field(self, **kwargs):
         fields = []
         if kwargs['report_type'] != '':
-            report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=kwargs['report_type'])
+            report_builder_fields, base_model = self.get_report_builder_class(report_type_id=kwargs['report_type'])
             fields = []
             tables = []
             self._get_fields(base_model=base_model,
                              fields=fields,
                              tables=tables,
-                             report_builder_fields=report_builder_fields,
+                             report_builder_class=report_builder_fields,
                              for_select2=True,
                              all_fields=True)
 
         return JsonResponse({'results': fields})
 
-    def _get_menu_fields(self, base_model, menus, report_builder_fields, code_prefix='', previous_base_model=None):
-
-        for report_builder_field in report_builder_fields.fields:
-            django_field, col_type_override, columns = get_django_field(base_model=base_model,
-                                                                        field=report_builder_field)
-            for column in columns:
-                full_id = code_prefix + column.column_name
-                menus.append({'code': full_id, 'text': column.title})
-
-        for include in report_builder_fields.includes:
-            app_label, model, report_builder_fields_str = include['model'].split('.')
-
-            new_model = apps.get_model(app_label, model)
-            if new_model != previous_base_model:
-                new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
-                title = new_report_builder_fields.title
-                menu = []
-                self._get_menu_fields(base_model=new_model,
-                                      menus=menu,
-                                      report_builder_fields=new_report_builder_fields,
-                                      code_prefix=f"{code_prefix}{include['field']}__",
-                                      previous_base_model=base_model)
-                menus.append({'text': title, 'menu': menu})
-
     def ajax_get_data_merge_menu(self, **kwargs):
         field_auto_id = kwargs['field_auto_id']
         menus = []
         if kwargs['report_type'] != '':
-            report_builder_fields, base_model = self.get_report_builder_fields(report_type_id=kwargs['report_type'])
+            report_builder_class, base_model = self.get_report_builder_class(report_type_id=kwargs['report_type'])
 
-            self._get_menu_fields(base_model=base_model,
-                                  menus=menus,
-                                  report_builder_fields=report_builder_fields)
+            get_menu_fields(base_model=base_model,
+                            report_builder_class=report_builder_class,
+                            menus=menus)
 
             menus = [{'code': 'data_merge',
                       'text': 'Data Merge',
