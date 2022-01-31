@@ -202,7 +202,8 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                                 report_builder_class=report_builder_class,
                                 selected_field_id=selected_field_id,
                                 field_types=DATE_FIELDS,
-                                for_select2=True)
+                                for_select2=True,
+                                allow_annotations_fields=False)
 
     def _get_number_fields(self, base_model, fields, report_builder_class, selected_field_id=None):
         return self._get_fields(base_model=base_model,
