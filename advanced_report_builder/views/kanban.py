@@ -83,6 +83,13 @@ class KanbanView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
                               *columns,
                               )
             table.datatable_template = 'advanced_report_builder/kanban/middle.html'
+
+            if kanban_report_lane.order_by_field:
+                if kanban_report_lane.order_by_ascending:
+                    table.order_by = [kanban_report_lane.order_by_field]
+                else:
+                    table.order_by = [f'-{kanban_report_lane.order_by_field}']
+
             lanes.append({'datatable': table,
                           'kanban_report_lane': kanban_report_lane})
         context['kanban_report'] = self.chart_report
