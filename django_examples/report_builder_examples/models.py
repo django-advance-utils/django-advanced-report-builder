@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Count, Sum
-from django_datatables.columns import ColumnLink, DatatableColumn, CurrencyPenceColumn, ColumnBase
+from django_datatables.columns import ColumnLink, DatatableColumn, CurrencyPenceColumn, ColumnBase, ManyToManyColumn
 from django_datatables.model_def import DatatableModel
 from report_builder_examples.report_overrides import CustomDateColumn
 from time_stamped_model.models import TimeStampedModel
@@ -38,11 +38,6 @@ class Sector(TimeStampedModel):
         default_multiple_column_text = '{name}'
         default_multiple_column_fields = ['name']
 
-        includes = [{'field': 'companysectors',
-                     'title': 'Company',
-                     'model': 'report_builder_examples.Company.ReportBuilder',
-                     'reversed': True}]
-
 
 class Company(TimeStampedModel):
     name = models.CharField(max_length=80)
@@ -60,6 +55,8 @@ class Company(TimeStampedModel):
 
         # people = {'annotations': {'people': Count('person__id')}}
         collink_1 = ColumnLink(title='Defined in Model', field='name', url_name='report_builder_examples:example_link')
+        # sector_names = ManyToManyColumn(column_name='sectors', field='sectors__name')
+        sector_names = ManyToManyColumn(field='sectors__name')
 
         class Tags(DatatableColumn):
             def setup_results(self, request, all_results):
@@ -90,6 +87,7 @@ class Company(TimeStampedModel):
                   'people',
                   'collink_1',
                   'payments',
+                  'sector_names',
                   'created',
                   'modified',
                   'Tags',

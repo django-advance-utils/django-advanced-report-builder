@@ -8,6 +8,7 @@ from report_builder_examples.models import UserProfile
 @admin.register(Sector)
 class SectorAdmin(admin.ModelAdmin):
     list_display = ('name',
+                    'type',
                     )
 
 

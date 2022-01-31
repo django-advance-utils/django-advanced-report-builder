@@ -54,11 +54,11 @@ class QueryBuilderModalBaseMixin:
             column_initialisor = ColumnInitialisor(start_model=base_model, path=report_builder_field)
             columns = column_initialisor.get_columns()
             for column in columns:
-                if column_initialisor.django_field is not None:
-                    field_types.get_filter(query_builder_filters=query_builder_filters,
-                                           django_field=column_initialisor.django_field,
-                                           field=prefix + column.column_name,
-                                           title=title_prefix + column.title)
+                field_types.get_filter(query_builder_filters=query_builder_filters,
+                                       django_field=column_initialisor.django_field,
+                                       field=prefix + column.column_name,
+                                       title=title_prefix + column.title,
+                                       column=column)
         for include in report_builder_fields.includes:
             app_label, model, report_builder_fields_str = include['model'].split('.')
             new_model = apps.get_model(app_label, model)
