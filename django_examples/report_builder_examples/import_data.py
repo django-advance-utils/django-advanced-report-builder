@@ -86,7 +86,8 @@ def import_tallies(path):
 def import_report_types():
 
     report_types = [['payment', 'Payment', 'ReportBuilder'],
-                    ['tally', 'Tally', 'ReportBuilder']]
+                    ['tally', 'Tally', 'ReportBuilder'],
+                    ['company', 'Company', 'ReportBuilder']]
 
     for report_type in report_types:
         content_type = ContentType.objects.get(app_label='report_builder_examples', model=report_type[0])
