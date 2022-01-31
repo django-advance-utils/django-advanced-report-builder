@@ -209,9 +209,9 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
 
         if not self.table_report.table_fields:
             return fields, totals, first_field_name
-        table_fields = self.table_report.get_table_fields()
+        table_fields = self.table_report.table_fields
 
-        pivot_fields = self.table_report.get_pivot_fields()
+        pivot_fields = self.table_report.pivot_fields
 
         fields_used = set()
         for index, table_field in enumerate(table_fields):
@@ -414,7 +414,8 @@ class TableModal(QueryBuilderModalBase):
         table_report = form.save()
 
         if not self.report_query and form.cleaned_data['query_data']:
-            ReportQuery(query=form.cleaned_data['query_data'],
+            query = form.cleaned_data['query_data']
+            ReportQuery(query=query,
                         report=table_report).save()
         elif form.cleaned_data['query_data']:
             self.report_query.query = form.cleaned_data['query_data']

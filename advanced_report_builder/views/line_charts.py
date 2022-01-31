@@ -161,24 +161,6 @@ class LineChartModal(QueryBuilderModalBase):
                         template='advanced_report_builder/query_builder.html'),
                 )
 
-    def form_valid(self, form):
-        line_chart_report = form.save()
-
-        if not self.report_query and (form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']):
-            ReportQuery(query=form.cleaned_data['query_data'],
-                        extra_query=form.cleaned_data['extra_query_data'],
-                        report=line_chart_report).save()
-        elif form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']:
-            self.report_query.extra_query = form.cleaned_data['extra_query_data']
-            self.report_query.query = form.cleaned_data['query_data']
-            if self.show_query_name:
-                self.report_query.name = form.cleaned_data['query_name']
-            self.report_query.save()
-        elif self.report_query:
-            self.report_query.delete()
-
-        return self.command_response('reload')
-
     def select2_date_field(self, **kwargs):
         fields = []
         if kwargs['report_type'] != '':

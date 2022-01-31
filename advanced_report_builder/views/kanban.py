@@ -77,11 +77,12 @@ class KanbanView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
             columns = get_data_merge_columns(base_model=base_model,
                                              report_builder_class=report_builder_class,
                                              html=kanban_report_lane.description)
+            if kanban_report_lane.heading_field is not None:
+                table.add_columns(kanban_report_lane.heading_field)
 
-            table.add_columns(kanban_report_lane.heading_field,
-                              DescriptionColumn(column_name='test', field='', html=kanban_report_lane.description),
-                              *columns,
-                              )
+            if kanban_report_lane.description is not None:
+                table.add_columns(DescriptionColumn(column_name='test', field='', html=kanban_report_lane.description))
+            table.add_columns(*columns)
             table.datatable_template = 'advanced_report_builder/kanban/middle.html'
 
             if kanban_report_lane.order_by_field:
@@ -90,11 +91,21 @@ class KanbanView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
                 else:
                     table.order_by = [f'-{kanban_report_lane.order_by_field}']
 
+            table.query_data = kanban_report_lane.query_data
+            table.view_filter = self.view_filter
             lanes.append({'datatable': table,
                           'kanban_report_lane': kanban_report_lane})
+
         context['kanban_report'] = self.chart_report
         context['lanes'] = lanes
         return context
+
+    def view_filter(self, query, table):
+        if not table.query_data:
+            return query
+
+        return self.process_query_filters(query=query,
+                                          search_filter_data= table.query_data)
 
     def pod_dashboard_view_menu(self):
         return []
@@ -255,3 +266,7 @@ class KanbanLaneModal(QueryBuilderModalBase):
 
         return self.command_response(f'build_data_merge_menu_{field_auto_id}',
                                      data=json.dumps(menus))
+
+    def form_valid(self, form):
+        form.save()
+        return self.command_response('reload')

@@ -31,12 +31,11 @@ class FilterQueryMixin:
         if not search_filter_data:
             return []
 
-        query_data = json.loads(search_filter_data)
-        query_list = self._process_group(query_data=query_data)
+        query_list = self._process_group(query_data=search_filter_data)
         if extra_filter:
             query_list.append(extra_filter)
 
-        reduce_by = self._format_group_conditions(query_data['condition'])
+        reduce_by = self._format_group_conditions(search_filter_data['condition'])
 
         if query_list:
             return reduce(reduce_by, query_list)

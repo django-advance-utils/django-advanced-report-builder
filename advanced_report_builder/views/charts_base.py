@@ -128,8 +128,8 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
 
         if not self.chart_report.fields:
             return fields
-        bar_chart_fields = json.loads(self.chart_report.fields)
-        for index, table_field in enumerate(bar_chart_fields, 1):
+        chart_fields = self.chart_report.fields
+        for index, table_field in enumerate(chart_fields, 1):
             field = table_field['field']
 
             django_field, col_type_override, _ = get_django_field(base_model=base_model, field=field)
@@ -194,7 +194,8 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         pass
 
     def get_number_field(self, annotations_type, index, table_field, data_attr, fields, col_type_override,
-                         extra_filter=None, title_suffix='', multiple_index=0, decimal_places=None):
+                         extra_filter=None, title_suffix='', multiple_index=0, decimal_places=None,
+                         convert_currency_fields=False):
         field_name = table_field['field']
         annotation_filter = None
         if annotations_type:
@@ -211,11 +212,11 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
             if model_parts:
                 if isinstance(field.field, str):
                     field.field = '__'.join(model_parts + [field.field])
-
-            if isinstance(field, CurrencyPenceColumn):
-                field.__class__ = ReportBuilderCurrencyPenceColumn
-            elif isinstance(field, CurrencyColumn):
-                field.__class__ = ReportBuilderCurrencyColumn
+            if convert_currency_fields:
+                if isinstance(field, CurrencyPenceColumn):
+                    field.__class__ = ReportBuilderCurrencyPenceColumn
+                elif isinstance(field, CurrencyColumn):
+                    field.__class__ = ReportBuilderCurrencyColumn
 
             if field.annotations:
                 if not self.use_annotations:

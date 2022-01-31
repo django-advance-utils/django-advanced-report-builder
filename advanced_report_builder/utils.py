@@ -53,6 +53,7 @@ def get_custom_report_builder():
 
 
 def get_django_field(base_model, field):
+
     original_column_initialisor = ColumnInitialisor(start_model=base_model, path=field)
     try:
         columns = original_column_initialisor.get_columns()
@@ -64,12 +65,18 @@ def get_django_field(base_model, field):
     if django_field is None and columns:
         col_type_override = columns[0]
         if isinstance(col_type_override.field, str):
-            path_parts = field.split('__')[:-1]
-            path_parts.append(col_type_override.field.split('__')[-1])
-            path = '__'.join(path_parts)
-            column_initialisor = ColumnInitialisor(start_model=base_model, path=path)
-            column_initialisor.get_columns()
-            django_field = column_initialisor.django_field
+            if isinstance(field, str):
+                path_parts = field.split('__')[:-1]
+                path_parts.append(col_type_override.field.split('__')[-1])
+                path = '__'.join(path_parts)
+                column_initialisor = ColumnInitialisor(start_model=base_model, path=path)
+                column_initialisor.get_columns()
+                django_field = column_initialisor.django_field
+            else:
+                column_initialisor = ColumnInitialisor(start_model=base_model, path=col_type_override.field)
+                column_initialisor.get_columns()
+                django_field = column_initialisor.django_field
+
     return django_field, col_type_override, columns
 
 

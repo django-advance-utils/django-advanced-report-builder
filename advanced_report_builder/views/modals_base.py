@@ -2,7 +2,7 @@ import json
 
 from crispy_forms.bootstrap import StrictButton
 from django.apps import apps
-from django.forms import CharField
+from django.forms import CharField, JSONField
 from django.shortcuts import get_object_or_404
 from django_datatables.datatables import ColumnInitialisor
 from django_modals.forms import ModelCrispyForm
@@ -106,10 +106,10 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
             return self.command_response()
 
     def add_query_data(self, form, include_extra_query=True):
-        form.fields['query_data'] = CharField(required=False, label='Filter')
+        form.fields['query_data'] = JSONField(required=False, label='Filter')
 
         if include_extra_query:
-            form.fields['extra_query_data'] = CharField(required=False, label='Numerator filter')
+            form.fields['extra_query_data'] = JSONField(required=False, label='Numerator filter')
 
         if self.object.id:
             query_id = self.slug.get('query_id')
@@ -121,7 +121,7 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
             if self.report_query:
                 self.show_query_name = self.object.reportquery_set.count() > 1
                 if self.show_query_name:
-                    form.fields['query_data'] = CharField(required=True, initial=self.report_query.name)
+                    form.fields['query_name'] = CharField(required=True, initial=self.report_query.name)
 
                 form.fields['query_data'].initial = self.report_query.query
                 if include_extra_query:
@@ -212,3 +212,21 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                                 selected_field_id=selected_field_id,
                                 field_types=NUMBER_FIELDS,
                                 for_select2=True)
+
+    def form_valid(self, form):
+        chart_report = form.save()
+
+        if not self.report_query and (form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']):
+            ReportQuery(query=form.cleaned_data['query_data'],
+                        extra_query=form.cleaned_data['extra_query_data'],
+                        report=chart_report).save()
+        elif form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']:
+            self.report_query.extra_query = form.cleaned_data['extra_query_data']
+            self.report_query.query = form.cleaned_data['query_data']
+            if self.show_query_name:
+                self.report_query.name = form.cleaned_data['query_name']
+            self.report_query.save()
+        elif self.report_query:
+            self.report_query.delete()
+
+        return self.command_response('reload')

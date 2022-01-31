@@ -24,13 +24,31 @@ class UserProfile(AbstractUser):
 
 class Sector(TimeStampedModel):
     name = models.CharField(max_length=80)
+    type = models.PositiveSmallIntegerField(default=1)
+
+    def __str__(self):
+        return self.name
+
+    class ReportBuilder(ReportBuilderFields):
+        colour = '#00008b'
+        title = 'Sector'
+        fields = ['name',
+                  'type']
+        default_columns = ['.id']
+        default_multiple_column_text = '{name}'
+        default_multiple_column_fields = ['name']
+
+        includes = [{'field': 'companysectors',
+                     'title': 'Company',
+                     'model': 'report_builder_examples.Company.ReportBuilder',
+                     'reversed': True}]
 
 
 class Company(TimeStampedModel):
     name = models.CharField(max_length=80)
     active = models.BooleanField(default=False)
     importance = models.IntegerField(null=True)
-    sector = models.ForeignKey(Sector, blank=True, null=True, on_delete=models.CASCADE)
+    sectors = models.ManyToManyField(Sector, blank=True, related_name='companysectors')
 
     class Meta:
         verbose_name_plural = 'Companies'
@@ -70,7 +88,6 @@ class Company(TimeStampedModel):
                   'active',
                   'importance',
                   'people',
-                  ('sector__name', {'title': 'Sector Name'}),
                   'collink_1',
                   'payments',
                   'created',

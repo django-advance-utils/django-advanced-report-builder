@@ -43,7 +43,8 @@ class SingleValueView(ChartBaseView):
                                   table_field={'field': field, 'title': field},
                                   fields=fields,
                                   col_type_override=col_type_override,
-                                  decimal_places=self.chart_report.decimal_places)
+                                  decimal_places=self.chart_report.decimal_places,
+                                  convert_currency_fields=True)
         else:
             raise ReportError('not a number field')
 
@@ -313,24 +314,6 @@ class SingleValueModal(QueryBuilderModalBase):
 
     def select2_numerator(self, **kwargs):
         return self.select2_field(**kwargs)
-
-    def form_valid(self, form):
-        single_value_report = form.save()
-
-        if not self.report_query and (form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']):
-            ReportQuery(query=form.cleaned_data['query_data'],
-                        extra_query=form.cleaned_data['extra_query_data'],
-                        report=single_value_report).save()
-        elif form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']:
-            self.report_query.extra_query = form.cleaned_data['extra_query_data']
-            self.report_query.query = form.cleaned_data['query_data']
-            if self.show_query_name:
-                self.report_query.name = form.cleaned_data['query_name']
-            self.report_query.save()
-        elif self.report_query:
-            self.report_query.delete()
-
-        return self.command_response('reload')
 
     def clean(self, form, cleaned_data):
         if (cleaned_data['single_value_type'] not in [SingleValueReport.SINGLE_VALUE_TYPE_COUNT,

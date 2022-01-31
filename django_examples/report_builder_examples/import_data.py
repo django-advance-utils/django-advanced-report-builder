@@ -47,7 +47,8 @@ def import_companies(path):
                 for c in companies[1:]:
                     c.delete()
 
-            company = models.Company.objects.get_or_create(name=r['Company'])[0]
+            company = models.Company.objects.get_or_create(name=r['Company'],
+                                                           importance=random.randrange(0, 10))[0]
             models.Person.objects.get_or_create(company=company,
                                                 first_name=r['First Name'],
                                                 surname=r['Surname'],
@@ -87,7 +88,9 @@ def import_report_types():
 
     report_types = [['payment', 'Payment', 'ReportBuilder'],
                     ['tally', 'Tally', 'ReportBuilder'],
-                    ['company', 'Company', 'ReportBuilder']]
+                    ['company', 'Company', 'ReportBuilder'],
+                    ['sector', 'Sector', 'ReportBuilder'],
+                    ]
 
     for report_type in report_types:
         content_type = ContentType.objects.get(app_label='report_builder_examples', model=report_type[0])

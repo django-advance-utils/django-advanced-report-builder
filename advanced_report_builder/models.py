@@ -125,27 +125,15 @@ class ReportQuery(TimeStampedModel):
 
 
 class TableReport(Report):
-    table_fields = models.TextField(null=True, blank=True)
+    table_fields = models.JSONField(null=True, blank=True)
     has_clickable_rows = models.BooleanField(default=False)  # This is for standard tables.
-    pivot_fields = models.TextField(null=True, blank=True)
+    pivot_fields = models.JSONField(null=True, blank=True)
     page_length = models.PositiveSmallIntegerField(choices=((10, '10'),
                                                             (25, '25'),
                                                             (50, '50'),
                                                             (100, '100'),
                                                             (150, '150'),
                                                             (200, '200')), default=100)
-
-    def get_table_fields(self):
-        return json.loads(self.table_fields)
-
-    def has_pivot_data(self):
-        return self.pivot_fields is not None and self.pivot_fields != ''
-
-    def get_pivot_fields(self):
-        if self.has_pivot_data():
-            pivot_data = json.loads(self.pivot_fields)
-            return pivot_data
-        return None
 
 
 class SingleValueReport(Report):
@@ -178,8 +166,6 @@ class SingleValueReport(Report):
                                           self.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT]
 
 
-
-
 class BarChartReport(Report):
 
     BAR_CHART_ORIENTATION_VERTICAL = 1
@@ -194,7 +180,7 @@ class BarChartReport(Report):
     date_field = models.CharField(max_length=200)
     axis_value_type = models.PositiveSmallIntegerField(choices=ANNOTATIONS_CHOICES,
                                                        default=ANNOTATION_CHOICE_COUNT, null=True, blank=True)
-    fields = models.TextField(null=True, blank=True)
+    fields = models.JSONField(null=True, blank=True)
     x_label = models.CharField(max_length=200, blank=True, null=True)
     y_label = models.CharField(max_length=200, blank=True, null=True)
 
@@ -217,7 +203,7 @@ class LineChartReport(Report):
     date_field = models.CharField(max_length=200)
     axis_value_type = models.PositiveSmallIntegerField(choices=ANNOTATIONS_CHOICES,
                                                        default=ANNOTATION_CHOICE_COUNT, null=True, blank=True)
-    fields = models.TextField(null=True, blank=True)
+    fields = models.JSONField(null=True, blank=True)
     x_label = models.CharField(max_length=200, blank=True, null=True)
     y_label = models.CharField(max_length=200, blank=True, null=True)
     show_totals = models.BooleanField(default=False)
@@ -237,7 +223,7 @@ class PieChartReport(Report):
 
     axis_value_type = models.PositiveSmallIntegerField(choices=ANNOTATIONS_CHOICES,
                                                        default=ANNOTATION_CHOICE_COUNT, null=True, blank=True)
-    fields = models.TextField(null=True, blank=True)
+    fields = models.JSONField(null=True, blank=True)
     style = models.PositiveSmallIntegerField(choices=PIE_CHART_STYLE_CHOICES, default=PIE_CHART_STYLE_PIE)
 
     def is_pie_chart(self):
@@ -247,7 +233,7 @@ class PieChartReport(Report):
 class FunnelChartReport(Report):
     axis_value_type = models.PositiveSmallIntegerField(choices=ANNOTATIONS_CHOICES,
                                                        default=ANNOTATION_CHOICE_COUNT, null=True, blank=True)
-    fields = models.TextField(null=True, blank=True)
+    fields = models.JSONField(null=True, blank=True)
 
 
 class KanbanReport(Report):
