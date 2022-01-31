@@ -173,6 +173,12 @@ class SingleValueReport(Report):
     prefix = models.CharField(max_length=64, blank=True, null=True)
     decimal_places = models.IntegerField(default=0)
 
+    def is_percentage(self):
+        return self.single_value_type in [self.SINGLE_VALUE_TYPE_PERCENT,
+                                          self.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT]
+
+
+
 
 class BarChartReport(Report):
 

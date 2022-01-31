@@ -1,7 +1,6 @@
 <div>
     <h1 id="{{ datatable.table_id }}"></h1>
 </div>
-
 <script>
     (function () {
 
@@ -11,8 +10,10 @@
         for (var i = 0; i < table.initsetup.colOptions.length; i++) {
             var row = '';
             var prefix = '';
+            var suffix = '';
             if(i === table.initsetup.colOptions.length-1) {
                 prefix = '{{ datatable.single_value.prefix|default_if_none:"" }}';
+                {% if datatable.single_value.is_percentage %}suffix = '%';{% endif %}
             }
 
             if(i > 0) {
@@ -34,7 +35,7 @@
                 if (cell_data == null) {
                     cell_data = '';
                 }
-                row += '<span' + row_class + '>' + prefix + cell_data + '</span>';
+                row += '<span' + row_class + '>' + prefix + cell_data + suffix + '</span>';
             }
             $('#' + table.table_id).append(row);
         }

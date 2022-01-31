@@ -278,7 +278,7 @@ class SingleValueModal(QueryBuilderModalBase):
                                     report_builder_class=report_builder_fields,
                                     selected_field_id=form.instance.numerator)
 
-            form.fields['numerator'].widget = Select2(attrs={'ajax': True})
+        form.fields['numerator'].widget = Select2(attrs={'ajax': True})
         form.fields['numerator'].widget.select_data = numerator_fields
 
         self.add_query_data(form, include_extra_query=True)
