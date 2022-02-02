@@ -1,5 +1,6 @@
 from advanced_report_builder.views.bar_charts import BarChartView
 from advanced_report_builder.views.funnel_charts import FunnelChartView
+from advanced_report_builder.views.kanban import KanbanView
 from advanced_report_builder.views.line_charts import LineChartView
 from advanced_report_builder.views.pie_charts import PieChartView
 from advanced_report_builder.views.single_values import SingleValueView
@@ -57,6 +58,7 @@ class ViewReports(MainIndices):
             'instance_type',
             'OutputTypeIcon',
             'OutputType',
+            'version',
             ColumnLink(column_name='view_report',
                        field='name',
                        link_ref_column='slug',
@@ -115,6 +117,12 @@ class ViewFunnelChartReport(FunnelChartView):
                 *super().pod_report_menu()]
 
 
+class ViewKanbanViewReport(KanbanView):
+    def pod_report_menu(self):
+        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
+                *super().pod_report_menu()]
+
+
 class ViewReport(MainMenu, ViewReportBase):
     template_name = 'report_builder_examples/report.html'
     views_overrides = {'tablereport': ViewTableReport,
@@ -123,6 +131,7 @@ class ViewReport(MainMenu, ViewReportBase):
                        'linechartreport': ViewLineChartReport,
                        'piechartreport': ViewPieChartReport,
                        'funnelchartreport': ViewFunnelChartReport,
+                       'kanbanreport': ViewKanbanViewReport,
                        }
 
     def report_not_found(self):

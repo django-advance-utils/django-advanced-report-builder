@@ -42,6 +42,8 @@ class Report(TimeStampedModel):
     report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
     instance_type = models.CharField(null=True, max_length=255)
     report_tags = models.ManyToManyField(ReportTag, blank=True)
+    notes = models.TextField(null=True, blank=True)
+    version = models.PositiveSmallIntegerField(default=0)
 
     def __str__(self):
         return self.name
@@ -56,6 +58,8 @@ class Report(TimeStampedModel):
         return self.name
 
     def save(self, *args, **kwargs):
+        if self.version is not None:
+            self.version += 1
 
         slug_alias = self.slug
         self.make_new_slug(obj=Report, allow_dashes=False, on_edit=True)

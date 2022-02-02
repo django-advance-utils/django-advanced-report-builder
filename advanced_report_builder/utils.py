@@ -1,5 +1,4 @@
 from crispy_forms.layout import HTML, Div
-from django.apps import apps
 from django.conf import settings
 from django.utils.module_loading import import_string
 from django_datatables.columns import ColumnNameError
@@ -55,12 +54,21 @@ def get_custom_report_builder():
 def get_django_field(base_model, field):
 
     original_column_initialisor = ColumnInitialisor(start_model=base_model, path=field)
+
     try:
         columns = original_column_initialisor.get_columns()
     except ColumnNameError as e:
         raise ReportError(e)
     django_field = original_column_initialisor.django_field
     col_type_override = None
+    if columns:
+        col_type_override = columns[0]
+        if isinstance(field, str) and '__' in field and col_type_override.model_path == '':
+            # I think there is a bug in datatables where the model path isn't always set! hence the following code
+            field_parts = field.split('__')[:-1]
+            model_path = '__'.join(field_parts) + '__'
+            col_type_override.model_path = model_path
+            col_type_override.field = col_type_override.field  # actions the setter
 
     if django_field is None and columns:
         col_type_override = columns[0]

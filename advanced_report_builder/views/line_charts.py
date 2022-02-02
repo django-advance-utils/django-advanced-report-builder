@@ -17,7 +17,7 @@ from django_modals.widgets.select2 import Select2, Select2Multiple
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import ANNOTATION_VALUE_YEAR, \
     ANNOTATION_VALUE_QUARTER, ANNOTATION_VALUE_MONTH, ANNOTATION_VALUE_WEEK, ANNOTATION_VALUE_DAY
-from advanced_report_builder.models import LineChartReport, ReportQuery
+from advanced_report_builder.models import LineChartReport
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr
 from advanced_report_builder.views.charts_base import ChartBaseView, ChartJSTable, ChartBaseFieldForm
@@ -111,6 +111,7 @@ class LineChartModal(QueryBuilderModalBase):
                'report_tags': Select2Multiple}
 
     form_fields = ['name',
+                   'notes',
                    'report_type',
                    'report_tags',
                    'axis_value_type',
@@ -139,13 +140,14 @@ class LineChartModal(QueryBuilderModalBase):
 
         form.fields['date_field'].widget = Select2(attrs={'ajax': True})
         form.fields['date_field'].widget.select_data = date_fields
-
+        form.fields['notes'].widget.attrs['rows'] = 3
         self.add_query_data(form, include_extra_query=True)
 
         url = reverse('advanced_report_builder:line_chart_field_modal',
                       kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
 
         return ('name',
+                'notes',
                 'report_type',
                 'report_tags',
                 'axis_scale',

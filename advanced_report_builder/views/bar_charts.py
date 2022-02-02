@@ -72,6 +72,7 @@ class BarChartModal(QueryBuilderModalBase):
                'report_tags': Select2Multiple}
 
     form_fields = ['name',
+                   'notes',
                    'report_type',
                    'report_tags',
                    ('bar_chart_orientation', {'label': 'Orientation'}),
@@ -101,6 +102,7 @@ class BarChartModal(QueryBuilderModalBase):
                                   report_builder_class=report_builder_fields,
                                   selected_field_id=form.instance.date_field)
 
+        form.fields['notes'].widget.attrs['rows'] = 3
         form.fields['date_field'].widget = Select2(attrs={'ajax': True})
         form.fields['date_field'].widget.select_data = date_fields
 
@@ -109,6 +111,7 @@ class BarChartModal(QueryBuilderModalBase):
                       kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
 
         return ('name',
+                'notes',
                 'report_type',
                 'report_tags',
                 'bar_chart_orientation',

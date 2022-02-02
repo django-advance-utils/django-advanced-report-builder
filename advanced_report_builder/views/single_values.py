@@ -12,7 +12,7 @@ from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_CHOICE_SUM, \
     ANNOTATION_CHOICE_AVG
-from advanced_report_builder.models import SingleValueReport, ReportQuery
+from advanced_report_builder.models import SingleValueReport
 from advanced_report_builder.utils import get_django_field
 from advanced_report_builder.views.charts_base import ChartBaseView
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
@@ -225,6 +225,7 @@ class SingleValueModal(QueryBuilderModalBase):
                'report_tags': Select2Multiple}
 
     form_fields = ['name',
+                   'notes',
                    'report_type',
                    'report_tags',
                    ('single_value_type', {'label': 'Value type'}),
@@ -283,8 +284,9 @@ class SingleValueModal(QueryBuilderModalBase):
         form.fields['numerator'].widget.select_data = numerator_fields
 
         self.add_query_data(form, include_extra_query=True)
-
+        form.fields['notes'].widget.attrs['rows'] = 3
         return ('name',
+                'notes',
                 'report_type',
                 'report_tags',
                 'single_value_type',

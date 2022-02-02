@@ -1,8 +1,5 @@
 import base64
-import copy
 import json
-import operator
-from functools import reduce
 
 from ajax_helpers.mixins import AjaxHelpers
 from crispy_forms.bootstrap import StrictButton
@@ -12,19 +9,16 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils.safestring import mark_safe
 from django.views.generic import TemplateView
-from django_datatables.columns import CurrencyPenceColumn, CurrencyColumn
 from django_datatables.datatables import DatatableTable
 from django_menus.menu import MenuMixin, MenuItem
 from django_modals.forms import CrispyForm
 
-from advanced_report_builder.columns import ReportBuilderNumberColumn, ReportBuilderDateColumn, \
-    ReportBuilderCurrencyPenceColumn, ReportBuilderCurrencyColumn
+from advanced_report_builder.columns import ReportBuilderDateColumn
 from advanced_report_builder.exceptions import ReportError
-from advanced_report_builder.filter_query import FilterQueryMixin
-from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_FUNCTIONS, ANNOTATION_VALUE_FUNCTIONS, \
-    ANNOTATION_CHOICE_COUNT
+from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_VALUE_FUNCTIONS
 from advanced_report_builder.models import ReportType
 from advanced_report_builder.utils import split_slug, get_django_field, split_attr
+from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
 
 
 class ChartJSTable(DatatableTable):
@@ -47,11 +41,10 @@ class ChartJSTable(DatatableTable):
             raise ReportError(e)
 
 
-class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
-    number_field = ReportBuilderNumberColumn
+class ChartBaseView(AjaxHelpers, ReportUtilsMixin, MenuMixin, TemplateView):
+    # number_field = ReportBuilderNumberColumn
     date_field = ReportBuilderDateColumn
     chart_js_table = ChartJSTable
-    use_annotations = True
 
     template_name = 'advanced_report_builder/charts/report.html'
 
@@ -189,119 +182,6 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
             return "{:02x}{:02x}{:02x}".format(*colour_list)
         else:
             return colour
-
-    def set_extra_number_field_kwargs(self, data_attr, options, multiple_index):
-        pass
-
-    def get_number_field(self, annotations_type, index, table_field, data_attr, fields, col_type_override,
-                         extra_filter=None, title_suffix='', multiple_index=0, decimal_places=None,
-                         convert_currency_fields=False):
-        field_name = table_field['field']
-        annotation_filter = None
-        if annotations_type:
-            b64_filter = data_attr.get('filter')
-            if b64_filter:
-                _filter = base64.urlsafe_b64decode(b64_filter).decode('utf-8', 'ignore')
-                annotation_filter = self.process_filters(search_filter_data=_filter, extra_filter=extra_filter)
-            elif extra_filter:
-                annotation_filter = reduce(operator.and_, [extra_filter])
-        title = title_suffix + ' ' + table_field.get('title')
-        if col_type_override:
-            field = copy.deepcopy(col_type_override)
-            if field.model_path and isinstance(field.field, str) and field.field.startswith(field.model_path):
-                raw_field_name = field.field[len(field.model_path):]
-            else:
-                raw_field_name = field.field
-
-            if convert_currency_fields:
-                if isinstance(field, CurrencyPenceColumn):
-                    field.__class__ = ReportBuilderCurrencyPenceColumn
-                elif isinstance(field, CurrencyColumn):
-                    field.__class__ = ReportBuilderCurrencyColumn
-
-            if field.annotations:
-                if not self.use_annotations:
-                    field.options['calculated'] = True
-                    field.aggregations = col_type_override.annotations
-                number_function_kwargs = {}
-                if title:
-                    number_function_kwargs['title'] = title
-                self.set_extra_number_field_kwargs(data_attr=data_attr,
-                                                   options=field.options,
-                                                   multiple_index=multiple_index)
-
-            elif annotations_type == ANNOTATION_CHOICE_COUNT:
-                new_field_name = f'{annotations_type}_{field_name}_{index}'
-                number_function_kwargs = {}
-                if title:
-                    number_function_kwargs['title'] = title
-                function_type = ANNOTATION_FUNCTIONS[annotations_type]
-
-                number_function_kwargs['options'] = {}
-                self.set_extra_number_field_kwargs(data_attr=data_attr,
-                                                   options=number_function_kwargs['options'],
-                                                   multiple_index=multiple_index)
-                if annotation_filter:
-                    function = function_type(raw_field_name, filter=annotation_filter)
-                else:
-                    function = function_type(raw_field_name)
-                if self.use_annotations:
-                    number_function_kwargs['annotations'] = {new_field_name: function}
-                else:
-                    number_function_kwargs['options']['calculated'] = True
-                    number_function_kwargs['aggregations'] = {new_field_name: function}
-
-                number_function_kwargs.update({'field': new_field_name,
-                                               'column_name': field_name})
-                field = self.number_field(**number_function_kwargs)
-            else:
-                if title:
-                    field.title = title
-                new_field_name = f'{annotations_type}_{field_name}_{index}'
-                function_type = ANNOTATION_FUNCTIONS[annotations_type]
-                if annotation_filter:
-                    function = function_type(raw_field_name, filter=annotation_filter)
-                else:
-                    function = function_type(raw_field_name)
-                if self.use_annotations:
-                    field.annotations = {new_field_name: function}
-                else:
-                    field.options['calculated'] = True
-                    field.aggregations = {new_field_name: function}
-                field.annotations = {new_field_name: function}
-                field.field = new_field_name
-                self.set_extra_number_field_kwargs(data_attr=data_attr,
-                                                   options=field.options,
-                                                   multiple_index=multiple_index)
-            fields.append(field)
-        else:
-            number_function_kwargs = {'title': title}
-            decimal_places = data_attr.get('decimal_places', decimal_places)
-            if decimal_places:
-                number_function_kwargs['decimal_places'] = int(decimal_places)
-            if annotations_type:
-                number_function_kwargs['options'] = {}
-                self.set_extra_number_field_kwargs(data_attr=data_attr,
-                                                   options=number_function_kwargs['options'],
-                                                   multiple_index=multiple_index)
-                new_field_name = f'{annotations_type}_{field_name}_{index}'
-                function_type = ANNOTATION_FUNCTIONS[annotations_type]
-                if annotation_filter:
-                    function = function_type(field_name, filter=annotation_filter)
-                else:
-                    function = function_type(field_name)
-                if self.use_annotations:
-                    number_function_kwargs['annotations'] = {new_field_name: function}
-                else:
-                    number_function_kwargs['options']['calculated'] = True
-                    number_function_kwargs['aggregations'] = {new_field_name: function}
-                field_name = new_field_name
-            number_function_kwargs.update({'field': field_name,
-                                           'column_name': field_name,
-                                           'model_path': ''})
-            field = self.number_field(**number_function_kwargs)
-            fields.append(field)
-        return field_name
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -133,11 +133,12 @@ class KanbanModal(ModelFormModal):
     ajax_commands = ['datatable', 'button']
 
     form_fields = ['name',
+                   'notes',
                    'report_tags']
 
     def form_setup(self, form, *_args, **_kwargs):
         org_id = self.object.id if hasattr(self, 'object') else None
-
+        form.fields['notes'].widget.attrs['rows'] = 3
         if org_id is not None:
             form.fields['order'] = CharField(
                 required=False,

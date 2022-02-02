@@ -58,6 +58,7 @@ class FunnelChartModal(QueryBuilderModalBase):
     widgets = {'report_tags': Select2Multiple}
 
     form_fields = ['name',
+                   'notes',
                    'report_type',
                    'report_tags',
                    'axis_value_type',
@@ -72,6 +73,7 @@ class FunnelChartModal(QueryBuilderModalBase):
                       kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
 
         return ('name',
+                'notes',
                 'report_type',
                 'report_tags',
                 'axis_value_type',

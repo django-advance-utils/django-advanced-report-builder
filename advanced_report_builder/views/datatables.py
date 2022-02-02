@@ -19,20 +19,19 @@ from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.columns import ReportBuilderDateColumn, ReportBuilderNumberColumn
 from advanced_report_builder.exceptions import ReportError
-from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, \
-    DATE_FORMAT_TYPES, ANNOTATION_CHOICE_COUNT
-from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_FUNCTIONS, \
-    ANNOTATION_FUNCTIONS
+    DATE_FORMAT_TYPES
+from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_FUNCTIONS
 from advanced_report_builder.models import TableReport, ReportQuery
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr, get_django_field
 from advanced_report_builder.utils import split_slug
 from advanced_report_builder.views.charts_base import ChartBaseFieldForm
 from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin, QueryBuilderModalBase
+from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
 
 
-class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
+class TableView(AjaxHelpers, ReportUtilsMixin, MenuMixin, DatatableView):
     template_name = 'advanced_report_builder/datatables/report.html'
 
     date_field = ReportBuilderDateColumn
@@ -98,94 +97,6 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
 
         return field_name
 
-    def get_number_field(self, index, table_field, data_attr, fields, totals, col_type_override,
-                         extra_filter=None, title_suffix=''):
-        field_name = table_field['field']
-        css_class = None
-
-        annotations_type = int(data_attr.get('annotations_type', 0))
-        annotation_filter = None
-        if annotations_type != 0:
-            b64_filter = data_attr.get('filter')
-            if b64_filter:
-                _filter = base64.urlsafe_b64decode(b64_filter).decode('utf-8', 'ignore')
-                annotation_filter = self.process_filters(search_filter_data=_filter, extra_filter=extra_filter)
-        title = title_suffix + ' ' + table_field.get('title')
-        if col_type_override:
-            field = copy.deepcopy(col_type_override)
-            model_parts = field_name.split('__')[:-1]
-            # if model_parts:
-            #     if isinstance(field.field, str):
-            #         field.field = '__'.join(model_parts + [field.field])
-
-            if annotations_type == ANNOTATION_CHOICE_COUNT:
-                new_field_name = f'{annotations_type}_{field_name}_{index}'
-                number_function_kwargs = {}
-                if title:
-                    number_function_kwargs['title'] = title
-                function_type = ANNOTATION_FUNCTIONS[annotations_type]
-                if annotation_filter:
-                    function = function_type(field.field, filter=annotation_filter)
-                else:
-                    function = function_type(field.field)
-
-                number_function_kwargs['annotations'] = {new_field_name: function}
-
-                number_function_kwargs.update({'field': new_field_name,
-                                               'column_name': field_name})
-                field = self.number_field(**number_function_kwargs)
-            else:
-                css_class = field.column_defs.get('className')
-                if title:
-                    field.title = title
-                if annotations_type:
-                    if field.annotations:
-                        pass
-                        # make this work if the field has already got annotations
-                    else:
-                        new_field_name = f'{annotations_type}_{field_name}_{index}'
-
-                        function_type = ANNOTATION_FUNCTIONS[annotations_type]
-                        if annotation_filter:
-                            function = function_type(field.field, filter=annotation_filter)
-                        else:
-                            function = function_type(field.field)
-
-                        field.annotations = {new_field_name: function}
-                        field.field = new_field_name
-
-            fields.append(field)
-        else:
-            number_function_kwargs = {'title': title}
-            decimal_places = data_attr.get('decimal_places')
-
-            if decimal_places:
-                number_function_kwargs['decimal_places'] = int(decimal_places)
-
-            if annotations_type != 0:
-                new_field_name = f'{annotations_type}_{field_name}_{index}'
-                function_type = ANNOTATION_FUNCTIONS[annotations_type]
-                if annotation_filter:
-                    function = function_type(field_name, filter=annotation_filter)
-                else:
-                    function = function_type(field_name)
-
-                number_function_kwargs['annotations'] = {new_field_name: function}
-                field_name = new_field_name
-
-            number_function_kwargs.update({'field': field_name,
-                                           'column_name': field_name})
-
-            field = self.number_field(**number_function_kwargs)
-            fields.append(field)
-
-        decimal_places = data_attr.get('decimal_places', 0)
-        show_total = data_attr.get('show_totals')
-        if show_total == '1':
-            totals[field_name] = {'sum': 'to_fixed', 'decimal_places': decimal_places, 'css_class': css_class}
-
-        return field_name
-
     @staticmethod
     def _set_multiple_title(database_values, value_prefix, fields, text):
         results = {}
@@ -229,7 +140,10 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
             elif isinstance(django_field, NUMBER_FIELDS) and (django_field is None or django_field.choices is None):
                 data_attr = split_attr(table_field)
 
-                if data_attr.get('annotations_type') and data_attr.get('multiple_columns') == '1':
+                annotations_type = int(data_attr.get('annotations_type', 0))
+                decimal_places = data_attr.get('decimal_places')
+
+                if annotations_type != 0 and data_attr.get('multiple_columns') == '1':
                     query = self.extra_filters(query=table.model.objects)
                     multiple_column_field = data_attr.get('multiple_column_field')
 
@@ -249,21 +163,25 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
                                                           text=field_report_builder_class.default_multiple_column_text)
                         extra_filter = Q((multiple_column_field, result[multiple_column_field]))
 
-                        field_name = self.get_number_field(index=f'{index}_{multiple_index}',
+                        field_name = self.get_number_field(annotations_type=annotations_type,
+                                                           index=f'{index}_{multiple_index}',
                                                            data_attr=data_attr,
                                                            table_field=table_field,
                                                            fields=fields,
                                                            totals=totals,
                                                            col_type_override=col_type_override,
                                                            extra_filter=extra_filter,
-                                                           title_suffix=suffix)
+                                                           title_suffix=suffix,
+                                                           decimal_places=decimal_places)
                 else:
-                    field_name = self.get_number_field(index=index,
+                    field_name = self.get_number_field(annotations_type=annotations_type,
+                                                       index=index,
                                                        data_attr=data_attr,
                                                        table_field=table_field,
                                                        fields=fields,
                                                        totals=totals,
-                                                       col_type_override=col_type_override)
+                                                       col_type_override=col_type_override,
+                                                       decimal_places=decimal_places)
             else:
                 field_attr = {}
                 if 'title' in table_field:
@@ -368,6 +286,7 @@ class TableModal(QueryBuilderModalBase):
     widgets = {'report_tags': Select2Multiple}
 
     form_fields = ['name',
+                   'notes',
                    ('has_clickable_rows', {'widget': Toggle(attrs={'data-onstyle': 'success',
                                                                    'data-on': 'YES',
                                                                    'data-off': 'NO'})}),
@@ -390,8 +309,9 @@ class TableModal(QueryBuilderModalBase):
 
         pivot_url = reverse('advanced_report_builder:table_pivot_modal',
                             kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
-
+        form.fields['notes'].widget.attrs['rows'] = 3
         fields = ['name',
+                  'notes',
                   'report_type',
                   'report_tags',
                   FieldEx('has_clickable_rows', template='django_modals/fields/label_checkbox.html'),

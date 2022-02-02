@@ -21,7 +21,7 @@ class ReportAdmin(admin.ModelAdmin):
                     'instance_type',
                     'slug',
                     'slug_alias',
-                    )
+                    'version')
     exclude = ('slug',
                )
 
