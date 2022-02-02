@@ -25,6 +25,7 @@ class ReportTag(TimeStampedModel):
 
 class ReportType(TimeStampedModel):
     name = models.CharField(max_length=200)
+    slug = models.SlugField(unique=True)
     content_type = models.ForeignKey(ContentType, null=False, blank=False, on_delete=models.PROTECT)
     report_builder_class_name = models.CharField(max_length=200)
 
@@ -33,6 +34,10 @@ class ReportType(TimeStampedModel):
 
     class Meta:
         ordering = ['name']
+
+    def save(self, *args, **kwargs):
+        self.make_new_slug(allow_dashes=False, on_edit=True)
+        return super().save(*args, **kwargs)
 
 
 class Report(TimeStampedModel):
