@@ -114,9 +114,9 @@ class TableView(AjaxHelpers, FilterQueryMixin, MenuMixin, DatatableView):
         if col_type_override:
             field = copy.deepcopy(col_type_override)
             model_parts = field_name.split('__')[:-1]
-            if model_parts:
-                if isinstance(field.field, str):
-                    field.field = '__'.join(model_parts + [field.field])
+            # if model_parts:
+            #     if isinstance(field.field, str):
+            #         field.field = '__'.join(model_parts + [field.field])
 
             if annotations_type == ANNOTATION_CHOICE_COUNT:
                 new_field_name = f'{annotations_type}_{field_name}_{index}'

@@ -211,7 +211,7 @@ class Payment(TimeStampedModel):
     class Datatable(DatatableModel):
         currency_amount = CurrencyPenceColumn(column_name='currency_amount', field='amount')
         created_field = CustomDateColumn(column_name='created_field', field='created', title='Created')
-        modified_field = CustomDateColumn(column_name='modified_field', field='modified', title='Modified')
+        # modified_field = CustomDateColumn(column_name='modified_field', field='modified', title='Modified')
 
     class ReportBuilder(ReportBuilderFields):
         colour = '#006440'
@@ -221,7 +221,7 @@ class Payment(TimeStampedModel):
                   'quantity',
                   'received',
                   'created_field',
-                  'modified_field',
+                  CustomDateColumn(column_name='modified', field='modified', title='Modified'),
                   ]
         includes = [{'field': 'company',
                      'title': 'Company',

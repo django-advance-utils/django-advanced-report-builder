@@ -208,10 +208,11 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         title = title_suffix + ' ' + table_field.get('title')
         if col_type_override:
             field = copy.deepcopy(col_type_override)
-            model_parts = field_name.split('__')[:-1]
-            if model_parts:
-                if isinstance(field.field, str):
-                    field.field = '__'.join(model_parts + [field.field])
+            if field.model_path and isinstance(field.field, str) and field.field.startswith(field.model_path):
+                raw_field_name = field.field[len(field.model_path):]
+            else:
+                raw_field_name = field.field
+
             if convert_currency_fields:
                 if isinstance(field, CurrencyPenceColumn):
                     field.__class__ = ReportBuilderCurrencyPenceColumn
@@ -241,9 +242,9 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
                                                    options=number_function_kwargs['options'],
                                                    multiple_index=multiple_index)
                 if annotation_filter:
-                    function = function_type(field.field, filter=annotation_filter)
+                    function = function_type(raw_field_name, filter=annotation_filter)
                 else:
-                    function = function_type(field.field)
+                    function = function_type(raw_field_name)
                 if self.use_annotations:
                     number_function_kwargs['annotations'] = {new_field_name: function}
                 else:
@@ -259,9 +260,9 @@ class ChartBaseView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
                 new_field_name = f'{annotations_type}_{field_name}_{index}'
                 function_type = ANNOTATION_FUNCTIONS[annotations_type]
                 if annotation_filter:
-                    function = function_type(field.field, filter=annotation_filter)
+                    function = function_type(raw_field_name, filter=annotation_filter)
                 else:
-                    function = function_type(field.field)
+                    function = function_type(raw_field_name)
                 if self.use_annotations:
                     field.annotations = {new_field_name: function}
                 else:

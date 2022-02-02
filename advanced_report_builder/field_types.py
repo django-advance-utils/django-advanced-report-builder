@@ -1,5 +1,4 @@
 from django.db import models
-from django.db.models import ManyToManyField
 from django_datatables.columns import ManyToManyColumn
 
 from advanced_report_builder.globals import DATE_FIELDS
