@@ -105,7 +105,7 @@ class KanbanView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
             return query
 
         return self.process_query_filters(query=query,
-                                          search_filter_data= table.query_data)
+                                          search_filter_data=table.query_data)
 
     def pod_dashboard_view_menu(self):
         return []
