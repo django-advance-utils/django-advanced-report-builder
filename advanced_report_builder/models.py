@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import CASCADE
@@ -13,6 +12,7 @@ from advanced_report_builder.globals import DISPLAY_OPTION_CHOICES, DISPLAY_OPTI
 
 class ReportTag(TimeStampedModel):
     name = models.CharField(max_length=128, unique=True)
+    slug = models.SlugField(unique=True)
     order = models.PositiveSmallIntegerField()
 
     class Meta:
@@ -20,6 +20,10 @@ class ReportTag(TimeStampedModel):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        self.make_new_slug(allow_dashes=False, on_edit=True)
+        return super().save(*args, **kwargs)
 
 
 class ReportType(TimeStampedModel):
