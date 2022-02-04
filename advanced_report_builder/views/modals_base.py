@@ -4,7 +4,6 @@ from crispy_forms.bootstrap import StrictButton
 from django.apps import apps
 from django.forms import CharField, JSONField
 from django.shortcuts import get_object_or_404
-from django_datatables.datatables import ColumnInitialisor
 from django_modals.forms import ModelCrispyForm
 from django_modals.modals import ModelFormModal
 
@@ -50,12 +49,10 @@ class QueryBuilderModalBaseMixin:
         field_types = FieldTypes()
 
         for report_builder_field in report_builder_fields.fields:
-
-            column_initialisor = ColumnInitialisor(start_model=base_model, path=report_builder_field)
-            columns = column_initialisor.get_columns()
+            django_field, _, columns = get_django_field(base_model=base_model, field=report_builder_field)
             for column in columns:
                 field_types.get_filter(query_builder_filters=query_builder_filters,
-                                       django_field=column_initialisor.django_field,
+                                       django_field=django_field,
                                        field=prefix + column.column_name,
                                        title=title_prefix + column.title,
                                        column=column)
