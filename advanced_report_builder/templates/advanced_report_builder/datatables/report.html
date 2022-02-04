@@ -4,14 +4,14 @@
 {% lib_include 'datatable' module='django_datatables.includes' %}
 {% if datatable.show_pivot_table %}
     <div class="col-12 col-sm-6 col-md-5 col-lg-4 col-xl-2 float-left">
-        <div class="card jms-card">
+        <div class="card report-card">
             {% filter_control datatable %}
         </div>
     </div>
     <div class="col-12 col-sm-6 col-md-7 col-lg-8 col-xl-10 float-left">
 {% endif %}
 
-<div class="card jms-card">
+<div class="card report-card">
     <div class="card-header">
         <div class="d-flex align-items-center">
             <h5 class="mr-auto">{{ title }}</h5>
@@ -19,7 +19,7 @@
             {% block table_buttons %}{{ menus.button_menu.render }}{% endblock %}
         </div>
     </div>
-    <div class="card-body jms-datatable-list">
+    <div class="card-body report-datatable-list">
         {% if not show_pivot_table and show_search_bar %}
             <div class="d-flex">
                 <div class="p-2">{% no_of_results datatable %}</div>
