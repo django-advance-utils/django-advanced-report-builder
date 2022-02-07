@@ -12,7 +12,7 @@
             var prefix = '';
             var suffix = '';
             if(i === table.initsetup.colOptions.length-1) {
-                prefix = '{{ datatable.single_value.prefix|default_if_none:"" }}';
+                prefix = '{{ datatable.prefix|default_if_none:"" }}';
                 {% if datatable.single_value.is_percentage %}suffix = '%';{% endif %}
             }
 

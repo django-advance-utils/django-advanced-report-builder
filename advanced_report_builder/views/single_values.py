@@ -196,8 +196,12 @@ class SingleValueView(ChartBaseView):
             self._process_percentage_from_count(fields=fields)
         return fields
 
+    def set_prefix(self):
+        self.table.prefix = self.chart_report.prefix
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        self.set_prefix()
         self.table.single_value = self.chart_report
         self.table.datatable_template = 'advanced_report_builder/single_values/middle.html'
         context['single_value_report'] = self.chart_report
