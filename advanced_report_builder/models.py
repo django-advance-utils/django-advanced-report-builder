@@ -138,7 +138,8 @@ class ReportQuery(TimeStampedModel):
 
 class TableReport(Report):
     table_fields = models.JSONField(null=True, blank=True)
-    has_clickable_rows = models.BooleanField(default=False)  # This is for standard tables.
+    has_clickable_rows = models.BooleanField(default=False)
+    link_field = models.CharField(max_length=200, blank=True, null=True)
     pivot_fields = models.JSONField(null=True, blank=True)
     page_length = models.PositiveSmallIntegerField(choices=((10, '10'),
                                                             (25, '25'),
@@ -259,6 +260,7 @@ class KanbanReportLane(TimeStampedModel):
     report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
     heading_field = models.CharField(max_length=200, blank=True, null=True)
     order_by_field = models.CharField(max_length=200, blank=True, null=True)
+    link_field = models.CharField(max_length=200, blank=True, null=True)
     order_by_ascending = models.BooleanField(default=True)
     description = models.TextField(blank=True, null=True)
     query_data = models.JSONField(null=True, blank=True)
