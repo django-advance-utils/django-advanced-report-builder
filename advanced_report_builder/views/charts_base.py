@@ -1,7 +1,6 @@
 import base64
 import json
 
-from ajax_helpers.mixins import AjaxHelpers
 from crispy_forms.bootstrap import StrictButton
 from django.apps import apps
 from django.db import ProgrammingError
@@ -10,7 +9,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.safestring import mark_safe
 from django.views.generic import TemplateView
 from django_datatables.datatables import DatatableTable
-from django_menus.menu import MenuMixin, MenuItem
+from django_menus.menu import MenuItem
 from django_modals.forms import CrispyForm
 
 from advanced_report_builder.columns import ReportBuilderDateColumn
@@ -19,6 +18,7 @@ from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_VALUE_FUNC
 from advanced_report_builder.models import ReportType
 from advanced_report_builder.utils import split_slug, get_django_field, split_attr
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
+from advanced_report_builder.views.report import ReportBase
 
 
 class ChartJSTable(DatatableTable):
@@ -41,7 +41,7 @@ class ChartJSTable(DatatableTable):
             raise ReportError(e)
 
 
-class ChartBaseView(AjaxHelpers, ReportUtilsMixin, MenuMixin, TemplateView):
+class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
     # number_field = ReportBuilderNumberColumn
     date_field = ReportBuilderDateColumn
     chart_js_table = ChartJSTable
@@ -235,11 +235,6 @@ class ChartBaseView(AjaxHelpers, ReportUtilsMixin, MenuMixin, TemplateView):
     @staticmethod
     def edit_report_menu(chart_report_id, slug_str):
         return []
-
-    def duplicate_menu(self, chart_report_id):
-        view_name = self.request.resolver_match.view_name
-        return [MenuItem(f'advanced_report_builder:duplicate_report_modal,pk-{chart_report_id}-view_name-{view_name}',
-                         css_classes=['btn-success'])]
 
     # noinspection PyMethodMayBeStatic
     def queries_menu(self):

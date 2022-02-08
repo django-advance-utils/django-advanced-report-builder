@@ -11,7 +11,7 @@ from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
 from django_modals.widgets.select2 import Select2Multiple
 
-from advanced_report_builder.models import ReportQuery, FunnelChartReport
+from advanced_report_builder.models import FunnelChartReport
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr
 from advanced_report_builder.views.charts_base import ChartBaseView, ChartBaseFieldForm
@@ -40,13 +40,11 @@ class FunnelChartView(ChartBaseView):
         funnel_colour = self.add_colour_offset(funnel_colour, multiple_index=multiple_index)
         options.update({'colour': funnel_colour})
 
-    @staticmethod
-    def edit_report_menu(chart_report_id, slug_str):
+    def edit_report_menu(self, chart_report_id, slug_str):
         return [MenuItem(f'advanced_report_builder:funnel_chart_modal,pk-{chart_report_id}{slug_str}',
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary']),
-                MenuItem(f'advanced_report_builder:duplicate_report_modal,pk-{chart_report_id}{slug_str}',
-                         css_classes=['btn-success'])]
+                *self.duplicate_menu(request=self.request, report_id=chart_report_id)]
 
     def get_date_field(self, index, fields, base_model):
         return None

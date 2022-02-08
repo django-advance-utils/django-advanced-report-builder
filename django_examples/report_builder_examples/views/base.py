@@ -7,6 +7,7 @@ class MainMenu(AjaxHelpers, MenuMixin):
 
     def setup_menu(self):
 
+        # noinspection PyUnresolvedReferences
         self.add_menu('main_menu').add_items(
             ('report_builder_examples:index', 'Reports'),
             ('report_builder_examples:dashboards_index', 'Dashboard'),

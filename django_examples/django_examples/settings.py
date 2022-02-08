@@ -138,6 +138,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+REPORT_BUILDER_DETAIL_URL_NAME = 'report_builder_examples:view_report'
+
 if SHOW_DEBUG_TOOLBAR:
     import os  # only if you haven't already imported this
     import socket  # only if you haven't already imported this

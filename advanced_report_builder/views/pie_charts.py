@@ -42,7 +42,7 @@ class PieChartView(ChartBaseView):
         return [MenuItem(f'advanced_report_builder:pie_chart_modal,pk-{chart_report_id}{slug_str}',
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary']),
-                *self.duplicate_menu(chart_report_id=self.chart_report.id)]
+                *self.duplicate_menu(request=self.request, report_id=chart_report_id)]
 
     def get_date_field(self, index, fields, base_model):
         return None

@@ -1,13 +1,14 @@
 import json
 
-from ajax_helpers.mixins import AjaxHelpers
+from django.conf import settings
 from django.forms import CharField
 from django.http import JsonResponse
 from django.template import Template, Context, TemplateSyntaxError
+from django.urls import reverse
 from django.views.generic import TemplateView
 from django_datatables.columns import ColumnBase
 from django_datatables.widgets import DataTableReorderWidget
-from django_menus.menu import MenuItem, MenuMixin
+from django_menus.menu import MenuItem
 from django_modals.datatables import EditColumn
 from django_modals.fields import FieldEx
 from django_modals.modals import ModelFormModal
@@ -23,6 +24,7 @@ from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import crispy_modal_link_args
 from advanced_report_builder.views.charts_base import ChartJSTable
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
+from advanced_report_builder.views.report import ReportBase
 
 
 class DescriptionColumn(ColumnBase):
@@ -36,7 +38,7 @@ class DescriptionColumn(ColumnBase):
             return 'Error in description'
 
 
-class KanbanView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
+class KanbanView(ReportBase, FilterQueryMixin, TemplateView):
     number_field = ReportBuilderNumberColumn
     template_name = 'advanced_report_builder/kanban/report.html'
     chart_js_table = ChartJSTable
@@ -115,13 +117,9 @@ class KanbanView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         return [MenuItem(f'advanced_report_builder:kanban_modal,pk-{self.chart_report.id}',
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary']),
-                *self.duplicate_menu(chart_report_id=self.chart_report.id)
+                *self.duplicate_menu(request=self.request, report_id=self.chart_report.id)
                 ]
 
-    def duplicate_menu(self, chart_report_id):
-        view_name = self.request.resolver_match.view_name
-        return [MenuItem(f'advanced_report_builder:duplicate_report_modal,pk-{chart_report_id}-view_name-{view_name}',
-                         css_classes=['btn-success'])]
 
     def pod_dashboard_edit_menu(self):
         return [MenuItem(f'advanced_report_builder:dashboard_report_modal,pk-{self.dashboard_report.id}',
@@ -179,7 +177,12 @@ class KanbanModal(ModelFormModal):
 
     def post_save(self, created):
         if created:
-            self.modal_redirect(self.request.resolver_match.view_name, slug=f'pk-{self.object.id}')
+            self.modal_redirect(self.request.resolver_match.view_name, slug=f'pk-{self.object.id}-new-True')
+        else:
+            url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME')
+            if url_name is not None and self.slug.get('new'):
+                url = reverse(url_name, kwargs={'slug': self.object.slug})
+                self.command_response('redirect', url=url)
 
 
 class KanbanLaneModal(QueryBuilderModalBase):

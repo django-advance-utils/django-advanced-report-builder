@@ -4,6 +4,7 @@ from crispy_forms.bootstrap import StrictButton
 from django.apps import apps
 from django.forms import CharField, JSONField
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django_modals.forms import ModelCrispyForm
 from django_modals.modals import ModelFormModal
 
@@ -11,6 +12,7 @@ from advanced_report_builder.field_types import FieldTypes
 from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS
 from advanced_report_builder.models import ReportQuery, ReportType
 from advanced_report_builder.utils import get_django_field
+from django.conf import settings
 
 
 class QueryBuilderModelForm(ModelCrispyForm):
@@ -211,6 +213,7 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                                 for_select2=True)
 
     def form_valid(self, form):
+        org_id = self.object.id if hasattr(self, 'object') else None
         chart_report = form.save()
 
         if not self.report_query and (form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']):
@@ -225,5 +228,9 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
             self.report_query.save()
         elif self.report_query:
             self.report_query.delete()
-
-        return self.command_response('reload')
+        url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME')
+        if org_id is None and url_name is not None:
+            url = reverse(url_name, kwargs={'slug': chart_report.slug})
+            return self.command_response('redirect', url=url)
+        else:
+            return self.command_response('reload')

@@ -14,7 +14,7 @@ from django_modals.widgets.select2 import Select2, Select2Multiple
 
 from advanced_report_builder.globals import DEFAULT_DATE_FORMAT, \
     DATE_FORMAT_TYPES_DJANGO_FORMAT
-from advanced_report_builder.models import BarChartReport, ReportQuery
+from advanced_report_builder.models import BarChartReport
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr
 from advanced_report_builder.views.charts_base import ChartBaseView, ChartBaseFieldForm
@@ -56,12 +56,9 @@ class BarChartView(ChartBaseView):
         return [MenuItem(f'advanced_report_builder:bar_chart_modal,pk-{chart_report_id}{slug_str}',
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary']),
-                *self.duplicate_menu(chart_report_id=chart_report_id)
+                *self.duplicate_menu(request=self.request, report_id=chart_report_id)
                 ]
-    def duplicate_menu(self, chart_report_id):
-        view_name = self.request.resolver_match.view_name
-        return [MenuItem(f'advanced_report_builder:duplicate_report_modal,pk-{chart_report_id}-view_name-{view_name}',
-                         css_classes=['btn-success'])]
+
 
 class BarChartModal(QueryBuilderModalBase):
     template_name = 'advanced_report_builder/charts/modal.html'

@@ -18,6 +18,7 @@ from advanced_report_builder.views.kanban import KanbanView
 from advanced_report_builder.views.line_charts import LineChartView
 from advanced_report_builder.views.pie_charts import PieChartView
 from advanced_report_builder.views.single_values import SingleValueView
+from django.conf import settings
 
 
 class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
@@ -91,5 +92,10 @@ class DuplicateReportModal(Modal):
         duplicate_report = DuplicateReport()
         new_report = duplicate_report.duplicate(report=report)
         messages.add_message(self.request, messages.SUCCESS, f'Successfully duplicated {report.name}')
-        url = reverse(self.slug['view_name'], kwargs={'slug': new_report.slug})
-        return self.command_response('redirect', url=url)
+
+        url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME')
+        if url_name is None:
+            return self.command_response('reload')
+        else:
+            url = reverse(url_name, kwargs={'slug': new_report.slug})
+            return self.command_response('redirect', url=url)

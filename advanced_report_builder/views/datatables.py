@@ -2,7 +2,6 @@ import base64
 import copy
 import json
 
-from ajax_helpers.mixins import AjaxHelpers
 from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Div
 from django.db.models import Q
@@ -10,7 +9,7 @@ from django.forms import CharField, ChoiceField, BooleanField, IntegerField
 from django.urls import reverse
 from django_datatables.datatables import DatatableView, DatatableError
 from django_datatables.plugins.column_totals import ColumnTotals
-from django_menus.menu import MenuMixin, MenuItem
+from django_menus.menu import MenuItem
 from django_modals.fields import FieldEx
 from django_modals.modals import FormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
@@ -29,9 +28,10 @@ from advanced_report_builder.utils import split_slug
 from advanced_report_builder.views.charts_base import ChartBaseFieldForm
 from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin, QueryBuilderModalBase
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
+from advanced_report_builder.views.report import ReportBase
+from django.conf import settings
 
-
-class TableView(AjaxHelpers, ReportUtilsMixin, MenuMixin, DatatableView):
+class TableView(ReportBase, ReportUtilsMixin, DatatableView):
     template_name = 'advanced_report_builder/datatables/report.html'
 
     date_field = ReportBuilderDateColumn
@@ -268,13 +268,8 @@ class TableView(AjaxHelpers, ReportUtilsMixin, MenuMixin, DatatableView):
         return [MenuItem(f'advanced_report_builder:table_modal,pk-{table_report_id}{slug_str}',
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary']),
-                *self.duplicate_menu(table_report_id=table_report_id)
+                *self.duplicate_menu(request=self.request, report_id=table_report_id)
                 ]
-
-    def duplicate_menu(self, table_report_id):
-        view_name = self.request.resolver_match.view_name
-        return [MenuItem(f'advanced_report_builder:duplicate_report_modal,pk-{table_report_id}-view_name-{view_name}',
-                         css_classes=['btn-success'])]
 
     def queries_menu(self):
         return []
@@ -335,6 +330,7 @@ class TableModal(QueryBuilderModalBase):
         return fields
 
     def form_valid(self, form):
+        org_id = self.object.id if hasattr(self, 'object') else None
         table_report = form.save()
 
         if not self.report_query and form.cleaned_data['query_data']:
@@ -348,8 +344,12 @@ class TableModal(QueryBuilderModalBase):
             self.report_query.save()
         elif self.report_query:
             self.report_query.delete()
-
-        return self.command_response('reload')
+        url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME')
+        if org_id is None and url_name is not None:
+            url = reverse(url_name, kwargs={'slug': table_report.slug})
+            return self.command_response('redirect', url=url)
+        else:
+            return self.command_response('reload')
 
     def ajax_get_fields(self, **kwargs):
         report_type_id = kwargs['report_type']

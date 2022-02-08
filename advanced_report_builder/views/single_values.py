@@ -214,7 +214,7 @@ class SingleValueView(ChartBaseView):
         return [MenuItem(f'advanced_report_builder:single_value_modal,pk-{chart_report_id}{slug_str}',
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary']),
-                *self.duplicate_menu(chart_report_id=chart_report_id)]
+                *self.duplicate_menu(request=self.request, report_id=chart_report_id)]
 
     def queries_menu(self):
         return []
@@ -321,6 +321,7 @@ class SingleValueModal(QueryBuilderModalBase):
     def select2_numerator(self, **kwargs):
         return self.select2_field(**kwargs)
 
+    # noinspection PyUnusedLocal
     def clean(self, form, cleaned_data):
         if (cleaned_data['single_value_type'] not in [SingleValueReport.SINGLE_VALUE_TYPE_COUNT,
                                                       SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT] and
