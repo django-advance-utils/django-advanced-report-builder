@@ -264,11 +264,17 @@ class TableView(AjaxHelpers, ReportUtilsMixin, MenuMixin, DatatableView):
 
         return self.edit_report_menu(table_report_id=self.table_report.id, slug_str=slug_str)
 
-    @staticmethod
-    def edit_report_menu(table_report_id, slug_str):
+    def edit_report_menu(self, table_report_id, slug_str):
         return [MenuItem(f'advanced_report_builder:table_modal,pk-{table_report_id}{slug_str}',
                          menu_display='Edit',
-                         font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
+                         font_awesome='fas fa-pencil-alt', css_classes=['btn-primary']),
+                *self.duplicate_menu(table_report_id=table_report_id)
+                ]
+
+    def duplicate_menu(self, table_report_id):
+        view_name = self.request.resolver_match.view_name
+        return [MenuItem(f'advanced_report_builder:duplicate_report_modal,pk-{table_report_id}-view_name-{view_name}',
+                         css_classes=['btn-success'])]
 
     def queries_menu(self):
         return []

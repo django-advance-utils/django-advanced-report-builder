@@ -44,7 +44,9 @@ class FunnelChartView(ChartBaseView):
     def edit_report_menu(chart_report_id, slug_str):
         return [MenuItem(f'advanced_report_builder:funnel_chart_modal,pk-{chart_report_id}{slug_str}',
                          menu_display='Edit',
-                         font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
+                         font_awesome='fas fa-pencil-alt', css_classes=['btn-primary']),
+                MenuItem(f'advanced_report_builder:duplicate_report_modal,pk-{chart_report_id}{slug_str}',
+                         css_classes=['btn-success'])]
 
     def get_date_field(self, index, fields, base_model):
         return None

@@ -236,6 +236,11 @@ class ChartBaseView(AjaxHelpers, ReportUtilsMixin, MenuMixin, TemplateView):
     def edit_report_menu(chart_report_id, slug_str):
         return []
 
+    def duplicate_menu(self, chart_report_id):
+        view_name = self.request.resolver_match.view_name
+        return [MenuItem(f'advanced_report_builder:duplicate_report_modal,pk-{chart_report_id}-view_name-{view_name}',
+                         css_classes=['btn-success'])]
+
     # noinspection PyMethodMayBeStatic
     def queries_menu(self):
         return []

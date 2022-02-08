@@ -1,8 +1,14 @@
 from ajax_helpers.mixins import AjaxHelpers
+from django.contrib import messages
 from django.http import Http404
+from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django.views.generic import TemplateView
-from django_menus.menu import MenuMixin
+from django_menus.menu import MenuMixin, MenuItemDisplay
+from django_modals.helper import modal_button, modal_button_method
+from django_modals.modals import Modal
 
+from advanced_report_builder.duplicate import DuplicateReport
 from advanced_report_builder.models import Report
 from advanced_report_builder.utils import split_slug
 from advanced_report_builder.views.bar_charts import BarChartView
@@ -70,3 +76,20 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         self.kwargs['report'] = self.report
         return view.as_view()(self.request, *self.args, **self.kwargs)
 
+
+class DuplicateReportModal(Modal):
+    menu_display = MenuItemDisplay('Duplicate', font_awesome='fas fa-copy')
+
+    def modal_content(self):
+        return 'Are you sure you want to duplicate this report?'
+
+    def get_modal_buttons(self):
+        return [modal_button_method('Confirm', 'duplicate'), modal_button('Cancel', 'close', 'btn-secondary')]
+
+    def button_duplicate(self, **_kwargs):
+        report = get_object_or_404(Report, id=self.slug['pk'])
+        duplicate_report = DuplicateReport()
+        new_report = duplicate_report.duplicate(report=report)
+        messages.add_message(self.request, messages.SUCCESS, f'Successfully duplicated {report.name}')
+        url = reverse(self.slug['view_name'], kwargs={'slug': new_report.slug})
+        return self.command_response('redirect', url=url)

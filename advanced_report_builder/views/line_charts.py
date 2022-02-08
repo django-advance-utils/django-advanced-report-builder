@@ -94,11 +94,12 @@ class LineChartView(ChartBaseView):
         line_colour = self.add_colour_offset(line_colour, multiple_index=multiple_index)
         options.update({'colour': line_colour})
 
-    @staticmethod
-    def edit_report_menu(chart_report_id, slug_str):
+    def edit_report_menu(self, chart_report_id, slug_str):
         return [MenuItem(f'advanced_report_builder:line_chart_modal,pk-{chart_report_id}{slug_str}',
                          menu_display='Edit',
-                         font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
+                         font_awesome='fas fa-pencil-alt', css_classes=['btn-primary']),
+                *self.duplicate_menu(chart_report_id=self.chart_report.id)
+                ]
 
 
 class LineChartModal(QueryBuilderModalBase):

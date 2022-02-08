@@ -7,6 +7,7 @@ from advanced_report_builder.views.funnel_charts import FunnelChartModal, Funnel
 from advanced_report_builder.views.kanban import KanbanModal, KanbanLaneModal
 from advanced_report_builder.views.line_charts import LineChartModal, LineChartFieldModal
 from advanced_report_builder.views.pie_charts import PieChartModal, PieChartFieldModal
+from advanced_report_builder.views.reports import DuplicateReportModal
 from advanced_report_builder.views.single_values import SingleValueModal
 
 app_name = 'advanced_report_builder'
@@ -38,4 +39,5 @@ urlpatterns = [
     path('dashboard/<str:slug>/', DashboardModal.as_view(), name='dashboard_modal'),
     path('dashboard/add/<str:slug>/', DashboardAddReportModal.as_view(), name='add_dashboard_report'),
 
+    path('duplicate/<str:slug>/', DuplicateReportModal.as_view(), name='duplicate_report_modal'),
 ]

@@ -107,19 +107,28 @@ class KanbanView(AjaxHelpers, FilterQueryMixin, MenuMixin, TemplateView):
         return self.process_query_filters(query=query,
                                           search_filter_data=table.query_data)
 
+    # noinspection PyMethodMayBeStatic
     def pod_dashboard_view_menu(self):
         return []
 
     def pod_report_menu(self):
         return [MenuItem(f'advanced_report_builder:kanban_modal,pk-{self.chart_report.id}',
                          menu_display='Edit',
-                         font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
+                         font_awesome='fas fa-pencil-alt', css_classes=['btn-primary']),
+                *self.duplicate_menu(chart_report_id=self.chart_report.id)
+                ]
+
+    def duplicate_menu(self, chart_report_id):
+        view_name = self.request.resolver_match.view_name
+        return [MenuItem(f'advanced_report_builder:duplicate_report_modal,pk-{chart_report_id}-view_name-{view_name}',
+                         css_classes=['btn-success'])]
 
     def pod_dashboard_edit_menu(self):
         return [MenuItem(f'advanced_report_builder:dashboard_report_modal,pk-{self.dashboard_report.id}',
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
 
+    # noinspection PyMethodMayBeStatic
     def queries_menu(self):
         return []
 

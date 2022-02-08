@@ -52,12 +52,16 @@ class BarChartView(ChartBaseView):
         options.update({'colours': {'negative': negative_bar_colour,
                                     'positive': positive_bar_colour}})
 
-    @staticmethod
-    def edit_report_menu(chart_report_id, slug_str):
+    def edit_report_menu(self, chart_report_id, slug_str):
         return [MenuItem(f'advanced_report_builder:bar_chart_modal,pk-{chart_report_id}{slug_str}',
                          menu_display='Edit',
-                         font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
-
+                         font_awesome='fas fa-pencil-alt', css_classes=['btn-primary']),
+                *self.duplicate_menu(chart_report_id=chart_report_id)
+                ]
+    def duplicate_menu(self, chart_report_id):
+        view_name = self.request.resolver_match.view_name
+        return [MenuItem(f'advanced_report_builder:duplicate_report_modal,pk-{chart_report_id}-view_name-{view_name}',
+                         css_classes=['btn-success'])]
 
 class BarChartModal(QueryBuilderModalBase):
     template_name = 'advanced_report_builder/charts/modal.html'
