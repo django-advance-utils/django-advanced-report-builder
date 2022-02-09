@@ -72,8 +72,9 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
                  2: ' col-12 col-sm-12 col-md-6',
                  3: ' col-12 col-sm-12 col-md-4',
                  4: ' col-12 col-sm-12 col-md-6 col-lg-3',
+                 6: ' col-12 col-sm-12 col-md-4',
                  9: ' col-12 col-sm-12 col-md-4'}
-        return spans.get(reports_len, ' col-3 col-sm-12')
+        return spans.get(reports_len, ' col-12 col-sm-12 col-md-3')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
