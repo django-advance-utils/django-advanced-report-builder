@@ -47,7 +47,7 @@ class ReportBuilderCurrencyPenceColumn(CurrencyPenceColumn):
         try:
             return intcomma('{:.2f}'.format(data[self.field] / 100.0))
         except (KeyError, TypeError):
-            return
+            return '0.00'
 
 
 class ReportBuilderCurrencyColumn(CurrencyColumn):
@@ -56,6 +56,6 @@ class ReportBuilderCurrencyColumn(CurrencyColumn):
         try:
             return intcomma('{:.2f}'.format(data[self.field]))
         except (KeyError, TypeError):
-            return
+            return '0.00'
 
 
