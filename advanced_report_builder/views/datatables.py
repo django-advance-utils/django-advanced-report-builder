@@ -31,6 +31,7 @@ from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
 from advanced_report_builder.views.report import ReportBase
 from django.conf import settings
 
+
 class TableView(ReportBase, ReportUtilsMixin, DatatableView):
     template_name = 'advanced_report_builder/datatables/report.html'
 

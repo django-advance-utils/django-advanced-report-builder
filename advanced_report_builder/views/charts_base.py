@@ -42,7 +42,6 @@ class ChartJSTable(DatatableTable):
 
 
 class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
-    # number_field = ReportBuilderNumberColumn
     date_field = ReportBuilderDateColumn
     chart_js_table = ChartJSTable
 

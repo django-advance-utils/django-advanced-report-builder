@@ -47,6 +47,9 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         """ used if the slug changes"""
         return None
 
+    def dashboard_not_found(self):
+        raise Http404
+
     def dispatch(self, request, *args, **kwargs):
         slug = split_slug(self.kwargs['slug'])
         self.dashboard = self.model.objects.filter(slug=slug['pk']).first()
@@ -54,7 +57,7 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         if self.dashboard is None:
             self.dashboard = self.model.objects.filter(slug_alias=slug['pk']).first()
             if self.dashboard is None:
-                raise Http404
+                return self.dashboard_not_found()
             else:
                 redirect_url = self.redirect_url()
                 if redirect_url:
@@ -136,6 +139,8 @@ class DashboardModal(ModelFormModal):
     model = Dashboard
     form_fields = ['name',
                    'display_option']
+    process = PROCESS_EDIT_DELETE
+    permission_delete = PERMISSION_OFF
 
     def post_save(self, created):
         if created:
