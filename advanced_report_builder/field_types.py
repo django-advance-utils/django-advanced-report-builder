@@ -49,7 +49,7 @@ class FieldTypes:
                      }
         return operators.get(field_type)
 
-    def get_filter(self, query_builder_filters, django_field, field, title, column):
+    def get_filter(self, query_builder_filters, django_field, field, title, column, prefix):
         if django_field is not None:
             if isinstance(django_field, (models.CharField, models.TextField, models.EmailField)):
                 query_builder_filters.append({"id": field,
@@ -99,7 +99,7 @@ class FieldTypes:
 
                 query_builder_filter = {"id": field,
                                         "label": title,
-                                        "field": column.field_id,
+                                        "field": prefix + column.field_id,
                                         "type": "integer",
                                         'input': 'select',
                                         'multiple': True,

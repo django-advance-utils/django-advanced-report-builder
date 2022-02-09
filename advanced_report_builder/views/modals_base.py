@@ -57,7 +57,8 @@ class QueryBuilderModalBaseMixin:
                                        django_field=django_field,
                                        field=prefix + column.column_name,
                                        title=title_prefix + column.title,
-                                       column=column)
+                                       column=column,
+                                       prefix=prefix)
         for include in report_builder_fields.includes:
             app_label, model, report_builder_fields_str = include['model'].split('.')
             new_model = apps.get_model(app_label, model)
