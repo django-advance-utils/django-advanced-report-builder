@@ -4,6 +4,7 @@ from ajax_helpers.mixins import AjaxHelpers
 from django.forms import ModelChoiceField
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django.views.generic import TemplateView
 from django_menus.menu import MenuMixin
 from django_modals.forms import CrispyForm
@@ -21,6 +22,7 @@ from advanced_report_builder.views.kanban import KanbanView
 from advanced_report_builder.views.line_charts import LineChartView
 from advanced_report_builder.views.pie_charts import PieChartView
 from advanced_report_builder.views.single_values import SingleValueView
+from django.conf import settings
 
 
 class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
@@ -134,6 +136,13 @@ class DashboardModal(ModelFormModal):
     model = Dashboard
     form_fields = ['name',
                    'display_option']
+
+    def post_save(self, created):
+        if created:
+            url_name = getattr(settings, 'REPORT_BUILDER_DASHBOARD_URL_NAME')
+            if url_name is not None:
+                url = reverse(url_name, kwargs={'slug': self.object.slug})
+                self.add_command('redirect', url=url)
 
 
 class DashboardReportModal(ModelFormModal):
