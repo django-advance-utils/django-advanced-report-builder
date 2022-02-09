@@ -138,7 +138,8 @@ class BarChartModal(QueryBuilderModalBase):
             fields = []
             self._get_date_fields(base_model=base_model,
                                   fields=fields,
-                                  report_builder_class=report_builder_class)
+                                  report_builder_class=report_builder_class,
+                                  search_string=kwargs.get('search'))
 
         return JsonResponse({'results': fields})
 

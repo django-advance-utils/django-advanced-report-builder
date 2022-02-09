@@ -127,10 +127,16 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                 if include_extra_query:
                     form.fields['extra_query_data'].initial = self.report_query.extra_query
 
+    @staticmethod
+    def _is_search_match(search_string, title):
+        if search_string is None:
+            return True
+        return search_string.lower() in title.lower()
+
     def _get_fields(self, base_model, fields, report_builder_class, tables=None,
                     prefix='', title_prefix='', title=None, colour=None,
                     previous_base_model=None, selected_field_id=None, for_select2=False,
-                    pivot_fields=None, allow_annotations_fields=True, field_types=None):
+                    pivot_fields=None, allow_annotations_fields=True, field_types=None, search_string=None):
         if title is None:
             title = report_builder_class.title
         if colour is None:
@@ -148,20 +154,24 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                         (allow_annotations_fields and column.annotations)):
                     full_id = prefix + column.column_name
                     if selected_field_id is None or selected_field_id == full_id:
-                        if for_select2:
-                            fields.append({'id': full_id,
-                                           'text': title_prefix + column.title})
-                        else:
-                            fields.append({'field': full_id,
-                                           'label': title_prefix + column.title,
-                                           'colour': report_builder_class.colour})
+                        full_title = title_prefix + column.title
+                        if self._is_search_match(search_string=search_string, title=full_title):
+                            if for_select2:
+                                fields.append({'id': full_id,
+                                               'text': full_title})
+                            else:
+                                fields.append({'field': full_id,
+                                               'label': full_title,
+                                               'colour': report_builder_class.colour})
 
         if not for_select2 and pivot_fields is not None:
             for pivot_field in report_builder_class.pivot_fields:
                 full_id = prefix + pivot_field['field']
-                pivot_fields.append({'field': full_id,
-                                     'label': title_prefix + pivot_field['title'],
-                                     'colour': report_builder_class.colour})
+                full_title = title_prefix + pivot_field['title']
+                if self._is_search_match(search_string=search_string, title=full_title):
+                    pivot_fields.append({'field': full_id,
+                                         'label': title_prefix + pivot_field['title'],
+                                         'colour': report_builder_class.colour})
 
         for include in report_builder_class.includes:
             app_label, model, report_builder_fields_str = include['model'].split('.')
@@ -196,22 +206,25 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                          field_types=NUMBER_FIELDS)
         return self.command_response('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
 
-    def _get_date_fields(self, base_model, fields, report_builder_class, selected_field_id=None):
+    def _get_date_fields(self, base_model, fields, report_builder_class, selected_field_id=None, search_string=None):
         return self._get_fields(base_model=base_model,
                                 fields=fields,
                                 report_builder_class=report_builder_class,
                                 selected_field_id=selected_field_id,
                                 field_types=DATE_FIELDS,
                                 for_select2=True,
-                                allow_annotations_fields=False)
+                                allow_annotations_fields=False,
+                                search_string=search_string)
 
-    def _get_number_fields(self, base_model, fields, report_builder_class, selected_field_id=None):
+    def _get_number_fields(self, base_model, fields, report_builder_class, selected_field_id=None, search_string=None):
         return self._get_fields(base_model=base_model,
                                 fields=fields,
                                 report_builder_class=report_builder_class,
                                 selected_field_id=selected_field_id,
                                 field_types=NUMBER_FIELDS,
-                                for_select2=True)
+                                for_select2=True,
+                                search_string=search_string
+                                )
 
     def form_valid(self, form):
         org_id = self.object.id if hasattr(self, 'object') else None

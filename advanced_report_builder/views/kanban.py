@@ -249,7 +249,8 @@ class KanbanLaneModal(QueryBuilderModalBase):
             self._get_fields(base_model=base_model,
                              fields=fields,
                              report_builder_class=report_builder_fields,
-                             for_select2=True)
+                             for_select2=True,
+                             search_string=kwargs.get('search'))
 
         return JsonResponse({'results': fields})
 
@@ -260,7 +261,8 @@ class KanbanLaneModal(QueryBuilderModalBase):
             fields = []
             self._get_date_fields(base_model=base_model,
                                   fields=fields,
-                                  report_builder_class=report_builder_fields)
+                                  report_builder_class=report_builder_fields,
+                                  search_string=kwargs.get('search'))
         return JsonResponse({'results': fields})
 
     def ajax_get_data_merge_menu(self, **kwargs):
