@@ -46,6 +46,7 @@ class ReportUtilsMixin(FilterQueryMixin):
                 if not self.use_annotations:
                     field.options['calculated'] = True
                     field.aggregations = col_type_override.annotations
+                    field.annotations = []
                 number_function_kwargs = {}
                 if title:
                     number_function_kwargs['title'] = title
@@ -73,6 +74,7 @@ class ReportUtilsMixin(FilterQueryMixin):
                 else:
                     number_function_kwargs['options']['calculated'] = True
                     number_function_kwargs['aggregations'] = {new_field_name: function}
+                    number_function_kwargs['annotations'] = []
 
                 number_function_kwargs.update({'field': new_field_name,
                                                'column_name': field_name})
@@ -93,7 +95,8 @@ class ReportUtilsMixin(FilterQueryMixin):
                     else:
                         field.options['calculated'] = True
                         field.aggregations = {new_field_name: function}
-                    field.annotations = {new_field_name: function}
+                        field.annotations = []
+
                     field.field = new_field_name
                     self.set_extra_number_field_kwargs(data_attr=data_attr,
                                                        options=field.options,
@@ -120,6 +123,7 @@ class ReportUtilsMixin(FilterQueryMixin):
                 else:
                     number_function_kwargs['options']['calculated'] = True
                     number_function_kwargs['aggregations'] = {new_field_name: function}
+                    number_function_kwargs['annotations'] = []
                 field_name = new_field_name
             number_function_kwargs.update({'field': field_name,
                                            'column_name': field_name,
