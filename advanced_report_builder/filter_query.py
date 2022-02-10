@@ -12,7 +12,6 @@ from advanced_report_builder.variable_date import VariableDate
 class FilterQueryMixin:
 
     def __init__(self, *args, **kwargs):
-        self.table_report = None
         self.report = None
         self.dashboard_report = None
         self.enable_edit = None

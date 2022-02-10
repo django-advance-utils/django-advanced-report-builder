@@ -134,7 +134,6 @@ class ReportUtilsMixin(FilterQueryMixin):
         if totals is not None:
             show_total = data_attr.get('show_totals')
             if show_total == '1':
-
                 totals[field_name] = {'sum': 'to_fixed', 'decimal_places': decimal_places, 'css_class': css_class}
 
         return field_name

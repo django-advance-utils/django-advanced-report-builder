@@ -13,7 +13,7 @@ from report_builder_examples.views.base import MainMenu, MainIndices
 
 from advanced_report_builder.models import Report
 from advanced_report_builder.utils import make_slug_str
-from advanced_report_builder.views.datatables import TableModal, TableView
+from advanced_report_builder.views.datatables.datatables import TableModal, TableView
 from advanced_report_builder.views.reports import ViewReportBase
 
 

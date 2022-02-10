@@ -173,6 +173,8 @@ class SingleValueReport(Report):
                                                          default=SINGLE_VALUE_TYPE_COUNT)
     prefix = models.CharField(max_length=64, blank=True, null=True)
     decimal_places = models.IntegerField(default=0)
+    show_breakdown = models.BooleanField(default=False)
+    breakdown_fields = models.JSONField(null=True, blank=True)
 
     def is_percentage(self):
         return self.single_value_type in [self.SINGLE_VALUE_TYPE_PERCENT,

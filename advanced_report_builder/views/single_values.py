@@ -1,12 +1,19 @@
+import json
+
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Sum, ExpressionWrapper, FloatField
 from django.db.models.functions import Coalesce, NullIf
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.urls import reverse
+from django_datatables.datatables import DatatableTable
 from django_menus.menu import MenuItem
 from django_modals.fields import FieldEx
+from django_modals.modals import Modal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
 from django_modals.widgets.select2 import Select2, Select2Multiple
+from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.exceptions import ReportError
@@ -15,6 +22,7 @@ from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_CHOICE_SUM
 from advanced_report_builder.models import SingleValueReport
 from advanced_report_builder.utils import get_django_field
 from advanced_report_builder.views.charts_base import ChartBaseView
+from advanced_report_builder.views.datatables.utils import TableUtilsMixin
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
 
 
@@ -226,7 +234,8 @@ class SingleValueModal(QueryBuilderModalBase):
     permission_delete = PERMISSION_OFF
     model = SingleValueReport
     widgets = {'tile_colour': ColourPickerWidget,
-               'report_tags': Select2Multiple}
+               'report_tags': Select2Multiple,
+               'show_breakdown': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'})}
 
     form_fields = ['name',
                    'notes',
@@ -237,7 +246,9 @@ class SingleValueModal(QueryBuilderModalBase):
                    'field',
                    'prefix',
                    'tile_colour',
-                   ('decimal_places', {'field_class': 'col-md-5 col-lg-3 input-group-sm'})
+                   ('decimal_places', {'field_class': 'col-md-5 col-lg-3 input-group-sm'}),
+                   'show_breakdown',
+                   'breakdown_fields'
                    ]
 
     def form_setup(self, form, *_args, **_kwargs):
@@ -260,6 +271,11 @@ class SingleValueModal(QueryBuilderModalBase):
             {'selector': 'label[for=id_field]',
              'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: ('html', 'Denominator field')},
              'default': ('html', 'Field')},
+
+        ])
+
+        form.add_trigger('show_breakdown', 'onchange', [
+            {'selector': '#div_id_breakdown_fields', 'values': {'checked': 'show'}, 'default': 'hide'},
         ])
 
         fields = []
@@ -289,6 +305,8 @@ class SingleValueModal(QueryBuilderModalBase):
 
         self.add_query_data(form, include_extra_query=True)
         form.fields['notes'].widget.attrs['rows'] = 3
+        url = reverse('advanced_report_builder:table_field_modal',
+                      kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
         return ('name',
                 'notes',
                 'report_type',
@@ -302,7 +320,10 @@ class SingleValueModal(QueryBuilderModalBase):
                         ),
                 'tile_colour',
                 'decimal_places',
-
+                'show_breakdown',
+                FieldEx('breakdown_fields',
+                        template='advanced_report_builder/select_column.html',
+                        extra_context={'select_column_url': url}),
                 FieldEx('query_data',
                         template='advanced_report_builder/query_builder.html')
                 )
@@ -328,3 +349,41 @@ class SingleValueModal(QueryBuilderModalBase):
                                                       SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT] and
                 not cleaned_data['field']):
             raise ValidationError("Please select a field")
+
+    def ajax_get_fields(self, **kwargs):
+        report_type_id = kwargs['report_type']
+        report_builder_fields, base_model = self.get_report_builder_class(report_type_id=report_type_id)
+        fields = []
+        tables = []
+        self._get_fields(base_model=base_model,
+                         fields=fields,
+                         tables=tables,
+                         report_builder_class=report_builder_fields)
+        return self.command_response('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
+
+
+class ShowBreakdownModal(TableUtilsMixin, Modal):
+    button_container_class = 'text-center'
+    size = 'xl'
+
+    def modal_title(self):
+        return self.table_report.name
+
+    def modal_content(self):
+        single_value_report = get_object_or_404(SingleValueReport, pk=self.slug['pk'])
+        self.table_report = single_value_report
+        base_model = single_value_report.get_base_modal()
+        table = DatatableTable(view=self, model=base_model)
+        table.extra_filters = self.extra_filters
+        table_fields = single_value_report.breakdown_fields
+        report_builder_class = getattr(base_model,
+                                       self.table_report.report_type.report_builder_class_name, None)
+        self.process_query_results(report_builder_class=report_builder_class,
+                                   table=table,
+                                   base_model=base_model,
+                                   table_fields=table_fields)
+
+        table.ajax_data = False
+        table.table_options['pageLength'] = 25
+        table.table_options['bStateSave'] = False
+        return table.render()
