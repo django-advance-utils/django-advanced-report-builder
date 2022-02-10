@@ -2,12 +2,12 @@ Django==3.2.7
 psycopg2-binary>=2.8
 django-crispy-forms==1.12.0
 #django-tab-menus==0.0.13
-git+https://github.com/jonesim/django-menus.git@53a641bb30d029961932b3ec5b835c405a7cd4c2
+git+https://github.com/jonesim/django-menus.git@badccaee168b3452dca7f39bf91a444106b64cf1
 # django-filtered-datatables==0.0.19
 git+https://github.com/jonesim/django-datatables.git@15ad01ba9eef83d784a38795df6526196f4f13d3
 
 django-nested-modals==0.0.17
-# git+https://github.com/jonesim/django-modals.git@8561b9ea665aa143b5fc5096cb6a46cd34c0c2b9
+# git+https://github.com/jonesim/django-modals.git@6bbdc6eec38f81a4e6ef7c8ea034843120cbe594
 
 django-ajax-helpers==0.0.16
 # git+https://github.com/jonesim/ajax-helpers.git@3ab5d5310398bb213a3dd50edae8813983562f55

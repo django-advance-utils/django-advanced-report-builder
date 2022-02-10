@@ -120,7 +120,6 @@ class KanbanView(ReportBase, FilterQueryMixin, TemplateView):
                 *self.duplicate_menu(request=self.request, report_id=self.chart_report.id)
                 ]
 
-
     def pod_dashboard_edit_menu(self):
         return [MenuItem(f'advanced_report_builder:dashboard_report_modal,pk-{self.dashboard_report.id}',
                          menu_display='Edit',
@@ -205,27 +204,35 @@ class KanbanLaneModal(QueryBuilderModalBase):
 
     def form_setup(self, form, *_args, **_kwargs):
         heading_fields = []
-        if form.instance.heading_field:
-            form.fields['heading_field'].initial = form.instance.heading_field
+        if 'data' in _kwargs:
+            heading_field = _kwargs['data'].get('heading_field')
+        else:
+            heading_field = form.instance.heading_field
+        if heading_field:
+            form.fields['heading_field'].initial = heading_field
             base_model = form.instance.report_type.content_type.model_class()
             report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
             self._get_fields(base_model=base_model,
                              fields=heading_fields,
                              report_builder_class=report_builder_fields,
-                             selected_field_id=form.instance.heading_field,
+                             selected_field_id=heading_field,
                              for_select2=True)
         form.fields['heading_field'].widget = Select2(attrs={'ajax': True})
         form.fields['heading_field'].widget.select_data = heading_fields
 
         order_by_fields = []
-        if form.instance.order_by_field:
-            form.fields['order_by_field'].initial = form.instance.order_by_field
+        if 'data' in _kwargs:
+            order_by_field = _kwargs['data'].get('order_by_field')
+        else:
+            order_by_field = form.instance.order_by_field
+        if order_by_field:
+            form.fields['order_by_field'].initial = order_by_field
             base_model = form.instance.report_type.content_type.model_class()
             report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
             self._get_date_fields(base_model=base_model,
                                   fields=order_by_fields,
                                   report_builder_class=report_builder_fields,
-                                  selected_field_id=form.instance.order_by_field)
+                                  selected_field_id=order_by_field)
         form.fields['order_by_field'].widget = Select2(attrs={'ajax': True})
         form.fields['order_by_field'].widget.select_data = order_by_fields
 

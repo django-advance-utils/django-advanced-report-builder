@@ -127,17 +127,18 @@ class LineChartModal(QueryBuilderModalBase):
     def form_setup(self, form, *_args, **_kwargs):
 
         date_fields = []
-        if form.instance.date_field:
-
-            form.fields['fields'].initial = form.instance.fields
-
+        if 'data' in _kwargs:
+            date_field = _kwargs['data'].get('date_field')
+        else:
+            date_field = form.instance.field
+        if date_field:
+            form.fields['fields'].initial = date_fields
             base_model = form.instance.report_type.content_type.model_class()
             report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
-
             self._get_date_fields(base_model=base_model,
                                   fields=date_fields,
                                   report_builder_class=report_builder_fields,
-                                  selected_field_id=form.instance.date_field)
+                                  selected_field_id=date_field)
 
         form.fields['date_field'].widget = Select2(attrs={'ajax': True})
         form.fields['date_field'].widget.select_data = date_fields

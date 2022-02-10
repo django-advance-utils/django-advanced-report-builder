@@ -2,6 +2,7 @@ import json
 
 from crispy_forms.bootstrap import StrictButton
 from django.apps import apps
+from django.conf import settings
 from django.forms import CharField, JSONField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -9,10 +10,9 @@ from django_modals.forms import ModelCrispyForm
 from django_modals.modals import ModelFormModal
 
 from advanced_report_builder.field_types import FieldTypes
-from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS
+from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, LINK_COLUMNS
 from advanced_report_builder.models import ReportQuery, ReportType
 from advanced_report_builder.utils import get_django_field
-from django.conf import settings
 
 
 class QueryBuilderModelForm(ModelCrispyForm):
@@ -136,7 +136,8 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
     def _get_fields(self, base_model, fields, report_builder_class, tables=None,
                     prefix='', title_prefix='', title=None, colour=None,
                     previous_base_model=None, selected_field_id=None, for_select2=False,
-                    pivot_fields=None, allow_annotations_fields=True, field_types=None, search_string=None):
+                    pivot_fields=None, allow_annotations_fields=True, field_types=None,
+                    column_types=None, search_string=None):
         if title is None:
             title = report_builder_class.title
         if colour is None:
@@ -150,7 +151,9 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
             django_field, col_type_override, columns = get_django_field(base_model=base_model,
                                                                         field=report_builder_field)
             for column in columns:
-                if (field_types is None or isinstance(django_field, field_types) or
+                if ((field_types is None and column_types is None) or
+                        (field_types is not None and isinstance(django_field, field_types)) or
+                        (column_types is not None and isinstance(col_type_override, column_types)) or
                         (allow_annotations_fields and column.annotations)):
                     full_id = prefix + column.column_name
                     if selected_field_id is None or selected_field_id == full_id:
@@ -192,7 +195,9 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                                  for_select2=for_select2,
                                  pivot_fields=pivot_fields,
                                  allow_annotations_fields=allow_annotations_fields,
-                                 field_types=field_types,)
+                                 field_types=field_types,
+                                 column_types=column_types,
+                                 search_string=search_string)
 
     def ajax_get_fields(self, **kwargs):
         report_type_id = kwargs['report_type']
@@ -224,6 +229,18 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                                 field_types=NUMBER_FIELDS,
                                 for_select2=True,
                                 search_string=search_string
+                                )
+
+    def _get_column_link_fields(self, base_model, fields, report_builder_class,
+                                selected_field_id=None, search_string=None):
+        return self._get_fields(base_model=base_model,
+                                fields=fields,
+                                report_builder_class=report_builder_class,
+                                selected_field_id=selected_field_id,
+                                column_types=LINK_COLUMNS,
+                                for_select2=True,
+                                search_string=search_string,
+                                allow_annotations_fields=False
                                 )
 
     def form_valid(self, form):

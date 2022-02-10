@@ -54,7 +54,15 @@ class Company(TimeStampedModel):
         payments = CurrencyPenceColumn(annotations={'payments': Sum('payment__amount', distinct=True)})
 
         # people = {'annotations': {'people': Count('person__id')}}
-        collink_1 = ColumnLink(title='Defined in Model', field='name', url_name='report_builder_examples:example_link')
+        collink_1 = ColumnLink(title='Col link 1', field='name', url_name='report_builder_examples:example_link')
+
+        collink_2 = ColumnLink(title='Col link 2',
+                               field=['id', 'name'],
+                               url_name='report_builder_examples:example_link', width='10px',
+                               link_html='<button class="btn btn-sm btn-outline-dark">'
+                                         '<i class="fas fa-building"></i></button>'
+                               )
+
         # sector_names = ManyToManyColumn(column_name='sectors', field='sectors__name')
         sector_names = ManyToManyColumn(field='sectors__name')
 
@@ -86,6 +94,7 @@ class Company(TimeStampedModel):
                   'importance',
                   'people',
                   'collink_1',
+                  'collink_2',
                   'payments',
                   'sector_names',
                   'created',

@@ -1,5 +1,5 @@
 from django.contrib.humanize.templatetags.humanize import intcomma
-from django_datatables.columns import ColumnBase, CurrencyPenceColumn, CurrencyColumn
+from django_datatables.columns import ColumnBase, CurrencyPenceColumn, CurrencyColumn, NoHeadingColumn
 
 
 class ReportBuilderDateColumn(ColumnBase):
@@ -59,3 +59,8 @@ class ReportBuilderCurrencyColumn(CurrencyColumn):
             return '0.00'
 
 
+class ArrowColumn(NoHeadingColumn):
+    def __init__(self, **kwargs):
+        kwargs['render'] = [{'html': '<i class="fa fa-angle-right fa-2x"></i>', 'function': 'Html'}]
+        kwargs['width'] = '10px'
+        super().__init__(**kwargs)

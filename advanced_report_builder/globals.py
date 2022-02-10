@@ -1,10 +1,14 @@
 from django.db import models
 from django.db.models import Sum, Max, Min, Count, Avg
 from django.db.models.functions import TruncMonth, TruncQuarter, TruncYear, TruncWeek, TruncDay
+from django_datatables.columns import CurrencyColumn, CurrencyPenceColumn, ColumnLink
 
 NUMBER_FIELDS = (models.IntegerField, models.PositiveSmallIntegerField, models.PositiveIntegerField)
 DATE_FIELDS = (models.DateTimeField, models.DateField)
 BOOLEAN_FIELD = models.BooleanField
+
+CURRENCY_COLUMNS = (CurrencyColumn, CurrencyPenceColumn)
+LINK_COLUMNS = ColumnLink
 
 ANNOTATION_VALUE_YEAR = 1
 ANNOTATION_VALUE_QUARTER = 2

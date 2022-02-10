@@ -9,6 +9,17 @@
     {% lib_include module='django_menus.includes' %}
     {% lib_include 'Modals' 'Toggle' 'select2' 'JQueryUI' 'TinyMce' 'ColourPicker' module='django_modals.includes' %}
 
+    <style>
+        .row_link tr td {
+            cursor: pointer;
+        }
+
+        .row_link + tbody tr td {
+            cursor: pointer;
+        }
+
+    </style>
+
     {% block head %}{% endblock %}
 </head>
 <body>

@@ -279,26 +279,34 @@ class SingleValueModal(QueryBuilderModalBase):
         ])
 
         fields = []
+        if 'data' in _kwargs:
+            field = _kwargs['data'].get('field')
+        else:
+            field = form.instance.field
         if form.instance.field:
-            form.fields['field'].initial = form.instance.field
+            form.fields['field'].initial = field
             base_model = form.instance.report_type.content_type.model_class()
             report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
             self._get_number_fields(base_model=base_model,
                                     fields=fields,
                                     report_builder_class=report_builder_fields,
-                                    selected_field_id=form.instance.field)
+                                    selected_field_id=field)
         form.fields['field'].widget = Select2(attrs={'ajax': True})
         form.fields['field'].widget.select_data = fields
 
         numerator_fields = []
+        if 'data' in _kwargs:
+            numerator = _kwargs['data'].get('numerator')
+        else:
+            numerator = form.instance.numerator
         if form.instance.numerator:
-            form.fields['numerator'].initial = form.instance.numerator
+            form.fields['numerator'].initial = numerator
             base_model = form.instance.report_type.content_type.model_class()
             report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
             self._get_number_fields(base_model=base_model,
                                     fields=numerator_fields,
                                     report_builder_class=report_builder_fields,
-                                    selected_field_id=form.instance.numerator)
+                                    selected_field_id=numerator)
 
         form.fields['numerator'].widget = Select2(attrs={'ajax': True})
         form.fields['numerator'].widget.select_data = numerator_fields
@@ -378,9 +386,11 @@ class ShowBreakdownModal(TableUtilsMixin, Modal):
         table_fields = single_value_report.breakdown_fields
         report_builder_class = getattr(base_model,
                                        self.table_report.report_type.report_builder_class_name, None)
+        fields_used = set()
         self.process_query_results(report_builder_class=report_builder_class,
                                    table=table,
                                    base_model=base_model,
+                                   fields_used=fields_used,
                                    table_fields=table_fields)
 
         table.ajax_data = False

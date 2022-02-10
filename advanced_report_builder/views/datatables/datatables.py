@@ -5,19 +5,21 @@ from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Div
 from django.conf import settings
 from django.forms import CharField, ChoiceField, BooleanField, IntegerField
+from django.http import JsonResponse
 from django.urls import reverse
-from django_datatables.columns import CurrencyPenceColumn, CurrencyColumn
 from django_datatables.datatables import DatatableView, DatatableError
+from django_datatables.helpers import row_link
 from django_menus.menu import MenuItem
 from django_modals.fields import FieldEx
 from django_modals.modals import FormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
-from django_modals.widgets.select2 import Select2Multiple
+from django_modals.widgets.select2 import Select2Multiple, Select2
 from django_modals.widgets.widgets import Toggle
 
+from advanced_report_builder.columns import ArrowColumn
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, \
-    DATE_FORMAT_TYPES
+    DATE_FORMAT_TYPES, CURRENCY_COLUMNS
 from advanced_report_builder.models import TableReport, ReportQuery
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr, get_django_field
@@ -58,16 +60,30 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
         base_model = self.table_report.get_base_modal()
         table_fields = self.table_report.table_fields
         pivot_fields = self.table_report.pivot_fields
+        fields_used = set()
         report_builder_class = getattr(base_model,
                                        self.table_report.report_type.report_builder_class_name, None)
         self.process_query_results(report_builder_class=report_builder_class,
                                    table=table,
                                    base_model=base_model,
+                                   fields_used=fields_used,
                                    table_fields=table_fields,
                                    pivot_fields=pivot_fields)
 
         table.table_options['pageLength'] = self.table_report.page_length
         table.table_options['bStateSave'] = False
+        if self.table_report.has_clickable_rows and self.table_report.link_field:
+            table.table_classes.append('row_link')
+            table.add_columns(ArrowColumn(column_name='arrow_icon'))
+            _, col_type_override, _ = get_django_field(base_model=base_model,
+                                                       field=self.table_report.link_field)
+            if isinstance(col_type_override.field, list):
+                field = col_type_override.field[0]
+            else:
+                field = 'id'
+            if field not in fields_used:
+                table.add_columns(f'.{field}')
+            table.table_options['row_href'] = row_link(col_type_override.url, field)
 
     def add_to_context(self, **kwargs):
         return {'title': self.get_title(),
@@ -131,6 +147,7 @@ class TableModal(QueryBuilderModalBase):
                    ('has_clickable_rows', {'widget': Toggle(attrs={'data-onstyle': 'success',
                                                                    'data-on': 'YES',
                                                                    'data-off': 'NO'})}),
+                   'link_field',
                    'page_length',
                    'report_type',
                    'report_tags',
@@ -150,12 +167,37 @@ class TableModal(QueryBuilderModalBase):
 
         pivot_url = reverse('advanced_report_builder:table_pivot_modal',
                             kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
+
+        form.add_trigger('has_clickable_rows', 'onchange', [
+            {'selector': '#div_id_link_field', 'values': {'checked': 'show'}, 'default': 'hide'},
+        ])
+
         form.fields['notes'].widget.attrs['rows'] = 3
+
+        link_fields = []
+
+        if 'data' in _kwargs:
+            link_field = _kwargs['data'].get( 'link_field')
+        else:
+            link_field = form.instance.link_field
+        if link_field:
+            form.fields['link_field'].initial = link_field
+            base_model = form.instance.report_type.content_type.model_class()
+            report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
+            self._get_column_link_fields(base_model=base_model,
+                                         fields=link_fields,
+                                         report_builder_class=report_builder_fields,
+                                         selected_field_id=link_field)
+
+        form.fields['link_field'].widget = Select2(attrs={'ajax': True})
+        form.fields['link_field'].widget.select_data = link_fields
+
         fields = ['name',
                   'notes',
                   'report_type',
                   'report_tags',
                   FieldEx('has_clickable_rows', template='django_modals/fields/label_checkbox.html'),
+                  'link_field',
                   FieldEx('page_length', template='django_modals/fields/label_checkbox.html'),
                   FieldEx('table_fields',
                           template='advanced_report_builder/select_column.html',
@@ -209,6 +251,18 @@ class TableModal(QueryBuilderModalBase):
         self.add_command('report_pivots', data=json.dumps({'pivot_fields': pivot_fields}))
 
         return self.command_response()
+
+    def select2_link_field(self, **kwargs):
+        fields = []
+        if kwargs['report_type'] != '':
+            report_builder_fields, base_model = self.get_report_builder_class(report_type_id=kwargs['report_type'])
+            fields = []
+            self._get_column_link_fields(base_model=base_model,
+                                         fields=fields,
+                                         report_builder_class=report_builder_fields,
+                                         search_string=kwargs.get('search'))
+
+        return JsonResponse({'results': fields})
 
 
 class TableFieldForm(ChartBaseFieldForm):
@@ -268,7 +322,7 @@ class TableFieldForm(ChartBaseFieldForm):
             if data_attr.get('multiple_columns') == '1':
                 self.fields['multiple_columns'].initial = True
                 self.fields['multiple_column_field'].initial = data_attr.get('multiple_column_field')
-        elif isinstance(self.col_type_override, (CurrencyColumn, CurrencyPenceColumn)):
+        elif isinstance(self.col_type_override, CURRENCY_COLUMNS):
             self.fields['show_totals'] = BooleanField(required=False, widget=RBToggle())
             if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
                 self.fields['show_totals'].initial = True
@@ -302,7 +356,7 @@ class TableFieldForm(ChartBaseFieldForm):
                 if self.cleaned_data['multiple_columns']:
                     attributes.append('multiple_columns-1')
                     attributes.append(f'multiple_column_field-{self.cleaned_data["multiple_column_field"]}')
-        elif isinstance(self.col_type_override, (CurrencyColumn, CurrencyPenceColumn)):
+        elif isinstance(self.col_type_override, CURRENCY_COLUMNS):
             if self.cleaned_data['show_totals'] and self.cleaned_data["show_totals"]:
                 attributes.append('show_totals-1')
 
@@ -370,7 +424,7 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
                             css_id='filter_fields_div'),
                         css_id='annotations_fields_div')
                     ]
-        elif isinstance(col_type_override, (CurrencyPenceColumn, CurrencyColumn)):
+        elif isinstance(col_type_override, CURRENCY_COLUMNS):
             return ['title',
                     'show_totals']
 

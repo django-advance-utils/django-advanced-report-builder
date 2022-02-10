@@ -5,7 +5,7 @@ from django_datatables.columns import CurrencyPenceColumn, CurrencyColumn
 from django_datatables.plugins.column_totals import ColumnTotals
 
 from advanced_report_builder.columns import ReportBuilderDateColumn
-from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS
+from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, CURRENCY_COLUMNS
 from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_FUNCTIONS
 from advanced_report_builder.utils import split_attr, get_django_field
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
@@ -56,7 +56,8 @@ class TableUtilsMixin(ReportUtilsMixin):
 
         return field_name
 
-    def process_query_results(self, report_builder_class, table, base_model, table_fields, pivot_fields=None):
+    def process_query_results(self, report_builder_class, table, base_model,
+                              fields_used, table_fields, pivot_fields=None):
         first_field_name = None
 
         field_name = None
@@ -69,19 +70,15 @@ class TableUtilsMixin(ReportUtilsMixin):
         if not table_fields:
             return fields, totals, first_field_name
 
-        fields_used = set()
         for index, table_field in enumerate(table_fields):
             field = table_field['field']
             fields_used.add(field)
-
             django_field, col_type_override, _ = get_django_field(base_model=base_model, field=field)
-
             if isinstance(django_field, DATE_FIELDS):
                 field_name = self.get_date_field(index=index,
                                                  col_type_override=col_type_override,
                                                  table_field=table_field,
                                                  fields=fields)
-
             elif isinstance(django_field, NUMBER_FIELDS) and (django_field is None or django_field.choices is None):
                 data_attr = split_attr(table_field)
 
@@ -129,7 +126,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                                                        decimal_places=decimal_places)
             else:
                 field_name = field
-                if isinstance(col_type_override, (CurrencyPenceColumn, CurrencyColumn)) and totals is not None:
+                if isinstance(col_type_override, CURRENCY_COLUMNS) and totals is not None:
                     data_attr = split_attr(table_field)
                     css_class = col_type_override.column_defs.get('className')
                     show_total = data_attr.get('show_totals')
