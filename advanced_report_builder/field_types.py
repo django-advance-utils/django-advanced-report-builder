@@ -50,11 +50,18 @@ class FieldTypes:
         return operators.get(field_type)
 
     def get_filter(self, query_builder_filters, django_field, field, title, column, prefix):
+        if isinstance(column.field, list):
+            full_field_name = prefix + column.field[0]
+        elif column.field is not None:
+            full_field_name = prefix + column.field
+        else:
+            full_field_name = prefix + field
+        column_id = prefix + field
         if django_field is not None:
             if isinstance(django_field, (models.CharField, models.TextField, models.EmailField)):
-                query_builder_filters.append({"id": field,
+                query_builder_filters.append({"id": column_id,
                                               "label": title,
-                                              "field": field,
+                                              "field": full_field_name,
                                               "type": "string",
                                               "operators": self.get_operator(self.FIELD_TYPE_STRING),
                                               "validation": {"allow_empty_value": True
@@ -64,16 +71,16 @@ class FieldTypes:
                                            models.PositiveSmallIntegerField,
                                            models.PositiveIntegerField)):
                 if django_field.choices is None:
-                    query_builder_filter = {"id": field,
+                    query_builder_filter = {"id": column_id,
                                             "label": title,
-                                            "field": field,
+                                            "field": full_field_name,
                                             "type": "integer",
                                             "operators": self.get_operator(self.FIELD_TYPE_NUMBER),
                                             }
                 else:
-                    query_builder_filter = {"id": field,
+                    query_builder_filter = {"id": column_id,
                                             "label": title,
-                                            "field": field,
+                                            "field": full_field_name,
                                             "type": "integer",
                                             'input': 'select',
                                             'multiple': True,
@@ -82,22 +89,21 @@ class FieldTypes:
                                             }
                 query_builder_filters.append(query_builder_filter)
             elif isinstance(django_field, models.BooleanField):
-                query_builder_filters.append({"id": field,
+                query_builder_filters.append({"id": column_id,
                                               "label": title,
-                                              "field": field,
+                                              "field": full_field_name,
                                               "input": "select",
                                               "operators": self.get_operator(self.FIELD_TYPE_BOOLEAN),
                                               "values": {"0": "False", "1": "True"}})
             elif isinstance(django_field, DATE_FIELDS):
-                self.get_date_field(query_builder_filters=query_builder_filters,
-                                    field=field,
+                self.get_date_field(column_id=column_id,
+                                    query_builder_filters=query_builder_filters,
+                                    field=full_field_name,
                                     title=title)
         else:
             if isinstance(column, ManyToManyColumn):
-
                 choices = dict(column.options['lookup'])
-
-                query_builder_filter = {"id": field,
+                query_builder_filter = {"id": column_id,
                                         "label": title,
                                         "field": prefix + column.field_id,
                                         "type": "integer",
@@ -117,9 +123,9 @@ class FieldTypes:
                                                      }
                                       })
 
-    def get_date_field(self, query_builder_filters, field, title):
+    def get_date_field(self, column_id, query_builder_filters, field, title):
         variable_date = VariableDate()
-        query_builder_filter = {"id": f'{field}__variable_date',
+        query_builder_filter = {"id": f'{column_id}__variable_date',
                                 "label": f'{title} (Variable)',
                                 "field": field,
                                 "operators": self.get_operator(self.FIELD_TYPE_DATE),

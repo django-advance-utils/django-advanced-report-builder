@@ -47,7 +47,6 @@ class QueryBuilderModalBaseMixin:
 
     def _get_query_builder_fields(self, base_model, query_builder_filters, report_builder_fields, prefix='',
                                   title_prefix='', previous_base_model=None):
-
         field_types = FieldTypes()
 
         for report_builder_field in report_builder_fields.fields:
@@ -55,7 +54,7 @@ class QueryBuilderModalBaseMixin:
             for column in columns:
                 field_types.get_filter(query_builder_filters=query_builder_filters,
                                        django_field=django_field,
-                                       field=prefix + column.column_name,
+                                       field=column.column_name,
                                        title=title_prefix + column.title,
                                        column=column,
                                        prefix=prefix)

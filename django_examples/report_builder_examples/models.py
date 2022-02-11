@@ -1,7 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Count, Sum
-from django_datatables.columns import ColumnLink, DatatableColumn, CurrencyPenceColumn, ColumnBase, ManyToManyColumn
+from django_datatables.columns import ColumnLink, DatatableColumn, CurrencyPenceColumn, ColumnBase, ManyToManyColumn, \
+    DateColumn
 from django_datatables.model_def import DatatableModel
 from report_builder_examples.report_overrides import CustomDateColumn
 from time_stamped_model.models import TimeStampedModel
@@ -86,6 +87,9 @@ class Company(TimeStampedModel):
                 self.options['lookup'] = list(Tags.objects.values_list('id', 'tag'))
                 self.row_result = self.proc_result
 
+        date_created = DateColumn(field='created', title='Date Created')
+        date_modified = DateColumn(field='modified', title='Date Modified')
+
     class ReportBuilder(ReportBuilderFields):
         colour = '#00008b'
         title = 'Company'
@@ -97,8 +101,8 @@ class Company(TimeStampedModel):
                   'collink_2',
                   'payments',
                   'sector_names',
-                  'created',
-                  'modified',
+                  'date_created',
+                  'date_modified',
                   'Tags',
                   ]
         default_columns = ['.id']
