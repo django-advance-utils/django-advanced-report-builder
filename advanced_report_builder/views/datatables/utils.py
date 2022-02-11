@@ -150,7 +150,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                                                        col_type_override=col_type_override,
                                                        decimal_places=decimal_places)
 
-            if isinstance(col_type_override, LINK_COLUMNS):
+            elif isinstance(col_type_override, LINK_COLUMNS):
                 self.get_link_field(table_field=table_field,
                                     col_type_override=col_type_override,
                                     fields=fields)
