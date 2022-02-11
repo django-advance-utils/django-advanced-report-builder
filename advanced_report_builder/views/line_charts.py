@@ -19,7 +19,7 @@ from advanced_report_builder.globals import ANNOTATION_VALUE_YEAR, \
     ANNOTATION_VALUE_QUARTER, ANNOTATION_VALUE_MONTH, ANNOTATION_VALUE_WEEK, ANNOTATION_VALUE_DAY
 from advanced_report_builder.models import LineChartReport
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import split_attr
+from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute
 from advanced_report_builder.views.charts_base import ChartBaseView, ChartJSTable, ChartBaseFieldForm
 from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin, QueryBuilderModalBase
 
@@ -197,9 +197,7 @@ class LineChartFieldForm(ChartBaseFieldForm):
         if data_attr.get('has_filter') == '1':
             self.fields['has_filter'].initial = True
             if 'filter' in data_attr:
-                _filter = base64.urlsafe_b64decode(data_attr['filter'])
-                _filter = _filter.decode('utf-8', 'ignore')
-                self.fields['filter'].initial = _filter
+                self.fields['filter'].initial = decode_attribute(data_attr['filter'])
 
         self.fields['multiple_columns'] = BooleanField(required=False, widget=RBToggle())
 
@@ -227,10 +225,8 @@ class LineChartFieldForm(ChartBaseFieldForm):
             attributes.append('has_filter-1')
 
             if self.cleaned_data['filter']:
-                _filter = self.cleaned_data['filter'].encode('utf-8', 'ignore')
-                b64_filter = base64.urlsafe_b64encode(_filter).decode('utf-8', 'ignore')
+                b64_filter = encode_attribute(self.cleaned_data['filter'])
                 attributes.append(f'filter-{b64_filter}')
-
             if self.cleaned_data['multiple_columns']:
                 attributes.append('multiple_columns-1')
                 attributes.append(f'multiple_column_field-{self.cleaned_data["multiple_column_field"]}')

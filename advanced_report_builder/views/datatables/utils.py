@@ -1,13 +1,12 @@
 import copy
 
 from django.db.models import Q
-from django_datatables.columns import CurrencyPenceColumn, CurrencyColumn
 from django_datatables.plugins.column_totals import ColumnTotals
 
 from advanced_report_builder.columns import ReportBuilderDateColumn
-from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, CURRENCY_COLUMNS
+from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, CURRENCY_COLUMNS, LINK_COLUMNS
 from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_FUNCTIONS
-from advanced_report_builder.utils import split_attr, get_django_field
+from advanced_report_builder.utils import split_attr, get_django_field, decode_attribute
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
 
 
@@ -55,6 +54,32 @@ class TableUtilsMixin(ReportUtilsMixin):
             fields.append(field)
 
         return field_name
+
+    @staticmethod
+    def get_link_field(table_field, fields, col_type_override):
+        field = copy.deepcopy(col_type_override)
+        data_attr = split_attr(table_field)
+        link_css = ''
+        if 'link_css' in data_attr:
+            link_css = decode_attribute(data_attr['link_css'])
+
+        link_html = ''
+        if 'link_html' in data_attr:
+            link_html = decode_attribute(data_attr['link_html'])
+
+        if link_css or link_html:
+            field.setup_link(link_css=link_css, link_html=link_html)
+
+        is_icon = data_attr.get('is_icon')
+        if is_icon == '1':
+            field.title = ''
+            field.options['no_col_search'] = True
+            field.column_defs['orderable'] = False
+            field.column_defs['width'] = '10px'
+
+        elif 'title' in table_field:
+            field.title = table_field['title']
+        fields.append(field)
 
     def process_query_results(self, report_builder_class, table, base_model,
                               fields_used, table_fields, pivot_fields=None):
@@ -124,6 +149,12 @@ class TableUtilsMixin(ReportUtilsMixin):
                                                        totals=totals,
                                                        col_type_override=col_type_override,
                                                        decimal_places=decimal_places)
+
+            if isinstance(col_type_override, LINK_COLUMNS):
+                self.get_link_field(table_field=table_field,
+                                    col_type_override=col_type_override,
+                                    fields=fields)
+
             else:
                 field_name = field
                 if isinstance(col_type_override, CURRENCY_COLUMNS) and totals is not None:
@@ -133,7 +164,6 @@ class TableUtilsMixin(ReportUtilsMixin):
                     if show_total == '1':
                         totals[field_name] = {'sum': 'to_fixed', 'decimal_places': 2,
                                               'css_class': css_class}
-
                 field_attr = {}
                 if 'title' in table_field:
                     field_attr['title'] = table_field['title']

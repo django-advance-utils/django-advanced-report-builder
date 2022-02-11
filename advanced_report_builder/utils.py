@@ -1,3 +1,5 @@
+import base64
+
 from crispy_forms.layout import HTML, Div
 from django.conf import settings
 from django.utils.module_loading import import_string
@@ -94,3 +96,14 @@ def crispy_modal_link_args(modal_name, text, *args, div=False, div_classes='', b
         link = Div(link, css_class=div_classes)
     return link
 
+
+def encode_attribute(string_in):
+    _data = string_in.encode('utf-8', 'ignore')
+    _data = base64.urlsafe_b64encode(_data).decode('utf-8', 'ignore')
+    return _data.replace('-', '@')
+
+
+def decode_attribute(data_attr):
+    data_attr = data_attr.replace('@', '-')
+    _data = base64.urlsafe_b64decode(data_attr)
+    return _data.decode('utf-8', 'ignore')

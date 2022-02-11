@@ -16,7 +16,7 @@ from advanced_report_builder.globals import DEFAULT_DATE_FORMAT, \
     DATE_FORMAT_TYPES_DJANGO_FORMAT
 from advanced_report_builder.models import BarChartReport
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import split_attr
+from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute
 from advanced_report_builder.views.charts_base import ChartBaseView, ChartBaseFieldForm
 from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin, QueryBuilderModalBase
 
@@ -166,9 +166,7 @@ class BarChartFieldForm(ChartBaseFieldForm):
         if data_attr.get('has_filter') == '1':
             self.fields['has_filter'].initial = True
             if 'filter' in data_attr:
-                _filter = base64.urlsafe_b64decode(data_attr['filter'])
-                _filter = _filter.decode('utf-8', 'ignore')
-                self.fields['filter'].initial = _filter
+                self.fields['filter'].initial = decode_attribute(data_attr['filter'])
 
         self.fields['multiple_columns'] = BooleanField(required=False, widget=RBToggle())
 
@@ -197,8 +195,7 @@ class BarChartFieldForm(ChartBaseFieldForm):
             attributes.append('has_filter-1')
 
             if self.cleaned_data['filter']:
-                _filter = self.cleaned_data['filter'].encode('utf-8', 'ignore')
-                b64_filter = base64.urlsafe_b64encode(_filter).decode('utf-8', 'ignore')
+                b64_filter = encode_attribute(self.cleaned_data['filter'])
                 attributes.append(f'filter-{b64_filter}')
 
             if self.cleaned_data['multiple_columns']:

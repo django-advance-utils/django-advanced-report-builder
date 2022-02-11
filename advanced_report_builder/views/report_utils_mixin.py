@@ -9,6 +9,7 @@ from advanced_report_builder.columns import ReportBuilderCurrencyPenceColumn, Re
     ReportBuilderNumberColumn
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import ANNOTATION_FUNCTIONS, ANNOTATION_CHOICE_COUNT
+from advanced_report_builder.utils import decode_attribute
 
 
 class ReportUtilsMixin(FilterQueryMixin):
@@ -24,7 +25,7 @@ class ReportUtilsMixin(FilterQueryMixin):
         if annotations_type != 0:
             b64_filter = data_attr.get('filter')
             if b64_filter:
-                _filter = base64.urlsafe_b64decode(b64_filter).decode('utf-8', 'ignore')
+                _filter = decode_attribute(b64_filter)
                 annotation_filter = self.process_filters(search_filter_data=_filter, extra_filter=extra_filter)
             elif extra_filter:
                 annotation_filter = reduce(operator.and_, [extra_filter])

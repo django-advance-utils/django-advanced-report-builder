@@ -2,7 +2,7 @@ from django.urls import path
 
 from advanced_report_builder.views.bar_charts import BarChartModal, BarChartFieldModal
 from advanced_report_builder.views.dashboard import DashboardReportModal, DashboardModal, DashboardAddReportModal
-from advanced_report_builder.views.datatables.datatables import TableModal, TableFieldModal, TablePivotModal
+from advanced_report_builder.views.datatables.modal import TableModal, TableFieldModal, TablePivotModal
 from advanced_report_builder.views.funnel_charts import FunnelChartModal, FunnelChartFieldModal
 from advanced_report_builder.views.kanban import KanbanModal, KanbanLaneModal
 from advanced_report_builder.views.line_charts import LineChartModal, LineChartFieldModal

@@ -1,20 +1,18 @@
-from advanced_report_builder.views.bar_charts import BarChartView
-from advanced_report_builder.views.funnel_charts import FunnelChartView
-from advanced_report_builder.views.kanban import KanbanView
-from advanced_report_builder.views.line_charts import LineChartView
-from advanced_report_builder.views.pie_charts import PieChartView
-from advanced_report_builder.views.single_values import SingleValueView
-from django.forms import CharField, Textarea
 from django.shortcuts import redirect
 from django_datatables.columns import ColumnLink
 from django_menus.menu import MenuItem
-from django_modals.fields import FieldEx
 from report_builder_examples.views.base import MainMenu, MainIndices
 
 from advanced_report_builder.models import Report
 from advanced_report_builder.utils import make_slug_str
-from advanced_report_builder.views.datatables.datatables import TableModal, TableView
+from advanced_report_builder.views.bar_charts import BarChartView
+from advanced_report_builder.views.datatables.datatables import TableView
+from advanced_report_builder.views.funnel_charts import FunnelChartView
+from advanced_report_builder.views.kanban import KanbanView
+from advanced_report_builder.views.line_charts import LineChartView
+from advanced_report_builder.views.pie_charts import PieChartView
 from advanced_report_builder.views.reports import ViewReportBase
+from advanced_report_builder.views.single_values import SingleValueView
 
 
 class ViewReports(MainIndices):
@@ -139,13 +137,3 @@ class ViewReport(MainMenu, ViewReportBase):
 
     def redirect_url(self):
         return redirect('report_builder_examples:view_report', slug=self.report.slug)
-
-
-class TableExtraModal(TableModal):
-
-    def form_setup(self, form, *_args, **_kwargs):
-        form.fields['notes'] = CharField(widget=Textarea)
-
-        return [FieldEx('name'),
-                FieldEx('notes'),
-                FieldEx('has_clickable_rows', template='django_modals/fields/label_checkbox.html')]
