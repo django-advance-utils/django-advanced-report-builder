@@ -1,6 +1,7 @@
 from django.urls import path
 from django.views.generic import TemplateView
 from report_builder_examples.views.dashboards import ViewDashboards, ViewDashboard
+from report_builder_examples.views.targets import ViewTargets
 
 from report_builder_examples.views.reports import ViewReport, ViewReports
 
@@ -18,5 +19,6 @@ urlpatterns = [
     path('dashboards/<str:slug>/', ViewDashboard.as_view(), name='view_dashboard'),
     path('dashboards/edit/<str:slug>/', ViewDashboard.as_view(enable_edit=True), name='edit_dashboard'),
 
+    path('targets/', ViewTargets.as_view(), name='targets_index'),
 
 ]

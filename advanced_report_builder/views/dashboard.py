@@ -145,8 +145,8 @@ class DashboardModal(ModelFormModal):
 
     def post_save(self, created):
         if created:
-            url_name = getattr(settings, 'REPORT_BUILDER_DASHBOARD_URL_NAME')
-            if url_name is not None:
+            url_name = getattr(settings, 'REPORT_BUILDER_DASHBOARD_URL_NAME', '')
+            if url_name:
                 url = reverse(url_name, kwargs={'slug': self.object.slug})
                 self.add_command('redirect', url=url)
 

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from advanced_report_builder.models import Report, ReportType, TableReport, ReportQuery, SingleValueReport, Dashboard, \
     DashboardReport, BarChartReport, LineChartReport, PieChartReport, FunnelChartReport, ReportTag, KanbanReport, \
-    KanbanReportLane
+    KanbanReportLane, Target
 
 
 @admin.register(ReportQuery)
@@ -136,3 +136,8 @@ class DashboardAdmin(admin.ModelAdmin):
 @admin.register(ReportTag)
 class ReportTagAdmin(admin.ModelAdmin):
     list_display = ('name', 'order')
+
+
+@admin.register(Target)
+class TargetAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'name', 'target_type', 'default_value')

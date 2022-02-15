@@ -6,6 +6,7 @@ from crispy_forms.layout import Div
 from django.conf import settings
 from django.forms import CharField, ChoiceField, BooleanField, IntegerField
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_modals.fields import FieldEx
 from django_modals.modals import FormModal
@@ -15,7 +16,7 @@ from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, \
     DATE_FORMAT_TYPES, CURRENCY_COLUMNS, LINK_COLUMNS
-from advanced_report_builder.models import TableReport, ReportQuery
+from advanced_report_builder.models import TableReport, ReportQuery, ReportType
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr, get_django_field, encode_attribute, decode_attribute
 from advanced_report_builder.views.charts_base import ChartBaseFieldForm
@@ -66,13 +67,16 @@ class TableModal(QueryBuilderModalBase):
         link_fields = []
 
         if 'data' in _kwargs:
-            link_field = _kwargs['data'].get( 'link_field')
+            link_field = _kwargs['data'].get('link_field')
+            report_type_id = _kwargs['data'].get('report_type')
+            report_type = get_object_or_404(ReportType, id=report_type_id)
         else:
             link_field = form.instance.link_field
+            report_type = form.instance.report_type
         if link_field:
             form.fields['link_field'].initial = link_field
-            base_model = form.instance.report_type.content_type.model_class()
-            report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
+            base_model = report_type.content_type.model_class()
+            report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
             self._get_column_link_fields(base_model=base_model,
                                          fields=link_fields,
                                          report_builder_class=report_builder_fields,
@@ -117,8 +121,8 @@ class TableModal(QueryBuilderModalBase):
             self.report_query.save()
         elif self.report_query:
             self.report_query.delete()
-        url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME')
-        if org_id is None and url_name is not None:
+        url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME', '')
+        if org_id is None and url_name:
             url = reverse(url_name, kwargs={'slug': table_report.slug})
             return self.command_response('redirect', url=url)
         else:

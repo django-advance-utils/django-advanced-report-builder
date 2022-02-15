@@ -93,9 +93,9 @@ class DuplicateReportModal(Modal):
         new_report = duplicate_report.duplicate(report=report)
         messages.add_message(self.request, messages.SUCCESS, f'Successfully duplicated {report.name}')
 
-        url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME')
-        if url_name is None:
-            return self.command_response('reload')
-        else:
+        url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME', '')
+        if url_name:
             url = reverse(url_name, kwargs={'slug': new_report.slug})
             return self.command_response('redirect', url=url)
+        else:
+            return self.command_response('reload')

@@ -19,7 +19,7 @@ from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_CHOICE_SUM, \
     ANNOTATION_CHOICE_AVG
-from advanced_report_builder.models import SingleValueReport
+from advanced_report_builder.models import SingleValueReport, ReportType
 from advanced_report_builder.utils import get_django_field
 from advanced_report_builder.views.charts_base import ChartBaseView
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
@@ -281,11 +281,17 @@ class SingleValueModal(QueryBuilderModalBase):
         fields = []
         if 'data' in _kwargs:
             field = _kwargs['data'].get('field')
+            numerator = _kwargs['data'].get('numerator')
+            report_type_id = _kwargs['data'].get('report_type')
+            report_type = get_object_or_404(ReportType, id=report_type_id)
         else:
             field = form.instance.field
+            report_type = form.instance.report_type
+            numerator = form.instance.numerator
+
         if form.instance.field:
             form.fields['field'].initial = field
-            base_model = form.instance.report_type.content_type.model_class()
+            base_model = report_type.content_type.model_class()
             report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
             self._get_number_fields(base_model=base_model,
                                     fields=fields,
@@ -295,13 +301,9 @@ class SingleValueModal(QueryBuilderModalBase):
         form.fields['field'].widget.select_data = fields
 
         numerator_fields = []
-        if 'data' in _kwargs:
-            numerator = _kwargs['data'].get('numerator')
-        else:
-            numerator = form.instance.numerator
         if form.instance.numerator:
             form.fields['numerator'].initial = numerator
-            base_model = form.instance.report_type.content_type.model_class()
+            base_model = report_type.content_type.model_class()
             report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
             self._get_number_fields(base_model=base_model,
                                     fields=numerator_fields,

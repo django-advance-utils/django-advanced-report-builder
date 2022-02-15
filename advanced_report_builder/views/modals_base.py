@@ -258,8 +258,8 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
             self.report_query.save()
         elif self.report_query:
             self.report_query.delete()
-        url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME')
-        if org_id is None and url_name is not None:
+        url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME', '')
+        if org_id is None and url_name:
             url = reverse(url_name, kwargs={'slug': chart_report.slug})
             return self.command_response('redirect', url=url)
         else:

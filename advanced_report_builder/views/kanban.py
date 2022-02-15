@@ -3,6 +3,7 @@ import json
 from django.conf import settings
 from django.forms import CharField
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.template import Template, Context, TemplateSyntaxError
 from django.urls import reverse
 from django.views.generic import TemplateView
@@ -19,7 +20,7 @@ from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.data_merge.utils import get_menu_fields, get_data_merge_columns
 from advanced_report_builder.data_merge.widget import DataMergeWidget
 from advanced_report_builder.filter_query import FilterQueryMixin
-from advanced_report_builder.models import KanbanReport, KanbanReportLane
+from advanced_report_builder.models import KanbanReport, KanbanReportLane, ReportType
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import crispy_modal_link_args
 from advanced_report_builder.views.charts_base import ChartJSTable
@@ -178,8 +179,8 @@ class KanbanModal(ModelFormModal):
         if created:
             self.modal_redirect(self.request.resolver_match.view_name, slug=f'pk-{self.object.id}-new-True')
         else:
-            url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME')
-            if url_name is not None and self.slug.get('new'):
+            url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME', '')
+            if url_name and self.slug.get('new'):
                 url = reverse(url_name, kwargs={'slug': self.object.slug})
                 self.command_response('redirect', url=url)
 
@@ -206,12 +207,18 @@ class KanbanLaneModal(QueryBuilderModalBase):
         heading_fields = []
         if 'data' in _kwargs:
             heading_field = _kwargs['data'].get('heading_field')
+            order_by_field = _kwargs['data'].get('order_by_field')
+            report_type_id = _kwargs['data'].get('report_type')
+            report_type = get_object_or_404(ReportType, id=report_type_id)
         else:
             heading_field = form.instance.heading_field
+            order_by_field = form.instance.order_by_field
+            report_type = form.instance.report_type
+
         if heading_field:
             form.fields['heading_field'].initial = heading_field
-            base_model = form.instance.report_type.content_type.model_class()
-            report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
+            base_model = report_type.content_type.model_class()
+            report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
             self._get_fields(base_model=base_model,
                              fields=heading_fields,
                              report_builder_class=report_builder_fields,
@@ -221,14 +228,10 @@ class KanbanLaneModal(QueryBuilderModalBase):
         form.fields['heading_field'].widget.select_data = heading_fields
 
         order_by_fields = []
-        if 'data' in _kwargs:
-            order_by_field = _kwargs['data'].get('order_by_field')
-        else:
-            order_by_field = form.instance.order_by_field
         if order_by_field:
             form.fields['order_by_field'].initial = order_by_field
-            base_model = form.instance.report_type.content_type.model_class()
-            report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
+            base_model = report_type.content_type.model_class()
+            report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
             self._get_date_fields(base_model=base_model,
                                   fields=order_by_fields,
                                   report_builder_class=report_builder_fields,

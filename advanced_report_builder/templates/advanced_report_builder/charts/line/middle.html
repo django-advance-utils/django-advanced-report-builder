@@ -13,6 +13,8 @@
 
         var labels = [];
         var datasets = [];
+        var min_date = null;
+        var max_date = null;
 
         for (var i = 0; i < table.initsetup.colOptions.length; i++) {
 
@@ -49,8 +51,15 @@
                 } else {
                     labels.push(cell_data);
                 }
+                if(i === 0) {
+                    if(min_date === null) {
+                        min_date = cell_data;
+                    }
+                    max_date = cell_data;
+                }
             }
         }
+
         var x_axis = {
             {% if datatable.line_chart_report.stacked %}stacked: true,{% endif %}
             display: true,
@@ -64,18 +73,12 @@
                 time: {
                     unit: '{{ datatable.line_chart_report.get_chart_scale}}',
                     displayFormats: {
-                        millisecond: 'MMM DD',
-                        second: 'MMM DD',
-                        minute: 'MMM DD',
-                        hour: 'MMM DD',
-                        day: 'MMM DD',
-                        week: 'MMM DD',
-                        month: 'MMM DD',
-                        quarter: 'MMM DD',
-                        year: 'MMM DD',
+                        week: 'MMM YY',
                     }
                 }
         };
+
+
 
         var y_axis = {
             {% if datatable.line_chart_report.stacked %}stacked: true,{% endif %}
@@ -89,6 +92,11 @@
             {% endif %}
         };
         var ctx{{ datatable.table_id }} = document.getElementById('{{ datatable.table_id }}').getContext('2d');
+
+        datasets = datasets.concat(table.targets);
+
+        console.log(datasets)
+
         var line{{ datatable.table_id }} = new Chart(ctx{{ datatable.table_id }}, {
             {% if datatable.line_chart_report.show_totals %}plugins: [ChartDataLabels],{% endif %}
             type: 'line',
@@ -108,6 +116,6 @@
                 },
             }
         });
-
     })();
+
 </script>

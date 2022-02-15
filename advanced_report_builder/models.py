@@ -1,6 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import CASCADE
+from django.utils.dates import MONTHS
 from django_datatables.columns import DatatableColumn, NoHeadingColumn, ManyToManyColumn
 from django_datatables.model_def import DatatableModel
 from time_stamped_model.models import TimeStampedModel
@@ -8,6 +9,70 @@ from time_stamped_model.models import TimeStampedModel
 from advanced_report_builder.globals import DISPLAY_OPTION_CHOICES, DISPLAY_OPTION_2_PER_ROW, DISPLAY_OPTION_NONE, \
     DISPLAY_OPTION_CLASSES, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, ANNOTATION_CHOICE_COUNT, \
     ANNOTATION_CHART_SCALE
+
+
+class Target(TimeStampedModel):
+    MANAGEMENT_TARGET_TYPE_COUNT = 1
+    MANAGEMENT_TARGET_TYPE_MONEY = 2
+    MANAGEMENT_TARGET_TYPE_PERCENTAGE = 3
+
+    MANAGEMENT_TARGET_TYPE_CHOICES = (
+        (MANAGEMENT_TARGET_TYPE_COUNT, 'Count'),
+        (MANAGEMENT_TARGET_TYPE_MONEY, 'Money'),
+        (MANAGEMENT_TARGET_TYPE_PERCENTAGE, 'Percentage'),
+    )
+
+    slug = models.SlugField(unique=True)
+    name = models.CharField(max_length=64)
+    target_type = models.PositiveSmallIntegerField(choices=MANAGEMENT_TARGET_TYPE_CHOICES)
+    colour = models.CharField(max_length=10, null=True, blank=True,
+                              help_text=' The colour when it gets displayed on a report')
+    default_value = models.IntegerField(default=0)
+    overridden = models.BooleanField(default=False)
+    override_data = models.JSONField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+    def get_override_data(self):
+        override_data = self.override_data if self.override_data else {}
+
+        ordered_value_dict = {}
+
+        for year, data in override_data.items():
+            if not ordered_value_dict.get(year):
+                ordered_value_dict[year] = {}
+            for month in MONTHS.values():
+                if data.get(str(month)):
+                    ordered_value_dict[year][month] = data[month]
+                else:
+                    ordered_value_dict[year][month] = self.default_value
+
+        return ordered_value_dict
+
+    def add_year(self, year):
+        override_data = self.override_data if self.override_data else {}
+        if not override_data.get(str(year)):
+            override_data[str(year)] = {}
+        temp = {}
+        # Create a temp dict that has the keys as integers.
+        for key, value in override_data.items():
+            temp[int(key)] = value
+        sorted_dict = {}
+        for key in sorted(temp):
+            sorted_dict[str(key)] = temp[key]
+        if sorted_dict:
+            self.override_data = sorted_dict
+            self.save()
+
+    def save(self, *args, **kwargs):
+        """
+        Overrides the save so that a new slug is generated
+        :param args:
+        :param kwargs:
+        """
+        self.make_new_slug()
+        super().save(*args, **kwargs)
 
 
 class ReportTag(TimeStampedModel):
@@ -223,6 +288,9 @@ class LineChartReport(Report):
     y_label = models.CharField(max_length=200, blank=True, null=True)
     show_totals = models.BooleanField(default=False)
 
+    has_targets = models.BooleanField(default=False)
+    targets = models.ManyToManyField(Target, blank=True)
+
     def get_chart_scale(self):
         return ANNOTATION_CHART_SCALE[self.axis_scale]
 
@@ -316,3 +384,5 @@ class DashboardReport(TimeStampedModel):
 
     class Meta:
         ordering = ['order']
+
+

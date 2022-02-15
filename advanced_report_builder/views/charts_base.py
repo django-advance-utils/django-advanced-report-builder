@@ -1,7 +1,9 @@
 import base64
 import json
+from datetime import timedelta, datetime
 
 from crispy_forms.bootstrap import StrictButton
+from date_offset.date_offset import DateOffset
 from django.apps import apps
 from django.db import ProgrammingError
 from django.db.models import Q
@@ -14,11 +16,13 @@ from django_modals.forms import CrispyForm
 
 from advanced_report_builder.columns import ReportBuilderDateColumn
 from advanced_report_builder.exceptions import ReportError
-from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_VALUE_FUNCTIONS
+from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_VALUE_FUNCTIONS, ANNOTATION_VALUE_YEAR, \
+    ANNOTATION_VALUE_DAY, ANNOTATION_VALUE_WEEK, ANNOTATION_VALUE_MONTH
 from advanced_report_builder.models import ReportType
 from advanced_report_builder.utils import split_slug, get_django_field, split_attr
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
 from advanced_report_builder.views.report import ReportBase
+from advanced_report_builder.views.targets.utils import get_target_value
 
 
 class ChartJSTable(DatatableTable):
@@ -26,19 +30,65 @@ class ChartJSTable(DatatableTable):
     def __init__(self, *args, **kwargs):
         pk = kwargs.pop('pk', None)
         self.axis_scale = kwargs.pop('axis_scale', None)
+        self.targets = kwargs.pop('targets', None)
         super().__init__(*args, **kwargs)
         if pk:
             self.filter['pk'] = pk
 
     def model_table_setup(self):
         try:
+            targets = []
+            data = self.get_table_array(self.kwargs.get('request'), self.get_query())
+            if self.targets is not None:
+                targets = self.targets.all()
+                if targets and len(data) > 0:
+                    targets = self.process_data_structure_target(targets=targets, data=data)
             return mark_safe(json.dumps({'initsetup': json.loads(self.col_def_str()),
-                                         'data': self.get_table_array(self.kwargs.get('request'), self.get_query()),
+                                         'data': data,
+                                         'targets': targets,
                                          'row_titles': self.all_titles(),
-                                         'table_id': self.table_id,
-                                         }))
+                                         'table_id': self.table_id}))
         except ProgrammingError as e:
             raise ReportError(e)
+
+    def process_data_structure_target(self, targets, data):
+        results = []
+        for target in targets:
+            new_data_structure = []
+            for data_dict in data:
+                target_value = self.process_target_results(data_dict=data_dict, target=target)
+                new_data_structure.append(target_value)
+            label = target.name + ' Target'
+            colour = '#' + target.colour
+            results.append({'label': label,
+                            'data': new_data_structure,
+                            'borderWidth': 1,
+                            'backgroundColor': [colour for _ in range(len(new_data_structure))],
+                            'borderColor': '#' + target.colour})
+        return results
+
+    @staticmethod
+    def process_target_results(data_dict, target):
+        """
+        Get the correct target data from from the management_target_client.
+        :param data_dict:
+        :param target:
+        :return:
+        """
+        start_date = datetime.strptime(data_dict[0], '%Y-%m-%d').date()
+
+        date_offset = DateOffset()
+
+        # since the targets are in months, this is the value we need.
+        first_day_month = start_date.replace(day=1)
+        next_date = date_offset.get_offset('1m', first_day_month) - timedelta(days=1)
+
+        target_value = get_target_value(min_date=first_day_month,
+                                        max_date=next_date,
+                                        target=target,
+                                        month_range=True)
+
+        return target_value
 
 
 class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
@@ -182,14 +232,17 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         else:
             return colour
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        base_model = self.chart_report.get_base_modal()
-
+    def setup_table(self, base_model):
         if hasattr(self.chart_report, 'axis_scale'):
             self.table = self.chart_js_table(model=base_model, axis_scale=self.chart_report.axis_scale)
         else:
             self.table = self.chart_js_table(model=base_model)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        base_model = self.chart_report.get_base_modal()
+
+        self.setup_table(base_model=base_model)
         self.table.extra_filters = self.extra_filters
         fields = self.process_query_results(base_model=base_model, table=self.table)
         self.table.add_columns(*fields)

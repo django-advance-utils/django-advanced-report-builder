@@ -4,6 +4,7 @@ import json
 from crispy_forms.layout import Div
 from django.forms import CharField, ChoiceField, BooleanField
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_menus.menu import MenuItem
 from django_modals.fields import FieldEx
@@ -14,7 +15,7 @@ from django_modals.widgets.select2 import Select2, Select2Multiple
 
 from advanced_report_builder.globals import DEFAULT_DATE_FORMAT, \
     DATE_FORMAT_TYPES_DJANGO_FORMAT
-from advanced_report_builder.models import BarChartReport
+from advanced_report_builder.models import BarChartReport, ReportType
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute
 from advanced_report_builder.views.charts_base import ChartBaseView, ChartBaseFieldForm
@@ -92,12 +93,15 @@ class BarChartModal(QueryBuilderModalBase):
         date_fields = []
         if 'data' in _kwargs:
             date_field = _kwargs['data'].get('date_field')
+            report_type_id = _kwargs['data'].get('report_type')
+            report_type = get_object_or_404(ReportType, id=report_type_id)
         else:
             date_field = form.instance.date_field
+            report_type = form.instance.report_type
         if date_field:
             form.fields['fields'].initial = date_field
-            base_model = form.instance.report_type.content_type.model_class()
-            report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
+            base_model = report_type.content_type.model_class()
+            report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
 
             self._get_date_fields(base_model=base_model,
                                   fields=date_fields,

@@ -6,6 +6,7 @@ from crispy_forms.layout import Div
 from date_offset.date_offset import DateOffset
 from django.forms import CharField, ChoiceField, BooleanField
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_menus.menu import MenuItem
 from django_modals.fields import FieldEx
@@ -17,7 +18,7 @@ from django_modals.widgets.select2 import Select2, Select2Multiple
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import ANNOTATION_VALUE_YEAR, \
     ANNOTATION_VALUE_QUARTER, ANNOTATION_VALUE_MONTH, ANNOTATION_VALUE_WEEK, ANNOTATION_VALUE_DAY
-from advanced_report_builder.models import LineChartReport
+from advanced_report_builder.models import LineChartReport, ReportType
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute
 from advanced_report_builder.views.charts_base import ChartBaseView, ChartJSTable, ChartBaseFieldForm
@@ -101,6 +102,13 @@ class LineChartView(ChartBaseView):
                 *self.duplicate_menu(request=self.request, report_id=chart_report_id)
                 ]
 
+    def setup_table(self, base_model):
+        axis_scale = getattr(self.chart_report, 'axis_scale')
+        targets = getattr(self.chart_report, 'targets')
+        self.table = self.chart_js_table(model=base_model,
+                                         axis_scale=axis_scale,
+                                         targets=targets)
+
 
 class LineChartModal(QueryBuilderModalBase):
     template_name = 'advanced_report_builder/charts/modal.html'
@@ -109,7 +117,9 @@ class LineChartModal(QueryBuilderModalBase):
     model = LineChartReport
     widgets = {'line_colour': ColourPickerWidget,
                'show_totals': RBToggle,
-               'report_tags': Select2Multiple}
+               'has_targets': RBToggle,
+               'report_tags': Select2Multiple,
+               'targets': Select2Multiple}
 
     form_fields = ['name',
                    'notes',
@@ -122,19 +132,27 @@ class LineChartModal(QueryBuilderModalBase):
                    'x_label',
                    'y_label',
                    'show_totals',
-                   ]
+                   'has_targets',
+                   'targets']
 
     def form_setup(self, form, *_args, **_kwargs):
+
+        form.add_trigger('has_targets', 'onchange', [
+            {'selector': '#div_id_targets', 'values': {'checked': 'show'}, 'default': 'hide'},
+        ])
 
         date_fields = []
         if 'data' in _kwargs:
             date_field = _kwargs['data'].get('date_field')
+            report_type_id = _kwargs['data'].get('report_type')
+            report_type = get_object_or_404(ReportType, id=report_type_id)
         else:
-            date_field = form.instance.field
+            date_field = form.instance.date_field
+            report_type = form.instance.report_type
         if date_field:
             form.fields['fields'].initial = date_fields
-            base_model = form.instance.report_type.content_type.model_class()
-            report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
+            base_model = report_type.content_type.model_class()
+            report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
             self._get_date_fields(base_model=base_model,
                                   fields=date_fields,
                                   report_builder_class=report_builder_fields,
@@ -161,6 +179,8 @@ class LineChartModal(QueryBuilderModalBase):
                 'x_label',
                 'y_label',
                 'show_totals',
+                'has_targets',
+                'targets',
                 FieldEx('query_data',
                         template='advanced_report_builder/query_builder.html'),
                 )

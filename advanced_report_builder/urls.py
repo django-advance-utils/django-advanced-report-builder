@@ -9,6 +9,7 @@ from advanced_report_builder.views.line_charts import LineChartModal, LineChartF
 from advanced_report_builder.views.pie_charts import PieChartModal, PieChartFieldModal
 from advanced_report_builder.views.reports import DuplicateReportModal
 from advanced_report_builder.views.single_values import SingleValueModal, ShowBreakdownModal
+from advanced_report_builder.views.targets.views import TargetModal
 
 app_name = 'advanced_report_builder'
 
@@ -41,4 +42,7 @@ urlpatterns = [
     path('dashboard/add/<str:slug>/', DashboardAddReportModal.as_view(), name='add_dashboard_report'),
 
     path('duplicate/<str:slug>/', DuplicateReportModal.as_view(), name='duplicate_report_modal'),
+
+    path('target/modal/<str:slug>/', TargetModal.as_view(), name='target_modal'),
+
 ]

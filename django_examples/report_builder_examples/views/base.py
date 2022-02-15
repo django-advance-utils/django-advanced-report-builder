@@ -11,6 +11,7 @@ class MainMenu(AjaxHelpers, MenuMixin):
         self.add_menu('main_menu').add_items(
             ('report_builder_examples:index', 'Reports'),
             ('report_builder_examples:dashboards_index', 'Dashboard'),
+            ('report_builder_examples:targets_index', 'Targets'),
             MenuItem(url='admin:index',
                      menu_display='Admin',
                      visible=self.request.user.is_superuser),
