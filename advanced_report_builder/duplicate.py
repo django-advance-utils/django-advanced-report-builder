@@ -1,7 +1,7 @@
 from copy import deepcopy
 
 from advanced_report_builder.models import TableReport, SingleValueReport, BarChartReport, PieChartReport, \
-    FunnelChartReport, KanbanReport
+    FunnelChartReport, KanbanReport, LineChartReport
 from django.shortcuts import get_object_or_404
 
 
@@ -46,6 +46,11 @@ class DuplicateReport:
         for report_tag in report.report_tags.all():
             new_report.report_tags.add(report_tag)
 
+    @staticmethod
+    def _duplicate_targets(report, new_report):
+        for target in report.targets.all():
+            new_report.targets.add(target)
+
     def _duplicate_table_report(self, report_id):
         table_report = get_object_or_404(TableReport, pk=report_id)
         new_table_report = self._duplicate_report(report=table_report)
@@ -62,8 +67,9 @@ class DuplicateReport:
         return new_bar_chart_report
 
     def _duplicate_line_chart_report(self, report_id):
-        bar_chart_report = get_object_or_404(BarChartReport, pk=report_id)
-        new_bar_chart_report = self._duplicate_report(report=bar_chart_report)
+        line_chart_report = get_object_or_404(LineChartReport, pk=report_id)
+        new_bar_chart_report = self._duplicate_report(report=line_chart_report)
+        self._duplicate_targets(report=line_chart_report, new_report=new_bar_chart_report)
         return new_bar_chart_report
 
     def _duplicate_pie_chart_report(self, report_id):
@@ -87,3 +93,4 @@ class DuplicateReport:
             new_kanban_report_lane.kanban_report = new_kanban_report
             new_kanban_report_lane.save()
         return new_kanban_report
+
