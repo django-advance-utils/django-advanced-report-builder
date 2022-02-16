@@ -251,7 +251,6 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         return context
 
     def setup_menu(self):
-        super().setup_menu()
         if not self.show_toolbar:
             return
 
