@@ -104,7 +104,10 @@ class LineChartView(ChartBaseView):
 
     def setup_table(self, base_model):
         axis_scale = getattr(self.chart_report, 'axis_scale')
-        targets = getattr(self.chart_report, 'targets')
+        targets = None
+
+        if getattr(self.chart_report, 'has_targets', False):
+            targets = getattr(self.chart_report, 'targets')
         self.table = self.chart_js_table(model=base_model,
                                          axis_scale=axis_scale,
                                          targets=targets)

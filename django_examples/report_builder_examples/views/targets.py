@@ -20,8 +20,6 @@ class ViewTargets(MainIndices):
             ('id', {'column_defs': {'width': '30px'}}),
             'slug',
             'name',
-
-            # 'instance_type',
-            # 'OutputType',
             EditColumn('advanced_report_builder:target_modal'),
         )
+
