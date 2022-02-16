@@ -1,4 +1,5 @@
 from django.shortcuts import redirect
+from django.views.generic import TemplateView
 from django_datatables.columns import ColumnLink
 from django_menus.menu import MenuItem
 from report_builder_examples.views.base import MainMenu, MainIndices
@@ -13,6 +14,7 @@ from advanced_report_builder.views.line_charts import LineChartView
 from advanced_report_builder.views.pie_charts import PieChartView
 from advanced_report_builder.views.reports import ViewReportBase
 from advanced_report_builder.views.single_values import SingleValueView
+from report_builder_examples.views.custom import Custom1
 
 
 class ViewReports(MainIndices):
@@ -131,6 +133,8 @@ class ViewReport(MainMenu, ViewReportBase):
                        'funnelchartreport': ViewFunnelChartReport,
                        'kanbanreport': ViewKanbanViewReport,
                        }
+
+    custom_views = {'custom1': Custom1}
 
     def report_not_found(self):
         return redirect('report_builder_examples:index')

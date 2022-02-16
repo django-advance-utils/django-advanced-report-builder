@@ -156,14 +156,18 @@ class Report(TimeStampedModel):
                             'piechartreport': 'Pie Chart',
                             'funnelchartreport': 'Funnel Chart',
                             'kanbanreport': 'Kanban',
-                            }
+                            'customreport': 'Custom'}
 
             def col_setup(self):
-                self.field = ['instance_type']
+                self.field = ['instance_type', 'customreport__output_type']
 
             # noinspection PyMethodMayBeStatic
             def row_result(self, data, _page_data):
                 instance_type = data[self.model_path + 'instance_type']
+                if instance_type == 'customreport':
+                    output_type = data[self.model_path + 'customreport__output_type']
+                    if output_type:
+                        return output_type
                 return self.output_types.get(instance_type, '')
 
         class OutputTypeIcon(NoHeadingColumn):
@@ -174,7 +178,7 @@ class Report(TimeStampedModel):
                             'piechartreport': '<i class="fas fa-chart-pie"></i>',
                             'funnelchartreport': '<i class="fas fa-filter"></i>',
                             'kanbanreport': '<i class="fas fa-chart-bar fa-flip-vertical"></i>',
-                            }
+                            'customreport': '<i class="fas fa-file"></i>'}
 
             def col_setup(self):
                 self.field = ['instance_type']
@@ -344,6 +348,12 @@ class KanbanReportLane(TimeStampedModel):
 
     class Meta:
         ordering = ('name',)
+
+
+class CustomReport(Report):
+    output_type = models.CharField(max_length=200, blank=True, null=True)
+    view_name = models.CharField(max_length=200)
+    settings = models.JSONField(null=True, blank=True)
 
 
 class Dashboard(TimeStampedModel):

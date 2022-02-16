@@ -36,6 +36,8 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
              'funnelchartreport': FunnelChartView,
              'kanbanreport': KanbanView,
              }
+
+    custom_views = {}
     views_overrides = {}
     ajax_commands = ['button', 'select2', 'ajax']
 
@@ -99,7 +101,10 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         return context
 
     def get_view(self, report):
-        if report.instance_type in self.views_overrides:
+        if report.instance_type == 'customreport':
+            view_name = report.customreport.view_name
+            return self.custom_views.get(view_name)
+        elif report.instance_type in self.views_overrides:
             return self.views_overrides.get(report.instance_type)
         return self.views.get(report.instance_type)
 

@@ -31,6 +31,9 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
              'funnelchartreport': FunnelChartView,
              'kanbanreport': KanbanView,
              }
+
+    custom_views = {}
+
     views_overrides = {}
 
     def __init__(self, *args, **kwargs):
@@ -63,12 +66,16 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         view = self.get_view(report=self.report)
         self.kwargs['report'] = self.report
+
         report_data = view.as_view()(self.request, *self.args, **self.kwargs).rendered_content
         context['report'] = report_data
         return context
 
     def get_view(self, report):
-        if report.instance_type in self.views_overrides:
+        if report.instance_type == 'customreport':
+            view_name = report.customreport.view_name
+            return self.custom_views.get(view_name)
+        elif report.instance_type in self.views_overrides:
             return self.views_overrides.get(report.instance_type)
         return self.views.get(report.instance_type)
 
@@ -99,3 +106,4 @@ class DuplicateReportModal(Modal):
             return self.command_response('redirect', url=url)
         else:
             return self.command_response('reload')
+

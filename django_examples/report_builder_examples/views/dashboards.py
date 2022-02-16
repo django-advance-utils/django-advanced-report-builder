@@ -5,11 +5,13 @@ from report_builder_examples.views.base import MainMenu, MainIndices
 
 from advanced_report_builder.models import Dashboard
 from advanced_report_builder.views.dashboard import ViewDashboardBase
+from report_builder_examples.views.custom import Custom1
 
 
 class ViewDashboards(MainIndices):
     model = Dashboard
     table_title = 'Dashboards'
+
 
     def setup_menu(self):
         super().setup_menu()
@@ -35,6 +37,7 @@ class ViewDashboard(MainMenu, ViewDashboardBase):
     enable_edit = False
     template_name = 'report_builder_examples/dashboard.html'
     # views_overrides = {'tablereport': ViewTableReport}
+    custom_views = {'custom1': Custom1}
 
     def setup_menu(self):
         super().setup_menu()

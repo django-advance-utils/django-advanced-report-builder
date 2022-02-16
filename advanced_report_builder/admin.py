@@ -1,7 +1,7 @@
 from django.contrib import admin
 from advanced_report_builder.models import Report, ReportType, TableReport, ReportQuery, SingleValueReport, Dashboard, \
     DashboardReport, BarChartReport, LineChartReport, PieChartReport, FunnelChartReport, ReportTag, KanbanReport, \
-    KanbanReportLane, Target
+    KanbanReportLane, Target, CustomReport
 
 
 @admin.register(ReportQuery)
@@ -99,6 +99,18 @@ class FunnelChartReportAdmin(admin.ModelAdmin):
                'slug',
                )
     inlines = [ReportQueryInline]
+
+
+@admin.register(CustomReport)
+class CustomReportAdmin(admin.ModelAdmin):
+    list_display = ('name',
+                    'slug',
+                    'output_type',
+                    'view_name',
+                    'settings')
+    exclude = ('instance_type',
+               'slug',
+               'report_type')
 
 
 class KanbanReportLaneInline(admin.TabularInline):

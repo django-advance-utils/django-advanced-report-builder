@@ -16,12 +16,11 @@ from django_modals.forms import CrispyForm
 
 from advanced_report_builder.columns import ReportBuilderDateColumn
 from advanced_report_builder.exceptions import ReportError
-from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_VALUE_FUNCTIONS, ANNOTATION_VALUE_YEAR, \
-    ANNOTATION_VALUE_DAY, ANNOTATION_VALUE_WEEK, ANNOTATION_VALUE_MONTH
+from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_VALUE_FUNCTIONS
 from advanced_report_builder.models import ReportType
 from advanced_report_builder.utils import split_slug, get_django_field, split_attr
-from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
 from advanced_report_builder.views.report import ReportBase
+from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
 from advanced_report_builder.views.targets.utils import get_target_value
 
 
@@ -70,7 +69,7 @@ class ChartJSTable(DatatableTable):
     @staticmethod
     def process_target_results(data_dict, target):
         """
-        Get the correct target data from from the management_target_client.
+        Get the correct target data from from the target.
         :param data_dict:
         :param target:
         :return:
