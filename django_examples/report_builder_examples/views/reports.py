@@ -77,21 +77,6 @@ class ViewTableReport(TableView):
         return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
                 *super().pod_report_menu()]
 
-    def queries_menu(self):
-        report_queries = self.table_report.reportquery_set.all()
-        if len(report_queries) > 1:
-            dropdown = []
-            for report_query in report_queries:
-                slug_str = make_slug_str(self.slug, overrides={f'query{self.table_report.id}': report_query.id})
-                dropdown.append(('report_builder_examples:view_report',
-                                 report_query.name, {'url_kwargs': {'slug': slug_str}}))
-            # name = self.get_report_query().name
-
-            # return [MenuItem(menu_display=name, no_hover=True, css_classes='btn-secondary',
-            #                  dropdown=dropdown)]
-            return dropdown
-        return []
-
 
 class ViewBarChartReport(BarChartView):
     def pod_report_menu(self):

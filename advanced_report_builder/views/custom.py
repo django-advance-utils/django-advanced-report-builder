@@ -1,6 +1,9 @@
 from django.views.generic import TemplateView
 from django_menus.menu import MenuMixin, MenuItem
+from django_modals.modals import ModelFormModal
+from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 
+from advanced_report_builder.models import CustomReport
 from advanced_report_builder.utils import split_slug
 
 
@@ -44,6 +47,7 @@ class CustomBaseView(MenuMixin, TemplateView):
 
         self.add_menu('button_menu', 'button_group').add_items(
             *report_menu,
+            *self.queries_menu()
         )
 
     def pod_dashboard_edit_menu(self):
@@ -64,3 +68,15 @@ class CustomBaseView(MenuMixin, TemplateView):
             return self.dashboard_report.name_override
         else:
             return self.report.name
+
+    # noinspection PyMethodMayBeStatic
+    def queries_menu(self):
+        return []
+
+
+class CustomModal(ModelFormModal):
+    process = PROCESS_EDIT_DELETE
+    permission_delete = PERMISSION_OFF
+    model = CustomReport
+
+    form_fields = ['name']

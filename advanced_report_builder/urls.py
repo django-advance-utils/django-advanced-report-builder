@@ -1,6 +1,7 @@
 from django.urls import path
 
 from advanced_report_builder.views.bar_charts import BarChartModal, BarChartFieldModal
+from advanced_report_builder.views.custom import CustomModal
 from advanced_report_builder.views.dashboard import DashboardReportModal, DashboardModal, DashboardAddReportModal
 from advanced_report_builder.views.datatables.modal import TableModal, TableFieldModal, TablePivotModal
 from advanced_report_builder.views.funnel_charts import FunnelChartModal, FunnelChartFieldModal
@@ -36,6 +37,8 @@ urlpatterns = [
 
     path('kanban/modal/<str:slug>/', KanbanModal.as_view(), name='kanban_modal'),
     path('kanban/modal/lane/<str:slug>/', KanbanLaneModal.as_view(), name='kanban_lane_modal'),
+
+    path('custom/modal/<str:slug>/', CustomModal.as_view(), name='custom_modal'),
 
     path('dashboard/report/<str:slug>/', DashboardReportModal.as_view(), name='dashboard_report_modal'),
     path('dashboard/<str:slug>/', DashboardModal.as_view(), name='dashboard_modal'),

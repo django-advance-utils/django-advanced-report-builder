@@ -4,7 +4,7 @@ from django_menus.menu import MenuItem
 
 from advanced_report_builder.columns import ArrowColumn
 from advanced_report_builder.exceptions import ReportError
-from advanced_report_builder.utils import get_django_field
+from advanced_report_builder.utils import get_django_field, make_slug_str
 from advanced_report_builder.utils import split_slug
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
 from advanced_report_builder.views.report import ReportBase
@@ -110,4 +110,13 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
 
     # noinspection PyMethodMayBeStatic
     def queries_menu(self):
+        report_queries = self.table_report.reportquery_set.all()
+        if len(report_queries) > 1:
+            dropdown = []
+            for report_query in report_queries:
+                slug_str = make_slug_str(self.slug, overrides={f'query{self.table_report.id}': report_query.id})
+                dropdown.append((self.request.resolver_match.view_name,
+                                 report_query.name, {'url_kwargs': {'slug': slug_str}}))
+            return [MenuItem(menu_display='Version', no_hover=True, css_classes='btn-secondary',
+                             dropdown=dropdown)]
         return []
