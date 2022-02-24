@@ -98,6 +98,7 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         context['top_reports'] = top_reports
         context['top_reports_class'] = self.get_top_report_class(top_reports)
         context['reports'] = reports
+        context['enable_edit'] = self.enable_edit
         return context
 
     def get_view(self, report):

@@ -8,6 +8,7 @@
 {% block content %}
     <h1>{{ dashboard.name }}</h1>
 
+
     {% block dashboard_buttons %}{{ menus.dashboard_buttons.render }}{% endblock %}
 
     {% if top_reports %}
@@ -15,7 +16,7 @@
         <div class="col-sm-12 float-left" style="padding-bottom: 50px">
             <div class="row">
                 <div class="container-fluid" id="top_reports">
-                    <div class="row dashboard_top">
+                    <div class="row {% if enable_edit %} dashboard_top{% endif %}">
                         {% for top_report in top_reports %}
                             <div id="content_{{ top_report.id }}"
                                  class="{{ top_reports_class }} dashboard_item" data-id="{{ top_report.id }}">
@@ -29,7 +30,7 @@
 
     {% endif %}
 
-    <div class="container-fluid dashboard_bottom">
+    <div class="container-fluid{% if enable_edit %} dashboard_bottom{% endif %}">
     {% for report in reports %}
         <div class="float-left{{ report.class }} dashboard_item" data-id="{{ report.id }}">
             {{ report.render }}

@@ -136,7 +136,8 @@ class DashboardReportInline(admin.TabularInline):
 
 @admin.register(Dashboard)
 class DashboardAdmin(admin.ModelAdmin):
-    list_display = ('name',
+    list_display = ('slug',
+                    'name',
                     )
 
     exclude = ['slug',
