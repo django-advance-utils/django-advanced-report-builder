@@ -5,7 +5,7 @@ from advanced_report_builder.views.custom import CustomModal
 from advanced_report_builder.views.dashboard import DashboardReportModal, DashboardModal, DashboardAddReportModal
 from advanced_report_builder.views.datatables.modal import TableModal, TableFieldModal, TablePivotModal
 from advanced_report_builder.views.funnel_charts import FunnelChartModal, FunnelChartFieldModal
-from advanced_report_builder.views.kanban import KanbanModal, KanbanLaneModal
+from advanced_report_builder.views.kanban import KanbanModal, KanbanLaneModal, KanbanLaneDuplicateModal
 from advanced_report_builder.views.line_charts import LineChartModal, LineChartFieldModal
 from advanced_report_builder.views.pie_charts import PieChartModal, PieChartFieldModal
 from advanced_report_builder.views.reports import DuplicateReportModal
@@ -37,6 +37,8 @@ urlpatterns = [
 
     path('kanban/modal/<str:slug>/', KanbanModal.as_view(), name='kanban_modal'),
     path('kanban/modal/lane/<str:slug>/', KanbanLaneModal.as_view(), name='kanban_lane_modal'),
+    path('kanban/modal/lane/duplicate/<str:slug>/', KanbanLaneDuplicateModal.as_view(),
+         name='kanban_lane_duplicate_modal'),
 
     path('custom/modal/<str:slug>/', CustomModal.as_view(), name='custom_modal'),
 

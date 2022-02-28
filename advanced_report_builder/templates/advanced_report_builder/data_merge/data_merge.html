@@ -55,7 +55,7 @@ function reset_{{ widget.attrs.id }}() {
 
      ajax_helpers.command_functions.build_data_merge_menu_{{ widget.attrs.id }} = function (command) {
         var editor = tinymce.get('{{ widget.attrs.id }}_textarea');
-        let menus = jQuery.parseJSON(command.data);
+        var menus = jQuery.parseJSON(command.data);
 
         $.each(menus, function( index, menu ) {
             var menu_data = build_menu(editor, menu['menu']);

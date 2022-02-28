@@ -347,7 +347,7 @@ class KanbanReportLane(TimeStampedModel):
         return self.report_type.content_type.model_class()
 
     class Meta:
-        ordering = ('name',)
+        ordering = ('order',)
 
 
 class CustomReport(Report):

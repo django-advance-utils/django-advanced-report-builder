@@ -43,6 +43,7 @@ class Sector(TimeStampedModel):
 class Company(TimeStampedModel):
     name = models.CharField(max_length=80)
     active = models.BooleanField(default=False)
+    number = models.CharField(max_length=128, blank=True)
     importance = models.IntegerField(null=True)
     sectors = models.ManyToManyField(Sector, blank=True, related_name='companysectors')
 
@@ -50,6 +51,7 @@ class Company(TimeStampedModel):
         verbose_name_plural = 'Companies'
 
     class Datatable(DatatableModel):
+        company_number = DatatableColumn(field='number', title='Company Number')
         people = DatatableColumn(annotations={'people': Count('person__id', distinct=True)})
 
         payments = CurrencyPenceColumn(annotations={'payments': Sum('payment__amount', distinct=True)})
@@ -95,6 +97,7 @@ class Company(TimeStampedModel):
         title = 'Company'
         fields = ['name',
                   'active',
+                  'company_number',
                   'importance',
                   'people',
                   'collink_1',

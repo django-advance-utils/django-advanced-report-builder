@@ -6,13 +6,15 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template import Template, Context, TemplateSyntaxError
 from django.urls import reverse
-from django.views.generic import TemplateView
-from django_datatables.columns import ColumnBase
+from django.views.generic import TemplateView, RedirectView
+from django_datatables.columns import ColumnBase, MenuColumn
+from django_datatables.helpers import DUMMY_ID
 from django_datatables.widgets import DataTableReorderWidget
-from django_menus.menu import MenuItem
+from django_menus.menu import MenuItem, HtmlMenu
 from django_modals.datatables import EditColumn
 from django_modals.fields import FieldEx
-from django_modals.modals import ModelFormModal
+from django_modals.helper import modal_button, modal_button_method
+from django_modals.modals import ModelFormModal, Modal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.select2 import Select2Multiple, Select2
 
@@ -31,12 +33,15 @@ from advanced_report_builder.views.report import ReportBase
 class DescriptionColumn(ColumnBase):
     def row_result(self, data, _page_data):
         html = self.options['html']
+        for mapped_field, field in self.options['column_map'].items():
+            if field in data:
+                data[mapped_field] = data[field]
         try:
             template = Template(html)
             context = Context(data)
             return template.render(context)
-        except TemplateSyntaxError:
-            return 'Error in description'
+        except TemplateSyntaxError as e:
+            return f'Error in description ({e})'
 
 
 class KanbanView(ReportBase, FilterQueryMixin, TemplateView):
@@ -77,14 +82,17 @@ class KanbanView(ReportBase, FilterQueryMixin, TemplateView):
 
             report_builder_class = getattr(base_model, kanban_report_lane.report_type.report_builder_class_name, None)
 
-            columns = get_data_merge_columns(base_model=base_model,
-                                             report_builder_class=report_builder_class,
-                                             html=kanban_report_lane.description)
+            columns, column_map = get_data_merge_columns(base_model=base_model,
+                                                         report_builder_class=report_builder_class,
+                                                         html=kanban_report_lane.description)
             if kanban_report_lane.heading_field is not None:
                 table.add_columns(kanban_report_lane.heading_field)
 
             if kanban_report_lane.description is not None:
-                table.add_columns(DescriptionColumn(column_name='test', field='', html=kanban_report_lane.description))
+                table.add_columns(DescriptionColumn(column_name='test',
+                                                    field='',
+                                                    html=kanban_report_lane.description,
+                                                    column_map=column_map))
             table.add_columns(*columns)
             table.datatable_template = 'advanced_report_builder/kanban/middle.html'
 
@@ -147,6 +155,16 @@ class KanbanModal(ModelFormModal):
         org_id = self.object.id if hasattr(self, 'object') else None
         form.fields['notes'].widget.attrs['rows'] = 3
         if org_id is not None:
+
+            menu_items = [MenuItem(f'advanced_report_builder:kanban_lane_duplicate_modal,pk-{DUMMY_ID}',
+                                   menu_display='Duplicate',
+                                   css_classes='btn btn-sm btn-outline-dark',
+                                   font_awesome='fas fa-clone'),
+                          MenuItem(f'advanced_report_builder:kanban_lane_modal,pk-{DUMMY_ID}',
+                                   menu_display='Edit',
+                                   css_classes='btn btn-sm btn-outline-dark',
+                                   font_awesome='fas fa-pencil')]
+
             form.fields['order'] = CharField(
                 required=False,
                 widget=DataTableReorderWidget(
@@ -155,9 +173,14 @@ class KanbanModal(ModelFormModal):
                     fields=['_.index',
                             '.id',
                             'name',
-                            EditColumn('advanced_report_builder:kanban_lane_modal')],
+                            MenuColumn(column_name='menu', field='id',
+                                       column_defs={'orderable': False, 'className': 'dt-right'},
+                                       menu=HtmlMenu(self.request, 'button_group').add_items(*menu_items)),
+                            ],
                     attrs={'filter': {'kanban_report__id': self.object.id}})
             )
+
+            modal_button('Custom Close', 'close', 'btn-warning')
 
             return [*self.form_fields,
                     crispy_modal_link_args('advanced_report_builder:kanban_lane_modal', 'Add Lane',
@@ -294,4 +317,21 @@ class KanbanLaneModal(QueryBuilderModalBase):
 
     def form_valid(self, form):
         form.save()
+        return self.command_response('reload')
+
+
+class KanbanLaneDuplicateModal(Modal):
+
+    def modal_content(self):
+        return 'Are you sure you want to duplicate this lane?'
+
+    def get_modal_buttons(self):
+        return [modal_button_method('Confirm', 'duplicate'), modal_button('Cancel', 'close', 'btn-secondary')]
+
+    def button_duplicate(self, **_kwargs):
+        kanban_report_lane = get_object_or_404(KanbanReportLane, id=self.slug['pk'])
+        kanban_report_lane.pk = None
+        kanban_report_lane.name = f'Copy of {kanban_report_lane.name}'
+        kanban_report_lane.order = None
+        kanban_report_lane.save()
         return self.command_response('reload')

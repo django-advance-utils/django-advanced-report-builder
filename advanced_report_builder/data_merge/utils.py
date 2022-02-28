@@ -39,20 +39,24 @@ def get_menu_fields(base_model, report_builder_class, menus=None, codes=None, co
 
 
 def get_data_merge_columns(base_model, report_builder_class, html):
-    fields = set()
+    display_fields = set()
+    all_fields = set()
+
     get_menu_fields(base_model=base_model,
                     report_builder_class=report_builder_class,
-                    codes=fields)
+                    codes=display_fields)
 
     variables = re.findall('{{\s*([^*\s*}}]+)\s*}}', html)
     columns = set()
     for variable in variables:
         if '|' in variable:
             field = variable.split('|')[0]
-
+        elif '&' in variable:
+            field = variable.split('&')[0]
         else:
             field = variable
-        if field in fields:
+        all_fields.add(field)
+        if field in display_fields:
             columns.add('.' + field)
 
     variables = re.findall('{%\s*if\s([^%}]+)\s*%}', html)
@@ -61,9 +65,18 @@ def get_data_merge_columns(base_model, report_builder_class, html):
         for field in variable.split(' '):
 
             if field not in ['', 'not', 'and' 'or'] and field[0] not in ['=', '<', '>', '(', ')', '"', "'"]:
-                if field in fields:
+                all_fields.add(field)
+                if field not in display_fields:
                     columns.add('.' + field)
-    return columns
+
+    column_map = {}
+    for field in all_fields:
+        _, col_type_override, _ = get_django_field(base_model=base_model, field=field)
+        field_parts = field.split('__')
+
+        if col_type_override is not None and field_parts[-1] != col_type_override.field:
+            column_map[field] = col_type_override.field
+    return columns, column_map
 
 
 
