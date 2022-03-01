@@ -18,7 +18,7 @@ from advanced_report_builder.columns import ReportBuilderDateColumn
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_VALUE_FUNCTIONS
 from advanced_report_builder.models import ReportType
-from advanced_report_builder.utils import split_slug, get_django_field, split_attr
+from advanced_report_builder.utils import split_slug, get_field_details, split_attr
 from advanced_report_builder.views.report import ReportBase
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
 from advanced_report_builder.views.targets.utils import get_target_value
@@ -126,7 +126,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         if field_name is None:
             return
 
-        django_field, col_type_override, _ = get_django_field(base_model=base_model, field=field_name)
+        django_field, col_type_override, _, _ = get_field_details(base_model=base_model, field=field_name)
 
         if col_type_override:
             field_name = col_type_override.field
@@ -173,7 +173,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         for index, table_field in enumerate(chart_fields, 1):
             field = table_field['field']
 
-            django_field, col_type_override, _ = get_django_field(base_model=base_model, field=field)
+            django_field, col_type_override, _, _ = get_field_details(base_model=base_model, field=field)
 
             if (isinstance(django_field, NUMBER_FIELDS) or
                     (col_type_override is not None and col_type_override.annotations)):
@@ -309,7 +309,7 @@ class ChartBaseFieldForm(CrispyForm):
 
         report_type = get_object_or_404(ReportType, pk=self.slug['report_type_id'])
         base_model = report_type.content_type.model_class()
-        self.django_field, self.col_type_override, _ = get_django_field(base_model=base_model, field=data['field'])
+        self.django_field, self.col_type_override, _, _ = get_field_details(base_model=base_model, field=data['field'])
 
         return report_type, base_model
 

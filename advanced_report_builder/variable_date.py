@@ -11,6 +11,10 @@ class VariableDate:
     RANGE_TYPE_THIS_WEEK = 4
     RANGE_TYPE_NEXT_WEEK = 5
     RANGE_TYPE_2_WEEKS_TIME = 6
+    RANGE_TYPE_3_WEEKS_TIME = 34
+    RANGE_TYPE_4_WEEKS_TIME = 35
+    RANGE_TYPE_5_WEEKS_TIME = 36
+    RANGE_TYPE_6_WEEKS_TIME = 37
     RANGE_TYPE_THIS_MONTH = 7
     RANGE_TYPE_NEXT_MONTH = 8
     RANGE_TYPE_LAST_MONTH = 9
@@ -53,6 +57,10 @@ class VariableDate:
                           (RANGE_TYPE_NEXT_14_DAYS, 'Next 14 days'),
                           (RANGE_TYPE_NEXT_WEEK, 'Next week'),
                           (RANGE_TYPE_2_WEEKS_TIME, '2 weeks time'),
+                          (RANGE_TYPE_3_WEEKS_TIME, '3 weeks time'),
+                          (RANGE_TYPE_4_WEEKS_TIME, '4 weeks time'),
+                          (RANGE_TYPE_5_WEEKS_TIME, '5 weeks time'),
+                          (RANGE_TYPE_6_WEEKS_TIME, '6 weeks time'),
                           (RANGE_TYPE_THIS_MONTH, 'This month'),
                           (RANGE_TYPE_NEXT_28_DAYS, 'Next 28 days'),
                           (RANGE_TYPE_NEXT_MONTH, 'Next month'),
@@ -94,6 +102,22 @@ class VariableDate:
             number_of_days = 7
         elif range_type == self.RANGE_TYPE_2_WEEKS_TIME:  # 2 Week Time
             start_date = today - timedelta(days=today.weekday()) + timedelta(days=14)
+            end_date = start_date + timedelta(days=7)
+            number_of_days = 7
+        elif range_type == self.RANGE_TYPE_2_WEEKS_TIME:  # 3 Week Time
+            start_date = today - timedelta(days=today.weekday()) + timedelta(days=21)
+            end_date = start_date + timedelta(days=7)
+            number_of_days = 7
+        elif range_type == self.RANGE_TYPE_4_WEEKS_TIME:  # 4 Week Time
+            start_date = today - timedelta(days=today.weekday()) + timedelta(days=28)
+            end_date = start_date + timedelta(days=7)
+            number_of_days = 7
+        elif range_type == self.RANGE_TYPE_5_WEEKS_TIME:  # 5 Week Time
+            start_date = today - timedelta(days=today.weekday()) + timedelta(days=35)
+            end_date = start_date + timedelta(days=7)
+            number_of_days = 7
+        elif range_type == self.RANGE_TYPE_6_WEEKS_TIME:  # 6 Week Time
+            start_date = today - timedelta(days=today.weekday()) + timedelta(days=42)
             end_date = start_date + timedelta(days=7)
             number_of_days = 7
         elif range_type == self.RANGE_TYPE_THIS_MONTH:  # This Month

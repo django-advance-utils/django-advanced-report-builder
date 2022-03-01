@@ -43,9 +43,18 @@
             <div class="col-xs-12" style="overflow: auto;">
                 <table class="table table-bordered kanban_summary">
                     <thead>
+
+                    <tr class="active">
+                        {% for heading in headings %}
+                            <th class="col-xs-1 text-center" rowspan="{{ heading.row_span }}" colspan="{{ heading.col_span }}">{{ heading.label|safe }}</th>
+                        {% endfor %}
+                    </tr>
+
                     <tr class="active">
                         {% for lane in lanes %}
-                            <th class="col-xs-1 text-center">{{ lane.kanban_report_lane.name|safe }}</th>
+                            {% if lane.multiple %}
+                            <th class="col-xs-1 text-center">{{ lane.label|safe }}</th>
+                            {% endif %}
                         {% endfor %}
                     </tr>
                     </thead>

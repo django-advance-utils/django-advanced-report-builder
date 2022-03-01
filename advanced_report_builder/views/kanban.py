@@ -1,17 +1,19 @@
 import json
+from calendar import monthrange
+from datetime import timedelta, date
 
 from django.conf import settings
-from django.forms import CharField
+from django.db.models import Q
+from django.forms import CharField, ChoiceField
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template import Template, Context, TemplateSyntaxError
 from django.urls import reverse
-from django.views.generic import TemplateView, RedirectView
+from django.views.generic import TemplateView
 from django_datatables.columns import ColumnBase, MenuColumn
-from django_datatables.helpers import DUMMY_ID
+from django_datatables.helpers import DUMMY_ID, row_link
 from django_datatables.widgets import DataTableReorderWidget
 from django_menus.menu import MenuItem, HtmlMenu
-from django_modals.datatables import EditColumn
 from django_modals.fields import FieldEx
 from django_modals.helper import modal_button, modal_button_method
 from django_modals.modals import ModelFormModal, Modal
@@ -22,9 +24,11 @@ from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.data_merge.utils import get_menu_fields, get_data_merge_columns
 from advanced_report_builder.data_merge.widget import DataMergeWidget
 from advanced_report_builder.filter_query import FilterQueryMixin
+from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, DATE_FORMAT_TYPE_DD_MM_YY_SLASH
 from advanced_report_builder.models import KanbanReport, KanbanReportLane, ReportType
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import crispy_modal_link_args
+from advanced_report_builder.utils import crispy_modal_link_args, get_field_details
+from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartJSTable
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
 from advanced_report_builder.views.report import ReportBase
@@ -71,43 +75,162 @@ class KanbanView(ReportBase, FilterQueryMixin, TemplateView):
         self.chart_report = self.report.kanbanreport
         return super().dispatch(request, *args, **kwargs)
 
+    def view_filter_extra(self, query, table):
+        if table.extra_query_filter:
+            query = query.filter(table.extra_query_filter)
+        return self.view_filter(query, table)
+
+    def get_lane(self, base_model, kanban_report_lane, lanes, label=None, extra_query_filter=None, multiple=False):
+
+        table = self.chart_js_table(model=base_model)
+
+        report_builder_class = getattr(base_model, kanban_report_lane.report_type.report_builder_class_name, None)
+
+        columns, column_map = get_data_merge_columns(base_model=base_model,
+                                                     report_builder_class=report_builder_class,
+                                                     html=kanban_report_lane.description)
+        if kanban_report_lane.heading_field is not None:
+            table.add_columns(kanban_report_lane.heading_field)
+
+        if kanban_report_lane.description is not None:
+            table.add_columns(DescriptionColumn(column_name='description',
+                                                field='',
+                                                html=kanban_report_lane.description,
+                                                column_map=column_map))
+        table.add_columns(*columns)
+
+        if kanban_report_lane.link_field:
+            _, col_type_override, _, _ = get_field_details(base_model=base_model,
+                                                           field=kanban_report_lane.link_field)
+            if isinstance(col_type_override.field, list):
+                field = col_type_override.field[0]
+            else:
+                field = 'id'
+            if field not in columns:
+                table.add_columns(f'.{field}')
+            table.has_link = True
+            table.table_options['row_href'] = row_link(col_type_override.url, field)
+        else:
+            table.has_link = False
+
+
+            # table.add_columns(kanban_report_lane.link_field)
+
+        table.datatable_template = 'advanced_report_builder/kanban/middle.html'
+
+        if kanban_report_lane.order_by_field:
+            if kanban_report_lane.order_by_ascending:
+                table.order_by = [kanban_report_lane.order_by_field]
+            else:
+                table.order_by = [f'-{kanban_report_lane.order_by_field}']
+
+        table.query_data = kanban_report_lane.query_data
+        table.extra_query_filter = extra_query_filter
+        table.view_filter = self.view_filter_extra
+        lanes.append({'datatable': table,
+                      'label': label,
+                      'kanban_report_lane': kanban_report_lane,
+                      'multiple': multiple})
+
+    @staticmethod
+    def get_multiple_date(multiple_type, current_date):
+        if multiple_type in (KanbanReportLane.MULTIPLE_TYPE_DAILY, KanbanReportLane.MULTIPLE_TYPE_DAILY_WITHIN):
+            return current_date + timedelta(days=1)
+        elif multiple_type in (KanbanReportLane.MULTIPLE_TYPE_WEEKLY, KanbanReportLane.MULTIPLE_TYPE_WEEKLY_WITHIN):
+            return current_date + timedelta(days=7)
+        elif multiple_type in (KanbanReportLane.MULTIPLE_TYPE_MONTHLY, KanbanReportLane.MULTIPLE_TYPE_MONTHLY_WITHIN):
+            start_date = date(current_date.year, current_date.month, 1)
+            number_of_days = monthrange(current_date.current_date, current_date.month)[1]
+            return start_date + timedelta(days=number_of_days)
+        assert False
+
+    @staticmethod
+    def get_date_format():
+        return DATE_FORMAT_TYPES_DJANGO_FORMAT[DATE_FORMAT_TYPE_DD_MM_YY_SLASH]
+
+    @staticmethod
+    def get_month_format():
+        return DATE_FORMAT_TYPES_DJANGO_FORMAT[DATE_FORMAT_TYPE_DD_MM_YY_SLASH]
+
+    def get_full_label(self, multiple_type, current_date, label):
+        if multiple_type in (KanbanReportLane.MULTIPLE_TYPE_DAILY, KanbanReportLane.MULTIPLE_TYPE_DAILY_WITHIN):
+            date_string = date.strftime(current_date, self.get_date_format())
+            return f'{label} {date_string}'
+        elif multiple_type in (KanbanReportLane.MULTIPLE_TYPE_WEEKLY, KanbanReportLane.MULTIPLE_TYPE_WEEKLY_WITHIN):
+            date_string = date.strftime(current_date, self.get_date_format())
+            week_number = current_date.isocalendar()[1]
+            return f'{label} {date_string} (w/c {week_number})'
+        elif multiple_type in (KanbanReportLane.MULTIPLE_TYPE_MONTHLY, KanbanReportLane.MULTIPLE_TYPE_MONTHLY_WITHIN):
+            date_string = date.strftime(current_date, self.get_date_format())
+            return f'{label} {date_string}'
+        assert False
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = self.get_title()
         kanban_report_lanes = self.chart_report.kanbanreportlane_set.all()
         lanes = []
+        headings = []
         for kanban_report_lane in kanban_report_lanes:
             base_model = kanban_report_lane.get_base_modal()
-            table = self.chart_js_table(model=base_model)
+            if kanban_report_lane.multiple_type == KanbanReportLane.MULTIPLE_TYPE_NA:
+                self.get_lane(base_model=base_model,
+                              kanban_report_lane=kanban_report_lane,
+                              lanes=lanes)
+                headings.append({'label': kanban_report_lane.name,
+                                 'row_span': 2,
+                                 'col_span': 1})
+            else:
+                variable_date = VariableDate()
+                start_date_and_time, _, _ = variable_date.get_variable_dates(kanban_report_lane.multiple_start_period)
+                _, end_date_and_time, _ = variable_date.get_variable_dates(kanban_report_lane.multiple_end_period)
 
-            report_builder_class = getattr(base_model, kanban_report_lane.report_type.report_builder_class_name, None)
+                multiple_type = kanban_report_lane.multiple_type
+                current_start_date = start_date_and_time
 
-            columns, column_map = get_data_merge_columns(base_model=base_model,
-                                                         report_builder_class=report_builder_class,
-                                                         html=kanban_report_lane.description)
-            if kanban_report_lane.heading_field is not None:
-                table.add_columns(kanban_report_lane.heading_field)
+                _, _, _, field_name = get_field_details(base_model=base_model,
+                                                        field=kanban_report_lane.multiple_type_date_field)
 
-            if kanban_report_lane.description is not None:
-                table.add_columns(DescriptionColumn(column_name='test',
-                                                    field='',
-                                                    html=kanban_report_lane.description,
-                                                    column_map=column_map))
-            table.add_columns(*columns)
-            table.datatable_template = 'advanced_report_builder/kanban/middle.html'
+                end_field_name = None
+                if kanban_report_lane.multiple_type_end_date_field:
+                    _, _, _, end_field_name = get_field_details(base_model=base_model,
+                                                                field=kanban_report_lane.multiple_type_end_date_field)
 
-            if kanban_report_lane.order_by_field:
-                if kanban_report_lane.order_by_ascending:
-                    table.order_by = [kanban_report_lane.order_by_field]
-                else:
-                    table.order_by = [f'-{kanban_report_lane.order_by_field}']
+                sub_lanes = []
+                while (current_end_date := self.get_multiple_date(
+                        multiple_type=multiple_type,
+                        current_date=current_start_date)) <= end_date_and_time:
 
-            table.query_data = kanban_report_lane.query_data
-            table.view_filter = self.view_filter
-            lanes.append({'datatable': table,
-                          'kanban_report_lane': kanban_report_lane})
+                    if multiple_type in (KanbanReportLane.MULTIPLE_TYPE_DAILY,
+                                         KanbanReportLane.MULTIPLE_TYPE_WEEKLY,
+                                         KanbanReportLane.MULTIPLE_TYPE_MONTHLY):
+                        query_filter = Q((field_name + "__gte", current_start_date)) &\
+                                       (Q((field_name + "__lt", current_end_date)))
+                    else:
+
+                        query_filter = Q((end_field_name + "__gte", current_start_date)) &\
+                                        (Q((field_name + "__lt", current_end_date)))
+
+                    label = self.get_full_label(multiple_type=multiple_type,
+                                                current_date=current_start_date,
+                                                label=kanban_report_lane.multiple_type_label)
+
+                    self.get_lane(base_model=base_model,
+                                  kanban_report_lane=kanban_report_lane,
+                                  lanes=sub_lanes,
+                                  label=label,
+                                  extra_query_filter=query_filter,
+                                  multiple=True)
+                    current_start_date = current_end_date
+
+                headings.append({'label': kanban_report_lane.name,
+                                 'col_span': len(sub_lanes),
+                                 'row_span': 1})
+
+                lanes += sub_lanes
 
         context['kanban_report'] = self.chart_report
+        context['headings'] = headings
         context['lanes'] = lanes
         return context
 
@@ -223,20 +346,44 @@ class KanbanLaneModal(QueryBuilderModalBase):
                    'heading_field',
                    'order_by_field',
                    'order_by_ascending',
+                   'multiple_type',
+                   'multiple_type_label',
+                   'multiple_type_date_field',
+                   'multiple_type_end_date_field',
+                   'multiple_start_period',
+                   'multiple_end_period',
                    'description',
+                   'link_field',
                    'query_data']
 
     def form_setup(self, form, *_args, **_kwargs):
+        form.add_trigger('multiple_type', 'onchange', [
+            {'selector': '#div_id_multiple_type_label,#div_id_multiple_type_date_field,'
+                         '#div_id_multiple_start_period,#div_id_multiple_end_period',
+             'values': {KanbanReportLane.MULTIPLE_TYPE_NA: 'hide'}, 'default': 'show'},
+            {'selector': '#div_id_multiple_type_end_date_field',
+             'values': {KanbanReportLane.MULTIPLE_TYPE_DAILY_WITHIN: 'show',
+                        KanbanReportLane.MULTIPLE_TYPE_WEEKLY_WITHIN: 'show',
+                        KanbanReportLane.MULTIPLE_TYPE_MONTHLY_WITHIN: 'show'},
+             'default': 'hide'},
+        ])
+
         heading_fields = []
         if 'data' in _kwargs:
             heading_field = _kwargs['data'].get('heading_field')
             order_by_field = _kwargs['data'].get('order_by_field')
+            multiple_type_date_field = _kwargs['data'].get('multiple_type_date_field')
+            multiple_type_end_date_field = _kwargs['data'].get('multiple_type_end_date_field')
+            link_field = _kwargs['data'].get('link_field')
             report_type_id = _kwargs['data'].get('report_type')
             report_type = get_object_or_404(ReportType, id=report_type_id)
         else:
             heading_field = form.instance.heading_field
             order_by_field = form.instance.order_by_field
             report_type = form.instance.report_type
+            multiple_type_date_field = form.instance.multiple_type_date_field
+            multiple_type_end_date_field = form.instance.multiple_type_end_date_field
+            link_field = form.instance.link_field
 
         if heading_field:
             form.fields['heading_field'].initial = heading_field
@@ -250,29 +397,79 @@ class KanbanLaneModal(QueryBuilderModalBase):
         form.fields['heading_field'].widget = Select2(attrs={'ajax': True})
         form.fields['heading_field'].widget.select_data = heading_fields
 
-        order_by_fields = []
-        if order_by_field:
-            form.fields['order_by_field'].initial = order_by_field
+        self.setup_date_field(form=form,
+                              field_name='order_by_field',
+                              selected_field_id=order_by_field,
+                              report_type=report_type)
+
+        self.setup_date_field(form=form,
+                              field_name='multiple_type_date_field',
+                              selected_field_id=multiple_type_date_field,
+                              report_type=report_type)
+
+        self.setup_date_field(form=form,
+                              field_name='multiple_type_end_date_field',
+                              selected_field_id=multiple_type_end_date_field,
+                              report_type=report_type)
+        link_fields = []
+        if link_field:
+            form.fields['link_field'].initial = link_field
             base_model = report_type.content_type.model_class()
             report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
-            self._get_date_fields(base_model=base_model,
-                                  fields=order_by_fields,
-                                  report_builder_class=report_builder_fields,
-                                  selected_field_id=order_by_field)
-        form.fields['order_by_field'].widget = Select2(attrs={'ajax': True})
-        form.fields['order_by_field'].widget.select_data = order_by_fields
+            self._get_column_link_fields(base_model=base_model,
+                                         fields=link_fields,
+                                         report_builder_class=report_builder_fields,
+                                         selected_field_id=link_field)
+        form.fields['link_field'].widget = Select2(attrs={'ajax': True})
+        form.fields['link_field'].widget.select_data = link_fields
 
         form.fields['description'].widget = DataMergeWidget()
+
+        range_type_choices = VariableDate.RANGE_TYPE_CHOICES
+        form.fields['multiple_start_period'] = ChoiceField(required=False, choices=range_type_choices)
+        form.fields['multiple_end_period'] = ChoiceField(required=False, choices=range_type_choices)
 
         return ('name',
                 'report_type',
                 'heading_field',
                 'order_by_field',
                 'order_by_ascending',
+                'multiple_type',
+                'multiple_type_label',
+                'multiple_type_date_field',
+                'multiple_type_end_date_field',
+                'multiple_start_period',
+                'multiple_end_period',
                 'description',
+                'link_field',
                 FieldEx('query_data',
                         template='advanced_report_builder/query_builder.html'),
                 )
+
+    def setup_date_field(self, form, field_name, selected_field_id, report_type):
+        _fields = []
+        if selected_field_id:
+            form.fields[field_name].initial = selected_field_id
+            base_model = report_type.content_type.model_class()
+            report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
+            self._get_date_fields(base_model=base_model,
+                                  fields=_fields,
+                                  report_builder_class=report_builder_fields,
+                                  selected_field_id=selected_field_id)
+        form.fields[field_name].widget = Select2(attrs={'ajax': True})
+        form.fields[field_name].widget.select_data = _fields
+
+    def select2_link_field(self, **kwargs):
+        fields = []
+        if kwargs['report_type'] != '':
+            report_builder_fields, base_model = self.get_report_builder_class(report_type_id=kwargs['report_type'])
+            fields = []
+            self._get_column_link_fields(base_model=base_model,
+                                         fields=fields,
+                                         report_builder_class=report_builder_fields,
+                                         search_string=kwargs.get('search'))
+
+        return JsonResponse({'results': fields})
 
     def select2_heading_field(self, **kwargs):
         fields = []
@@ -288,14 +485,26 @@ class KanbanLaneModal(QueryBuilderModalBase):
         return JsonResponse({'results': fields})
 
     def select2_order_by_field(self, **kwargs):
+        return self.get_date_fields_for_select2(report_type=kwargs['report_type'],
+                                                search_string=kwargs.get('search'))
+
+    def select2_multiple_type_date_field(self, **kwargs):
+        return self.get_date_fields_for_select2(report_type=kwargs['report_type'],
+                                                search_string=kwargs.get('search'))
+
+    def select2_multiple_type_end_date_field(self, **kwargs):
+        return self.get_date_fields_for_select2(report_type=kwargs['report_type'],
+                                                search_string=kwargs.get('search'))
+
+    def get_date_fields_for_select2(self, report_type, search_string):
         fields = []
-        if kwargs['report_type'] != '':
-            report_builder_fields, base_model = self.get_report_builder_class(report_type_id=kwargs['report_type'])
+        if report_type != '':
+            report_builder_fields, base_model = self.get_report_builder_class(report_type_id=report_type)
             fields = []
             self._get_date_fields(base_model=base_model,
                                   fields=fields,
                                   report_builder_class=report_builder_fields,
-                                  search_string=kwargs.get('search'))
+                                  search_string=search_string)
         return JsonResponse({'results': fields})
 
     def ajax_get_data_merge_menu(self, **kwargs):

@@ -5,11 +5,26 @@
     (function () {
 
         var table = {{ datatable.model_table_setup }};
+        var link_pos = -1;
+        var link_details;
+        if(table.initsetup.tableOptions.row_href) {
+            link_details = table.initsetup.tableOptions.row_href[0];
+            link_pos = table.initsetup.field_ids.indexOf(link_details.column);
+        }
         $.each(table.data, function( index, card ) {
-            var html = '<div class="alert-success">';
-            html += '<h5>' + card[0] + '</h5>'
-            html += '<h6>' + card[1] + '</h6>'
-            html += '</div>';
+            var html = ''
+            if(link_pos >= 0) {
+                var link = link_details.html.replace(link_details.var, card[link_pos]);
+                html = '<a href="' + link + '"><div class="alert-success">';
+                html += '<h5>' + card[0] + '</h5>'
+                html += '<h6>' + card[1] + '</h6>'
+                html += '</div></a>';
+            } else {
+                html = '<div class="alert-success">';
+                html += '<h5>' + card[0] + '</h5>'
+                html += '<h6>' + card[1] + '</h6>'
+                html += '</div>';
+            }
             $('#' + table.table_id).append(html);
         })
     })();

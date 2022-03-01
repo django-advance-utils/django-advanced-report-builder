@@ -328,6 +328,24 @@ class KanbanReport(Report):
 
 
 class KanbanReportLane(TimeStampedModel):
+    MULTIPLE_TYPE_NA = 0
+    MULTIPLE_TYPE_DAILY = 1
+    MULTIPLE_TYPE_DAILY_WITHIN = 2
+    MULTIPLE_TYPE_WEEKLY = 3
+    MULTIPLE_TYPE_WEEKLY_WITHIN = 4
+    MULTIPLE_TYPE_MONTHLY = 5
+    MULTIPLE_TYPE_MONTHLY_WITHIN = 6
+
+    MULTIPLE_TYPE_CHOICES = [
+        (MULTIPLE_TYPE_NA, 'N/A'),
+        (MULTIPLE_TYPE_DAILY, 'Daily (single date)'),
+        (MULTIPLE_TYPE_DAILY_WITHIN, 'Daily (within two date)'),
+        (MULTIPLE_TYPE_WEEKLY, 'Weekly (single date)'),
+        (MULTIPLE_TYPE_WEEKLY_WITHIN, 'Weekly (within two date)'),
+        (MULTIPLE_TYPE_MONTHLY, 'Monthly (single date)'),
+        (MULTIPLE_TYPE_MONTHLY_WITHIN, 'Monthly (within two date)'),
+    ]
+
     kanban_report = models.ForeignKey(KanbanReport, on_delete=CASCADE)
     name = models.CharField(max_length=200)
     order = models.PositiveSmallIntegerField()
@@ -337,6 +355,15 @@ class KanbanReportLane(TimeStampedModel):
     link_field = models.CharField(max_length=200, blank=True, null=True)
     order_by_ascending = models.BooleanField(default=True)
     description = models.TextField(blank=True, null=True)
+    multiple_type = models.PositiveIntegerField(choices=MULTIPLE_TYPE_CHOICES, default=MULTIPLE_TYPE_NA)
+    multiple_type_label = models.CharField(max_length=200, blank=True, null=True)
+    multiple_type_date_field = models.CharField(max_length=200, blank=True, null=True)
+    multiple_type_end_date_field = models.CharField(max_length=200, blank=True, null=True)
+
+    # this could be choice field from RANGE_TYPE_CHOICES however if one adds a new one it creates a new migration!
+    multiple_start_period = models.PositiveSmallIntegerField(blank=True, null=True)
+    multiple_end_period = models.PositiveSmallIntegerField(blank=True, null=True)
+
     query_data = models.JSONField(null=True, blank=True)
 
     def save(self, *args, **kwargs):

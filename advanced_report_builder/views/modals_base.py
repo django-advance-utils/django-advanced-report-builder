@@ -12,7 +12,7 @@ from django_modals.modals import ModelFormModal
 from advanced_report_builder.field_types import FieldTypes
 from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, LINK_COLUMNS
 from advanced_report_builder.models import ReportQuery, ReportType
-from advanced_report_builder.utils import get_django_field
+from advanced_report_builder.utils import get_field_details
 
 
 class QueryBuilderModelForm(ModelCrispyForm):
@@ -50,7 +50,7 @@ class QueryBuilderModalBaseMixin:
         field_types = FieldTypes()
 
         for report_builder_field in report_builder_fields.fields:
-            django_field, _, columns = get_django_field(base_model=base_model, field=report_builder_field)
+            django_field, _, columns, _ = get_field_details(base_model=base_model, field=report_builder_field)
             for column in columns:
                 field_types.get_filter(query_builder_filters=query_builder_filters,
                                        django_field=django_field,
@@ -147,8 +147,8 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                            'colour': colour})
 
         for report_builder_field in report_builder_class.fields:
-            django_field, col_type_override, columns = get_django_field(base_model=base_model,
-                                                                        field=report_builder_field)
+            django_field, col_type_override, columns, _ = get_field_details(base_model=base_model,
+                                                                            field=report_builder_field)
             for column in columns:
                 if ((field_types is None and column_types is None) or
                         (field_types is not None and isinstance(django_field, field_types)) or

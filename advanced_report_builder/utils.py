@@ -53,8 +53,8 @@ def get_custom_report_builder():
                                  'report_builder.customise.CustomiseReportBuilder'))
 
 
-def get_django_field(base_model, field):
-
+def get_field_details(base_model, field):
+    path = field
     original_column_initialisor = ColumnInitialisor(start_model=base_model, path=field)
 
     try:
@@ -71,6 +71,7 @@ def get_django_field(base_model, field):
             model_path = '__'.join(field_parts) + '__'
             col_type_override.model_path = model_path
             col_type_override.field = col_type_override.field  # actions the setter
+            path = model_path
 
     if django_field is None and columns:
         col_type_override = columns[0]
@@ -87,7 +88,7 @@ def get_django_field(base_model, field):
                 column_initialisor.get_columns()
                 django_field = column_initialisor.django_field
 
-    return django_field, col_type_override, columns
+    return django_field, col_type_override, columns, path
 
 
 def crispy_modal_link_args(modal_name, text, *args, div=False, div_classes='', button_classes='', font_awesome=None):

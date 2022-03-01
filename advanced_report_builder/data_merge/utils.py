@@ -2,14 +2,14 @@ import re
 
 from django.apps import apps
 
-from advanced_report_builder.utils import get_django_field
+from advanced_report_builder.utils import get_field_details
 
 
 def get_menu_fields(base_model, report_builder_class, menus=None, codes=None, code_prefix='', previous_base_model=None):
 
     for report_builder_field in report_builder_class.fields:
-        django_field, col_type_override, columns = get_django_field(base_model=base_model,
-                                                                    field=report_builder_field)
+        django_field, col_type_override, columns, _ = get_field_details(base_model=base_model,
+                                                                        field=report_builder_field)
         for column in columns:
             full_id = code_prefix + column.column_name
             if menus is not None:
@@ -71,7 +71,7 @@ def get_data_merge_columns(base_model, report_builder_class, html):
 
     column_map = {}
     for field in all_fields:
-        _, col_type_override, _ = get_django_field(base_model=base_model, field=field)
+        _, col_type_override, _, _ = get_field_details(base_model=base_model, field=field)
         field_parts = field.split('__')
 
         if col_type_override is not None and field_parts[-1] != col_type_override.field:

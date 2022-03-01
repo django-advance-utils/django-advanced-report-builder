@@ -4,7 +4,7 @@ from django_menus.menu import MenuItem
 
 from advanced_report_builder.columns import ArrowColumn
 from advanced_report_builder.exceptions import ReportError
-from advanced_report_builder.utils import get_django_field, make_slug_str
+from advanced_report_builder.utils import get_field_details, make_slug_str
 from advanced_report_builder.utils import split_slug
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
 from advanced_report_builder.views.report import ReportBase
@@ -55,8 +55,8 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
         if self.table_report.has_clickable_rows and self.table_report.link_field:
             table.table_classes.append('row_link')
             table.add_columns(ArrowColumn(column_name='arrow_icon'))
-            _, col_type_override, _ = get_django_field(base_model=base_model,
-                                                       field=self.table_report.link_field)
+            _, col_type_override, _, _ = get_field_details(base_model=base_model,
+                                                           field=self.table_report.link_field)
             if isinstance(col_type_override.field, list):
                 field = col_type_override.field[0]
             else:

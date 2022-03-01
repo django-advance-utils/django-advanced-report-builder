@@ -18,7 +18,7 @@ from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATI
     DATE_FORMAT_TYPES, CURRENCY_COLUMNS, LINK_COLUMNS
 from advanced_report_builder.models import TableReport, ReportQuery, ReportType
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import split_attr, get_django_field, encode_attribute, decode_attribute
+from advanced_report_builder.utils import split_attr, get_field_details, encode_attribute, decode_attribute
 from advanced_report_builder.views.charts_base import ChartBaseFieldForm
 from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin, QueryBuilderModalBase
 
@@ -299,7 +299,7 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
 
         data = json.loads(base64.b64decode(self.slug['data']))
         report_builder_fields, base_model = self.get_report_builder_class(report_type_id=self.slug['report_type_id'])
-        django_field, col_type_override, _ = get_django_field(base_model=base_model, field=data['field'])
+        django_field, col_type_override, _, _ = get_field_details(base_model=base_model, field=data['field'])
         if django_field is not None and isinstance(django_field, NUMBER_FIELDS):
             form.add_trigger('annotations_type', 'onchange', [
                 {'selector': '#annotations_fields_div', 'values': {'': 'hide'}, 'default': 'show'}])

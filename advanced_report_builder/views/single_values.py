@@ -20,7 +20,7 @@ from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_CHOICE_SUM, \
     ANNOTATION_CHOICE_AVG
 from advanced_report_builder.models import SingleValueReport, ReportType
-from advanced_report_builder.utils import get_django_field
+from advanced_report_builder.utils import get_field_details
 from advanced_report_builder.views.charts_base import ChartBaseView
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
@@ -40,7 +40,7 @@ class SingleValueView(ChartBaseView):
         field = self.chart_report.field
         base_model = self.chart_report.get_base_modal()
 
-        django_field, col_type_override, _ = get_django_field(base_model=base_model, field=field)
+        django_field, col_type_override, _, _ = get_field_details(base_model=base_model, field=field)
 
         if (isinstance(django_field, NUMBER_FIELDS) or
                 col_type_override is not None and col_type_override.annotations):
@@ -134,14 +134,14 @@ class SingleValueView(ChartBaseView):
         numerator_field = self.chart_report.numerator
         base_model = self.chart_report.get_base_modal()
 
-        deno_django_field, denominator_col_type_override, _ = get_django_field(base_model=base_model,
-                                                                               field=denominator_field)
+        deno_django_field, denominator_col_type_override, _, _ = get_field_details(base_model=base_model,
+                                                                                   field=denominator_field)
         if (not isinstance(deno_django_field, NUMBER_FIELDS) and
                 (denominator_col_type_override is not None and not denominator_col_type_override.annotations)):
             raise ReportError('denominator is not a number field')
 
-        num_django_field, numerator_col_type_override, _ = get_django_field(base_model=base_model,
-                                                                            field=denominator_field)
+        num_django_field, numerator_col_type_override, _, _ = get_field_details(base_model=base_model,
+                                                                                field=denominator_field)
 
         if (not isinstance(num_django_field, NUMBER_FIELDS) and
                 (numerator_col_type_override is not None and not numerator_col_type_override.annotations)):
