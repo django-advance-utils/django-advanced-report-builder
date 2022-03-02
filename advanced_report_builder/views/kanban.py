@@ -5,6 +5,7 @@ from datetime import timedelta, date, datetime
 from django.conf import settings
 from django.db.models import Q
 from django.forms import CharField, ChoiceField
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template import Template, Context, TemplateSyntaxError
 from django.urls import reverse
@@ -17,7 +18,7 @@ from django_modals.fields import FieldEx
 from django_modals.helper import modal_button, modal_button_method
 from django_modals.modals import ModelFormModal, Modal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
-from django_modals.widgets.select2 import Select2Multiple
+from django_modals.widgets.select2 import Select2Multiple, Select2
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.data_merge.utils import get_menu_fields, get_data_merge_columns
@@ -25,7 +26,7 @@ from advanced_report_builder.data_merge.widget import DataMergeWidget
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, DATE_FORMAT_TYPE_DD_MM_YY_SLASH, \
     DATE_FORMAT_TYPE_SHORT_WORDS_MM_YY
-from advanced_report_builder.models import KanbanReport, KanbanReportLane, ReportType
+from advanced_report_builder.models import KanbanReport, KanbanReportLane, ReportType, KanbanReportDescription
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import crispy_modal_link_args, get_field_details
 from advanced_report_builder.variable_date import VariableDate
@@ -85,22 +86,11 @@ class KanbanView(ReportBase, FilterQueryMixin, TemplateView):
         table = self.chart_js_table(model=base_model)
 
         report_builder_class = getattr(base_model, kanban_report_lane.report_type.report_builder_class_name, None)
-
-        columns, column_map = get_data_merge_columns(base_model=base_model,
-                                                     report_builder_class=report_builder_class,
-                                                     html=kanban_report_lane.description)
-
         table_indexes = []
+
         if kanban_report_lane.heading_field is not None:
             table_indexes.append('heading')
             table.add_columns(kanban_report_lane.heading_field)
-
-        if kanban_report_lane.description is not None:
-            table_indexes.append('description')
-            table.add_columns(DescriptionColumn(column_name='description',
-                                                field='',
-                                                html=kanban_report_lane.description,
-                                                column_map=column_map))
 
         if kanban_report_lane.background_colour_field is not None:
             table_indexes.append('background_colour')
@@ -110,8 +100,20 @@ class KanbanView(ReportBase, FilterQueryMixin, TemplateView):
             table_indexes.append('heading_colour')
             table.add_columns(kanban_report_lane.heading_colour_field)
 
+        if kanban_report_lane.kanban_report_description is not None:
+            description = kanban_report_lane.kanban_report_description.description
+            columns, column_map = get_data_merge_columns(base_model=base_model,
+                                                         report_builder_class=report_builder_class,
+                                                         html=description)
+
+            table_indexes.append('description')
+            table.add_columns(DescriptionColumn(column_name='description',
+                                                field='',
+                                                html=description,
+                                                column_map=column_map))
+            table.add_columns(*columns)
+
         table.table_options['indexes'] = table_indexes
-        table.add_columns(*columns)
 
         if kanban_report_lane.link_field:
             _, col_type_override, _, _ = get_field_details(base_model=base_model,
@@ -120,7 +122,7 @@ class KanbanView(ReportBase, FilterQueryMixin, TemplateView):
                 field = col_type_override.field[0]
             else:
                 field = 'id'
-            if field not in columns:
+            if field not in table.columns:
                 table.add_columns(f'.{field}')
             table.has_link = True
             table.table_options['row_href'] = row_link(col_type_override.url, field)
@@ -291,18 +293,18 @@ class KanbanModal(ModelFormModal):
         org_id = self.object.id if hasattr(self, 'object') else None
         form.fields['notes'].widget.attrs['rows'] = 3
         if org_id is not None:
+            lane_menu_items = [MenuItem(f'advanced_report_builder:kanban_lane_duplicate_modal,pk-{DUMMY_ID}',
+                                        menu_display='Duplicate',
+                                        css_classes='btn btn-sm btn-outline-dark',
+                                        font_awesome='fas fa-clone'),
+                               MenuItem(f'advanced_report_builder:kanban_lane_modal,pk-{DUMMY_ID}',
+                                        menu_display='Edit',
+                                        css_classes='btn btn-sm btn-outline-dark',
+                                        font_awesome='fas fa-pencil')]
 
-            menu_items = [MenuItem(f'advanced_report_builder:kanban_lane_duplicate_modal,pk-{DUMMY_ID}',
-                                   menu_display='Duplicate',
-                                   css_classes='btn btn-sm btn-outline-dark',
-                                   font_awesome='fas fa-clone'),
-                          MenuItem(f'advanced_report_builder:kanban_lane_modal,pk-{DUMMY_ID}',
-                                   menu_display='Edit',
-                                   css_classes='btn btn-sm btn-outline-dark',
-                                   font_awesome='fas fa-pencil')]
-
-            form.fields['order'] = CharField(
+            form.fields['lanes'] = CharField(
                 required=False,
+                label='Lanes',
                 widget=DataTableReorderWidget(
                     model=KanbanReportLane,
                     order_field='order',
@@ -311,7 +313,33 @@ class KanbanModal(ModelFormModal):
                             'name',
                             MenuColumn(column_name='menu', field='id',
                                        column_defs={'orderable': False, 'className': 'dt-right'},
-                                       menu=HtmlMenu(self.request, 'button_group').add_items(*menu_items)),
+                                       menu=HtmlMenu(self.request, 'button_group').add_items(*lane_menu_items)),
+                            ],
+                    attrs={'filter': {'kanban_report__id': self.object.id}})
+            )
+
+            description_menu_items = [
+                MenuItem(f'advanced_report_builder:kanban_description_duplicate_modal,pk-{DUMMY_ID}',
+                         menu_display='Duplicate',
+                         css_classes='btn btn-sm btn-outline-dark',
+                         font_awesome='fas fa-clone'),
+                MenuItem(f'advanced_report_builder:kanban_description_modal,pk-{DUMMY_ID}',
+                         menu_display='Edit',
+                         css_classes='btn btn-sm btn-outline-dark',
+                         font_awesome='fas fa-pencil')]
+
+            form.fields['descriptions'] = CharField(
+                required=False,
+                label='Descriptions',
+                widget=DataTableReorderWidget(
+                    model=KanbanReportDescription,
+                    order_field='order',
+                    fields=['_.index',
+                            '.id',
+                            'name',
+                            MenuColumn(column_name='menu', field='id',
+                                       column_defs={'orderable': False, 'className': 'dt-right'},
+                                       menu=HtmlMenu(self.request, 'button_group').add_items(*description_menu_items)),
                             ],
                     attrs={'filter': {'kanban_report__id': self.object.id}})
             )
@@ -323,7 +351,15 @@ class KanbanModal(ModelFormModal):
                                            'kanban_report_id-', self.object.id, div=True,
                                            div_classes='float-right', button_classes='btn btn-primary',
                                            font_awesome='fa fa-plus'),
-                    'order']
+                    'lanes',
+
+                    crispy_modal_link_args('advanced_report_builder:kanban_description_modal', 'Add Description',
+                                           'kanban_report_id-', self.object.id, div=True,
+                                           div_classes='float-right', button_classes='btn btn-primary',
+                                           font_awesome='fa fa-plus'),
+
+                    'descriptions',
+                    ]
 
     def datatable_sort(self, **kwargs):
         current_sort = dict(KanbanReportLane.objects.filter(kanban_report=self.object.id).values_list('id', 'order'))
@@ -357,6 +393,7 @@ class KanbanLaneModal(QueryBuilderModalBase):
     form_fields = ['name',
                    'report_type',
                    'heading_field',
+                   'kanban_report_description',
                    'order_by_field',
                    'order_by_ascending',
                    'multiple_type',
@@ -365,7 +402,6 @@ class KanbanLaneModal(QueryBuilderModalBase):
                    'multiple_type_end_date_field',
                    'multiple_start_period',
                    'multiple_end_period',
-                   'description',
                    'link_field',
                    'background_colour_field',
                    'heading_colour_field',
@@ -392,7 +428,10 @@ class KanbanLaneModal(QueryBuilderModalBase):
             heading_colour_field = _kwargs['data'].get('heading_colour_field')
             link_field = _kwargs['data'].get('link_field')
             report_type_id = _kwargs['data'].get('report_type')
+            kanban_report_description = KanbanReportDescription.objects.filter(
+                pk=_kwargs['data'].get('kanban_report_description')).first()
             report_type = get_object_or_404(ReportType, id=report_type_id)
+
         else:
             heading_field = form.instance.heading_field
             order_by_field = form.instance.order_by_field
@@ -401,7 +440,14 @@ class KanbanLaneModal(QueryBuilderModalBase):
             multiple_type_end_date_field = form.instance.multiple_type_end_date_field
             background_colour_field = form.instance.background_colour_field
             heading_colour_field = form.instance.heading_colour_field
+            kanban_report_description = form.instance.kanban_report_description
             link_field = form.instance.link_field
+
+        form.fields['kanban_report_description'].widget = Select2(attrs={'ajax': True})
+        if kanban_report_description is not None:
+            form.fields['kanban_report_description'].widget.select_data = [{'id': kanban_report_description.id,
+                                                                            'text': kanban_report_description.name}]
+        form.fields['kanban_report_description'].label = 'Description'
 
         self.setup_field(field_type='all',
                          form=form,
@@ -445,7 +491,6 @@ class KanbanLaneModal(QueryBuilderModalBase):
                          selected_field_id=heading_colour_field,
                          report_type=report_type)
 
-        form.fields['description'].widget = DataMergeWidget()
         range_type_choices = VariableDate.RANGE_TYPE_CHOICES
         form.fields['multiple_start_period'] = ChoiceField(required=False, choices=range_type_choices)
         form.fields['multiple_end_period'] = ChoiceField(required=False, choices=range_type_choices)
@@ -453,6 +498,7 @@ class KanbanLaneModal(QueryBuilderModalBase):
         return ('name',
                 'report_type',
                 'heading_field',
+                'kanban_report_description',
                 'order_by_field',
                 'order_by_ascending',
                 'multiple_type',
@@ -461,7 +507,6 @@ class KanbanLaneModal(QueryBuilderModalBase):
                 'multiple_type_end_date_field',
                 'multiple_start_period',
                 'multiple_end_period',
-                'description',
                 'background_colour_field',
                 'heading_colour_field',
                 'link_field',
@@ -504,6 +549,67 @@ class KanbanLaneModal(QueryBuilderModalBase):
                                            report_type=kwargs['report_type'],
                                            search_string=kwargs.get('search'))
 
+    def select2_kanban_report_description(self, **kwargs):
+        descriptions = []
+        report_type_id = kwargs['report_type']
+        if report_type_id != '':
+            kanban_report_id = self.object.kanban_report_id
+
+            _filter = KanbanReportDescription.objects.filter(report_type_id=report_type_id,
+                                                             kanban_report_id=kanban_report_id)
+
+            search = kwargs.get('search')
+            if search:
+                _filter = _filter.filter(name__icontains=search)
+
+            for description in _filter.values('id', 'name'):
+                descriptions.append({'id': description['id'], 'text': description['name']})
+
+        return JsonResponse({'results': descriptions})
+
+    def form_valid(self, form):
+        form.save()
+        return self.command_response('reload')
+
+
+class KanbanLaneDuplicateModal(Modal):
+
+    def modal_content(self):
+        return 'Are you sure you want to duplicate this lane?'
+
+    def get_modal_buttons(self):
+        return [modal_button_method('Confirm', 'duplicate'), modal_button('Cancel', 'close', 'btn-secondary')]
+
+    def button_duplicate(self, **_kwargs):
+        kanban_report_lane = get_object_or_404(KanbanReportLane, id=self.slug['pk'])
+        kanban_report_lane.pk = None
+        kanban_report_lane.name = f'Copy of {kanban_report_lane.name}'
+        kanban_report_lane.order = None
+        kanban_report_lane.save()
+        return self.command_response('reload')
+
+
+class KanbanDescriptionModal(QueryBuilderModalBase):
+    template_name = 'advanced_report_builder/kanban/description_modal.html'
+    size = 'xl'
+    process = PROCESS_EDIT_DELETE
+    permission_delete = PERMISSION_OFF
+    model = KanbanReportDescription
+
+    widgets = {'report_tags': Select2Multiple,
+               'order_by_ascending': RBToggle}
+
+    form_fields = ['name',
+                   'report_type',
+                   'description']
+
+    def form_setup(self, form, *_args, **_kwargs):
+        form.fields['description'].widget = DataMergeWidget()
+
+        return ('name',
+                'report_type',
+                'description')
+
     def ajax_get_data_merge_menu(self, **kwargs):
         field_auto_id = kwargs['field_auto_id']
         menus = []
@@ -526,18 +632,17 @@ class KanbanLaneModal(QueryBuilderModalBase):
         return self.command_response('reload')
 
 
-class KanbanLaneDuplicateModal(Modal):
+class KanbanDescriptionDuplicateModal(Modal):
 
     def modal_content(self):
-        return 'Are you sure you want to duplicate this lane?'
+        return 'Are you sure you want to duplicate this description?'
 
     def get_modal_buttons(self):
         return [modal_button_method('Confirm', 'duplicate'), modal_button('Cancel', 'close', 'btn-secondary')]
 
     def button_duplicate(self, **_kwargs):
-        kanban_report_lane = get_object_or_404(KanbanReportLane, id=self.slug['pk'])
-        kanban_report_lane.pk = None
-        kanban_report_lane.name = f'Copy of {kanban_report_lane.name}'
-        kanban_report_lane.order = None
-        kanban_report_lane.save()
+        kanban_report_description = get_object_or_404(KanbanReportDescription, id=self.slug['pk'])
+        kanban_report_description.pk = None
+        kanban_report_description.name = f'Copy of {kanban_report_description.name}'
+        kanban_report_description.save()
         return self.command_response('reload')

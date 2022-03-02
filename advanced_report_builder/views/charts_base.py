@@ -280,10 +280,10 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         slug_str = ''
         if query_id:
             slug_str = f'-query_id-{query_id}'
-        return self.edit_report_menu(chart_report_id=self.chart_report.id, slug_str=slug_str)
+        return self.edit_report_menu(request=self.request, chart_report_id=self.chart_report.id, slug_str=slug_str)
 
     @staticmethod
-    def edit_report_menu(chart_report_id, slug_str):
+    def edit_report_menu(request, chart_report_id, slug_str):
         return []
 
     # noinspection PyMethodMayBeStatic

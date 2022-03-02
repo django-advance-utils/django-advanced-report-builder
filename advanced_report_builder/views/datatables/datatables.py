@@ -99,13 +99,13 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
         if query_id:
             slug_str = f'-query_id-{query_id}'
 
-        return self.edit_report_menu(table_report_id=self.table_report.id, slug_str=slug_str)
+        return self.edit_report_menu(request=self.request, chart_report_id=self.table_report.id, slug_str=slug_str)
 
-    def edit_report_menu(self, table_report_id, slug_str):
-        return [MenuItem(f'advanced_report_builder:table_modal,pk-{table_report_id}{slug_str}',
+    def edit_report_menu(self, request, chart_report_id, slug_str):
+        return [MenuItem(f'advanced_report_builder:table_modal,pk-{chart_report_id}{slug_str}',
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary']),
-                *self.duplicate_menu(request=self.request, report_id=table_report_id)
+                *self.duplicate_menu(request=self.request, report_id=chart_report_id)
                 ]
 
     # noinspection PyMethodMayBeStatic

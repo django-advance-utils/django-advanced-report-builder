@@ -4,12 +4,10 @@
 <script>
             $(function () {
                 $('#id_report_type').on('change', function (e) {
-                    $('#id_heading_field').val('').trigger('change');
+                    reset_id_description();
                 });
             });
-
-            function save_modal_{{ form.form_id }}() {
-                id_query_data.save_query_builder();
+             function save_modal_{{ form.form_id }}() {
                 django_modal.process_commands_lock([{'function': 'post_modal'}]);
             }
 

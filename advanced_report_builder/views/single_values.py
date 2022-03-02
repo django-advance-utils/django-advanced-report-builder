@@ -217,7 +217,7 @@ class SingleValueView(ChartBaseView):
     def pod_dashboard_view_menu(self):
         return []
 
-    def edit_report_menu(self, chart_report_id, slug_str):
+    def edit_report_menu(self, request, chart_report_id, slug_str):
         return [MenuItem(f'advanced_report_builder:single_value_modal,pk-{chart_report_id}{slug_str}',
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary']),

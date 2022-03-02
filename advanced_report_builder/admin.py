@@ -1,7 +1,7 @@
 from django.contrib import admin
 from advanced_report_builder.models import Report, ReportType, TableReport, ReportQuery, SingleValueReport, Dashboard, \
     DashboardReport, BarChartReport, LineChartReport, PieChartReport, FunnelChartReport, ReportTag, KanbanReport, \
-    KanbanReportLane, Target, CustomReport
+    KanbanReportLane, Target, CustomReport, KanbanReportDescription
 
 
 @admin.register(ReportQuery)
@@ -113,6 +113,10 @@ class CustomReportAdmin(admin.ModelAdmin):
                'report_type')
 
 
+class KanbanReportDescriptionInline(admin.TabularInline):
+    model = KanbanReportDescription
+
+
 class KanbanReportLaneInline(admin.TabularInline):
     model = KanbanReportLane
 
@@ -127,7 +131,8 @@ class KanbanReportAdmin(admin.ModelAdmin):
                'slug',
                'report_type'
                )
-    inlines = [KanbanReportLaneInline]
+    inlines = [KanbanReportLaneInline,
+               KanbanReportDescriptionInline]
 
 
 class DashboardReportInline(admin.TabularInline):

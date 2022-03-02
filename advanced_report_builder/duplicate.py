@@ -86,12 +86,24 @@ class DuplicateReport:
     def _duplicate_kanban_report(self, report_id):
         kanban_report = get_object_or_404(KanbanReport, pk=report_id)
         new_kanban_report = self._duplicate_report(report=kanban_report, copy_queries=False)
+        kanban_report_descriptions = kanban_report.kanbanreportdescription_set.all()
+        descriptions_map = {}
+        for kanban_report_description in kanban_report_descriptions:
+            new_kanban_report_description = deepcopy(kanban_report_description)
+            new_kanban_report_description.id = None
+            new_kanban_report_description.pk = None
+            new_kanban_report_description.kanban_report = new_kanban_report
+            new_kanban_report_description.save()
+            descriptions_map[kanban_report_description.id] = new_kanban_report_description
+
         kanban_report_lanes = kanban_report.kanbanreportlane_set.all()
         for kanban_report_lane in kanban_report_lanes:
             new_kanban_report_lane = deepcopy(kanban_report_lane)
             new_kanban_report_lane.id = None
             new_kanban_report_lane.pk = None
             new_kanban_report_lane.kanban_report = new_kanban_report
+            kanban_report_description_id = kanban_report_lane.kanban_report_description_id
+            new_kanban_report_lane.kanban_report_description = descriptions_map[kanban_report_description_id]
             new_kanban_report_lane.save()
         return new_kanban_report
 

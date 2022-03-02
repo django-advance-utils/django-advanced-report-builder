@@ -38,7 +38,7 @@ class PieChartView(ChartBaseView):
         pie_colour = self.add_colour_offset(pie_colour, multiple_index=multiple_index)
         options.update({'colour': pie_colour})
 
-    def edit_report_menu(self, chart_report_id, slug_str):
+    def edit_report_menu(self, request, chart_report_id, slug_str):
         return [MenuItem(f'advanced_report_builder:pie_chart_modal,pk-{chart_report_id}{slug_str}',
                          menu_display='Edit',
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary']),

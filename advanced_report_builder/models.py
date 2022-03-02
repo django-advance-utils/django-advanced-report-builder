@@ -327,6 +327,27 @@ class KanbanReport(Report):
     pass
 
 
+class KanbanReportDescription(TimeStampedModel):
+    kanban_report = models.ForeignKey(KanbanReport, on_delete=CASCADE)
+    name = models.CharField(max_length=200)
+    report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
+    description = models.TextField(blank=True, null=True)
+    order = models.PositiveSmallIntegerField()
+
+    def save(self, *args, **kwargs):
+        self.set_order_field(extra_filters={'kanban_report': self.kanban_report})
+        return super().save(*args, **kwargs)
+
+    def get_base_modal(self):
+        return self.report_type.content_type.model_class()
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ('order',)
+
+
 class KanbanReportLane(TimeStampedModel):
     MULTIPLE_TYPE_NA = 0
     MULTIPLE_TYPE_DAILY = 1
@@ -354,7 +375,9 @@ class KanbanReportLane(TimeStampedModel):
     link_field = models.CharField(max_length=200, blank=True, null=True)
     order_by_field = models.CharField(max_length=200, blank=True, null=True)
     order_by_ascending = models.BooleanField(default=True)
-    description = models.TextField(blank=True, null=True)
+    kanban_report_description = models.ForeignKey(KanbanReportDescription,
+                                                  null=True, blank=False, on_delete=models.PROTECT)
+
     multiple_type = models.PositiveIntegerField(choices=MULTIPLE_TYPE_CHOICES, default=MULTIPLE_TYPE_NA)
     multiple_type_label = models.CharField(max_length=200, blank=True, null=True)
     multiple_type_date_field = models.CharField(max_length=200, blank=True, null=True)
