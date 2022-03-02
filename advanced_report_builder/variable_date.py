@@ -104,7 +104,7 @@ class VariableDate:
             start_date = today - timedelta(days=today.weekday()) + timedelta(days=14)
             end_date = start_date + timedelta(days=7)
             number_of_days = 7
-        elif range_type == self.RANGE_TYPE_2_WEEKS_TIME:  # 3 Week Time
+        elif range_type == self.RANGE_TYPE_3_WEEKS_TIME:  # 3 Week Time
             start_date = today - timedelta(days=today.weekday()) + timedelta(days=21)
             end_date = start_date + timedelta(days=7)
             number_of_days = 7
