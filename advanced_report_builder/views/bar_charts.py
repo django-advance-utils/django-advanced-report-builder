@@ -3,7 +3,6 @@ import json
 
 from crispy_forms.layout import Div
 from django.forms import CharField, ChoiceField, BooleanField
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_menus.menu import MenuItem
@@ -11,7 +10,7 @@ from django_modals.fields import FieldEx
 from django_modals.modals import FormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
-from django_modals.widgets.select2 import Select2, Select2Multiple
+from django_modals.widgets.select2 import Select2Multiple
 
 from advanced_report_builder.globals import DEFAULT_DATE_FORMAT, \
     DATE_FORMAT_TYPES_DJANGO_FORMAT
@@ -90,7 +89,6 @@ class BarChartModal(QueryBuilderModalBase):
                    ]
 
     def form_setup(self, form, *_args, **_kwargs):
-        date_fields = []
         if 'data' in _kwargs:
             date_field = _kwargs['data'].get('date_field')
             report_type_id = _kwargs['data'].get('report_type')
@@ -98,19 +96,14 @@ class BarChartModal(QueryBuilderModalBase):
         else:
             date_field = form.instance.date_field
             report_type = form.instance.report_type
-        if date_field:
-            form.fields['fields'].initial = date_field
-            base_model = report_type.content_type.model_class()
-            report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
 
-            self._get_date_fields(base_model=base_model,
-                                  fields=date_fields,
-                                  report_builder_class=report_builder_fields,
-                                  selected_field_id=date_field)
+        self.setup_field(field_type='date',
+                         form=form,
+                         field_name='date_field',
+                         selected_field_id=date_field,
+                         report_type=report_type)
 
         form.fields['notes'].widget.attrs['rows'] = 3
-        form.fields['date_field'].widget = Select2(attrs={'ajax': True})
-        form.fields['date_field'].widget.select_data = date_fields
 
         self.add_query_data(form, include_extra_query=True)
         url = reverse('advanced_report_builder:bar_chart_field_modal',
@@ -137,16 +130,9 @@ class BarChartModal(QueryBuilderModalBase):
                 )
 
     def select2_date_field(self, **kwargs):
-        fields = []
-        if kwargs['report_type'] != '':
-            report_builder_class, base_model = self.get_report_builder_class(report_type_id=kwargs['report_type'])
-            fields = []
-            self._get_date_fields(base_model=base_model,
-                                  fields=fields,
-                                  report_builder_class=report_builder_class,
-                                  search_string=kwargs.get('search'))
-
-        return JsonResponse({'results': fields})
+        return self.get_fields_for_select2(field_type='date',
+                                           report_type=kwargs['report_type'],
+                                           search_string=kwargs.get('search'))
 
 
 class BarChartFieldForm(ChartBaseFieldForm):

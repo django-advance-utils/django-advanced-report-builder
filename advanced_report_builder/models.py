@@ -363,6 +363,8 @@ class KanbanReportLane(TimeStampedModel):
     # this could be choice field from RANGE_TYPE_CHOICES however if one adds a new one it creates a new migration!
     multiple_start_period = models.PositiveSmallIntegerField(blank=True, null=True)
     multiple_end_period = models.PositiveSmallIntegerField(blank=True, null=True)
+    background_colour_field = models.CharField(max_length=200, blank=True, null=True)
+    heading_colour_field = models.CharField(max_length=200, blank=True, null=True)
 
     query_data = models.JSONField(null=True, blank=True)
 

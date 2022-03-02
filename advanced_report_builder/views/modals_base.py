@@ -4,13 +4,15 @@ from crispy_forms.bootstrap import StrictButton
 from django.apps import apps
 from django.conf import settings
 from django.forms import CharField, JSONField
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_modals.forms import ModelCrispyForm
 from django_modals.modals import ModelFormModal
+from django_modals.widgets.select2 import Select2
 
 from advanced_report_builder.field_types import FieldTypes
-from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, LINK_COLUMNS
+from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, LINK_COLUMNS, COLOUR_COLUMNS
 from advanced_report_builder.models import ReportQuery, ReportType
 from advanced_report_builder.utils import get_field_details
 
@@ -241,6 +243,88 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                                 search_string=search_string,
                                 allow_annotations_fields=False
                                 )
+
+    def _get_colour_fields(self, base_model, fields, report_builder_class,
+                           selected_field_id=None, search_string=None):
+        return self._get_fields(base_model=base_model,
+                                fields=fields,
+                                report_builder_class=report_builder_class,
+                                selected_field_id=selected_field_id,
+                                column_types=COLOUR_COLUMNS,
+                                for_select2=True,
+                                search_string=search_string,
+                                allow_annotations_fields=False
+                                )
+
+    def get_fields_for_select2(self, field_type, report_type, search_string):
+        fields = []
+        if report_type != '':
+            report_builder_fields, base_model = self.get_report_builder_class(report_type_id=report_type)
+            fields = []
+            if field_type == 'date':
+                self._get_date_fields(base_model=base_model,
+                                      fields=fields,
+                                      report_builder_class=report_builder_fields,
+                                      search_string=search_string)
+            elif field_type == 'number':
+                self._get_number_fields(base_model=base_model,
+                                        fields=fields,
+                                        report_builder_class=report_builder_fields,
+                                        search_string=search_string)
+            elif field_type == 'link':
+                self._get_column_link_fields(base_model=base_model,
+                                             fields=fields,
+                                             report_builder_class=report_builder_fields,
+                                             search_string=search_string)
+            elif field_type == 'colour':
+                self._get_colour_fields(base_model=base_model,
+                                        fields=fields,
+                                        report_builder_class=report_builder_fields,
+                                        search_string=search_string)
+            elif field_type == 'all':
+                self._get_fields(base_model=base_model,
+                                 fields=fields,
+                                 report_builder_class=report_builder_fields,
+                                 for_select2=True,
+                                 search_string=search_string)
+
+        return JsonResponse({'results': fields})
+
+    def setup_field(self, field_type, form, field_name, selected_field_id, report_type):
+        _fields = []
+        if selected_field_id:
+            form.fields[field_name].initial = selected_field_id
+            base_model = report_type.content_type.model_class()
+            report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
+            if field_type == 'date':
+                self._get_date_fields(base_model=base_model,
+                                      fields=_fields,
+                                      report_builder_class=report_builder_fields,
+                                      selected_field_id=selected_field_id)
+            elif field_type == 'link':
+                self._get_column_link_fields(base_model=base_model,
+                                             fields=_fields,
+                                             report_builder_class=report_builder_fields,
+                                             selected_field_id=selected_field_id)
+            elif field_type == 'number':
+                self._get_number_fields(base_model=base_model,
+                                        fields=_fields,
+                                        report_builder_class=report_builder_fields,
+                                        selected_field_id=selected_field_id)
+            elif field_type == 'colour':
+                self._get_colour_fields(base_model=base_model,
+                                        fields=_fields,
+                                        report_builder_class=report_builder_fields,
+                                        selected_field_id=selected_field_id)
+            elif field_type == 'all':
+                self._get_fields(base_model=base_model,
+                                 fields=_fields,
+                                 report_builder_class=report_builder_fields,
+                                 selected_field_id=selected_field_id,
+                                 for_select2=True)
+
+        form.fields[field_name].widget = Select2(attrs={'ajax': True})
+        form.fields[field_name].widget.select_data = _fields
 
     def form_valid(self, form):
         org_id = self.object.id if hasattr(self, 'object') else None

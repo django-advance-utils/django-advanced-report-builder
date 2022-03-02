@@ -64,3 +64,12 @@ class ArrowColumn(NoHeadingColumn):
         kwargs['render'] = [{'html': '<i class="fa fa-angle-right fa-2x"></i>', 'function': 'Html'}]
         kwargs['width'] = '10px'
         super().__init__(**kwargs)
+
+
+class ColourColumn(ColumnBase):
+    def row_result(self, data, _page_data):
+        colour = data.get(self.field)
+        if colour is not None:
+            return '#' + colour
+        return ''
+

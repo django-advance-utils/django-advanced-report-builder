@@ -4,27 +4,56 @@
 <script>
     (function () {
 
+
         var table = {{ datatable.model_table_setup }};
-        var link_pos = -1;
+
+
+        var link_index = -1;
         var link_details;
+        var indexes = table.initsetup.tableOptions.indexes;
+
+
+        var heading_index = indexes.indexOf('heading')
+
+        var description_index = indexes.indexOf('description')
+        var background_colour_index = indexes.indexOf('background_colour')
+        var heading_colour_index = indexes.indexOf('heading_colour')
+
         if(table.initsetup.tableOptions.row_href) {
             link_details = table.initsetup.tableOptions.row_href[0];
-            link_pos = table.initsetup.field_ids.indexOf(link_details.column);
+            link_index = table.initsetup.field_ids.indexOf(link_details.column);
         }
         $.each(table.data, function( index, card ) {
-            var html = ''
-            if(link_pos >= 0) {
-                var link = link_details.html.replace(link_details.var, card[link_pos]);
-                html = '<a href="' + link + '"><div class="alert-success">';
-                html += '<h5>' + card[0] + '</h5>'
-                html += '<h6>' + card[1] + '</h6>'
-                html += '</div></a>';
-            } else {
-                html = '<div class="alert-success">';
-                html += '<h5>' + card[0] + '</h5>'
-                html += '<h6>' + card[1] + '</h6>'
-                html += '</div>';
+            var html = '';
+            var link = '';
+            var styles = '';
+            if(link_index >= 0) {
+                link = link_details.html.replace(link_details.var, card[link_index]);
+                styles += 'cursor:pointer;';
             }
+            if(background_colour_index >= 0){
+                styles += 'background-color:' + card[background_colour_index] + ';'
+            }
+            html += '<div class="kanban_item"';
+            if(styles !== ''){
+                html += ' style="' + styles + '"';
+            }
+            if(link !== ''){
+                html += ' onclick="location.href=\'' + link + '\'"'
+            }
+            html += '>'
+            if(heading_index >= 0) {
+                if(heading_colour_index >= 0) {
+                    html += '<h5 style="color: ' + card[heading_colour_index] + '">' + card[heading_index] + '</h5>';
+                } else {
+                    html += '<h5>' + card[heading_index] + '</h5>';
+                }
+            }
+            if(description_index >= 0) {
+                html += '<h6>' + card[description_index] + '</h6>';
+            }
+            html += '</div>';
+
             $('#' + table.table_id).append(html);
         })
     })();

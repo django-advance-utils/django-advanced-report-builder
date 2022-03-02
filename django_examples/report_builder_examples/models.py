@@ -7,6 +7,7 @@ from django_datatables.model_def import DatatableModel
 from report_builder_examples.report_overrides import CustomDateColumn
 from time_stamped_model.models import TimeStampedModel
 
+from advanced_report_builder.columns import ColourColumn
 from advanced_report_builder.models import Report
 from advanced_report_builder.report_builder import ReportBuilderFields
 
@@ -46,6 +47,8 @@ class Company(TimeStampedModel):
     number = models.CharField(max_length=128, blank=True)
     importance = models.IntegerField(null=True)
     sectors = models.ManyToManyField(Sector, blank=True, related_name='companysectors')
+    background_colour = models.CharField(max_length=8, default='90EE90')
+    text_colour = models.CharField(max_length=8, default='454B1B')
 
     class Meta:
         verbose_name_plural = 'Companies'
@@ -65,6 +68,9 @@ class Company(TimeStampedModel):
                                link_html='<button class="btn btn-sm btn-outline-dark">'
                                          '<i class="fas fa-building"></i></button>'
                                )
+
+        background_colour_column = ColourColumn(title='Background Colour', field='background_colour')
+        text_colour_column = ColourColumn(title='Text Colour', field='text_colour')
 
         # sector_names = ManyToManyColumn(column_name='sectors', field='sectors__name')
         sector_names = ManyToManyColumn(field='sectors__name')
@@ -106,6 +112,8 @@ class Company(TimeStampedModel):
                   'sector_names',
                   'date_created',
                   'date_modified',
+                  'background_colour_column',
+                  'text_colour_column',
                   'Tags',
                   ]
         default_columns = ['.id']

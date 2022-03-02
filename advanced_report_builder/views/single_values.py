@@ -3,7 +3,6 @@ import json
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Sum, ExpressionWrapper, FloatField
 from django.db.models.functions import Coalesce, NullIf
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_datatables.datatables import DatatableTable
@@ -12,7 +11,7 @@ from django_modals.fields import FieldEx
 from django_modals.modals import Modal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
-from django_modals.widgets.select2 import Select2, Select2Multiple
+from django_modals.widgets.select2 import Select2Multiple
 from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
@@ -289,29 +288,17 @@ class SingleValueModal(QueryBuilderModalBase):
             report_type = form.instance.report_type
             numerator = form.instance.numerator
 
-        if form.instance.field:
-            form.fields['field'].initial = field
-            base_model = report_type.content_type.model_class()
-            report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
-            self._get_number_fields(base_model=base_model,
-                                    fields=fields,
-                                    report_builder_class=report_builder_fields,
-                                    selected_field_id=field)
-        form.fields['field'].widget = Select2(attrs={'ajax': True})
-        form.fields['field'].widget.select_data = fields
+        self.setup_field(field_type='number',
+                         form=form,
+                         field_name='field',
+                         selected_field_id=field,
+                         report_type=report_type)
 
-        numerator_fields = []
-        if form.instance.numerator:
-            form.fields['numerator'].initial = numerator
-            base_model = report_type.content_type.model_class()
-            report_builder_fields = getattr(base_model, form.instance.report_type.report_builder_class_name, None)
-            self._get_number_fields(base_model=base_model,
-                                    fields=numerator_fields,
-                                    report_builder_class=report_builder_fields,
-                                    selected_field_id=numerator)
-
-        form.fields['numerator'].widget = Select2(attrs={'ajax': True})
-        form.fields['numerator'].widget.select_data = numerator_fields
+        self.setup_field(field_type='number',
+                         form=form,
+                         field_name='numerator',
+                         selected_field_id=numerator,
+                         report_type=report_type)
 
         self.add_query_data(form, include_extra_query=True)
         form.fields['notes'].widget.attrs['rows'] = 3
@@ -339,19 +326,14 @@ class SingleValueModal(QueryBuilderModalBase):
                 )
 
     def select2_field(self, **kwargs):
-        fields = []
-        if kwargs['report_type'] != '':
-            report_builder_fields, base_model = self.get_report_builder_class(report_type_id=kwargs['report_type'])
-            fields = []
-            self._get_number_fields(base_model=base_model,
-                                    fields=fields,
-                                    report_builder_class=report_builder_fields,
-                                    search_string=kwargs.get('search'))
-
-        return JsonResponse({'results': fields})
+        return self.get_fields_for_select2(field_type='number',
+                                           report_type=kwargs['report_type'],
+                                           search_string=kwargs.get('search'))
 
     def select2_numerator(self, **kwargs):
-        return self.select2_field(**kwargs)
+        return self.get_fields_for_select2(field_type='number',
+                                           report_type=kwargs['report_type'],
+                                           search_string=kwargs.get('search'))
 
     # noinspection PyUnusedLocal
     def clean(self, form, cleaned_data):
