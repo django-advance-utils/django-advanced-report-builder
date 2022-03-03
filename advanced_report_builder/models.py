@@ -1,6 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.db.models import CASCADE
 from django.utils.dates import MONTHS
 from django_datatables.columns import DatatableColumn, NoHeadingColumn, ManyToManyColumn
 from django_datatables.model_def import DatatableModel
@@ -328,7 +327,7 @@ class KanbanReport(Report):
 
 
 class KanbanReportDescription(TimeStampedModel):
-    kanban_report = models.ForeignKey(KanbanReport, on_delete=CASCADE)
+    kanban_report = models.ForeignKey(KanbanReport, on_delete=models.CASCADE)
     name = models.CharField(max_length=200)
     report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
     description = models.TextField(blank=True, null=True)
@@ -367,7 +366,7 @@ class KanbanReportLane(TimeStampedModel):
         (MULTIPLE_TYPE_MONTHLY_WITHIN, 'Monthly (within two date)'),
     ]
 
-    kanban_report = models.ForeignKey(KanbanReport, on_delete=CASCADE)
+    kanban_report = models.ForeignKey(KanbanReport, on_delete=models.CASCADE)
     name = models.CharField(max_length=200)
     order = models.PositiveSmallIntegerField()
     report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
@@ -376,7 +375,7 @@ class KanbanReportLane(TimeStampedModel):
     order_by_field = models.CharField(max_length=200, blank=True, null=True)
     order_by_ascending = models.BooleanField(default=True)
     kanban_report_description = models.ForeignKey(KanbanReportDescription,
-                                                  null=True, blank=False, on_delete=models.PROTECT)
+                                                  null=True, blank=False, on_delete=models.CASCADE)
 
     multiple_type = models.PositiveIntegerField(choices=MULTIPLE_TYPE_CHOICES, default=MULTIPLE_TYPE_NA)
     multiple_type_label = models.CharField(max_length=200, blank=True, null=True)
@@ -446,5 +445,3 @@ class DashboardReport(TimeStampedModel):
 
     class Meta:
         ordering = ['order']
-
-
