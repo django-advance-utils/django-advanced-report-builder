@@ -277,7 +277,6 @@ class SingleValueModal(QueryBuilderModalBase):
             {'selector': '#div_id_breakdown_fields', 'values': {'checked': 'show'}, 'default': 'hide'},
         ])
 
-        fields = []
         if 'data' in _kwargs:
             field = _kwargs['data'].get('field')
             numerator = _kwargs['data'].get('numerator')
