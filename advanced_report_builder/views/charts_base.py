@@ -292,6 +292,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
 
 
 class ChartBaseFieldForm(CrispyForm):
+    cancel_class = 'btn-secondary modal-cancel'
 
     def __init__(self, *args, **kwargs):
         self.django_field = None
@@ -303,6 +304,12 @@ class ChartBaseFieldForm(CrispyForm):
             return StrictButton(button_text, onclick=f'save_modal_{self.form_id}()', css_class=css_class, **kwargs)
         else:
             return super().submit_button(css_class, button_text, **kwargs)
+
+    def cancel_button(self, css_class=cancel_class, **kwargs):
+        commands = [{'function': 'save_query_builder_id_query_data'},
+                    {'function': 'close'}]
+        return self.button('Cancel', commands, css_class, **kwargs)
+
 
     def get_report_type_details(self):
         data = json.loads(base64.b64decode(self.slug['data']))

@@ -10,7 +10,7 @@ from advanced_report_builder.views.kanban import KanbanModal, KanbanLaneModal, K
 from advanced_report_builder.views.line_charts import LineChartModal, LineChartFieldModal
 from advanced_report_builder.views.pie_charts import PieChartModal, PieChartFieldModal
 from advanced_report_builder.views.reports import DuplicateReportModal
-from advanced_report_builder.views.single_values import SingleValueModal, ShowBreakdownModal
+from advanced_report_builder.views.single_values import SingleValueModal, ShowBreakdownModal, SingleValueTableFieldModal
 from advanced_report_builder.views.targets.views import TargetModal
 
 app_name = 'advanced_report_builder'
@@ -22,6 +22,7 @@ urlpatterns = [
     path('table/modal/pivot/<str:slug>/', TablePivotModal.as_view(), name='table_pivot_modal'),
 
     path('single-value/modal/<str:slug>/', SingleValueModal.as_view(), name='single_value_modal'),
+    path('single-value/modal/field/<str:slug>/', SingleValueTableFieldModal.as_view(), name='single_value_field_modal'),
     path('single-value/show-breakdown/<str:slug>/', ShowBreakdownModal.as_view(), name='show_breakdown_modal'),
 
     path('bar-chart/modal/<str:slug>/', BarChartModal.as_view(), name='bar_chart_modal'),

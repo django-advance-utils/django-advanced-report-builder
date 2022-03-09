@@ -17,6 +17,6 @@ class DataMergeWidget(Input):
         if self.data_merge_data is None:
             context['data_merge'] = None
         else:
-            context['data_merge'] = self.data_merge.build_menus()
+            context['data_merge'] = self.data_merge_data.build_menus()
 
         return context

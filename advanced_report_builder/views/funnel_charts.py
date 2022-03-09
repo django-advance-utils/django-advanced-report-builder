@@ -147,6 +147,7 @@ class FunnelChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
     form_class = FunnelChartFieldForm
     size = 'xl'
     template_name = 'advanced_report_builder/charts/modal.html'
+    no_header_x = True
 
     @property
     def modal_title(self):

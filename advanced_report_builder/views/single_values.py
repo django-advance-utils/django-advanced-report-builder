@@ -20,7 +20,8 @@ from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_CHOICE_SUM
     ANNOTATION_CHOICE_AVG
 from advanced_report_builder.models import SingleValueReport, ReportType
 from advanced_report_builder.utils import get_field_details
-from advanced_report_builder.views.charts_base import ChartBaseView
+from advanced_report_builder.views.charts_base import ChartBaseView, ChartBaseFieldForm
+from advanced_report_builder.views.datatables.modal import TableFieldModal, TableFieldForm
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
 
@@ -301,7 +302,7 @@ class SingleValueModal(QueryBuilderModalBase):
 
         self.add_query_data(form, include_extra_query=True)
         form.fields['notes'].widget.attrs['rows'] = 3
-        url = reverse('advanced_report_builder:table_field_modal',
+        url = reverse('advanced_report_builder:single_value_field_modal',
                       kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
         return ('name',
                 'notes',
@@ -380,3 +381,32 @@ class ShowBreakdownModal(TableUtilsMixin, Modal):
         table.table_options['pageLength'] = 25
         table.table_options['bStateSave'] = False
         return table.render()
+
+
+class SingleValueTableFieldForm(TableFieldForm):
+    cancel_class = 'btn-secondary modal-cancel'
+
+    def cancel_button(self, css_class=cancel_class, **kwargs):
+        commands = [{'function': 'save_query_builder_id_query_data'},
+                    {'function': 'save_query_builder_id_extra_query_data'},
+                    {'function': 'close'}]
+        return self.button('Cancel', commands, css_class, **kwargs)
+
+
+class SingleValueTableFieldModal(TableFieldModal):
+    form_class = SingleValueTableFieldForm
+
+    def form_valid(self, form):
+        selector = self.slug['selector']
+
+        _attr = form.get_additional_attributes()
+        self.add_command({'function': 'set_attr',
+                          'selector': f'#{selector}',
+                          'attr': 'data-attr',
+                          'val': _attr})
+
+        self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
+        self.add_command({'function': 'save_query_builder_id_query_data'})
+        self.add_command({'function': 'save_query_builder_id_extra_query_data'})
+        self.add_command({'function': 'update_selection'})
+        return self.command_response('close')

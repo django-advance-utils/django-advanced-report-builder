@@ -9,6 +9,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_modals.fields import FieldEx
+from django_modals.helper import modal_button_method, modal_button
 from django_modals.modals import FormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.select2 import Select2Multiple, Select2
@@ -159,6 +160,7 @@ class TableModal(QueryBuilderModalBase):
 
 
 class TableFieldForm(ChartBaseFieldForm):
+    cancel_class = 'btn-secondary modal-cancel'
 
     def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
         if self.django_field is not None and isinstance(self.django_field, NUMBER_FIELDS):
@@ -275,6 +277,7 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
     form_class = TableFieldForm
     size = 'xl'
     template_name = 'advanced_report_builder/datatables/fields/modal.html'
+    no_header_x = True
 
     @property
     def modal_title(self):
@@ -349,15 +352,23 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
 
 
 class TablePivotForm(ChartBaseFieldForm):
+    cancel_class = 'btn-secondary modal-cancel'
+
     def setup_modal(self, *args, **kwargs):
         data = json.loads(base64.b64decode(self.slug['data']))
         self.fields['title'] = CharField(initial=data['title'])
         super().setup_modal(*args, **kwargs)
 
+    def cancel_button(self, css_class=cancel_class, **kwargs):
+        commands = [{'function': 'save_query_builder_id_query_data'},
+                    {'function': 'close'}]
+        return self.button('Cancel', commands, css_class, **kwargs)
+
 
 class TablePivotModal(QueryBuilderModalBaseMixin, FormModal):
     form_class = TablePivotForm
     size = 'xl'
+    no_header_x = True
 
     @property
     def modal_title(self):
@@ -371,3 +382,4 @@ class TablePivotModal(QueryBuilderModalBaseMixin, FormModal):
         self.add_command({'function': 'save_query_builder_id_query_data'})
         self.add_command({'function': 'update_pivot_selection'})
         return self.command_response('close')
+
