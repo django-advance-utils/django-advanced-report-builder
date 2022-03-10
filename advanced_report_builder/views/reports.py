@@ -1,5 +1,6 @@
 from ajax_helpers.mixins import AjaxHelpers
 from django.contrib import messages
+from django.db import DataError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -66,7 +67,6 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         view = self.get_view(report=self.report)
         self.kwargs['report'] = self.report
-
         report_data = view.as_view()(self.request, *self.args, **self.kwargs).rendered_content
         context['report'] = report_data
         return context

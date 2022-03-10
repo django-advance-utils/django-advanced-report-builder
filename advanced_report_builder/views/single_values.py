@@ -20,7 +20,7 @@ from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_CHOICE_SUM
     ANNOTATION_CHOICE_AVG
 from advanced_report_builder.models import SingleValueReport, ReportType
 from advanced_report_builder.utils import get_field_details
-from advanced_report_builder.views.charts_base import ChartBaseView, ChartBaseFieldForm
+from advanced_report_builder.views.charts_base import ChartBaseView
 from advanced_report_builder.views.datatables.modal import TableFieldModal, TableFieldForm
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase

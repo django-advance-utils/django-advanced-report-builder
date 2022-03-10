@@ -5,7 +5,7 @@ from datetime import timedelta, datetime
 from crispy_forms.bootstrap import StrictButton
 from date_offset.date_offset import DateOffset
 from django.apps import apps
-from django.db import ProgrammingError
+from django.db import ProgrammingError, DataError
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils.safestring import mark_safe
@@ -37,7 +37,10 @@ class ChartJSTable(DatatableTable):
     def model_table_setup(self):
         try:
             targets = []
-            data = self.get_table_array(self.kwargs.get('request'), self.get_query())
+            try:
+                data = self.get_table_array(self.kwargs.get('request'), self.get_query())
+            except DataError:
+                data = [['N/A']]
             if self.targets is not None:
                 targets = self.targets.all()
                 if targets and len(data) > 0:
