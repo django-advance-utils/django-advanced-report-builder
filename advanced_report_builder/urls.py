@@ -3,7 +3,7 @@ from django.urls import path
 from advanced_report_builder.views.bar_charts import BarChartModal, BarChartFieldModal
 from advanced_report_builder.views.custom import CustomModal
 from advanced_report_builder.views.dashboard import DashboardReportModal, DashboardModal, DashboardAddReportModal
-from advanced_report_builder.views.datatables.modal import TableModal, TableFieldModal, TablePivotModal
+from advanced_report_builder.views.datatables.modal import TableModal, TableFieldModal, TablePivotModal, TableQueryModal
 from advanced_report_builder.views.funnel_charts import FunnelChartModal, FunnelChartFieldModal
 from advanced_report_builder.views.kanban import KanbanModal, KanbanLaneModal, KanbanLaneDuplicateModal, \
     KanbanDescriptionModal, KanbanDescriptionDuplicateModal
@@ -20,6 +20,7 @@ urlpatterns = [
     path('table/modal/<str:slug>/', TableModal.as_view(), name='table_modal'),
     path('table/modal/field/<str:slug>/', TableFieldModal.as_view(), name='table_field_modal'),
     path('table/modal/pivot/<str:slug>/', TablePivotModal.as_view(), name='table_pivot_modal'),
+    path('table/modal/query/<str:slug>', TableQueryModal.as_view(), name='table_query_modal'),
 
     path('single-value/modal/<str:slug>/', SingleValueModal.as_view(), name='single_value_modal'),
     path('single-value/modal/field/<str:slug>/', SingleValueTableFieldModal.as_view(), name='single_value_field_modal'),
@@ -54,5 +55,4 @@ urlpatterns = [
     path('duplicate/<str:slug>/', DuplicateReportModal.as_view(), name='duplicate_report_modal'),
 
     path('target/modal/<str:slug>/', TargetModal.as_view(), name='target_modal'),
-
 ]

@@ -106,7 +106,7 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
         else:
             return self.command_response()
 
-    def add_query_data(self, form, include_extra_query=True):
+    def add_query_data(self, form, include_extra_query=False):
         form.fields['query_data'] = JSONField(required=False, label='Filter')
 
         if include_extra_query:

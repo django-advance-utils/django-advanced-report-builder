@@ -194,13 +194,17 @@ class Report(TimeStampedModel):
 
 class ReportQuery(TimeStampedModel):
     report = models.ForeignKey(Report, on_delete=models.CASCADE)
-    name = models.TextField(default='Standard')
+    name = models.CharField(max_length=256, default='Standard')
     query = models.JSONField(null=True, blank=True)
     extra_query = models.JSONField(null=True, blank=True)  # used for single value Numerator
+    order = models.PositiveSmallIntegerField()
+
+    def save(self, *args, **kwargs):
+        self.set_order_field(extra_filters={'report': self.report})
+        return super().save(*args, **kwargs)
 
     class Meta:
-        ordering = ['name']
-        unique_together = ('name', 'report')
+        ordering = ['order']
         verbose_name_plural = 'Report queries'
 
 

@@ -2,6 +2,7 @@ from django.views.generic import TemplateView
 from django_menus.menu import MenuMixin, MenuItem
 from django_modals.modals import ModelFormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
+from django_modals.widgets.select2 import Select2Multiple
 
 from advanced_report_builder.models import CustomReport
 from advanced_report_builder.utils import split_slug
@@ -79,4 +80,8 @@ class CustomModal(ModelFormModal):
     permission_delete = PERMISSION_OFF
     model = CustomReport
 
-    form_fields = ['name']
+    widgets = {'report_tags': Select2Multiple}
+
+    form_fields = ['name',
+                   'report_tags',
+                   'notes']

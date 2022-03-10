@@ -349,23 +349,27 @@ class KanbanModal(ModelFormModal):
             return [*self.form_fields,
                     crispy_modal_link_args('advanced_report_builder:kanban_lane_modal', 'Add Lane',
                                            'kanban_report_id-', self.object.id, div=True,
-                                           div_classes='float-right', button_classes='btn btn-primary',
+                                           div_classes='form-buttons', button_classes='btn btn-primary',
                                            font_awesome='fa fa-plus'),
                     'lanes',
 
                     crispy_modal_link_args('advanced_report_builder:kanban_description_modal', 'Add Description',
                                            'kanban_report_id-', self.object.id, div=True,
-                                           div_classes='float-right', button_classes='btn btn-primary',
+                                           div_classes='form-buttons', button_classes='btn btn-primary',
                                            font_awesome='fa fa-plus'),
 
                     'descriptions',
                     ]
 
     def datatable_sort(self, **kwargs):
-        current_sort = dict(KanbanReportLane.objects.filter(kanban_report=self.object.id).values_list('id', 'order'))
+
+        form = self.get_form()
+        widget = form.fields[kwargs['table_id'][3:]].widget
+        _model = widget.attrs['table_model']
+        current_sort = dict(_model.objects.filter(kanban_report=self.object.id).values_list('id', 'order'))
         for s in kwargs['sort']:
             if current_sort[s[1]] != s[0]:
-                o = KanbanReportLane.objects.get(id=s[1])
+                o = _model.objects.get(id=s[1])
                 o.order = s[0]
                 o.save()
         return self.command_response('')

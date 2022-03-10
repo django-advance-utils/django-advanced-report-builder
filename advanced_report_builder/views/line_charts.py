@@ -158,7 +158,7 @@ class LineChartModal(QueryBuilderModalBase):
                          report_type=report_type)
 
         form.fields['notes'].widget.attrs['rows'] = 3
-        self.add_query_data(form, include_extra_query=True)
+        self.add_query_data(form)
 
         url = reverse('advanced_report_builder:line_chart_field_modal',
                       kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})

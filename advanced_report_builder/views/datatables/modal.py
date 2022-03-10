@@ -8,9 +8,11 @@ from django.forms import CharField, ChoiceField, BooleanField, IntegerField
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django_datatables.widgets import DataTableReorderWidget
 from django_modals.fields import FieldEx
+from django_modals.forms import ModelCrispyForm
 from django_modals.helper import modal_button_method, modal_button
-from django_modals.modals import FormModal
+from django_modals.modals import FormModal, ModelFormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.select2 import Select2Multiple, Select2
 from django_modals.widgets.widgets import Toggle
@@ -19,7 +21,8 @@ from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATI
     DATE_FORMAT_TYPES, CURRENCY_COLUMNS, LINK_COLUMNS
 from advanced_report_builder.models import TableReport, ReportQuery, ReportType
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import split_attr, get_field_details, encode_attribute, decode_attribute
+from advanced_report_builder.utils import split_attr, get_field_details, encode_attribute, decode_attribute, \
+    crispy_modal_link_args
 from advanced_report_builder.views.charts_base import ChartBaseFieldForm
 from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin, QueryBuilderModalBase
 
@@ -103,8 +106,28 @@ class TableModal(QueryBuilderModalBase):
 
         if self.show_query_name:
             fields.append(FieldEx('query_name'))
-
         fields.append(FieldEx('query_data', template='advanced_report_builder/query_builder.html'))
+
+        if self.object.id:
+            fields.append(crispy_modal_link_args('advanced_report_builder:table_query_modal', 'Add Query Version',
+                                                 'report_id-', self.object.id, div=True,
+                                                 div_classes='form-buttons', button_classes='btn btn-primary',
+                                                 font_awesome='fa fa-plus'))
+
+            report_queries_count = self.object.reportquery_set.all().count()
+            if report_queries_count > 1:
+                form.fields['queries'] = CharField(
+                    required=False,
+                    label='Queries Versions',
+                    widget=DataTableReorderWidget(
+                        model=ReportQuery,
+                        order_field='order',
+                        fields=['_.index',
+                                '.id',
+                                'name',
+                                ],
+                        attrs={'filter': {'report__id': self.object.id}}))
+                fields.append('queries')
         return fields
 
     def form_valid(self, form):
@@ -157,6 +180,19 @@ class TableModal(QueryBuilderModalBase):
                                          search_string=kwargs.get('search'))
 
         return JsonResponse({'results': fields})
+
+    def datatable_sort(self, **kwargs):
+
+        form = self.get_form()
+        widget = form.fields[kwargs['table_id'][3:]].widget
+        _model = widget.attrs['table_model']
+        current_sort = dict(_model.objects.filter(report=self.object.id).values_list('id', 'order'))
+        for s in kwargs['sort']:
+            if current_sort[s[1]] != s[0]:
+                o = _model.objects.get(id=s[1])
+                o.order = s[0]
+                o.save()
+        return self.command_response('')
 
 
 class TableFieldForm(ChartBaseFieldForm):
@@ -383,3 +419,29 @@ class TablePivotModal(QueryBuilderModalBaseMixin, FormModal):
         self.add_command({'function': 'update_pivot_selection'})
         return self.command_response('close')
 
+
+class TableQueryForm(ModelCrispyForm):
+    cancel_class = 'btn-secondary modal-cancel'
+
+    def cancel_button(self, css_class=cancel_class, **kwargs):
+        commands = [{'function': 'save_query_builder_id_query_data'},
+                    {'function': 'close'}]
+        return self.button('Cancel', commands, css_class, **kwargs)
+
+
+class TableQueryModal(ModelFormModal):
+    model = ReportQuery
+    base_form = TableQueryForm
+    process = PROCESS_EDIT_DELETE
+    permission_delete = PERMISSION_OFF
+    no_header_x = True
+    form_fields = ['name']
+
+    def post_save(self, created):
+        self.add_command({'function': 'save_query_builder_id_query_data'})
+        return self.command_response('close')
+
+    def form_setup(self, form, *_args, **_kwargs):
+        fields = ['name']
+
+        return fields
