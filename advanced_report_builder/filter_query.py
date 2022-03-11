@@ -111,6 +111,12 @@ class FilterQueryMixin:
                                        display_operator=display_operator,
                                        field=field,
                                        query_string=query_string)
+            elif data_type == "string" and _id.endswith('__logged_in_user'):
+                self.get_logged_in_user(value=value,
+                                        query_list=query_list,
+                                        display_operator=display_operator,
+                                        field=field,
+                                        query_string=query_string)
             else:
                 # 'Normal' Query.
                 if display_operator in ["not_equal", "not_in", "not_contains", 'not_begins_with', "not_ends_with"]:
@@ -141,6 +147,16 @@ class FilterQueryMixin:
             query_list.append(~((Q((field + "__gte", value[0]))) & (Q((field + "__lte", value[1])))))
         else:
             query_list.append(((Q((field + "__gte", value[0]))) & (Q((field + "__lte", value[1])))))
+
+    def get_logged_in_user(self, value, query_list, display_operator, field, query_string):
+
+        # noinspection PyUnresolvedReferences
+        current_user = self.request.user
+        value = value == '1'
+        if (display_operator == 'equal' and value) or (display_operator == 'not_equal' and not value):
+            query_list.append(Q((query_string, current_user)))
+        else:
+            query_list.append(~Q((query_string, current_user)))
 
     def get_report_query(self, report):
 

@@ -12,6 +12,7 @@ class FieldTypes:
     FIELD_TYPE_BOOLEAN = 4
     FIELD_TYPE_MULTIPLE_CHOICE = 5
     FIELD_TYPE_FOREIGN_KEY = 6
+    FIELD_TYPE_ABSTRACT_USER = 7
 
     def get_operator(self, field_type):
         operators = {self.FIELD_TYPE_STRING: ['equal',
@@ -45,7 +46,9 @@ class FieldTypes:
                      self.FIELD_TYPE_MULTIPLE_CHOICE: ['in',
                                                        'not_in'],
                      self.FIELD_TYPE_FOREIGN_KEY: ['is_null',
-                                                   'is_not_null']
+                                                   'is_not_null'],
+                     self.FIELD_TYPE_ABSTRACT_USER: ['equal',
+                                                     'not_equal'],
                      }
         return operators.get(field_type)
 
@@ -133,3 +136,12 @@ class FieldTypes:
                                 "values": variable_date.get_variable_date_filter_values()
                                 }
         query_builder_filters.append(query_builder_filter)
+
+    def get_abstract_user_field(self, query_builder_filters, field, title):
+        query_builder_filters.append({"id": f'{field}__logged_in_user',
+                                      "label": f'{title} (Logged in user)',
+                                      "field": field,
+                                      "input": "select",
+                                      "operators": self.get_operator(self.FIELD_TYPE_ABSTRACT_USER),
+                                      "values": {"0": "False", "1": "True"}
+                                      })

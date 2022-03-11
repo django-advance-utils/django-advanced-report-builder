@@ -10,6 +10,7 @@ from time_stamped_model.models import TimeStampedModel
 from advanced_report_builder.columns import ColourColumn
 from advanced_report_builder.models import Report
 from advanced_report_builder.report_builder import ReportBuilderFields
+from django.conf import settings
 
 
 class UserProfile(AbstractUser):
@@ -49,6 +50,7 @@ class Company(TimeStampedModel):
     sectors = models.ManyToManyField(Sector, blank=True, related_name='companysectors')
     background_colour = models.CharField(max_length=8, default='90EE90')
     text_colour = models.CharField(max_length=8, default='454B1B')
+    user_profile = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True)
 
     class Meta:
         verbose_name_plural = 'Companies'
@@ -123,7 +125,11 @@ class Company(TimeStampedModel):
         includes = [{'field': 'companyinformation',
                      'title': 'Company Information',
                      'model': 'report_builder_examples.CompanyInformation.ReportBuilder',
-                     'reversed': True}]
+                     'reversed': True},
+                    {'field': 'user_profile',
+                     'title': 'User',
+                     'model': 'report_builder_examples.UserProfile.ReportBuilder'}
+                    ]
 
         pivot_fields = [
             {'title': 'Tags',

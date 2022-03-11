@@ -3,6 +3,7 @@ import json
 from crispy_forms.bootstrap import StrictButton
 from django.apps import apps
 from django.conf import settings
+from django.contrib.auth.models import AbstractUser
 from django.forms import CharField, JSONField
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -79,6 +80,10 @@ class QueryBuilderModalBaseMixin:
                     field_types.get_foreign_key_null_field(query_builder_filters=query_builder_filters,
                                                            field=prefix + include['field'],
                                                            title=title_prefix + include['title'])
+                if isinstance(new_model(), AbstractUser):
+                    field_types.get_abstract_user_field(query_builder_filters=query_builder_filters,
+                                                        field=prefix + include['field'],
+                                                        title=title_prefix + include['title'])
 
                 self._get_query_builder_fields(base_model=new_model,
                                                query_builder_filters=query_builder_filters,

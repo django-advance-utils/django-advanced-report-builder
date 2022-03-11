@@ -17,7 +17,8 @@ class CompanyAdmin(admin.ModelAdmin):
     list_display = ('name',
                     'active',
                     'importance',
-                    'modified')
+                    'modified',
+                    'user_profile')
 
 
 @admin.register(CompanyInformation)
