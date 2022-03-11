@@ -176,7 +176,7 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                                 else:
                                     fields.append({'field': full_id,
                                                    'label': full_title,
-                                                   'colour': report_builder_class.colour})
+                                                   'colour': colour})
 
         if not for_select2 and pivot_fields is not None:
             for pivot_field in report_builder_class.pivot_fields:
@@ -185,7 +185,7 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                 if self._is_search_match(search_string=search_string, title=full_title):
                     pivot_fields.append({'field': full_id,
                                          'label': title_prefix + pivot_field['title'],
-                                         'colour': report_builder_class.colour})
+                                         'colour': colour})
 
         for include in report_builder_class.includes:
             app_label, model, report_builder_fields_str = include['model'].split('.')
