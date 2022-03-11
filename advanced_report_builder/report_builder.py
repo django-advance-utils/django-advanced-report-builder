@@ -3,8 +3,8 @@ class ReportBuilderFields:
     title = None
     fields = []
     pivot_fields = []
-    exclude_search_fields = []
-    exclude_display_fields = []
+    exclude_search_fields = set()
+    exclude_display_fields = set()
     url = None
     includes = []
     default_columns = []

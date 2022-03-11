@@ -11,7 +11,6 @@ from django.urls import reverse
 from django_datatables.widgets import DataTableReorderWidget
 from django_modals.fields import FieldEx
 from django_modals.forms import ModelCrispyForm
-from django_modals.helper import modal_button_method, modal_button
 from django_modals.modals import FormModal, ModelFormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.select2 import Select2Multiple, Select2
@@ -172,11 +171,11 @@ class TableModal(QueryBuilderModalBase):
     def select2_link_field(self, **kwargs):
         fields = []
         if kwargs['report_type'] != '':
-            report_builder_fields, base_model = self.get_report_builder_class(report_type_id=kwargs['report_type'])
+            report_builder_class, base_model = self.get_report_builder_class(report_type_id=kwargs['report_type'])
             fields = []
             self._get_column_link_fields(base_model=base_model,
                                          fields=fields,
-                                         report_builder_class=report_builder_fields,
+                                         report_builder_class=report_builder_class,
                                          search_string=kwargs.get('search'))
 
         return JsonResponse({'results': fields})

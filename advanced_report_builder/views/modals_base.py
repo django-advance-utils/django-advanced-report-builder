@@ -36,31 +36,33 @@ class QueryBuilderModalBaseMixin:
 
     def get_query_builder_report_type_field(self, report_type_id):
 
-        report_builder_fields, base_model = self.get_report_builder_class(report_type_id=report_type_id)
-        if report_builder_fields is None:
+        report_builder_class, base_model = self.get_report_builder_class(report_type_id=report_type_id)
+        if report_builder_class is None:
             # noinspection PyUnresolvedReferences
             return self.command_response()
         query_builder_filters = []
         self._get_query_builder_fields(base_model=base_model,
                                        query_builder_filters=query_builder_filters,
-                                       report_builder_fields=report_builder_fields)
+                                       report_builder_class=report_builder_class)
 
         return query_builder_filters
 
-    def _get_query_builder_fields(self, base_model, query_builder_filters, report_builder_fields, prefix='',
+    def _get_query_builder_fields(self, base_model, query_builder_filters, report_builder_class, prefix='',
                                   title_prefix='', previous_base_model=None):
         field_types = FieldTypes()
 
-        for report_builder_field in report_builder_fields.fields:
-            django_field, _, columns, _ = get_field_details(base_model=base_model, field=report_builder_field)
-            for column in columns:
-                field_types.get_filter(query_builder_filters=query_builder_filters,
-                                       django_field=django_field,
-                                       field=column.column_name,
-                                       title=title_prefix + column.title,
-                                       column=column,
-                                       prefix=prefix)
-        for include in report_builder_fields.includes:
+        for report_builder_field in report_builder_class.fields:
+            if (not isinstance(report_builder_field, str) or
+                    report_builder_field not in report_builder_class.exclude_search_fields):
+                django_field, _, columns, _ = get_field_details(base_model=base_model, field=report_builder_field)
+                for column in columns:
+                    field_types.get_filter(query_builder_filters=query_builder_filters,
+                                           django_field=django_field,
+                                           field=column.column_name,
+                                           title=title_prefix + column.title,
+                                           column=column,
+                                           prefix=prefix)
+        for include in report_builder_class.includes:
             app_label, model, report_builder_fields_str = include['model'].split('.')
             new_model = apps.get_model(app_label, model)
             new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
@@ -80,7 +82,7 @@ class QueryBuilderModalBaseMixin:
 
                 self._get_query_builder_fields(base_model=new_model,
                                                query_builder_filters=query_builder_filters,
-                                               report_builder_fields=new_report_builder_fields,
+                                               report_builder_class=new_report_builder_fields,
                                                prefix=f"{prefix}{include['field']}__",
                                                title_prefix=f"{include['title']} --> ",
                                                previous_base_model=base_model)
@@ -149,24 +151,27 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                            'colour': colour})
 
         for report_builder_field in report_builder_class.fields:
-            django_field, col_type_override, columns, _ = get_field_details(base_model=base_model,
-                                                                            field=report_builder_field)
-            for column in columns:
-                if ((field_types is None and column_types is None) or
-                        (field_types is not None and isinstance(django_field, field_types)) or
-                        (column_types is not None and isinstance(col_type_override, column_types)) or
-                        (allow_annotations_fields and column.annotations)):
-                    full_id = prefix + column.column_name
-                    if selected_field_id is None or selected_field_id == full_id:
-                        full_title = title_prefix + column.title
-                        if self._is_search_match(search_string=search_string, title=full_title):
-                            if for_select2:
-                                fields.append({'id': full_id,
-                                               'text': full_title})
-                            else:
-                                fields.append({'field': full_id,
-                                               'label': full_title,
-                                               'colour': report_builder_class.colour})
+
+            if (not isinstance(report_builder_field, str) or
+                    report_builder_field not in report_builder_class.exclude_display_fields):
+                django_field, col_type_override, columns, _ = get_field_details(base_model=base_model,
+                                                                                field=report_builder_field)
+                for column in columns:
+                    if ((field_types is None and column_types is None) or
+                            (field_types is not None and isinstance(django_field, field_types)) or
+                            (column_types is not None and isinstance(col_type_override, column_types)) or
+                            (allow_annotations_fields and column.annotations)):
+                        full_id = prefix + column.column_name
+                        if selected_field_id is None or selected_field_id == full_id:
+                            full_title = title_prefix + column.title
+                            if self._is_search_match(search_string=search_string, title=full_title):
+                                if for_select2:
+                                    fields.append({'id': full_id,
+                                                   'text': full_title})
+                                else:
+                                    fields.append({'field': full_id,
+                                                   'label': full_title,
+                                                   'colour': report_builder_class.colour})
 
         if not for_select2 and pivot_fields is not None:
             for pivot_field in report_builder_class.pivot_fields:
