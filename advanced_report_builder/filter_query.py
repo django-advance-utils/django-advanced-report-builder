@@ -188,11 +188,14 @@ class FilterQueryMixin:
 
     def _get_pivot_details(self, base_model, pivot_str, report_builder_class, previous_base_model=None):
 
+        for pivot_field in report_builder_class.pivot_fields:
+            if pivot_field['field'] == pivot_str:
+                return pivot_field
+
         if '__' in pivot_str:
             pivot_parts = pivot_str.split('__')
             include_str = pivot_parts[0]
             new_pivot_str = '__'.join(pivot_parts[1:])
-
             for include in report_builder_class.includes:
                 app_label, model, report_builder_fields_str = include['model'].split('.')
                 new_model = apps.get_model(app_label, model)
@@ -205,8 +208,4 @@ class FilterQueryMixin:
                                                      previous_base_model=base_model)
                     if result:
                         return result
-        else:
-            for pivot_field in report_builder_class.pivot_fields:
-                if pivot_field['field'] == pivot_str:
-                    return pivot_field
         return None
