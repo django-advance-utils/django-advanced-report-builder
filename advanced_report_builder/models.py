@@ -437,10 +437,16 @@ class DashboardReport(TimeStampedModel):
     name_override = models.CharField(max_length=200, blank=True, null=True)
     display_option = models.PositiveIntegerField(choices=DISPLAY_OPTION_CHOICES, default=DISPLAY_OPTION_NONE)
 
-    def get_class(self):
+    def get_class(self, extra_class_name):
         if self.display_option != DISPLAY_OPTION_NONE:
-            return DISPLAY_OPTION_CLASSES.get(self.display_option)
-        return DISPLAY_OPTION_CLASSES.get(self.dashboard.display_option)
+            class_names = DISPLAY_OPTION_CLASSES.get(self.display_option)
+        else:
+            class_names = DISPLAY_OPTION_CLASSES.get(self.dashboard.display_option)
+
+        if extra_class_name:
+            class_names += f' {extra_class_name}'
+
+        return class_names
 
     def save(self, *args, **kwargs):
         self.set_order_field(extra_filters={'dashboard': self.dashboard,

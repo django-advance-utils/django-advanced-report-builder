@@ -86,17 +86,20 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         reports = []
 
         for dashboard_report in self.dashboard.dashboardreport_set.all():
-            report_data = self.call_view(dashboard_report=dashboard_report).rendered_content
+            report_view = self.get_view(report=dashboard_report.report)
+            extra_class_name = report_view().get_dashboard_class(report=dashboard_report.report)
+            report_data = self.call_view(dashboard_report=dashboard_report, report_view=report_view).rendered_content
             report = {'render': report_data,
                       'name': dashboard_report.report.name,
                       'id': dashboard_report.id,
-                      'class': dashboard_report.get_class()}
+                      'class': dashboard_report.get_class(extra_class_name=extra_class_name)}
             if dashboard_report.top:
                 top_reports.append(report)
             else:
                 reports.append(report)
         context['top_reports'] = top_reports
         context['top_reports_class'] = self.get_top_report_class(top_reports)
+
         context['reports'] = reports
         context['enable_edit'] = self.enable_edit
         return context
@@ -109,13 +112,14 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
             return self.views_overrides.get(report.instance_type)
         return self.views.get(report.instance_type)
 
-    def call_view(self, dashboard_report):
-        view = self.get_view(report=dashboard_report.report)
+    def call_view(self, dashboard_report, report_view=None):
+        if report_view is None:
+            report_view = self.get_view(report=dashboard_report.report)
         view_kwargs = copy.deepcopy(self.kwargs)
         view_kwargs['report'] = dashboard_report.report
         view_kwargs['dashboard_report'] = dashboard_report
         view_kwargs['enable_edit'] = self.enable_edit
-        return view.as_view()(self.request, *self.args, **view_kwargs)
+        return report_view.as_view()(self.request, *self.args, **view_kwargs)
 
     def post(self, request, *args, **kwargs):
         table_id = request.POST.get('table_id')

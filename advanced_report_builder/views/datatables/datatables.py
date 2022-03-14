@@ -128,3 +128,11 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
             return [MenuItem(menu_display='Version', no_hover=True, css_classes='btn-secondary',
                              dropdown=dropdown)]
         return []
+
+    def get_dashboard_class(self, report):
+        pivot_fields = report.tablereport.pivot_fields
+        if pivot_fields is not None and len(pivot_fields) > 0:
+            return 'p-0'
+        return ''
+
+

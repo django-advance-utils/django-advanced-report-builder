@@ -8,3 +8,6 @@ class ReportBase(AjaxHelpers, MenuMixin):
     def duplicate_menu(request, report_id):
         return [MenuItem(f'advanced_report_builder:duplicate_report_modal,pk-{report_id}',
                          css_classes=['btn-success'])]
+
+    def get_dashboard_class(self, report):
+        return None
