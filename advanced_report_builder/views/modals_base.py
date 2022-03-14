@@ -340,12 +340,13 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
         org_id = self.object.id if hasattr(self, 'object') else None
         chart_report = form.save()
 
-        if not self.report_query and (form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']):
+        extra_query_data = form.cleaned_data.get('extra_query_data')
+        if not self.report_query and (form.cleaned_data['query_data'] or extra_query_data):
             ReportQuery(query=form.cleaned_data['query_data'],
-                        extra_query=form.cleaned_data['extra_query_data'],
+                        extra_query=extra_query_data,
                         report=chart_report).save()
-        elif form.cleaned_data['query_data'] or form.cleaned_data['extra_query_data']:
-            self.report_query.extra_query = form.cleaned_data['extra_query_data']
+        elif form.cleaned_data['query_data'] or extra_query_data:
+            self.report_query.extra_query = extra_query_data
             self.report_query.query = form.cleaned_data['query_data']
             if self.show_query_name:
                 self.report_query.name = form.cleaned_data['query_name']
