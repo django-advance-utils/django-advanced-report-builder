@@ -12,6 +12,7 @@ from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
 
 class TableUtilsMixin(ReportUtilsMixin):
     date_field = ReportBuilderDateColumn
+    column_totals_class = ColumnTotals
 
     def __init__(self, *args, **kwargs):
         self.table_report = None
@@ -191,7 +192,7 @@ class TableUtilsMixin(ReportUtilsMixin):
 
         if totals:
             totals[first_field_name] = {'text': 'Totals'}
-            table.add_plugin(ColumnTotals, totals)
+            table.add_plugin(self.column_totals_class, totals)
 
     @staticmethod
     def _set_multiple_title(database_values, value_prefix, fields, text):

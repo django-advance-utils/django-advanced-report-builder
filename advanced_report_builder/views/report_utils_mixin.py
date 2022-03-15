@@ -135,9 +135,17 @@ class ReportUtilsMixin(FilterQueryMixin):
         if totals is not None:
             show_total = data_attr.get('show_totals')
             if show_total == '1':
-                totals[field_name] = {'sum': 'to_fixed', 'decimal_places': decimal_places, 'css_class': css_class}
+                self.set_number_total(totals=totals,
+                                      field_name=field_name,
+                                      col_type_override=col_type_override,
+                                      decimal_places=decimal_places,
+                                      css_class=css_class)
 
         return field_name
 
     def set_extra_number_field_kwargs(self, data_attr, options, multiple_index):
         pass
+
+    # noinspection PyUnusedLocal,PyMethodMayBeStatic
+    def set_number_total(self, totals, field_name, col_type_override, decimal_places, css_class):
+        totals[field_name] = {'sum': 'to_fixed', 'decimal_places': decimal_places, 'css_class': css_class}
