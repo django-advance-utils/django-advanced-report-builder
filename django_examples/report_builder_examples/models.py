@@ -13,13 +13,40 @@ from advanced_report_builder.report_builder import ReportBuilderFields
 from django.conf import settings
 
 
+def get_merged_name(default=None, **kwargs):
+    merge = ' '.join([n for n in kwargs.values() if n is not None and n != ''])
+    return merge if merge != '' else default
+
+
 class UserProfile(AbstractUser):
+    class Datatable(DatatableModel):
+        class FullNameColumn(DatatableColumn):
+
+            def col_setup(self):
+                self.field = ['first_name',
+                              'last_name',
+                              'username']
+
+            # noinspection PyMethodMayBeStatic
+            def row_result(self, data, _page_data):
+                first_name = data[self.model_path + 'first_name'] \
+                    if data[self.model_path + 'first_name'] is not None else ''
+                last_name = data[self.model_path + 'last_name'] \
+                    if data[self.model_path + 'last_name'] is not None else ''
+                username = data[self.model_path + 'username'] \
+                    if data[self.model_path + 'username'] is not None else ''
+
+                return get_merged_name(default=username, first_name=first_name, last_name=last_name)
+
+        full_name = FullNameColumn(title='Name')
+
     class ReportBuilder(ReportBuilderFields):
         colour = '#606440'
         title = 'Users'
         fields = ['first_name',
                   'last_name',
-                  'username']
+                  'username',
+                  'full_name']
         default_multiple_column_text = '{first_name} {last_name}'
         default_multiple_column_fields = ['first_name',
                                           'last_name']
@@ -99,11 +126,13 @@ class Company(TimeStampedModel):
 
         date_created = DateColumn(field='created', title='Date Created')
         date_modified = DateColumn(field='modified', title='Date Modified')
+        record_count = ColumnBase(column_name='id', field='id', calculated=True, annotations={'id': Count('id')}),
 
     class ReportBuilder(ReportBuilderFields):
         colour = '#00008b'
         title = 'Company'
-        fields = ['name',
+        fields = ['record_count',
+                  'name',
                   'active',
                   'company_number',
                   'importance',
