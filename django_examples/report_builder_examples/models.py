@@ -7,7 +7,7 @@ from django_datatables.model_def import DatatableModel
 from report_builder_examples.report_overrides import CustomDateColumn
 from time_stamped_model.models import TimeStampedModel
 
-from advanced_report_builder.columns import ColourColumn
+from advanced_report_builder.columns import ColourColumn, ArrowColumn
 from advanced_report_builder.models import Report
 from advanced_report_builder.report_builder import ReportBuilderFields
 from django.conf import settings
@@ -104,6 +104,8 @@ class Company(TimeStampedModel):
         # sector_names = ManyToManyColumn(column_name='sectors', field='sectors__name')
         sector_names = ManyToManyColumn(field='sectors__name')
 
+        arrow_icon_column = ArrowColumn(title='Arrow Icon')
+
         class Tags(DatatableColumn):
             def setup_results(self, request, all_results):
                 tags = Tags.objects.values_list('company__id', 'id')
@@ -131,7 +133,8 @@ class Company(TimeStampedModel):
     class ReportBuilder(ReportBuilderFields):
         colour = '#00008b'
         title = 'Company'
-        fields = ['record_count',
+        fields = ['arrow_icon_column',
+                  'record_count',
                   'name',
                   'active',
                   'company_number',

@@ -313,7 +313,6 @@ class ChartBaseFieldForm(CrispyForm):
                     {'function': 'close'}]
         return self.button('Cancel', commands, css_class, **kwargs)
 
-
     def get_report_type_details(self):
         data = json.loads(base64.b64decode(self.slug['data']))
 

@@ -8,6 +8,7 @@ from django.forms import CharField, JSONField
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django_datatables.columns import NoHeadingColumn
 from django_modals.forms import ModelCrispyForm
 from django_modals.modals import ModelFormModal
 from django_modals.widgets.select2 import Select2
@@ -168,7 +169,11 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                             (allow_annotations_fields and column.annotations)):
                         full_id = prefix + column.column_name
                         if selected_field_id is None or selected_field_id == full_id:
-                            full_title = title_prefix + column.title
+
+                            if isinstance(col_type_override, NoHeadingColumn):
+                                full_title = title_prefix + col_type_override.title_from_name(column.column_name)
+                            else:
+                                full_title = title_prefix + column.title
                             if self._is_search_match(search_string=search_string, title=full_title):
                                 if for_select2:
                                     fields.append({'id': full_id,
