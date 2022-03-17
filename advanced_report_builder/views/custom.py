@@ -74,6 +74,9 @@ class CustomBaseView(MenuMixin, TemplateView):
     def queries_menu(self):
         return []
 
+    def get_dashboard_class(self, report):
+        return None
+
 
 class CustomModal(ModelFormModal):
     process = PROCESS_EDIT_DELETE
