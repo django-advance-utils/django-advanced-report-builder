@@ -202,11 +202,17 @@ class FilterQueryMixin:
                     return new_report_builder_fields
         return None
 
-    def _get_pivot_details(self, base_model, pivot_str, report_builder_class, previous_base_model=None):
+    def _get_pivot_details(self, base_model, pivot_str, report_builder_class, previous_base_model=None, include_str=''):
 
-        for pivot_field in report_builder_class.pivot_fields:
-            if pivot_field['field'] == pivot_str:
-                return pivot_field
+        if pivot_str in report_builder_class.pivot_fields:
+            pivot_data = report_builder_class.pivot_fields[pivot_str]
+            if include_str == '':
+                full_field_id = pivot_data['field']
+            else:
+                full_field_id = '__'.join((include_str, pivot_data['field']))
+
+            return {'id': full_field_id,
+                    'details': pivot_data}
 
         if '__' in pivot_str:
             pivot_parts = pivot_str.split('__')
@@ -221,7 +227,8 @@ class FilterQueryMixin:
                     result = self._get_pivot_details(base_model=new_model,
                                                      pivot_str=new_pivot_str,
                                                      report_builder_class=new_report_builder_fields,
-                                                     previous_base_model=base_model)
+                                                     previous_base_model=base_model,
+                                                     include_str=include_str)
                     if result:
                         return result
         return None

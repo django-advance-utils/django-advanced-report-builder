@@ -163,12 +163,10 @@ class Company(TimeStampedModel):
                      'model': 'report_builder_examples.UserProfile.ReportBuilder'}
                     ]
 
-        pivot_fields = [
-            {'title': 'Tags',
-             'type': 'tag',
-             'field': 'Tags',
-             'kwargs': {'collapsed': False}},
-        ]
+        pivot_fields = {'tags': {'title': 'Tags',
+                                 'type': 'tag',
+                                 'field': 'Tags',
+                                 'kwargs': {'collapsed': False}}}
 
     def __str__(self):
         return self.name

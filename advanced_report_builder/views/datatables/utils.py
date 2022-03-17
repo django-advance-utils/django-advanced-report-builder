@@ -181,13 +181,18 @@ class TableUtilsMixin(ReportUtilsMixin):
                 pivot_field_data = self._get_pivot_details(base_model=base_model,
                                                            pivot_str=pivot_field['field'],
                                                            report_builder_class=report_builder_class)
-                if pivot_field['field'] != fields_used:
-                    table.add_columns('.' + pivot_field['field'])
-                    fields_used.add(pivot_field['field'])
-                table.add_js_filters(pivot_field_data['type'],
-                                     pivot_field['field'],
-                                     filter_title=pivot_field['title'],
-                                     **pivot_field_data['kwargs'])
+                if pivot_field_data is None:
+                    continue
+
+                if pivot_field_data['id'] != fields_used:
+                    table.add_columns('.' + pivot_field_data['id'])
+                    fields_used.add(pivot_field_data['id'])
+
+                pivot_field_details = pivot_field_data['details']
+                table.add_js_filters(pivot_field_details['type'],
+                                     pivot_field_data['id'],
+                                     filter_title=pivot_field_details['title'],
+                                     **pivot_field_details['kwargs'])
                 table.show_pivot_table = True
 
         if totals:
