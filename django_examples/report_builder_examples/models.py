@@ -232,11 +232,6 @@ class Note(models.Model):
     notes = models.TextField()
 
 
-class ExtraReportFields(models.Model):
-    report = models.OneToOneField(Report, primary_key=True, on_delete=models.CASCADE)
-    notes = models.TextField()
-
-
 class Tally(models.Model):
     date = models.DateField()
     cars = models.IntegerField()
@@ -292,3 +287,8 @@ class Payment(TimeStampedModel):
                      'title': 'User',
                      'model': 'report_builder_examples.UserProfile.ReportBuilder'},
                     ]
+
+
+class ReportPermission(TimeStampedModel):
+    report = models.OneToOneField(Report, primary_key=True, on_delete=models.CASCADE)
+    requires_superuser = models.BooleanField(default=False)

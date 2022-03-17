@@ -1,6 +1,8 @@
 from django.shortcuts import redirect
 from django_datatables.columns import ColumnLink
 from django_menus.menu import MenuItem
+from django_modals.modals import ModelFormModal
+from django_modals.widgets.widgets import Toggle
 from report_builder_examples.views.base import MainMenu, MainIndices
 from report_builder_examples.views.custom import Custom1
 
@@ -13,6 +15,7 @@ from advanced_report_builder.views.line_charts import LineChartView
 from advanced_report_builder.views.pie_charts import PieChartView
 from advanced_report_builder.views.reports import ViewReportBase
 from advanced_report_builder.views.single_values import SingleValueView
+from report_builder_examples.models import ReportPermission
 
 
 class ViewReports(MainIndices):
@@ -72,8 +75,15 @@ class ViewSingleValueReport(SingleValueView):
 
 class ViewTableReport(TableView):
     def pod_report_menu(self):
-        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
+        menu = [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
                 *super().pod_report_menu()]
+        if hasattr(self.report, 'reportpermission'):
+            menu.append((f'report_builder_examples:permission_modal,pk-{self.report.id}',
+                         'Permission', {'css_classes': 'btn-danger', 'font_awesome': 'fas fa-key'}))
+        else:
+            menu.append((f'report_builder_examples:permission_modal,report_id-{self.report.id}',
+                         'Permission', {'css_classes': 'btn-danger', 'font_awesome': 'fas fa-key'}))
+        return menu
 
 
 class ViewBarChartReport(BarChartView):
@@ -124,3 +134,17 @@ class ViewReport(MainMenu, ViewReportBase):
 
     def redirect_url(self):
         return redirect('report_builder_examples:view_report', slug=self.report.slug)
+
+    def has_permission(self):
+        report = self.report
+        if hasattr(report, 'reportpermission'):
+            if report.reportpermission.requires_superuser:
+                return self.request.user.is_superuser
+        return True
+
+
+class PermissionModal(ModelFormModal):
+
+    model = ReportPermission
+    form_fields = ['requires_superuser']
+    widgets = {'requires_superuser': Toggle()}

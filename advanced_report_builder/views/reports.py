@@ -1,6 +1,6 @@
 from ajax_helpers.mixins import AjaxHelpers
+from django.conf import settings
 from django.contrib import messages
-from django.db import DataError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -19,7 +19,6 @@ from advanced_report_builder.views.kanban import KanbanView
 from advanced_report_builder.views.line_charts import LineChartView
 from advanced_report_builder.views.pie_charts import PieChartView
 from advanced_report_builder.views.single_values import SingleValueView
-from django.conf import settings
 
 
 class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
@@ -58,7 +57,18 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
                 if redirect_url:
                     return redirect_url
 
+        if not self.has_permission():
+            return self.report_no_permission()
+
         return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        """You can over override this to check if the user has permission to view the report.
+          If return false 'report_no_permission' will be called"""
+        return True
+
+    def report_no_permission(self):
+        raise Http404
 
     def report_not_found(self):
         raise Http404
@@ -106,4 +116,3 @@ class DuplicateReportModal(Modal):
             return self.command_response('redirect', url=url)
         else:
             return self.command_response('reload')
-

@@ -12,7 +12,6 @@ class ViewDashboards(MainIndices):
     model = Dashboard
     table_title = 'Dashboards'
 
-
     def setup_menu(self):
         super().setup_menu()
         self.add_menu('table_menu', 'button_group').add_items(('advanced_report_builder:dashboard_modal,-',
@@ -65,3 +64,15 @@ class ViewDashboard(MainMenu, ViewDashboardBase):
             return redirect('report_builder_examples:edit_dashboard', slug=self.dashboard.slug)
         else:
             return redirect('report_builder_examples:view_dashboard', slug=self.dashboard.slug)
+
+    def has_report_got_permission(self, report):
+        if hasattr(report, 'reportpermission'):
+            if report.reportpermission.requires_superuser:
+                return self.request.user.is_superuser
+        return True
+
+    def report_no_permission(self, dashboard_report, reports):
+        reports.append({'render': 'No permission to view',
+                        'name': dashboard_report.report.name,
+                        'id': dashboard_report.id,
+                        'class': ''})

@@ -78,25 +78,46 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
                  9: ' col-12 col-sm-12 col-md-4'}
         return spans.get(reports_len, ' col-12 col-sm-12 col-md-3')
 
+    def has_dashboard_permission(self):
+        """You can over override this to check if the user has permission to view the dashboard.
+          If return false 'dashboard_no_permission' will be called"""
+        return True
+
+    def dashboard_no_permission(self):
+        raise Http404
+
+    def has_report_got_permission(self, report):
+        """You can over override this to check if the user has permission to view the report.
+          If return false 'report_no_permission' will be called"""
+        return True
+
+    def report_no_permission(self, dashboard_report, reports):
+        pass
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['dashboard'] = self.dashboard
 
+        if not self.has_dashboard_permission():
+            return self.dashboard_no_permission()
+
         top_reports = []
         reports = []
-
         for dashboard_report in self.dashboard.dashboardreport_set.all():
-            report_view = self.get_view(report=dashboard_report.report)
-            extra_class_name = report_view().get_dashboard_class(report=dashboard_report.report)
-            report_data = self.call_view(dashboard_report=dashboard_report, report_view=report_view).rendered_content
-            report = {'render': report_data,
-                      'name': dashboard_report.report.name,
-                      'id': dashboard_report.id,
-                      'class': dashboard_report.get_class(extra_class_name=extra_class_name)}
-            if dashboard_report.top:
-                top_reports.append(report)
+            if self.has_report_got_permission(report=dashboard_report.report):
+                report_view = self.get_view(report=dashboard_report.report)
+                extra_class_name = report_view().get_dashboard_class(report=dashboard_report.report)
+                report_data = self.call_view(dashboard_report=dashboard_report, report_view=report_view).rendered_content
+                report = {'render': report_data,
+                          'name': dashboard_report.report.name,
+                          'id': dashboard_report.id,
+                          'class': dashboard_report.get_class(extra_class_name=extra_class_name)}
+                if dashboard_report.top:
+                    top_reports.append(report)
+                else:
+                    reports.append(report)
             else:
-                reports.append(report)
+                self.report_no_permission(dashboard_report=dashboard_report, reports=reports)
         context['top_reports'] = top_reports
         context['top_reports_class'] = self.get_top_report_class(top_reports)
 

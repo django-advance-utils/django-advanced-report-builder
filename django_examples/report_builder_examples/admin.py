@@ -1,5 +1,5 @@
 from django.contrib import admin
-from report_builder_examples.models import Company, Person, Tags, Sector, Tally, Payment, CompanyInformation
+from report_builder_examples.models import Company, Person, Tags, Sector, Tally, Payment, CompanyInformation, ReportPermission
 from django.contrib.auth.admin import UserAdmin
 
 from report_builder_examples.models import UserProfile
@@ -66,3 +66,13 @@ class PaymentAdmin(admin.ModelAdmin):
 
 
 admin.site.register(UserProfile, UserAdmin)
+
+
+@admin.register(ReportPermission)
+class ReportPermissionAdmin(admin.ModelAdmin):
+    list_display = ('get_report_name',
+                    'requires_superuser')
+
+    @staticmethod
+    def get_report_name(obj):
+        return obj.report.name
