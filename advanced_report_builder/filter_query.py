@@ -124,29 +124,24 @@ class FilterQueryMixin:
                 else:
                     query_list.append(Q((query_string, value)))
 
-            # elif data_type == 'date':
-            #     value = datetime.strptime(value, self.date_format).date()
-            # elif data_type == 'datetime':
-            #     value = datetime.strptime(value, self.date_time_format)
-            # elif data_type == 'integer' and value == '#current_user#':
-            #     value = self.user_profile_id
-
-            variable_date = False
         return query_list
 
     @staticmethod
     def get_variable_date(value, query_list, display_operator, field, query_string):
-        _, range_type = value.split(":")
-        variable_date = VariableDate()
-        value = variable_date.get_variable_dates(range_type=int(range_type))
-        if display_operator in ['less', 'greater_or_equal']:
-            query_list.append(Q((query_string, value[0])))
-        elif display_operator in ['greater', 'less_or_equal']:
-            query_list.append(Q((query_string, value[1])))
-        elif display_operator in ["not_equal", "not_in"]:
-            query_list.append(~((Q((field + "__gte", value[0]))) & (Q((field + "__lte", value[1])))))
+        if display_operator in ['is_null', 'is_not_null']:
+            query_list.append(Q((query_string, value)))
         else:
-            query_list.append(((Q((field + "__gte", value[0]))) & (Q((field + "__lte", value[1])))))
+            _, range_type = value.split(":")
+            variable_date = VariableDate()
+            value = variable_date.get_variable_dates(range_type=int(range_type))
+            if display_operator in ['less', 'greater_or_equal']:
+                query_list.append(Q((query_string, value[0])))
+            elif display_operator in ['greater', 'less_or_equal']:
+                query_list.append(Q((query_string, value[1])))
+            elif display_operator in ["not_equal", "not_in"]:
+                query_list.append(~((Q((field + "__gte", value[0]))) & (Q((field + "__lte", value[1])))))
+            else:
+                query_list.append(((Q((field + "__gte", value[0]))) & (Q((field + "__lte", value[1])))))
 
     def get_logged_in_user(self, value, query_list, display_operator, field, query_string):
 
