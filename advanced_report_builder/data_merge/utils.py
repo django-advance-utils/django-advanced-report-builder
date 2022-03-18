@@ -56,26 +56,28 @@ def get_data_merge_columns(base_model, report_builder_class, html):
         else:
             field = variable
         all_fields.add(field)
-        if field in display_fields:
-            columns.add('.' + field)
 
-    variables = re.findall('{%\s*if\s([^%}]+)\s*%}', html)
+    variables = re.findall('{%\s*if|elif|with\s([^%}]+)\s*%}', html)
 
     for variable in variables:
         for field in variable.split(' '):
 
-            if field not in ['', 'not', 'and' 'or'] and field[0] not in ['=', '<', '>', '(', ')', '"', "'"]:
+            if field not in ['', 'not', 'and' 'or', 'as'] and field[0] not in ['=', '<', '>', '(', ')', '"', "'"]:
+                if field == 'as':
+                    continue
                 all_fields.add(field)
-                if field not in display_fields:
-                    columns.add('.' + field)
 
     column_map = {}
     for field in all_fields:
-        _, col_type_override, _, _ = get_field_details(base_model=base_model, field=field)
-        field_parts = field.split('__')
+        django_field, col_type_override, _, _ = get_field_details(base_model=base_model, field=field)
+        if django_field is not None or isinstance(col_type_override.field, (list, tuple)):
+            if field not in columns and f'.{field}' not in columns:
+                columns.add('.' + field)
 
-        if col_type_override is not None and field_parts[-1] != col_type_override.field:
-            column_map[field] = col_type_override.field
+            field_parts = field.split('__')
+
+            if col_type_override is not None and field_parts[-1] != col_type_override.field:
+                column_map[field] = col_type_override.field
     return columns, column_map
 
 

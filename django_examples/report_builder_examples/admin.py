@@ -19,6 +19,8 @@ class CompanyAdmin(admin.ModelAdmin):
                     'importance',
                     'modified',
                     'user_profile')
+    search_fields = ('name',
+                     )
 
 
 @admin.register(CompanyInformation)

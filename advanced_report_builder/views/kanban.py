@@ -11,6 +11,7 @@ from django.template import Template, Context, TemplateSyntaxError
 from django.urls import reverse
 from django.views.generic import TemplateView
 from django_datatables.columns import ColumnBase, MenuColumn
+from django_datatables.datatables import DatatableExcludedRow
 from django_datatables.helpers import DUMMY_ID, row_link
 from django_datatables.widgets import DataTableReorderWidget
 from django_menus.menu import MenuItem, HtmlMenu
@@ -36,11 +37,13 @@ from advanced_report_builder.views.report import ReportBase
 
 
 class DescriptionColumn(ColumnBase):
-    def row_result(self, data, _page_data):
+    def row_result(self, data, _page_data, columns):
         html = self.options['html']
-        for mapped_field, field in self.options['column_map'].items():
-            if field in data:
-                data[mapped_field] = data[field]
+
+        for column in columns:
+            if not isinstance(column, DescriptionColumn):
+                data[column.column_name] = column.row_result(data, _page_data)
+
         try:
             template = Template(html)
             context = Context(data)
@@ -49,10 +52,35 @@ class DescriptionColumn(ColumnBase):
             return f'Error in description ({e})'
 
 
+class KanbanTable(ChartJSTable):
+    def get_table_array(self, request, results):
+        result_processes = self.get_result_processes()
+        for p in result_processes:
+            p.setup_results(request, self.page_results)
+        for c in self.columns:
+            c.setup_results(request, self.page_results)
+        results_list = []
+        for data_dict in results:
+            try:
+                for p in result_processes:
+                    p.row_result(data_dict, self.page_results)
+                row_data = []
+                for column in self.columns:
+                    if isinstance(column, DescriptionColumn):
+                        row_data.append(column.row_result(data_dict, self.page_results, columns=self.columns))
+                    else:
+                        row_data.append(column.row_result(data_dict, self.page_results))
+
+                results_list.append(row_data)
+            except DatatableExcludedRow:
+                pass
+        return results_list
+
+
 class KanbanView(ReportBase, FilterQueryMixin, TemplateView):
     number_field = ReportBuilderNumberColumn
     template_name = 'advanced_report_builder/kanban/report.html'
-    chart_js_table = ChartJSTable
+    chart_js_table = KanbanTable
 
     def __init__(self, *args, **kwargs):
         self.chart_report = None
