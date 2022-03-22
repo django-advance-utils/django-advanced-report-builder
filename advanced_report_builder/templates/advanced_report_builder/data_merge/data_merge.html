@@ -22,7 +22,7 @@
                 '//fonts.googleapis.com/css?family=Lato:300,300i,400,400i'],
 
             setup: function (editor) {
-                 django_modal.send_inputs({'ajax': 'get_data_merge_menu', 'field_auto_id': '{{ widget.attrs.id }}'});
+                 django_modal.send_inputs({'ajax': 'get_{{ widget.name }}_data_merge_menu', 'field_auto_id': '{{ widget.attrs.id }}'});
             }
         });
     }
@@ -45,7 +45,11 @@ function reset_{{ widget.attrs.id }}() {
                 build_menu(editor, menu['menu']);
             } else {
                 menu['onclick'] = function () {
-                    editor.insertContent('{% templatetag openvariable %} ' + menu['code'] + ' {% templatetag closevariable %}');
+                    if('raw' in menu && menu['raw']) {
+                        editor.insertContent(menu['code']);
+                    } else {
+                        editor.insertContent('{% templatetag openvariable %} ' + menu['code'] + ' {% templatetag closevariable %}');
+                    }
                 }
             }
         });

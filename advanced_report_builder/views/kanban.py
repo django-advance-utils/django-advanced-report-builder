@@ -642,7 +642,7 @@ class KanbanDescriptionModal(QueryBuilderModalBase):
                 'report_type',
                 'description')
 
-    def ajax_get_data_merge_menu(self, **kwargs):
+    def ajax_get_description_data_merge_menu(self, **kwargs):
         field_auto_id = kwargs['field_auto_id']
         menus = []
         if kwargs['report_type'] != '':
