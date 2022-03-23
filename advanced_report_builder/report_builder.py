@@ -5,6 +5,7 @@ class ReportBuilderFields:
     pivot_fields = {}
     exclude_search_fields = set()
     exclude_display_fields = set()
+    order_by_fields = set()
     url = None
     includes = []
     default_columns = []

@@ -1,6 +1,7 @@
 from django.db import models
 from django_datatables.columns import ManyToManyColumn
 
+from advanced_report_builder.columns import FilterForeignKeyColumn
 from advanced_report_builder.globals import DATE_FIELDS
 from advanced_report_builder.variable_date import VariableDate
 
@@ -61,7 +62,18 @@ class FieldTypes:
             full_field_name = prefix + field
         column_id = prefix + field
         if django_field is not None:
-            if isinstance(django_field, (models.CharField, models.TextField, models.EmailField)):
+            if isinstance(column, FilterForeignKeyColumn):
+                query_builder_filters.append({"id": column_id,
+                                              "label": title,
+                                              "field": full_field_name,
+                                              "type": "string",
+                                              'input': 'select',
+                                              'multiple': True,
+                                              'values': column.get_query_options(),
+                                              "operators": self.get_operator(
+                                                  self.FIELD_TYPE_MULTIPLE_CHOICE),
+                                              })
+            elif isinstance(django_field, (models.CharField, models.TextField, models.EmailField)):
                 query_builder_filters.append({"id": column_id,
                                               "label": title,
                                               "field": full_field_name,

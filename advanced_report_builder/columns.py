@@ -73,3 +73,8 @@ class ColourColumn(ColumnBase):
             return '#' + colour
         return ''
 
+
+class FilterForeignKeyColumn(ColumnBase):
+    def get_query_options(self):
+        values = self.model.objects.distinct(self.field).order_by(self.field).values_list(self.field, flat=True)
+        return {v: v for v in values if v}

@@ -145,7 +145,7 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                     prefix='', title_prefix='', title=None, colour=None,
                     previous_base_model=None, selected_field_id=None, for_select2=False,
                     pivot_fields=None, allow_annotations_fields=True, field_types=None,
-                    column_types=None, search_string=None):
+                    column_types=None, search_string=None, show_order_by_fields=False):
         if title is None:
             title = report_builder_class.title
         if colour is None:
@@ -158,7 +158,8 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
         for report_builder_field in report_builder_class.fields:
 
             if (not isinstance(report_builder_field, str) or
-                    report_builder_field not in report_builder_class.exclude_display_fields):
+                    report_builder_field not in report_builder_class.exclude_display_fields or
+                    (show_order_by_fields and report_builder_field in report_builder_class.order_by_fields)):
                 django_field, col_type_override, columns, _ = get_field_details(base_model=base_model,
                                                                                 field=report_builder_field)
                 for column in columns:
@@ -212,7 +213,8 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                                  allow_annotations_fields=allow_annotations_fields,
                                  field_types=field_types,
                                  column_types=column_types,
-                                 search_string=search_string)
+                                 search_string=search_string,
+                                 show_order_by_fields=show_order_by_fields)
 
     def ajax_get_fields(self, **kwargs):
         report_type_id = kwargs['report_type']
@@ -301,6 +303,13 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                                  report_builder_class=report_builder_fields,
                                  for_select2=True,
                                  search_string=search_string)
+            elif field_type == 'order':
+                self._get_fields(base_model=base_model,
+                                 fields=fields,
+                                 report_builder_class=report_builder_fields,
+                                 for_select2=True,
+                                 search_string=search_string,
+                                 show_order_by_fields=True)
 
         return JsonResponse({'results': fields})
 
@@ -336,6 +345,13 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                                  report_builder_class=report_builder_fields,
                                  selected_field_id=selected_field_id,
                                  for_select2=True)
+            elif field_type == 'order':
+                self._get_fields(base_model=base_model,
+                                 fields=_fields,
+                                 report_builder_class=report_builder_fields,
+                                 selected_field_id=selected_field_id,
+                                 for_select2=True,
+                                 show_order_by_fields=True)
 
         form.fields[field_name].widget = Select2(attrs={'ajax': True})
         form.fields[field_name].widget.select_data = _fields

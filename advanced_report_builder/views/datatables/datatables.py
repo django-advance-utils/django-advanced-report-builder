@@ -144,5 +144,3 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
         if pivot_fields is not None and len(pivot_fields) > 0:
             return 'p-0'
         return ''
-
-

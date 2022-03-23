@@ -1,5 +1,6 @@
 from django.contrib import admin
-from report_builder_examples.models import Company, Person, Tags, Sector, Tally, Payment, CompanyInformation, ReportPermission
+from report_builder_examples.models import Company, Person, Tags, Sector, Tally, Payment,\
+    CompanyInformation, ReportPermission, CompanyCategory
 from django.contrib.auth.admin import UserAdmin
 
 from report_builder_examples.models import UserProfile
@@ -78,3 +79,9 @@ class ReportPermissionAdmin(admin.ModelAdmin):
     @staticmethod
     def get_report_name(obj):
         return obj.report.name
+
+
+@admin.register(CompanyCategory)
+class CompanyCategoryAdmin(admin.ModelAdmin):
+    list_display = ('name',
+                    )

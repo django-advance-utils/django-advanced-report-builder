@@ -7,7 +7,7 @@ from django_datatables.model_def import DatatableModel
 from report_builder_examples.report_overrides import CustomDateColumn
 from time_stamped_model.models import TimeStampedModel
 
-from advanced_report_builder.columns import ColourColumn, ArrowColumn
+from advanced_report_builder.columns import ColourColumn, ArrowColumn, FilterForeignKeyColumn
 from advanced_report_builder.models import Report
 from advanced_report_builder.report_builder import ReportBuilderFields
 from django.conf import settings
@@ -69,6 +69,13 @@ class Sector(TimeStampedModel):
         default_multiple_column_fields = ['name']
 
 
+class CompanyCategory(TimeStampedModel):
+    name = models.CharField(max_length=80)
+
+    def __str__(self):
+        return self.name
+
+
 class Company(TimeStampedModel):
     name = models.CharField(max_length=80)
     active = models.BooleanField(default=False)
@@ -78,6 +85,7 @@ class Company(TimeStampedModel):
     background_colour = models.CharField(max_length=8, default='90EE90')
     text_colour = models.CharField(max_length=8, default='454B1B')
     user_profile = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True)
+    company_category = models.ForeignKey(CompanyCategory, on_delete=models.CASCADE, blank=True, null=True)
 
     class Meta:
         verbose_name_plural = 'Companies'
@@ -130,10 +138,14 @@ class Company(TimeStampedModel):
         date_modified = DateColumn(field='modified', title='Date Modified')
         record_count = ColumnBase(column_name='id', field='id', calculated=True, annotations={'id': Count('id')}),
 
+        company_category_column = FilterForeignKeyColumn(field='company_category__name',
+                                                         title='Company Category')
+
     class ReportBuilder(ReportBuilderFields):
         colour = '#00008b'
         title = 'Company'
-        fields = ['arrow_icon_column',
+        fields = ['company_category_column',
+                  'arrow_icon_column',
                   'record_count',
                   'name',
                   'active',
@@ -148,6 +160,7 @@ class Company(TimeStampedModel):
                   'date_modified',
                   'background_colour_column',
                   'text_colour_column',
+
                   'Tags',
                   ]
         default_columns = ['.id']

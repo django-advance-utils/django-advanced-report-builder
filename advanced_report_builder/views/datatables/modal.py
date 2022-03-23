@@ -87,7 +87,7 @@ class TableModal(QueryBuilderModalBase):
                          selected_field_id=link_field,
                          report_type=report_type)
 
-        self.setup_field(field_type='all',
+        self.setup_field(field_type='order',
                          form=form,
                          field_name='order_by_field',
                          selected_field_id=order_by_field,
@@ -181,7 +181,7 @@ class TableModal(QueryBuilderModalBase):
                                            search_string=kwargs.get('search'))
 
     def select2_order_by_field(self, **kwargs):
-        return self.get_fields_for_select2(field_type='all',
+        return self.get_fields_for_select2(field_type='order',
                                            report_type=kwargs['report_type'],
                                            search_string=kwargs.get('search'))
 
