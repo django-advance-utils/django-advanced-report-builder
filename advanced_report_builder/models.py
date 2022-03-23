@@ -213,6 +213,8 @@ class TableReport(Report):
     has_clickable_rows = models.BooleanField(default=False)
     link_field = models.CharField(max_length=200, blank=True, null=True)
     pivot_fields = models.JSONField(null=True, blank=True)
+    order_by_field = models.CharField(max_length=200, blank=True, null=True)
+    order_by_ascending = models.BooleanField(default=True)
     page_length = models.PositiveSmallIntegerField(choices=((10, '10'),
                                                             (25, '25'),
                                                             (50, '50'),

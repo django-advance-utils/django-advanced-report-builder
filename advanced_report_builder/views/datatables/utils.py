@@ -209,8 +209,7 @@ class TableUtilsMixin(ReportUtilsMixin):
 
     def extra_filters(self, query):
         report_query = self.get_report_query(report=self.table_report)
-        if not report_query:
-            return query
-
-        return self.process_query_filters(query=query,
-                                          search_filter_data=report_query.query)
+        if report_query:
+            query = self.process_query_filters(query=query,
+                                               search_filter_data=report_query.query)
+        return query

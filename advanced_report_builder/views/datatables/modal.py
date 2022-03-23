@@ -5,7 +5,6 @@ from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Div
 from django.conf import settings
 from django.forms import CharField, ChoiceField, BooleanField, IntegerField
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_datatables.widgets import DataTableReorderWidget
@@ -13,7 +12,7 @@ from django_modals.fields import FieldEx
 from django_modals.forms import ModelCrispyForm
 from django_modals.modals import FormModal, ModelFormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
-from django_modals.widgets.select2 import Select2Multiple, Select2
+from django_modals.widgets.select2 import Select2Multiple
 from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, \
@@ -41,6 +40,11 @@ class TableModal(QueryBuilderModalBase):
                                                                    'data-on': 'YES',
                                                                    'data-off': 'NO'})}),
                    'link_field',
+                   'order_by_field',
+                   ('order_by_ascending', {'widget': Toggle(attrs={'data-onstyle': 'success',
+                                                                   'data-on': 'YES',
+                                                                   'data-off': 'NO'})}),
+
                    'page_length',
                    'report_type',
                    'report_tags',
@@ -67,26 +71,27 @@ class TableModal(QueryBuilderModalBase):
 
         form.fields['notes'].widget.attrs['rows'] = 3
 
-        link_fields = []
-
         if 'data' in _kwargs:
             link_field = _kwargs['data'].get('link_field')
+            order_by_field = _kwargs['data'].get('order_by_field')
             report_type_id = _kwargs['data'].get('report_type')
             report_type = get_object_or_404(ReportType, id=report_type_id)
         else:
             link_field = form.instance.link_field
+            order_by_field = form.instance.order_by_field
             report_type = form.instance.report_type
-        if link_field:
-            form.fields['link_field'].initial = link_field
-            base_model = report_type.content_type.model_class()
-            report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
-            self._get_column_link_fields(base_model=base_model,
-                                         fields=link_fields,
-                                         report_builder_class=report_builder_fields,
-                                         selected_field_id=link_field)
 
-        form.fields['link_field'].widget = Select2(attrs={'ajax': True})
-        form.fields['link_field'].widget.select_data = link_fields
+        self.setup_field(field_type='link',
+                         form=form,
+                         field_name='link_field',
+                         selected_field_id=link_field,
+                         report_type=report_type)
+
+        self.setup_field(field_type='all',
+                         form=form,
+                         field_name='order_by_field',
+                         selected_field_id=order_by_field,
+                         report_type=report_type)
 
         fields = ['name',
                   'notes',
@@ -94,6 +99,8 @@ class TableModal(QueryBuilderModalBase):
                   'report_tags',
                   FieldEx('has_clickable_rows', template='django_modals/fields/label_checkbox.html'),
                   'link_field',
+                  'order_by_field',
+                  FieldEx('order_by_ascending', template='django_modals/fields/label_checkbox.html'),
                   FieldEx('page_length', template='django_modals/fields/label_checkbox.html'),
                   FieldEx('table_fields',
                           template='advanced_report_builder/select_column.html',
@@ -169,16 +176,14 @@ class TableModal(QueryBuilderModalBase):
         return self.command_response()
 
     def select2_link_field(self, **kwargs):
-        fields = []
-        if kwargs['report_type'] != '':
-            report_builder_class, base_model = self.get_report_builder_class(report_type_id=kwargs['report_type'])
-            fields = []
-            self._get_column_link_fields(base_model=base_model,
-                                         fields=fields,
-                                         report_builder_class=report_builder_class,
-                                         search_string=kwargs.get('search'))
+        return self.get_fields_for_select2(field_type='link',
+                                           report_type=kwargs['report_type'],
+                                           search_string=kwargs.get('search'))
 
-        return JsonResponse({'results': fields})
+    def select2_order_by_field(self, **kwargs):
+        return self.get_fields_for_select2(field_type='all',
+                                           report_type=kwargs['report_type'],
+                                           search_string=kwargs.get('search'))
 
     def datatable_sort(self, **kwargs):
 

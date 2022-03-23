@@ -50,8 +50,18 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
                                    table_fields=table_fields,
                                    pivot_fields=pivot_fields)
 
+        if self.table_report.order_by_field:
+            order_by_field = self.table_report.order_by_field
+            if order_by_field not in fields_used:
+                table.add_columns(f'.{order_by_field}')
+            if self.table_report.order_by_ascending:
+                table.sort(order_by_field)
+            else:
+                table.sort(f'-{order_by_field}')
+
         table.table_options['pageLength'] = self.table_report.page_length
         table.table_options['bStateSave'] = False
+
         if self.table_report.has_clickable_rows and self.table_report.link_field:
             table.table_classes.append('row_link')
             table.add_columns(ArrowColumn(column_name='arrow_icon'))
