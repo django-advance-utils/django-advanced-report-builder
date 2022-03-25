@@ -53,7 +53,11 @@ def get_custom_report_builder():
                                  'report_builder.customise.CustomiseReportBuilder'))
 
 
-def get_field_details(base_model, field, table=None):
+def get_field_details(base_model, field, report_builder_class, table=None):
+
+    if isinstance(field, str) and field in report_builder_class.field_classes:
+        field = report_builder_class.field_classes[field]
+
     path = field
     original_column_initialisor = ColumnInitialisor(start_model=base_model, path=field, table=table)
 

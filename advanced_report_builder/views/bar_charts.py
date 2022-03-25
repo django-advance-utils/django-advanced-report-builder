@@ -2,6 +2,7 @@ import base64
 import json
 
 from crispy_forms.layout import Div
+from django.core.exceptions import FieldDoesNotExist
 from django.forms import CharField, ChoiceField, BooleanField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -12,6 +13,7 @@ from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
 from django_modals.widgets.select2 import Select2Multiple
 
+from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import DEFAULT_DATE_FORMAT, \
     DATE_FORMAT_TYPES_DJANGO_FORMAT
 from advanced_report_builder.models import BarChartReport, ReportType
@@ -29,7 +31,10 @@ class BarChartView(ChartBaseView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+        try:
+            context = super().get_context_data(**kwargs)
+        except FieldDoesNotExist as e:
+            raise ReportError(e)
         self.table.bar_chart_report = self.chart_report
         self.table.datatable_template = 'advanced_report_builder/charts/bar/middle.html'
         context['bar_chart_report'] = self.chart_report

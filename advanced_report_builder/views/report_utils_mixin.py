@@ -49,9 +49,8 @@ class ReportUtilsMixin(FilterQueryMixin):
                     field.options['calculated'] = True
                     field.aggregations = col_type_override.annotations
                     field.annotations = []
-                number_function_kwargs = {}
                 if title:
-                    number_function_kwargs['title'] = title
+                    field.title = title
                 self.set_extra_number_field_kwargs(data_attr=data_attr,
                                                    options=field.options,
                                                    multiple_index=multiple_index)

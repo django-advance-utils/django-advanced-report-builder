@@ -128,8 +128,12 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         field_name = self.chart_report.date_field
         if field_name is None:
             return
-
-        django_field, col_type_override, _, _ = get_field_details(base_model=base_model, field=field_name, table=table)
+        report_builder_class = getattr(base_model,
+                                       self.chart_report.report_type.report_builder_class_name, None)
+        django_field, col_type_override, _, _ = get_field_details(base_model=base_model,
+                                                                  field=field_name,
+                                                                  report_builder_class=report_builder_class,
+                                                                  table=table)
 
         if col_type_override:
             field_name = col_type_override.field
@@ -173,10 +177,17 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         if not self.chart_report.fields:
             return fields
         chart_fields = self.chart_report.fields
+
+        report_builder_class = getattr(base_model,
+                                       self.chart_report.report_type.report_builder_class_name, None)
+
         for index, table_field in enumerate(chart_fields, 1):
             field = table_field['field']
 
-            django_field, col_type_override, _, _ = get_field_details(base_model=base_model, field=field, table=table)
+            django_field, col_type_override, _, _ = get_field_details(base_model=base_model,
+                                                                      field=field,
+                                                                      report_builder_class=report_builder_class,
+                                                                      table=table)
 
             if (isinstance(django_field, NUMBER_FIELDS) or
                     (col_type_override is not None and col_type_override.annotations)):
@@ -184,13 +195,10 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
                 if data_attr.get('multiple_columns') == '1':
                     query = self.extra_filters(query=table.model.objects)
                     multiple_column_field = data_attr.get('multiple_column_field')
-                    report_builder_fields = getattr(base_model,
-                                                    self.chart_report.report_type.report_builder_class_name, None)
-
-                    report_builder_fields = self._get_report_builder_class(base_model=base_model,
-                                                                           field_str=multiple_column_field,
-                                                                           report_builder_class=report_builder_fields)
-                    _fields = report_builder_fields.default_multiple_column_fields
+                    report_builder_class = self._get_report_builder_class(base_model=base_model,
+                                                                          field_str=multiple_column_field,
+                                                                          report_builder_class=report_builder_class)
+                    _fields = report_builder_class.default_multiple_column_fields
                     default_multiple_column_fields = [multiple_column_field + '__' + x for x in _fields]
                     results = query.distinct(multiple_column_field).values(multiple_column_field,
                                                                            *default_multiple_column_fields)
@@ -199,7 +207,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
                         suffix = self._set_multiple_title(database_values=result,
                                                           value_prefix=multiple_column_field,
                                                           fields=_fields,
-                                                          text=report_builder_fields.default_multiple_column_text)
+                                                          text=report_builder_class.default_multiple_column_text)
                         extra_filter = Q((multiple_column_field, result[multiple_column_field]))
 
                         self.get_number_field(annotations_type=self.chart_report.axis_value_type,
@@ -318,9 +326,11 @@ class ChartBaseFieldForm(CrispyForm):
 
         report_type = get_object_or_404(ReportType, pk=self.slug['report_type_id'])
         base_model = report_type.content_type.model_class()
+        report_builder_class = getattr(base_model,
+                                       report_type.report_builder_class_name, None)
         self.django_field, self.col_type_override, _, _ = get_field_details(base_model=base_model,
                                                                             field=data['field'],
-                                                                            )
+                                                                            report_builder_class=report_builder_class)
 
         return report_type, base_model
 

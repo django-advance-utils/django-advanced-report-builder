@@ -100,7 +100,10 @@ class TableUtilsMixin(ReportUtilsMixin):
         for index, table_field in enumerate(table_fields):
             field = table_field['field']
             fields_used.add(field)
-            django_field, col_type_override, _, _ = get_field_details(base_model=base_model, field=field, table=table)
+            django_field, col_type_override, _, _ = get_field_details(base_model=base_model,
+                                                                      field=field,
+                                                                      table=table,
+                                                                      report_builder_class=report_builder_class)
             if isinstance(django_field, DATE_FIELDS):
                 field_name = self.get_date_field(index=index,
                                                  col_type_override=col_type_override,

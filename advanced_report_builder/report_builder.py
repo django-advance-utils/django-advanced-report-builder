@@ -1,3 +1,6 @@
+from advanced_report_builder.columns import RecordCountColumn
+
+
 class ReportBuilderFields:
     colour = None
     title = None
@@ -10,5 +13,11 @@ class ReportBuilderFields:
     includes = []
     default_columns = []
 
+    field_classes = {'record_count': RecordCountColumn()}
+
     default_multiple_column_text = ''
     default_multiple_column_fields = []
+
+    extra_chart_field = ['record_count']
+
+

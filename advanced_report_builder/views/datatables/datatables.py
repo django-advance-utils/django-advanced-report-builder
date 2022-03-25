@@ -66,7 +66,8 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
             table.table_classes.append('row_link')
             table.add_columns(ArrowColumn(column_name='arrow_icon'))
             _, col_type_override, _, _ = get_field_details(base_model=base_model,
-                                                           field=self.table_report.link_field)
+                                                           field=self.table_report.link_field,
+                                                           report_builder_class=report_builder_class)
             if isinstance(col_type_override.field, list):
                 field = col_type_override.field[0]
             else:

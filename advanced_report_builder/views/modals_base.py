@@ -55,7 +55,9 @@ class QueryBuilderModalBaseMixin:
         for report_builder_field in report_builder_class.fields:
             if (not isinstance(report_builder_field, str) or
                     report_builder_field not in report_builder_class.exclude_search_fields):
-                django_field, _, columns, _ = get_field_details(base_model=base_model, field=report_builder_field)
+                django_field, _, columns, _ = get_field_details(base_model=base_model,
+                                                                field=report_builder_field,
+                                                                report_builder_class=report_builder_class)
                 for column in columns:
                     field_types.get_filter(query_builder_filters=query_builder_filters,
                                            django_field=django_field,
@@ -145,7 +147,7 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                     prefix='', title_prefix='', title=None, colour=None,
                     previous_base_model=None, selected_field_id=None, for_select2=False,
                     pivot_fields=None, allow_annotations_fields=True, field_types=None,
-                    column_types=None, search_string=None, show_order_by_fields=False):
+                    column_types=None, search_string=None, show_order_by_fields=False, extra_fields=None):
         if title is None:
             title = report_builder_class.title
         if colour is None:
@@ -155,13 +157,20 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
             tables.append({'name': title,
                            'colour': colour})
 
-        for report_builder_field in report_builder_class.fields:
+        if extra_fields:
+            report_builder_class_fields = report_builder_class.fields + extra_fields
+        else:
+            report_builder_class_fields = report_builder_class.fields
+
+        for report_builder_field in report_builder_class_fields:
 
             if (not isinstance(report_builder_field, str) or
                     report_builder_field not in report_builder_class.exclude_display_fields or
                     (show_order_by_fields and report_builder_field in report_builder_class.order_by_fields)):
-                django_field, col_type_override, columns, _ = get_field_details(base_model=base_model,
-                                                                                field=report_builder_field)
+                django_field, col_type_override, columns, _ = get_field_details(
+                    base_model=base_model,
+                    field=report_builder_field,
+                    report_builder_class=report_builder_class)
                 for column in columns:
                     if ((field_types is None and column_types is None) or
                             (field_types is not None and isinstance(django_field, field_types)) or
@@ -218,14 +227,15 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
 
     def ajax_get_fields(self, **kwargs):
         report_type_id = kwargs['report_type']
-        report_builder_fields, base_model = self.get_report_builder_class(report_type_id=report_type_id)
+        report_builder_class, base_model = self.get_report_builder_class(report_type_id=report_type_id)
         fields = []
         tables = []
         self._get_fields(base_model=base_model,
                          fields=fields,
                          tables=tables,
-                         report_builder_class=report_builder_fields,
-                         field_types=NUMBER_FIELDS)
+                         report_builder_class=report_builder_class,
+                         field_types=NUMBER_FIELDS,
+                         extra_fields=report_builder_class.extra_chart_field)
         return self.command_response('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
 
     def _get_date_fields(self, base_model, fields, report_builder_class, selected_field_id=None, search_string=None):

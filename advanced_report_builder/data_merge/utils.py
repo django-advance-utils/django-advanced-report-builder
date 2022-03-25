@@ -11,6 +11,7 @@ def get_menu_fields(base_model, report_builder_class,
     for report_builder_field in report_builder_class.fields:
         django_field, col_type_override, columns, _ = get_field_details(base_model=base_model,
                                                                         field=report_builder_field,
+                                                                        report_builder_class=report_builder_class,
                                                                         table=table)
         for column in columns:
             full_id = code_prefix + column.column_name
@@ -72,7 +73,10 @@ def get_data_merge_columns(base_model, report_builder_class, html, table):
 
     column_map = {}
     for field in all_fields:
-        django_field, col_type_override, _, _ = get_field_details(base_model=base_model, field=field, table=table)
+        django_field, col_type_override, _, _ = get_field_details(base_model=base_model,
+                                                                  field=field,
+                                                                  report_builder_class=report_builder_class,
+                                                                  table=table)
         if django_field is not None or isinstance(col_type_override.field, (list, tuple)):
             if field not in columns and f'.{field}' not in columns:
                 columns.add('.' + field)

@@ -146,7 +146,8 @@ class KanbanView(ReportBase, FilterQueryMixin, TemplateView):
 
         if kanban_report_lane.link_field and self.kwargs.get('enable_links'):
             _, col_type_override, _, _ = get_field_details(base_model=base_model,
-                                                           field=kanban_report_lane.link_field)
+                                                           field=kanban_report_lane.link_field,
+                                                           report_builder_class=report_builder_class)
             if isinstance(col_type_override.field, list):
                 field = col_type_override.field[0]
             else:
@@ -215,8 +216,12 @@ class KanbanView(ReportBase, FilterQueryMixin, TemplateView):
         kanban_report_lanes = self.chart_report.kanbanreportlane_set.all()
         lanes = []
         headings = []
+
+
+
         for kanban_report_lane in kanban_report_lanes:
             base_model = kanban_report_lane.get_base_modal()
+            report_builder_class = getattr(base_model, kanban_report_lane.report_type.report_builder_class_name, None)
             if kanban_report_lane.multiple_type == KanbanReportLane.MULTIPLE_TYPE_NA:
                 self.get_lane(base_model=base_model,
                               kanban_report_lane=kanban_report_lane,
@@ -233,12 +238,14 @@ class KanbanView(ReportBase, FilterQueryMixin, TemplateView):
                 current_start_date = start_date_and_time
 
                 _, _, _, field_name = get_field_details(base_model=base_model,
-                                                        field=kanban_report_lane.multiple_type_date_field)
+                                                        field=kanban_report_lane.multiple_type_date_field,
+                                                        report_builder_class=report_builder_class)
 
                 end_field_name = None
                 if kanban_report_lane.multiple_type_end_date_field:
                     _, _, _, end_field_name = get_field_details(base_model=base_model,
-                                                                field=kanban_report_lane.multiple_type_end_date_field)
+                                                                field=kanban_report_lane.multiple_type_end_date_field,
+                                                                report_builder_class=report_builder_class)
 
                 sub_lanes = []
                 while (current_end_date := self.get_multiple_date(

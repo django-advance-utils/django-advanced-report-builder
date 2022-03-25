@@ -1,4 +1,5 @@
 from django.contrib.humanize.templatetags.humanize import intcomma
+from django.db.models import Count
 from django_datatables.columns import ColumnBase, CurrencyPenceColumn, CurrencyColumn, NoHeadingColumn, ColumnLink
 from django_datatables.helpers import get_url, render_replace, DUMMY_ID
 
@@ -93,3 +94,12 @@ class ReportBuilderColumnLink(ColumnLink):
             self._url = get_url(url_name)
         else:
             self._url = f'#?{DUMMY_ID}'
+
+
+class RecordCountColumn(ColumnBase):
+    def __init__(self, field=None, **kwargs):
+        if 'annotations' not in kwargs:
+            kwargs['annotations'] = {'record_count': Count(1)}
+        if 'column_name' not in kwargs:
+            kwargs['column_name'] = 'record_count'
+        super().__init__(field, **kwargs)
