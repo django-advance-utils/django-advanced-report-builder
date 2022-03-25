@@ -5,11 +5,13 @@ from django.apps import apps
 from advanced_report_builder.utils import get_field_details
 
 
-def get_menu_fields(base_model, report_builder_class, menus=None, codes=None, code_prefix='', previous_base_model=None):
+def get_menu_fields(base_model, report_builder_class,
+                    menus=None, codes=None, code_prefix='', previous_base_model=None, table=None):
 
     for report_builder_field in report_builder_class.fields:
         django_field, col_type_override, columns, _ = get_field_details(base_model=base_model,
-                                                                        field=report_builder_field)
+                                                                        field=report_builder_field,
+                                                                        table=table)
         for column in columns:
             full_id = code_prefix + column.column_name
             if menus is not None:
@@ -33,12 +35,13 @@ def get_menu_fields(base_model, report_builder_class, menus=None, codes=None, co
                             menus=menu,
                             codes=codes,
                             code_prefix=f"{code_prefix}{include['field']}__",
-                            previous_base_model=base_model)
+                            previous_base_model=base_model,
+                            table=table)
             if menus is not None:
                 menus.append({'text': title, 'menu': menu})
 
 
-def get_data_merge_columns(base_model, report_builder_class, html):
+def get_data_merge_columns(base_model, report_builder_class, html, table):
     display_fields = set()
     all_fields = set()
 
@@ -69,7 +72,7 @@ def get_data_merge_columns(base_model, report_builder_class, html):
 
     column_map = {}
     for field in all_fields:
-        django_field, col_type_override, _, _ = get_field_details(base_model=base_model, field=field)
+        django_field, col_type_override, _, _ = get_field_details(base_model=base_model, field=field, table=table)
         if django_field is not None or isinstance(col_type_override.field, (list, tuple)):
             if field not in columns and f'.{field}' not in columns:
                 columns.add('.' + field)

@@ -34,6 +34,7 @@ class ViewDashboards(MainIndices):
 
 class ViewDashboard(MainMenu, ViewDashboardBase):
     enable_edit = False
+    enable_links = False
     template_name = 'report_builder_examples/dashboard.html'
     # views_overrides = {'tablereport': ViewTableReport}
     custom_views = {'custom1': Custom1}

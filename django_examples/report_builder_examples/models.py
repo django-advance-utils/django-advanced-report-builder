@@ -7,7 +7,7 @@ from django_datatables.model_def import DatatableModel
 from report_builder_examples.report_overrides import CustomDateColumn
 from time_stamped_model.models import TimeStampedModel
 
-from advanced_report_builder.columns import ColourColumn, ArrowColumn, FilterForeignKeyColumn
+from advanced_report_builder.columns import ColourColumn, ArrowColumn, FilterForeignKeyColumn, ReportBuilderColumnLink
 from advanced_report_builder.models import Report
 from advanced_report_builder.report_builder import ReportBuilderFields
 from django.conf import settings
@@ -97,14 +97,16 @@ class Company(TimeStampedModel):
         payments = CurrencyPenceColumn(annotations={'payments': Sum('payment__amount', distinct=True)})
 
         # people = {'annotations': {'people': Count('person__id')}}
-        collink_1 = ColumnLink(title='Col link 1', field='name', url_name='report_builder_examples:example_link')
+        collink_1 = ReportBuilderColumnLink(title='Col link 1',
+                                            field='name',
+                                            url_name='report_builder_examples:example_link')
 
-        collink_2 = ColumnLink(title='Col link 2',
-                               field=['id', 'name'],
-                               url_name='report_builder_examples:example_link', width='10px',
-                               link_html='<button class="btn btn-sm btn-outline-dark">'
-                                         '<i class="fas fa-building"></i></button>'
-                               )
+        collink_2 = ReportBuilderColumnLink(title='Col link 2',
+                                            field=['id', 'name'],
+                                            url_name='report_builder_examples:example_link', width='10px',
+                                            link_html='<button class="btn btn-sm btn-outline-dark">'
+                                                      '<i class="fas fa-building"></i></button>'
+                                            )
 
         background_colour_column = ColourColumn(title='Background Colour', field='background_colour')
         text_colour_column = ColourColumn(title='Text Colour', field='text_colour')

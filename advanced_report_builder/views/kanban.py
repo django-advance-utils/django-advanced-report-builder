@@ -132,7 +132,8 @@ class KanbanView(ReportBase, FilterQueryMixin, TemplateView):
             description = kanban_report_lane.kanban_report_description.description
             columns, column_map = get_data_merge_columns(base_model=base_model,
                                                          report_builder_class=report_builder_class,
-                                                         html=description)
+                                                         html=description,
+                                                         table=table)
 
             table_indexes.append('description')
             table.add_columns(DescriptionColumn(column_name='description',
@@ -143,7 +144,7 @@ class KanbanView(ReportBase, FilterQueryMixin, TemplateView):
 
         table.table_options['indexes'] = table_indexes
 
-        if kanban_report_lane.link_field:
+        if kanban_report_lane.link_field and self.kwargs.get('enable_links'):
             _, col_type_override, _, _ = get_field_details(base_model=base_model,
                                                            field=kanban_report_lane.link_field)
             if isinstance(col_type_override.field, list):

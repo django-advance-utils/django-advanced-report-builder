@@ -31,6 +31,7 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
              'funnelchartreport': FunnelChartView,
              'kanbanreport': KanbanView,
              }
+    enable_links = True
 
     custom_views = {}
 
@@ -77,6 +78,7 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         view = self.get_view(report=self.report)
         self.kwargs['report'] = self.report
+        self.kwargs['enable_link'] = self.enable_links
         report_data = view.as_view()(self.request, *self.args, **self.kwargs).rendered_content
         context['report'] = report_data
         return context
@@ -92,6 +94,7 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         view = self.get_view(report=self.report)
         self.kwargs['report'] = self.report
+        self.kwargs['enable_link'] = self.enable_links
         return view.as_view()(self.request, *self.args, **self.kwargs)
 
 

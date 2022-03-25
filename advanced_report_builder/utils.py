@@ -53,9 +53,9 @@ def get_custom_report_builder():
                                  'report_builder.customise.CustomiseReportBuilder'))
 
 
-def get_field_details(base_model, field):
+def get_field_details(base_model, field, table=None):
     path = field
-    original_column_initialisor = ColumnInitialisor(start_model=base_model, path=field)
+    original_column_initialisor = ColumnInitialisor(start_model=base_model, path=field, table=table)
 
     try:
         columns = original_column_initialisor.get_columns()
@@ -80,11 +80,13 @@ def get_field_details(base_model, field):
                 path_parts = field.split('__')[:-1]
                 path_parts.append(col_type_override.field.split('__')[-1])
                 path = '__'.join(path_parts)
-                column_initialisor = ColumnInitialisor(start_model=base_model, path=path)
+                column_initialisor = ColumnInitialisor(start_model=base_model, path=path, table=table)
                 column_initialisor.get_columns()
                 django_field = column_initialisor.django_field
             else:
-                column_initialisor = ColumnInitialisor(start_model=base_model, path=col_type_override.field)
+                column_initialisor = ColumnInitialisor(start_model=base_model,
+                                                       path=col_type_override.field,
+                                                       table=table)
                 column_initialisor.get_columns()
                 django_field = column_initialisor.django_field
 

@@ -31,6 +31,7 @@ class ReportUtilsMixin(FilterQueryMixin):
                 annotation_filter = reduce(operator.and_, [extra_filter])
         title = title_suffix + ' ' + table_field.get('title')
         if col_type_override:
+            col_type_override.table = None
             field = copy.deepcopy(col_type_override)
             if field.model_path and isinstance(field.field, str) and field.field.startswith(field.model_path):
                 raw_field_name = field.field[len(field.model_path):]

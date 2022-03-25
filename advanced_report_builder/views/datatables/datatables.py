@@ -62,7 +62,7 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
         table.table_options['pageLength'] = self.table_report.page_length
         table.table_options['bStateSave'] = False
 
-        if self.table_report.has_clickable_rows and self.table_report.link_field:
+        if self.table_report.has_clickable_rows and self.table_report.link_field and self.kwargs.get('enable_links'):
             table.table_classes.append('row_link')
             table.add_columns(ArrowColumn(column_name='arrow_icon'))
             _, col_type_override, _, _ = get_field_details(base_model=base_model,

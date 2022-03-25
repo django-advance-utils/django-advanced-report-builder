@@ -1,5 +1,6 @@
 from django.contrib.humanize.templatetags.humanize import intcomma
-from django_datatables.columns import ColumnBase, CurrencyPenceColumn, CurrencyColumn, NoHeadingColumn
+from django_datatables.columns import ColumnBase, CurrencyPenceColumn, CurrencyColumn, NoHeadingColumn, ColumnLink
+from django_datatables.helpers import get_url, render_replace, DUMMY_ID
 
 
 class ReportBuilderDateColumn(ColumnBase):
@@ -78,3 +79,17 @@ class FilterForeignKeyColumn(ColumnBase):
     def get_query_options(self):
         values = self.model.objects.distinct(self.field).order_by(self.field).values_list(self.field, flat=True)
         return {v: v for v in values if v}
+
+
+class ReportBuilderColumnLink(ColumnLink):
+
+    @property
+    def url(self):
+        return self._url
+
+    @url.setter
+    def url(self, url_name):
+        if not self.table or self.table.view.kwargs.get('enable_link'):
+            self._url = get_url(url_name)
+        else:
+            self._url = f'#?{DUMMY_ID}'

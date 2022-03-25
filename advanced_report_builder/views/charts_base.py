@@ -123,13 +123,13 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
     def get_date_format(self):
         return '%Y-%m-%d'
 
-    def get_date_field(self, index, fields, base_model):
+    def get_date_field(self, index, fields, base_model, table):
 
         field_name = self.chart_report.date_field
         if field_name is None:
             return
 
-        django_field, col_type_override, _, _ = get_field_details(base_model=base_model, field=field_name)
+        django_field, col_type_override, _, _ = get_field_details(base_model=base_model, field=field_name, table=table)
 
         if col_type_override:
             field_name = col_type_override.field
@@ -164,7 +164,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
 
     def process_query_results(self, base_model, table):
         fields = []
-        date_field_name = self.get_date_field(0, fields, base_model=base_model)
+        date_field_name = self.get_date_field(0, fields, base_model=base_model, table=table)
         if date_field_name is not None:
             table.order_by = [date_field_name]
         else:
@@ -176,7 +176,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         for index, table_field in enumerate(chart_fields, 1):
             field = table_field['field']
 
-            django_field, col_type_override, _, _ = get_field_details(base_model=base_model, field=field)
+            django_field, col_type_override, _, _ = get_field_details(base_model=base_model, field=field, table=table)
 
             if (isinstance(django_field, NUMBER_FIELDS) or
                     (col_type_override is not None and col_type_override.annotations)):
@@ -318,7 +318,9 @@ class ChartBaseFieldForm(CrispyForm):
 
         report_type = get_object_or_404(ReportType, pk=self.slug['report_type_id'])
         base_model = report_type.content_type.model_class()
-        self.django_field, self.col_type_override, _, _ = get_field_details(base_model=base_model, field=data['field'])
+        self.django_field, self.col_type_override, _, _ = get_field_details(base_model=base_model,
+                                                                            field=data['field'],
+                                                                            )
 
         return report_type, base_model
 

@@ -28,6 +28,7 @@ from django.conf import settings
 class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
     model = Dashboard
     enable_edit = True
+    enable_links = True
     views = {'tablereport': TableView,
              'singlevaluereport': SingleValueView,
              'barchartreport': BarChartView,
@@ -140,6 +141,7 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         view_kwargs['report'] = dashboard_report.report
         view_kwargs['dashboard_report'] = dashboard_report
         view_kwargs['enable_edit'] = self.enable_edit
+        view_kwargs['enable_links'] = self.enable_links
         return report_view.as_view()(self.request, *self.args, **view_kwargs)
 
     def post(self, request, *args, **kwargs):

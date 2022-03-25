@@ -29,7 +29,7 @@ class TableUtilsMixin(ReportUtilsMixin):
 
         annotations_value = int(data_attr.get('annotations_value', 0))
         if col_type_override and annotations_value == 0:
-
+            col_type_override.table = None
             field = copy.deepcopy(col_type_override)
 
             if title:
@@ -58,6 +58,7 @@ class TableUtilsMixin(ReportUtilsMixin):
 
     @staticmethod
     def get_link_field(table_field, fields, col_type_override):
+        col_type_override.table = None
         field = copy.deepcopy(col_type_override)
         data_attr = split_attr(table_field)
         link_css = ''
@@ -99,7 +100,7 @@ class TableUtilsMixin(ReportUtilsMixin):
         for index, table_field in enumerate(table_fields):
             field = table_field['field']
             fields_used.add(field)
-            django_field, col_type_override, _, _ = get_field_details(base_model=base_model, field=field)
+            django_field, col_type_override, _, _ = get_field_details(base_model=base_model, field=field, table=table)
             if isinstance(django_field, DATE_FIELDS):
                 field_name = self.get_date_field(index=index,
                                                  col_type_override=col_type_override,

@@ -144,7 +144,6 @@ class ViewReport(MainMenu, ViewReportBase):
 
 
 class PermissionModal(ModelFormModal):
-
     model = ReportPermission
     form_fields = ['requires_superuser']
     widgets = {'requires_superuser': Toggle()}
