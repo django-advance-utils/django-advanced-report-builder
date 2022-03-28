@@ -28,7 +28,7 @@ from django.conf import settings
 class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
     model = Dashboard
     enable_edit = True
-    enable_links = True
+    enable_links = False
     views = {'tablereport': TableView,
              'singlevaluereport': SingleValueView,
              'barchartreport': BarChartView,
