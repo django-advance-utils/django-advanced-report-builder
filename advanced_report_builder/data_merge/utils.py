@@ -61,14 +61,13 @@ def get_data_merge_columns(base_model, report_builder_class, html, table):
             field = variable
         all_fields.add(field)
 
-    variables = re.findall('{%\s*if|elif|with\s([^%}]+)\s*%}', html)
+    variables = re.findall('{%\s*(if|elif|with)\s([^%}]+)\s*%}', html)
 
     for variable in variables:
-        for field in variable.split(' '):
-
-            if field not in ['', 'not', 'and' 'or', 'as'] and field[0] not in ['=', '<', '>', '(', ')', '"', "'"]:
-                if field == 'as':
-                    continue
+        for field in variable[1].split(' '):
+            if field != '' and (field == 'as' or field[0] in ['=', '<', '>']):
+                break
+            if field not in ['', 'not', 'and' 'or'] and field[0] not in ['(', ')', '"', "'"]:
                 all_fields.add(field)
 
     column_map = {}
