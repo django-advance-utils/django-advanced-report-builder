@@ -219,6 +219,7 @@ class SingleValueView(ChartBaseView):
         context = super().get_context_data(**kwargs)
         self.set_prefix()
         self.table.single_value = self.chart_report
+        self.table.enable_links = self.kwargs.get('enable_links')
         self.table.datatable_template = 'advanced_report_builder/single_values/middle.html'
         context['single_value_report'] = self.chart_report
         return context
@@ -371,6 +372,7 @@ class ShowBreakdownModal(TableUtilsMixin, Modal):
 
     def modal_content(self):
         single_value_report = get_object_or_404(SingleValueReport, pk=self.slug['pk'])
+        self.kwargs['enable_links'] = self.slug['enable_links'] == 'True'
         self.table_report = single_value_report
         base_model = single_value_report.get_base_modal()
         table = DatatableTable(view=self, model=base_model)
