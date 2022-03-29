@@ -1,5 +1,6 @@
 import base64
 import copy
+import json
 import operator
 from functools import reduce
 
@@ -26,6 +27,7 @@ class ReportUtilsMixin(FilterQueryMixin):
             b64_filter = data_attr.get('filter')
             if b64_filter:
                 _filter = decode_attribute(b64_filter)
+                _filter = json.loads(_filter)
                 annotation_filter = self.process_filters(search_filter_data=_filter, extra_filter=extra_filter)
             elif extra_filter:
                 annotation_filter = reduce(operator.and_, [extra_filter])

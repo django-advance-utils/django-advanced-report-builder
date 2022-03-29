@@ -1,17 +1,16 @@
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Count, Sum
-from django_datatables.columns import ColumnLink, DatatableColumn, CurrencyPenceColumn, ColumnBase, ManyToManyColumn, \
+from django_datatables.columns import DatatableColumn, CurrencyPenceColumn, ColumnBase, ManyToManyColumn, \
     DateColumn
 from django_datatables.model_def import DatatableModel
 from report_builder_examples.report_overrides import CustomDateColumn
 from time_stamped_model.models import TimeStampedModel
 
-from advanced_report_builder.columns import ColourColumn, ArrowColumn, FilterForeignKeyColumn, ReportBuilderColumnLink, \
-    RecordCountColumn
+from advanced_report_builder.columns import ColourColumn, ArrowColumn, FilterForeignKeyColumn, ReportBuilderColumnLink
 from advanced_report_builder.models import Report
 from advanced_report_builder.report_builder import ReportBuilderFields
-from django.conf import settings
 
 
 def get_merged_name(default=None, **kwargs):
@@ -251,6 +250,7 @@ class Tally(models.Model):
     motor_bikes = models.IntegerField()
     push_bikes = models.IntegerField()
     tractors = models.IntegerField()
+    user_profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE, null=True, blank=True)
 
     class Meta:
         verbose_name_plural = 'Tallies'
@@ -265,6 +265,11 @@ class Tally(models.Model):
                   'lorries',
                   'push_bikes',
                   'tractors']
+
+        includes = [{'field': 'user_profile',
+                     'title': 'User',
+                     'model': 'report_builder_examples.UserProfile.ReportBuilder'},
+                    ]
 
 
 class Payment(TimeStampedModel):
