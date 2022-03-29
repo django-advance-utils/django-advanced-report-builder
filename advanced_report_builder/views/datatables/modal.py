@@ -5,7 +5,6 @@ from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Div, HTML
 from django.conf import settings
 from django.forms import CharField, ChoiceField, BooleanField, IntegerField
-from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_datatables.columns import MenuColumn
 from django_datatables.widgets import DataTableReorderWidget
@@ -223,8 +222,6 @@ class TableModal(QueryBuilderModalBase):
                 o.order = s[0]
                 o.save()
         return self.command_response('')
-
-
 
     def button_duplicate_query(self, **_kwargs):
         query_id = _kwargs['query_id'][1:]

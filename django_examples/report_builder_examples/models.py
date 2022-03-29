@@ -256,6 +256,7 @@ class Tally(models.Model):
         verbose_name_plural = 'Tallies'
 
     class ReportBuilder(ReportBuilderFields):
+        default_columns = ['.id']
         colour = '#006400'
         title = 'Tally'
         fields = ['date',

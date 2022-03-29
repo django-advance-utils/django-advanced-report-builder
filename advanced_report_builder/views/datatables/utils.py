@@ -91,9 +91,7 @@ class TableUtilsMixin(ReportUtilsMixin):
         fields = []
         totals = {}
 
-        if len(report_builder_class.default_columns) > 0:
-            fields += report_builder_class.default_columns
-
+        has_annotations = False
         if not table_fields:
             return fields, totals, first_field_name
 
@@ -113,6 +111,8 @@ class TableUtilsMixin(ReportUtilsMixin):
                 data_attr = split_attr(table_field)
 
                 annotations_type = int(data_attr.get('annotations_type', 0))
+                if annotations_type != 0:
+                    has_annotations = True
                 decimal_places = data_attr.get('decimal_places')
 
                 if annotations_type != 0 and data_attr.get('multiple_columns') == '1':
@@ -178,6 +178,9 @@ class TableUtilsMixin(ReportUtilsMixin):
                 fields.append(field)
             if not first_field_name:
                 first_field_name = field_name
+
+        if not has_annotations and len(report_builder_class.default_columns) > 0:
+            table.add_columns(*report_builder_class.default_columns)
         table.add_columns(*fields)
         table.show_pivot_table = False
         if pivot_fields is not None:
