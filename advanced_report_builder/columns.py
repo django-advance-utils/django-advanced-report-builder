@@ -1,7 +1,7 @@
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.db.models import Count
 from django_datatables.columns import ColumnBase, CurrencyPenceColumn, CurrencyColumn, NoHeadingColumn, ColumnLink
-from django_datatables.helpers import get_url, render_replace, DUMMY_ID
+from django_datatables.helpers import get_url, DUMMY_ID
 
 
 class ReportBuilderDateColumn(ColumnBase):

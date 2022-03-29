@@ -102,6 +102,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                                                                       field=field,
                                                                       table=table,
                                                                       report_builder_class=report_builder_class)
+
             if isinstance(django_field, DATE_FIELDS):
                 field_name = self.get_date_field(index=index,
                                                  col_type_override=col_type_override,
@@ -163,9 +164,18 @@ class TableUtilsMixin(ReportUtilsMixin):
                                     fields=fields)
 
             else:
+
+                data_attr = split_attr(table_field)
+                if col_type_override is not None:
+                    if data_attr.get('annotation_label') == '1':
+                        if isinstance(col_type_override.field, list):
+                            table.initial_values += col_type_override.field
+                        else:
+                            table.initial_values.append(col_type_override.field)
+
                 field_name = field
                 if isinstance(col_type_override, CURRENCY_COLUMNS) and totals is not None:
-                    data_attr = split_attr(table_field)
+
                     css_class = col_type_override.column_defs.get('className')
                     show_total = data_attr.get('show_totals')
                     if show_total == '1':
