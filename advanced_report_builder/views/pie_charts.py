@@ -6,6 +6,7 @@ from django.forms import CharField, ChoiceField, BooleanField
 from django.urls import reverse
 from django_menus.menu import MenuItem
 from django_modals.fields import FieldEx
+from django_modals.form_helpers import HorizontalNoEnterHelper
 from django_modals.modals import FormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
@@ -44,7 +45,7 @@ class PieChartView(ChartBaseView):
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary']),
                 *self.duplicate_menu(request=self.request, report_id=chart_report_id)]
 
-    def get_date_field(self, index, fields, base_model):
+    def get_date_field(self, index, fields, base_model, table):
         return None
 
 
@@ -148,6 +149,7 @@ class PieChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
     size = 'xl'
     template_name = 'advanced_report_builder/charts/modal.html'
     no_header_x = True
+    helper_class = HorizontalNoEnterHelper
 
     @property
     def modal_title(self):

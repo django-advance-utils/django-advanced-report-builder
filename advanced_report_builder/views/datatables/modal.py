@@ -2,13 +2,16 @@ import base64
 import json
 
 from crispy_forms.bootstrap import StrictButton
-from crispy_forms.layout import Div
+from crispy_forms.layout import Div, HTML
 from django.conf import settings
 from django.forms import CharField, ChoiceField, BooleanField, IntegerField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django_datatables.columns import MenuColumn
 from django_datatables.widgets import DataTableReorderWidget
+from django_menus.menu import HtmlMenu, MenuItem
 from django_modals.fields import FieldEx
+from django_modals.form_helpers import HorizontalNoEnterHelper
 from django_modals.forms import ModelCrispyForm
 from django_modals.modals import FormModal, ModelFormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
@@ -19,8 +22,7 @@ from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATI
     DATE_FORMAT_TYPES, CURRENCY_COLUMNS, LINK_COLUMNS
 from advanced_report_builder.models import TableReport, ReportQuery, ReportType
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import split_attr, get_field_details, encode_attribute, decode_attribute, \
-    crispy_modal_link_args
+from advanced_report_builder.utils import split_attr, get_field_details, encode_attribute, decode_attribute
 from advanced_report_builder.views.charts_base import ChartBaseFieldForm
 from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin, QueryBuilderModalBase
 
@@ -31,6 +33,7 @@ class TableModal(QueryBuilderModalBase):
     model = TableReport
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
+    ajax_commands = ['datatable', 'button']
 
     widgets = {'report_tags': Select2Multiple}
 
@@ -52,13 +55,7 @@ class TableModal(QueryBuilderModalBase):
                    'pivot_fields',
                    ]
 
-    def __init__(self, *args, **kwargs):
-        self.report_query = None
-        self.show_query_name = False
-        super().__init__(*args, **kwargs)
-
     def form_setup(self, form, *_args, **_kwargs):
-        self.add_query_data(form)
         url = reverse('advanced_report_builder:table_field_modal',
                       kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
 
@@ -75,7 +72,7 @@ class TableModal(QueryBuilderModalBase):
             link_field = _kwargs['data'].get('link_field')
             order_by_field = _kwargs['data'].get('order_by_field')
             report_type_id = _kwargs['data'].get('report_type')
-            report_type = get_object_or_404(ReportType, id=report_type_id)
+            report_type = ReportType.objects.filter(id=report_type_id).first()  # can be None
         else:
             link_field = form.instance.link_field
             order_by_field = form.instance.order_by_field
@@ -110,53 +107,82 @@ class TableModal(QueryBuilderModalBase):
                           extra_context={'select_column_url': pivot_url}),
                   ]
 
-        if self.show_query_name:
-            fields.append(FieldEx('query_name'))
-        fields.append(FieldEx('query_data', template='advanced_report_builder/query_builder.html'))
-
         if self.object.id:
-            fields.append(crispy_modal_link_args('advanced_report_builder:table_query_modal', 'Add Query Version',
-                                                 'report_id-', self.object.id, div=True,
-                                                 div_classes='form-buttons', button_classes='btn btn-primary',
-                                                 font_awesome='fa fa-plus'))
 
-            report_queries_count = self.object.reportquery_set.all().count()
-            if report_queries_count > 1:
-                form.fields['queries'] = CharField(
-                    required=False,
-                    label='Queries Versions',
-                    widget=DataTableReorderWidget(
-                        model=ReportQuery,
-                        order_field='order',
-                        fields=['_.index',
-                                '.id',
-                                'name',
-                                ],
-                        attrs={'filter': {'report__id': self.object.id}}))
-                fields.append('queries')
+            add_query_js = 'django_modal.process_commands_lock([{"function": "post_modal", ' \
+                            '"button": {"button": "add_query"}}])'
+
+            description_add_menu_items = [
+
+                MenuItem(add_query_js.replace('"', "&quot;"),
+                         menu_display='Add Query Version',
+                         css_classes='btn btn-primary',
+                         font_awesome='fas fa-pencil',
+                         link_type=MenuItem.HREF)]
+
+            menu = HtmlMenu(self.request,
+                            'advanced_report_builder/datatables/onclick_menu.html').add_items(
+                            *description_add_menu_items)
+
+            fields.append(Div(HTML(menu.render()), css_class='form-buttons'))
+            edit_query_js = 'django_modal.process_commands_lock([{"function": "post_modal", ' \
+                            '"button": {"button": "edit_query", "query_id": $(this).closest(\'tr\').attr(\'id\')}}])'
+
+            duplicate_query_js = 'django_modal.process_commands_lock([{"function": "post_modal", ' \
+                                 '"button": {"button": "duplicate_query", ' \
+                                 '"query_id": $(this).closest(\'tr\').attr(\'id\')}}])'
+
+            description_edit_menu_items = [
+                MenuItem(duplicate_query_js.replace('"', "&quot;"),
+                         menu_display='Duplicate',
+                         css_classes='btn btn-sm btn-outline-dark',
+                         font_awesome='fas fa-clone',
+                         link_type=MenuItem.HREF),
+
+                MenuItem(edit_query_js.replace('"', "&quot;"),
+                         menu_display='Edit',
+                         css_classes='btn btn-sm btn-outline-dark',
+                         font_awesome='fas fa-pencil',
+                         link_type=MenuItem.HREF)]
+
+            form.fields['queries'] = CharField(
+                required=False,
+                label='Queries Versions',
+                widget=DataTableReorderWidget(
+                    model=ReportQuery,
+                    order_field='order',
+                    fields=['_.index',
+                            '.id',
+                            'name',
+
+                            MenuColumn(column_name='menu', field='id',
+                                       column_defs={'orderable': False, 'className': 'dt-right'},
+                                       menu=HtmlMenu(self.request,
+                                                     'advanced_report_builder/datatables/onclick_menu.html').add_items(
+                                           *description_edit_menu_items)),
+                            ],
+                    attrs={'filter': {'report__id': self.object.id}}))
+            fields.append('queries')
         return fields
 
     def form_valid(self, form):
-        org_id = self.object.id if hasattr(self, 'object') else None
-        table_report = form.save()
+        org_id = self.object.pk if hasattr(self, 'object') else None
+        save_function = getattr(form, 'save', None)
+        if save_function:
+            save_function()
+        self.post_save(created=org_id is None)
+        if not self.response_commands:
+            self.add_command('reload')
+        return self.command_response()
 
-        if not self.report_query and form.cleaned_data['query_data']:
-            query = form.cleaned_data['query_data']
-            ReportQuery(query=query,
-                        report=table_report).save()
-        elif form.cleaned_data['query_data']:
-            self.report_query.query = form.cleaned_data['query_data']
-            if self.show_query_name:
-                self.report_query.name = form.cleaned_data['query_name']
-            self.report_query.save()
-        elif self.report_query:
-            self.report_query.delete()
-        url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME', '')
-        if org_id is None and url_name:
-            url = reverse(url_name, kwargs={'slug': table_report.slug})
-            return self.command_response('redirect', url=url)
+    def post_save(self, created):
+        if created:
+            self.modal_redirect(self.request.resolver_match.view_name, slug=f'pk-{self.object.id}-new-True')
         else:
-            return self.command_response('reload')
+            url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME', '')
+            if url_name and self.slug.get('new'):
+                url = reverse(url_name, kwargs={'slug': self.object.slug})
+                self.command_response('redirect', url=url)
 
     def ajax_get_fields(self, **kwargs):
         report_type_id = kwargs['report_type']
@@ -199,8 +225,40 @@ class TableModal(QueryBuilderModalBase):
         return self.command_response('')
 
 
+
+    def button_duplicate_query(self, **_kwargs):
+        query_id = _kwargs['query_id'][1:]
+        report_query = ReportQuery.objects.get(pk=query_id)
+        report_query.slug = None
+        report_query.pk = None
+        report_query.order = None
+        report_query.save()
+
+        report_type = _kwargs['report_type']
+        url = reverse('advanced_report_builder:table_query_modal',
+                      kwargs={'slug': f'pk-{report_query.id}-report_type-{report_type}'})
+        return self.command_response('show_modal', modal=url)
+
+    def button_add_query(self, **_kwargs):
+        report_type = _kwargs['report_type']
+        url = reverse('advanced_report_builder:table_query_modal',
+                      kwargs={'slug': f'report_id-{self.object.id}-report_type-{report_type}'})
+        return self.command_response('show_modal', modal=url)
+
+    def button_edit_query(self, **_kwargs):
+        query_id = _kwargs['query_id'][1:]
+        report_type = _kwargs['report_type']
+        url = reverse('advanced_report_builder:table_query_modal',
+                      kwargs={'slug': f'pk-{query_id}-report_type-{report_type}'})
+        return self.command_response('show_modal', modal=url)
+
+
 class TableFieldForm(ChartBaseFieldForm):
     cancel_class = 'btn-secondary modal-cancel'
+
+    def cancel_button(self, css_class=cancel_class, **kwargs):
+        commands = [{'function': 'close'}]
+        return self.button('Cancel', commands, css_class, **kwargs)
 
     def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
         if self.django_field is not None and isinstance(self.django_field, NUMBER_FIELDS):
@@ -318,6 +376,7 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
     size = 'xl'
     template_name = 'advanced_report_builder/datatables/fields/modal.html'
     no_header_x = True
+    helper_class = HorizontalNoEnterHelper
 
     @property
     def modal_title(self):
@@ -334,7 +393,6 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
                           'val': _attr})
 
         self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
-        self.add_command({'function': 'save_query_builder_id_query_data'})
         self.add_command({'function': 'update_selection'})
         return self.command_response('close')
 
@@ -402,8 +460,7 @@ class TablePivotForm(ChartBaseFieldForm):
         super().setup_modal(*args, **kwargs)
 
     def cancel_button(self, css_class=cancel_class, **kwargs):
-        commands = [{'function': 'save_query_builder_id_query_data'},
-                    {'function': 'close'}]
+        commands = [{'function': 'close'}]
         return self.button('Cancel', commands, css_class, **kwargs)
 
 
@@ -421,7 +478,7 @@ class TablePivotModal(QueryBuilderModalBaseMixin, FormModal):
         selector = self.slug['selector']
 
         self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
-        self.add_command({'function': 'save_query_builder_id_query_data'})
+
         self.add_command({'function': 'update_pivot_selection'})
         return self.command_response('close')
 
@@ -429,25 +486,38 @@ class TablePivotModal(QueryBuilderModalBaseMixin, FormModal):
 class TableQueryForm(ModelCrispyForm):
     cancel_class = 'btn-secondary modal-cancel'
 
-    def cancel_button(self, css_class=cancel_class, **kwargs):
-        commands = [{'function': 'save_query_builder_id_query_data'},
-                    {'function': 'close'}]
-        return self.button('Cancel', commands, css_class, **kwargs)
+    class Meta:
+        model = ReportQuery
+        fields = ['name',
+                  'query']
+
+    def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
+        return StrictButton(button_text, onclick=f'save_modal_{self.form_id}()', css_class=css_class, **kwargs)
 
 
-class TableQueryModal(ModelFormModal):
+class TableQueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
     model = ReportQuery
-    base_form = TableQueryForm
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
+    form_class = TableQueryForm
+    helper_class = HorizontalNoEnterHelper
+
+    template_name = 'advanced_report_builder/datatables/query_modal.html'
     no_header_x = True
-    form_fields = ['name']
 
     def post_save(self, created):
-        self.add_command({'function': 'save_query_builder_id_query_data'})
+        self.add_command({'function': 'save_query_builder_id_query'})
         return self.command_response('close')
 
     def form_setup(self, form, *_args, **_kwargs):
-        fields = ['name']
-
+        fields = ['name',
+                  FieldEx('query', template='advanced_report_builder/query_builder.html')]
         return fields
+
+    def ajax_get_query_builder_fields(self, **kwargs):
+        field_auto_id = kwargs['field_auto_id']
+
+        report_type_id = self.slug['report_type']
+        query_builder_filters = self.get_query_builder_report_type_field(report_type_id=report_type_id)
+
+        return self.command_response(f'query_builder_{field_auto_id}', data=json.dumps(query_builder_filters))

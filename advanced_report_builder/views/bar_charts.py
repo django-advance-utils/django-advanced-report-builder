@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_menus.menu import MenuItem
 from django_modals.fields import FieldEx
+from django_modals.form_helpers import HorizontalNoEnterHelper
 from django_modals.modals import FormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
@@ -207,6 +208,7 @@ class BarChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
     size = 'xl'
     template_name = 'advanced_report_builder/charts/modal.html'
     no_header_x = True
+    helper_class = HorizontalNoEnterHelper
 
     @property
     def modal_title(self):

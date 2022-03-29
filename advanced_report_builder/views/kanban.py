@@ -16,6 +16,7 @@ from django_datatables.helpers import DUMMY_ID, row_link
 from django_datatables.widgets import DataTableReorderWidget
 from django_menus.menu import MenuItem, HtmlMenu
 from django_modals.fields import FieldEx
+from django_modals.form_helpers import HorizontalNoEnterHelper
 from django_modals.helper import modal_button, modal_button_method
 from django_modals.modals import ModelFormModal, Modal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
@@ -217,8 +218,6 @@ class KanbanView(ReportBase, FilterQueryMixin, TemplateView):
         lanes = []
         headings = []
 
-
-
         for kanban_report_lane in kanban_report_lanes:
             base_model = kanban_report_lane.get_base_modal()
             report_builder_class = getattr(base_model, kanban_report_lane.report_type.report_builder_class_name, None)
@@ -388,12 +387,10 @@ class KanbanModal(ModelFormModal):
                                            div_classes='form-buttons', button_classes='btn btn-primary',
                                            font_awesome='fa fa-plus'),
                     'lanes',
-
                     crispy_modal_link_args('advanced_report_builder:kanban_description_modal', 'Add Description',
                                            'kanban_report_id-', self.object.id, div=True,
                                            div_classes='form-buttons', button_classes='btn btn-primary',
                                            font_awesome='fa fa-plus'),
-
                     'descriptions',
                     ]
 
@@ -426,6 +423,7 @@ class KanbanLaneModal(QueryBuilderModalBase):
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
     model = KanbanReportLane
+    helper_class = HorizontalNoEnterHelper
 
     widgets = {'report_tags': Select2Multiple,
                'order_by_ascending': RBToggle}

@@ -145,8 +145,7 @@ class Company(TimeStampedModel):
     class ReportBuilder(ReportBuilderFields):
         colour = '#00008b'
         title = 'Company'
-        fields = ['record_count',
-                  'company_category_column',
+        fields = ['company_category_column',
                   'arrow_icon_column',
                   'name',
                   'active',
