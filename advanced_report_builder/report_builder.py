@@ -17,6 +17,7 @@ class ReportBuilderFields:
 
     default_multiple_column_text = ''
     default_multiple_column_fields = []
+    default_multiple_pk = 'id'
 
     extra_chart_field = ['record_count']
 

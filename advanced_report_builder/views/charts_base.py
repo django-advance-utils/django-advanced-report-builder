@@ -200,8 +200,9 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
                                                                           report_builder_class=report_builder_class)
                     _fields = report_builder_class.default_multiple_column_fields
                     default_multiple_column_fields = [multiple_column_field + '__' + x for x in _fields]
-                    results = query.distinct(multiple_column_field).values(multiple_column_field,
-                                                                           *default_multiple_column_fields)
+                    order_by = f'{multiple_column_field}__{report_builder_class.default_multiple_pk}'
+                    results = query.order_by(order_by).distinct(multiple_column_field).\
+                        values(multiple_column_field, *default_multiple_column_fields)
 
                     for multiple_index, result in enumerate(results):
                         suffix = self._set_multiple_title(database_values=result,

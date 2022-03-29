@@ -1,3 +1,4 @@
+from django.db import ProgrammingError
 from django_datatables.datatables import DatatableView, DatatableError
 from django_datatables.helpers import row_link
 from django_menus.menu import MenuItem
@@ -33,6 +34,8 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
         try:
             return super().dispatch(request, *args, **kwargs)
         except DatatableError as de:
+            raise ReportError(de.args[0])
+        except ProgrammingError as de:
             raise ReportError(de.args[0])
 
     def setup_table(self, table):
