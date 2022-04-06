@@ -11,24 +11,30 @@ from advanced_report_builder.globals import DISPLAY_OPTION_CHOICES, DISPLAY_OPTI
 
 
 class Target(TimeStampedModel):
-    MANAGEMENT_TARGET_TYPE_COUNT = 1
-    MANAGEMENT_TARGET_TYPE_MONEY = 2
-    MANAGEMENT_TARGET_TYPE_PERCENTAGE = 3
+    TARGET_TYPE_COUNT = 1
+    TARGET_TYPE_MONEY = 2
+    TARGET_TYPE_PERCENTAGE = 3
 
-    MANAGEMENT_TARGET_TYPE_CHOICES = (
-        (MANAGEMENT_TARGET_TYPE_COUNT, 'Count'),
-        (MANAGEMENT_TARGET_TYPE_MONEY, 'Money'),
-        (MANAGEMENT_TARGET_TYPE_PERCENTAGE, 'Percentage'),
+    TARGET_TYPE_CHOICES = (
+        (TARGET_TYPE_COUNT, 'Count'),
+        (TARGET_TYPE_MONEY, 'Money'),
+        (TARGET_TYPE_PERCENTAGE, 'Percentage'),
     )
 
     slug = models.SlugField(unique=True)
     name = models.CharField(max_length=64)
-    target_type = models.PositiveSmallIntegerField(choices=MANAGEMENT_TARGET_TYPE_CHOICES)
+    target_type = models.PositiveSmallIntegerField(choices=TARGET_TYPE_CHOICES)
     colour = models.CharField(max_length=10, null=True, blank=True,
-                              help_text=' The colour when it gets displayed on a report')
-    default_value = models.IntegerField(default=0)
+                              help_text='The colour when it gets displayed on a report')
+    default_value = models.IntegerField(blank=True, null=True)
+    default_percentage = models.FloatField(blank=True, null=True)
     overridden = models.BooleanField(default=False)
     override_data = models.JSONField(null=True, blank=True)
+
+    def get_value(self):
+        if self.target_type == self.TARGET_TYPE_PERCENTAGE:
+            return self.default_percentage
+        return self.default_value
 
     def __str__(self):
         return self.name

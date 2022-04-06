@@ -21,9 +21,9 @@ def get_target_value(min_date, max_date, target, month_range=False):
 
                 if year_data:
                     month_str = MONTHS.get(min_date.month)
-                    return year_data.get(month_str, target.default_value)
+                    return year_data.get(month_str, target.get_value())
                 else:
-                    return target.default_value
+                    return target.get_value()
         else:
             # if it isn't exactly a month long, then we need to do some calculations to find the exact amount.
 
@@ -36,7 +36,7 @@ def get_target_value(min_date, max_date, target, month_range=False):
                         month_str = MONTHS.get(month)
                         month_value = year_data.get(month_str)
                     else:
-                        month_value = target.default_value
+                        month_value = target.get_value()
 
                     days_in_month = monthrange(year, month)[1]
 
@@ -63,4 +63,4 @@ def get_target_value(min_date, max_date, target, month_range=False):
         return total_target_value
     else:
         # we don't have any dates to compare against, so we can only use the monthly default value.
-        return target.default_value
+        return target.get_value()

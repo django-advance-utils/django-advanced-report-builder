@@ -8,8 +8,7 @@ from django_datatables.model_def import DatatableModel
 from report_builder_examples.report_overrides import CustomDateColumn
 from time_stamped_model.models import TimeStampedModel
 
-from advanced_report_builder.columns import ColourColumn, ArrowColumn, FilterForeignKeyColumn, ReportBuilderColumnLink, \
-    AllowAnnotationColumn
+from advanced_report_builder.columns import ColourColumn, ArrowColumn, FilterForeignKeyColumn, ReportBuilderColumnLink
 from advanced_report_builder.models import Report
 from advanced_report_builder.report_builder import ReportBuilderFields
 
