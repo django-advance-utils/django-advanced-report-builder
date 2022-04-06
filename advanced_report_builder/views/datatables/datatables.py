@@ -15,6 +15,10 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
     template_name = 'advanced_report_builder/datatables/report.html'
     menu_display = ''
 
+    def __init__(self, *args, **kwargs):
+        self.table_id = None
+        super().__init__(*args, **kwargs)
+
     def add_tables(self):
         return None
 
@@ -25,12 +29,12 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
         self.dashboard_report = kwargs.get('dashboard_report')
         self.enable_edit = kwargs.get('enable_edit')
         if self.dashboard_report:
-            table_id = f'tabledashboard_{self.dashboard_report.id}'
+            self.table_id = f'tabledashboard_{self.dashboard_report.id}'
         else:
-            table_id = f'table_{self.table_report.id}'
+            self.table_id = f'table_{self.table_report.id}'
 
         self.base_model = self.table_report.get_base_modal()
-        self.add_table(table_id, model=self.base_model)
+        self.add_table(self.table_id, model=self.base_model)
         try:
             return super().dispatch(request, *args, **kwargs)
         except DatatableError as de:
