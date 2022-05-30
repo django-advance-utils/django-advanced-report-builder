@@ -18,7 +18,7 @@ class TargetModal(ModelFormModal):
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
 
-    def post_save(self, created):
+    def post_save(self, created, form):
         if created:
             url_name = getattr(settings, 'REPORT_BUILDER_TARGET_URL_NAME', '')
             if url_name:

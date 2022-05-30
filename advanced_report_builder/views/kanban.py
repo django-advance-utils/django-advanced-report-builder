@@ -407,7 +407,7 @@ class KanbanModal(ModelFormModal):
                 o.save()
         return self.command_response('')
 
-    def post_save(self, created):
+    def post_save(self, created, form):
         if created:
             self.modal_redirect(self.request.resolver_match.view_name, slug=f'pk-{self.object.id}-new-True')
         else:

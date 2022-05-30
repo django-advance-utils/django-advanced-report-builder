@@ -169,12 +169,12 @@ class TableModal(QueryBuilderModalBase):
         save_function = getattr(form, 'save', None)
         if save_function:
             save_function()
-        self.post_save(created=org_id is None)
+        self.post_save(created=org_id is None, form=form)
         if not self.response_commands:
             self.add_command('reload')
         return self.command_response()
 
-    def post_save(self, created):
+    def post_save(self, created, form):
         if created:
             self.modal_redirect(self.request.resolver_match.view_name, slug=f'pk-{self.object.id}-new-True')
         else:
@@ -509,7 +509,7 @@ class TableQueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
     template_name = 'advanced_report_builder/datatables/query_modal.html'
     no_header_x = True
 
-    def post_save(self, created):
+    def post_save(self, created, form):
         self.add_command({'function': 'save_query_builder_id_query'})
         return self.command_response('close')
 
