@@ -97,11 +97,16 @@ class TableUtilsMixin(ReportUtilsMixin):
 
         for index, table_field in enumerate(table_fields):
             field = table_field['field']
+            field_attr = {}
+            if 'title' in table_field:
+                field_attr['title'] = table_field['title']
+
             fields_used.add(field)
             django_field, col_type_override, _, _ = get_field_details(base_model=base_model,
                                                                       field=field,
                                                                       table=table,
-                                                                      report_builder_class=report_builder_class)
+                                                                      report_builder_class=report_builder_class,
+                                                                      field_attr=field_attr)
 
             if isinstance(django_field, DATE_FIELDS):
                 field_name = self.get_date_field(index=index,
@@ -110,6 +115,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                                                  fields=fields)
             elif isinstance(django_field, NUMBER_FIELDS) and (django_field is None or django_field.choices is None):
                 data_attr = split_attr(table_field)
+
 
                 annotations_type = int(data_attr.get('annotations_type', 0))
                 if annotations_type != 0:
@@ -181,9 +187,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                     if show_total == '1':
                         totals[field_name] = {'sum': 'to_fixed', 'decimal_places': 2,
                                               'css_class': css_class}
-                field_attr = {}
-                if 'title' in table_field:
-                    field_attr['title'] = table_field['title']
+
 
                 if field_attr:
                     field = (field, field_attr)
@@ -203,7 +207,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                 if pivot_field_data is None:
                     continue
 
-                if pivot_field_data['id'] != fields_used:
+                if pivot_field_data['id'] not in fields_used:
                     table.add_columns('.' + pivot_field_data['id'])
                     fields_used.add(pivot_field_data['id'])
 

@@ -53,13 +53,15 @@ def get_custom_report_builder():
                                  'report_builder.customise.CustomiseReportBuilder'))
 
 
-def get_field_details(base_model, field, report_builder_class, table=None):
+def get_field_details(base_model, field, report_builder_class, table=None, field_attr=None):
 
+    if field_attr is None:
+        field_attr = {}
     if isinstance(field, str) and field in report_builder_class.field_classes:
         field = report_builder_class.field_classes[field]
 
     path = field
-    original_column_initialisor = ColumnInitialisor(start_model=base_model, path=field, table=table)
+    original_column_initialisor = ColumnInitialisor(start_model=base_model, path=field, table=table, **field_attr)
 
     try:
         columns = original_column_initialisor.get_columns()
@@ -84,13 +86,14 @@ def get_field_details(base_model, field, report_builder_class, table=None):
                 path_parts = field.split('__')[:-1]
                 path_parts.append(col_type_override.field.split('__')[-1])
                 path = '__'.join(path_parts)
-                column_initialisor = ColumnInitialisor(start_model=base_model, path=path, table=table)
+                column_initialisor = ColumnInitialisor(start_model=base_model, path=path, table=table, **field_attr)
                 column_initialisor.get_columns()
                 django_field = column_initialisor.django_field
             else:
                 column_initialisor = ColumnInitialisor(start_model=base_model,
                                                        path=col_type_override.field,
-                                                       table=table)
+                                                       table=table,
+                                                       **field_attr)
                 column_initialisor.get_columns()
                 django_field = column_initialisor.django_field
 

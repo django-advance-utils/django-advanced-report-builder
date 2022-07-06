@@ -141,6 +141,11 @@ class Company(TimeStampedModel):
         company_category_column = FilterForeignKeyColumn(field='company_category__name',
                                                          title='Company Category')
 
+        importance_choice = ColumnBase(column_name='importance_choice',
+                                       field='importance',
+                                       title='Importance Choice',
+                                       choices={1: 'High', 2: 'Medium', 3: 'Low'})
+
     class ReportBuilder(ReportBuilderFields):
         colour = '#00008b'
         title = 'Company'
@@ -150,6 +155,7 @@ class Company(TimeStampedModel):
                   'active',
                   'company_number',
                   'importance',
+                  'importance_choice',
                   'people',
                   'collink_1',
                   'collink_2',
@@ -177,7 +183,12 @@ class Company(TimeStampedModel):
         pivot_fields = {'tags': {'title': 'Tags',
                                  'type': 'tag',
                                  'field': 'Tags',
-                                 'kwargs': {'collapsed': False}}}
+                                 'kwargs': {'collapsed': False}},
+                        'importance_choice': {'title': 'Importance choice',
+                                              'type': 'pivot',
+                                              'field': 'importance_choice',
+                                              'kwargs': {'collapsed': False}}
+                        }
 
     def __str__(self):
         return self.name
