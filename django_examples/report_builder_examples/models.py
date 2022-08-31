@@ -171,14 +171,11 @@ class Company(TimeStampedModel):
         default_multiple_column_text = '{name}'
         default_multiple_column_fields = ['name']
 
-        includes = [{'field': 'companyinformation',
-                     'title': 'Company Information',
-                     'model': 'report_builder_examples.CompanyInformation.ReportBuilder',
-                     'reversed': True},
-                    {'field': 'user_profile',
-                     'title': 'User',
-                     'model': 'report_builder_examples.UserProfile.ReportBuilder'}
-                    ]
+        includes = {'companyinformation': {'title': 'Company Information',
+                                           'model': 'report_builder_examples.CompanyInformation.ReportBuilder',
+                                           'reversed': True},
+                    'user_profile': {'title': 'User',
+                                     'model': 'report_builder_examples.UserProfile.ReportBuilder'}}
 
         pivot_fields = {'tags': {'title': 'Tags',
                                  'type': 'tag',
@@ -211,9 +208,8 @@ class CompanyInformation(models.Model):
                   'incorporated_date']
 
         default_columns = ['.id']
-        includes = [{'field': 'company',
-                     'title': 'Company',
-                     'model': 'report_builder_examples.Company.ReportBuilder'}]
+        includes = {'company': {'title': 'Company',
+                                'model': 'report_builder_examples.Company.ReportBuilder'}}
 
 
 class Person(models.Model):
@@ -233,9 +229,8 @@ class Person(models.Model):
                   'first_name',
                   'surname',
                   'date_entered']
-        includes = [{'field': 'company',
-                     'title': 'Company',
-                     'model': 'report_builder_examples.Company.ReportBuilder'}]
+        includes = {'company': {'title': 'Company',
+                                'model': 'report_builder_examples.Company.ReportBuilder'}}
 
 
 class Tags(models.Model):
@@ -278,10 +273,8 @@ class Tally(models.Model):
                   'push_bikes',
                   'tractors']
 
-        includes = [{'field': 'user_profile',
-                     'title': 'User',
-                     'model': 'report_builder_examples.UserProfile.ReportBuilder'},
-                    ]
+        includes = {'user_profile': {'title': 'User',
+                                     'model': 'report_builder_examples.UserProfile.ReportBuilder'}}
 
 
 class Payment(TimeStampedModel):
@@ -307,13 +300,10 @@ class Payment(TimeStampedModel):
                   'created_field',
                   CustomDateColumn(column_name='modified', field='modified', title='Modified'),
                   ]
-        includes = [{'field': 'company',
-                     'title': 'Company',
-                     'model': 'report_builder_examples.Company.ReportBuilder'},
-                    {'field': 'user_profile',
-                     'title': 'User',
-                     'model': 'report_builder_examples.UserProfile.ReportBuilder'},
-                    ]
+        includes = {'company': {'title': 'Company',
+                                'model': 'report_builder_examples.Company.ReportBuilder'},
+                    'user_profile': {'title': 'User',
+                                     'model': 'report_builder_examples.UserProfile.ReportBuilder'}}
 
 
 class ReportPermission(TimeStampedModel):

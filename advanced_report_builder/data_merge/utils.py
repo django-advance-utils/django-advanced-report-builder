@@ -20,7 +20,7 @@ def get_menu_fields(base_model, report_builder_class,
             if codes is not None:
                 codes.add(full_id)
 
-    for include in report_builder_class.includes:
+    for include_field, include in report_builder_class.includes.items():
         app_label, model, report_builder_fields_str = include['model'].split('.')
 
         new_model = apps.get_model(app_label, model)
@@ -35,7 +35,7 @@ def get_menu_fields(base_model, report_builder_class,
                             report_builder_class=new_report_builder_class,
                             menus=menu,
                             codes=codes,
-                            code_prefix=f"{code_prefix}{include['field']}__",
+                            code_prefix=f"{code_prefix}{include_field}__",
                             previous_base_model=base_model,
                             table=table)
             if menus is not None:

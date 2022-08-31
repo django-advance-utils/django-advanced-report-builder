@@ -65,13 +65,13 @@ class QueryBuilderModalBaseMixin:
                                            title=title_prefix + column.title,
                                            column=column,
                                            prefix=prefix)
-        for include in report_builder_class.includes:
+        for include_field, include in report_builder_class.includes.items():
             app_label, model, report_builder_fields_str = include['model'].split('.')
             new_model = apps.get_model(app_label, model)
             new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
 
             if new_model != previous_base_model:
-                _foreign_key = getattr(base_model, include['field'], None)
+                _foreign_key = getattr(base_model, include_field, None)
 
                 if hasattr(_foreign_key, 'field'):
                     add_null_field = _foreign_key.field.null
@@ -80,17 +80,17 @@ class QueryBuilderModalBaseMixin:
 
                 if add_null_field:
                     field_types.get_foreign_key_null_field(query_builder_filters=query_builder_filters,
-                                                           field=prefix + include['field'],
+                                                           field=prefix + include_field,
                                                            title=title_prefix + include['title'])
                 if isinstance(new_model(), AbstractUser):
                     field_types.get_abstract_user_field(query_builder_filters=query_builder_filters,
-                                                        field=prefix + include['field'],
+                                                        field=prefix + include_field,
                                                         title=title_prefix + include['title'])
 
                 self._get_query_builder_fields(base_model=new_model,
                                                query_builder_filters=query_builder_filters,
                                                report_builder_class=new_report_builder_fields,
-                                               prefix=f"{prefix}{include['field']}__",
+                                               prefix=f"{prefix}{include_field}__",
                                                title_prefix=f"{include['title']} --> ",
                                                previous_base_model=base_model)
 
@@ -201,7 +201,7 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                                          'label': title_prefix + pivot_field['title'],
                                          'colour': colour})
 
-        for include in report_builder_class.includes:
+        for include_field, include in report_builder_class.includes.items():
             app_label, model, report_builder_fields_str = include['model'].split('.')
 
             new_model = apps.get_model(app_label, model)
@@ -211,7 +211,7 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
                                  fields=fields,
                                  report_builder_class=new_report_builder_class,
                                  tables=tables,
-                                 prefix=f"{prefix}{include['field']}__",
+                                 prefix=f"{prefix}{include_field}__",
                                  title_prefix=f"{title_prefix}{include['title']} -> ",
                                  title=include.get('title'),
                                  colour=include.get('colour'),

@@ -10,7 +10,7 @@ class ReportBuilderFields:
     exclude_display_fields = set()
     order_by_fields = set()
     url = None
-    includes = []
+    includes = {}
     default_columns = []
 
     field_classes = {'record_count': RecordCountColumn()}

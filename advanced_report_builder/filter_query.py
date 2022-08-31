@@ -176,12 +176,14 @@ class FilterQueryMixin:
             include_str = field_parts[0]
             new_field_str = '__'.join(field_parts[1:])
 
-            for include in report_builder_class.includes:
+            include = report_builder_class.includes.get(include_str)
+
+            if include is not None:
                 app_label, model, report_builder_fields_str = include['model'].split('.')
                 new_model = apps.get_model(app_label, model)
                 new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
 
-                if new_model != previous_base_model and include_str == include['field']:
+                if new_model != previous_base_model:
                     result = self._get_report_builder_class(base_model=new_model,
                                                             field_str=new_field_str,
                                                             report_builder_class=new_report_builder_fields,
@@ -189,12 +191,12 @@ class FilterQueryMixin:
                     if result:
                         return result
         else:
-            for include in report_builder_class.includes:
+            include = report_builder_class.includes.get(field_str)
+            if include is not None:
                 app_label, model, report_builder_fields_str = include['model'].split('.')
                 new_model = apps.get_model(app_label, model)
                 new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
-                if field_str == include['field']:
-                    return new_report_builder_fields
+                return new_report_builder_fields
         return None
 
     def _get_pivot_details(self, base_model, pivot_str, report_builder_class, previous_base_model=None, include_str=''):
@@ -213,12 +215,14 @@ class FilterQueryMixin:
             pivot_parts = pivot_str.split('__')
             include_str = pivot_parts[0]
             new_pivot_str = '__'.join(pivot_parts[1:])
-            for include in report_builder_class.includes:
+
+            include = report_builder_class.includes.get(include_str)
+            if include is not None:
                 app_label, model, report_builder_fields_str = include['model'].split('.')
                 new_model = apps.get_model(app_label, model)
                 new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
 
-                if new_model != previous_base_model and include_str == include['field']:
+                if new_model != previous_base_model:
                     result = self._get_pivot_details(base_model=new_model,
                                                      pivot_str=new_pivot_str,
                                                      report_builder_class=new_report_builder_fields,
