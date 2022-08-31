@@ -103,6 +103,8 @@ class KanbanView(ReportBase, FilterQueryMixin, TemplateView):
     def dispatch(self, request, *args, **kwargs):
         self.report = kwargs.get('report')
         self.chart_report = self.report.kanbanreport
+        self.dashboard_report = kwargs.get('dashboard_report')
+        self.enable_edit = kwargs.get('enable_edit')
         return super().dispatch(request, *args, **kwargs)
 
     def view_filter_extra(self, query, table):
