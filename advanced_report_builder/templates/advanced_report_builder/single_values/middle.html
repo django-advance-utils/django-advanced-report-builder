@@ -1,7 +1,7 @@
 {% load modal_tags %}
 <div>
-    {% if datatable.single_value.show_breakdown %}
-        <a class="single_value_link" href="{% show_modal 'advanced_report_builder:show_breakdown_modal' 'pk-' datatable.single_value.id '-enable_links-' datatable.enable_links href=True %}"><h1 id="{{ datatable.table_id }}"></h1></a>{% else %} <h1 id="{{ datatable.table_id }}"></h1>{% endif %}
+    {% if datatable.breakdown_url %}
+        <a class="single_value_link" href="{{ datatable.breakdown_url }}"><h1 id="{{ datatable.table_id }}"></h1></a>{% else %} <h1 id="{{ datatable.table_id }}"></h1>{% endif %}
 </div>
 <script>
     (function () {

@@ -8,6 +8,7 @@ from django.urls import reverse
 from django_datatables.datatables import DatatableTable
 from django_menus.menu import MenuItem
 from django_modals.fields import FieldEx
+from django_modals.helper import show_modal
 from django_modals.modals import Modal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
@@ -221,8 +222,18 @@ class SingleValueView(ChartBaseView):
         self.table.single_value = self.chart_report
         self.table.enable_links = self.kwargs.get('enable_links')
         self.table.datatable_template = 'advanced_report_builder/single_values/middle.html'
+        self.table.breakdown_url = self.get_breakdown_url()
         context['single_value_report'] = self.chart_report
         return context
+
+    def get_breakdown_url(self):
+        if self.table.single_value.show_breakdown:
+            return show_modal('advanced_report_builder:show_breakdown_modal',
+                              'pk-',
+                              self.table.single_value.id,
+                              '-enable_links-',
+                              self.table.enable_links, href=True)
+        return None
 
     def pod_dashboard_view_menu(self):
         return []
@@ -370,12 +381,15 @@ class ShowBreakdownModal(TableUtilsMixin, Modal):
     def modal_title(self):
         return self.table_report.name
 
+    def add_table(self, base_model):
+        return DatatableTable(view=self, model=base_model)
+
     def modal_content(self):
         single_value_report = get_object_or_404(SingleValueReport, pk=self.slug['pk'])
         self.kwargs['enable_links'] = self.slug['enable_links'] == 'True'
         self.table_report = single_value_report
         base_model = single_value_report.get_base_modal()
-        table = DatatableTable(view=self, model=base_model)
+        table = self.add_table(base_model=base_model)
         table.extra_filters = self.extra_filters
         table_fields = single_value_report.breakdown_fields
         report_builder_class = getattr(base_model,
