@@ -384,7 +384,7 @@ class ShowBreakdownModal(TableUtilsMixin, Modal):
     def add_table(self, base_model):
         return DatatableTable(view=self, model=base_model)
 
-    def modal_content(self):
+    def setup_table(self):
         single_value_report = get_object_or_404(SingleValueReport, pk=self.slug['pk'])
         self.kwargs['enable_links'] = self.slug['enable_links'] == 'True'
         self.table_report = single_value_report
@@ -404,6 +404,10 @@ class ShowBreakdownModal(TableUtilsMixin, Modal):
         table.ajax_data = False
         table.table_options['pageLength'] = 25
         table.table_options['bStateSave'] = False
+        return table
+
+    def modal_content(self):
+        table = self.setup_table()
         return table.render()
 
 

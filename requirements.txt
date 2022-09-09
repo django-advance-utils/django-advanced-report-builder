@@ -6,7 +6,7 @@ django-tab-menus==0.0.15
 django-filtered-datatables==0.0.21
 # git+https://github.com/jonesim/django-datatables.git@835fbfcca570616dc7c4cec8b13110118553c585
 
-django-nested-modals==0.0.20
+django-nested-modals==0.0.21
 # git+https://github.com/jonesim/django-modals.git@0624daf0450df3018f5c4d489a3bc70f8e4d0453
 
 django-ajax-helpers==0.0.20
