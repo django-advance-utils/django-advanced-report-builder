@@ -1,3 +1,4 @@
+import calendar
 from datetime import datetime, date, timedelta
 from calendar import monthrange
 
@@ -235,4 +236,31 @@ class VariableDate:
         values = {}
         for choice in self.RANGE_TYPE_CHOICES:
             values['#variable_date:%d' % choice[0]] = choice[1]
+        return values
+
+    @staticmethod
+    def get_date_filter_years():
+        values = {}
+        today = date.today()
+        start_year = today.year - 10
+        end_year = start_year + 15
+
+        for year in range(start_year, end_year):
+            values['#year:%d' % year] = year
+        return values
+
+    @staticmethod
+    def get_date_filter_months():
+        values = {}
+        for index, month in enumerate(list(calendar.month_name)[1:], 1):
+            values['#month:%d' % index] = month
+        return values
+
+    @staticmethod
+    def get_date_filter_quarters():
+        values = {}
+        for quarter in range(1, 5):
+            values['#quarter:%d' % quarter] = f'Quarter {quarter}'
+        for quarter in range(1, 5):
+            values['#financial_quarter:%d' % quarter] = f'Financial Quarter {quarter}'
         return values

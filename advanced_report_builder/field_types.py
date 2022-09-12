@@ -14,6 +14,7 @@ class FieldTypes:
     FIELD_TYPE_MULTIPLE_CHOICE = 5
     FIELD_TYPE_FOREIGN_KEY = 6
     FIELD_TYPE_ABSTRACT_USER = 7
+    FIELD_TYPE_PART_DATE = 8
 
     def get_operator(self, field_type):
         operators = {self.FIELD_TYPE_STRING: ['equal',
@@ -41,6 +42,11 @@ class FieldTypes:
                                             'is_null',
                                             'is_not_null'
                                             ],
+                     self.FIELD_TYPE_PART_DATE: ['equal',
+                                                 'not_equal',
+                                                 'is_null',
+                                                 'is_not_null'
+                                                 ],
                      self.FIELD_TYPE_BOOLEAN: ['equal',
                                                'not_equal'
                                                ],
@@ -148,6 +154,32 @@ class FieldTypes:
                                 "values": variable_date.get_variable_date_filter_values()
                                 }
         query_builder_filters.append(query_builder_filter)
+        query_builder_filter = {"id": f'{column_id}__variable_year',
+                                "label": f'{title} (Year)',
+                                "field": field,
+                                "operators": self.get_operator(self.FIELD_TYPE_DATE),
+                                "input": "select",
+                                "values": variable_date.get_date_filter_years()
+                                }
+        query_builder_filters.append(query_builder_filter)
+        query_builder_filter = {"id": f'{column_id}__variable_month',
+                                "label": f'{title} (Month)',
+                                "field": field,
+                                "operators": self.get_operator(self.FIELD_TYPE_DATE),
+                                "input": "select",
+                                "values": variable_date.get_date_filter_months()
+                                }
+        query_builder_filters.append(query_builder_filter)
+
+        query_builder_filter = {"id": f'{column_id}__variable_quarter',
+                                "label": f'{title} (Quarter)',
+                                "field": field,
+                                "operators": self.get_operator(self.FIELD_TYPE_PART_DATE),
+                                "input": "select",
+                                "values": variable_date.get_date_filter_quarters()
+                                }
+        query_builder_filters.append(query_builder_filter)
+
 
     def get_abstract_user_field(self, query_builder_filters, field, title):
         query_builder_filters.append({"id": f'{field}__logged_in_user',

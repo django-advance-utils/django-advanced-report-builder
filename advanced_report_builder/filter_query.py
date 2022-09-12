@@ -111,6 +111,24 @@ class FilterQueryMixin:
                                        display_operator=display_operator,
                                        field=field,
                                        query_string=query_string)
+            elif data_type == "string" and _id.endswith('__variable_year'):
+                self.get_variable_year(value=value,
+                                       query_list=query_list,
+                                       display_operator=display_operator,
+                                       field=field,
+                                       query_string=query_string)
+            elif data_type == "string" and _id.endswith('__variable_month'):
+                self.get_variable_month(value=value,
+                                        query_list=query_list,
+                                        display_operator=display_operator,
+                                        field=field,
+                                        query_string=query_string)
+            elif data_type == "string" and _id.endswith('__variable_quarter'):
+                self.get_variable_quarter(value=value,
+                                          query_list=query_list,
+                                          display_operator=display_operator,
+                                          field=field,
+                                          query_string=query_string)
             elif data_type == "string" and _id.endswith('__logged_in_user'):
                 self.get_logged_in_user(value=value,
                                         query_list=query_list,
@@ -126,8 +144,7 @@ class FilterQueryMixin:
 
         return query_list
 
-    @staticmethod
-    def get_variable_date(value, query_list, display_operator, field, query_string):
+    def get_variable_date(self, value, query_list, display_operator, field, query_string):
         if display_operator in ['is_null', 'is_not_null']:
             query_list.append(Q((query_string, value)))
         else:
@@ -142,6 +159,63 @@ class FilterQueryMixin:
                 query_list.append(~((Q((field + "__gte", value[0]))) & (Q((field + "__lte", value[1])))))
             else:
                 query_list.append(((Q((field + "__gte", value[0]))) & (Q((field + "__lte", value[1])))))
+
+    @staticmethod
+    def get_variable_year(value, query_list, display_operator, field, query_string):
+        if display_operator in ['is_null', 'is_not_null']:
+            query_list.append(Q((query_string, value)))
+        else:
+            _, year = value.split(":")
+            year = int(year)
+            if display_operator in ['less', 'less_or_equal', 'greater', 'greater_or_equal']:
+                query_string_parts = query_string.split('__')
+                query_list.append(Q((f"{field}__year__{query_string_parts[-1]}", year)))
+            elif display_operator in ["not_equal", "not_in"]:
+                query_list.append(~Q((query_string + "__year", year)))
+            else:
+                query_list.append(Q((query_string + "__year", year)))
+
+    @staticmethod
+    def get_variable_month(value, query_list, display_operator, field, query_string):
+        if display_operator in ['is_null', 'is_not_null']:
+            query_list.append(Q((query_string, value)))
+        else:
+            _, month = value.split(":")
+            month = int(month)
+            if display_operator in ["not_equal", "not_in"]:
+                query_list.append(~Q((field + "__month", month)))
+            else:
+                query_list.append(Q((field + "__month", month)))
+
+    def get_variable_quarter(self, value, query_list, display_operator, field, query_string):
+        if display_operator in ['is_null', 'is_not_null']:
+            query_list.append(Q((query_string, value)))
+        else:
+            quarter_type, quarter = value.split(":")
+            quarter = int(quarter)
+
+            if quarter_type == '#quarter':
+                start_month = (quarter-1) * 3
+                end_month = start_month + 3
+                if display_operator == "not_equal":
+                    query_list.append(~((Q((field + "__month__gt", start_month))) &
+                                        (Q((field + "__month__lte", end_month)))))
+                else:
+                    query_list.append(((Q((field + "__month__gt", start_month))) &
+                                       (Q((field + "__month__lte", end_month)))))
+            else:
+                start_month = self.get_financial_month() - 1
+                end_month = start_month + 3
+                months = [divmod(x, 12)[1] + 1 for x in range(start_month, end_month)]
+
+                if display_operator == "not_equal":
+                    query_list.append(~((Q((field + "__month", months[0]))) |
+                                        (Q((field + "__month", months[1]))) |
+                                        (Q((field + "__month", months[2])))))
+                else:
+                    query_list.append(((Q((field + "__month", months[0]))) |
+                                       (Q((field + "__month", months[1]))) |
+                                       (Q((field + "__month", months[2])))))
 
     def get_logged_in_user(self, value, query_list, display_operator, field, query_string):
 
@@ -231,3 +305,6 @@ class FilterQueryMixin:
                     if result:
                         return result
         return None
+
+    def get_financial_month(self):
+        return 1
