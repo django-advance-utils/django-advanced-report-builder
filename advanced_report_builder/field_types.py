@@ -180,7 +180,6 @@ class FieldTypes:
                                 }
         query_builder_filters.append(query_builder_filter)
 
-
     def get_abstract_user_field(self, query_builder_filters, field, title):
         query_builder_filters.append({"id": f'{field}__logged_in_user',
                                       "label": f'{title} (Logged in user)',

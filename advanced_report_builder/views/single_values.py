@@ -411,6 +411,7 @@ class ShowBreakdownModal(TableUtilsMixin, Modal):
         return table.render()
 
 
+
 class SingleValueTableFieldForm(TableFieldForm):
     cancel_class = 'btn-secondary modal-cancel'
 
