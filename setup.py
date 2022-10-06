@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="django-advanced-report-builder",
-    version="0.1.4",
+    version="0.1.5",
     author="Thomas Turner",
     description="Django app that allows you to build reports from modals",
     long_description=long_description,
@@ -19,4 +19,13 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
+    install_requires=[
+        'Django >= 3.2',
+        'django-filtered-datatables >= 0.0.21',
+        'django-ajax-helpers >= 0.0.20',
+        'django-nested-modals >= 0.0.21',
+        'time-stamped-model >= 0.2.3',
+        'date-offset >= 0.0.2'
+    ],
+
 )
