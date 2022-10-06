@@ -83,6 +83,8 @@ class FilterForeignKeyColumn(ColumnBase):
 
 
 class ReportBuilderColumnLink(ColumnLink):
+    """ Sometimes you may want to have a report where the links don't work.
+    This is used for when you have a wall board"""
 
     @property
     def url(self):
@@ -90,7 +92,9 @@ class ReportBuilderColumnLink(ColumnLink):
 
     @url.setter
     def url(self, url_name):
-        if not self.table or self.table.view.kwargs.get('enable_links'):
+        if (not self.table or
+                self.table.view.kwargs.get('enable_links') or
+                getattr(self.table.view, 'enable_links', False)):
             self._url = get_url(url_name)
         else:
             self._url = f'#?{DUMMY_ID}'
