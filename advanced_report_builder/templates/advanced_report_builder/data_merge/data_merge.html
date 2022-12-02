@@ -6,6 +6,11 @@
         tinymce.init({
             selector: '#{{ widget.attrs.id }}_textarea',
             height: 150,
+            menubar: false,
+            content_css: [
+                '//fonts.googleapis.com/css?family=Lato:300,300i,400,400i'],
+            {% if disabled %}readonly : 1,
+                toolbar: ' | '{% else %}
             forced_root_block: '',
             force_br_newlines: true,
             force_p_newlines: false,
@@ -17,13 +22,10 @@
                 'code'
             ],
             toolbar: 'bold italic | bullist numlist | standardparagraphbutton',
-            menubar: false,
-            content_css: [
-                '//fonts.googleapis.com/css?family=Lato:300,300i,400,400i'],
-
             setup: function (editor) {
                  django_modal.send_inputs({'ajax': 'get_{{ widget.name }}_data_merge_menu', 'field_auto_id': '{{ widget.attrs.id }}'});
             }
+            {% endif %}
         });
     }
 

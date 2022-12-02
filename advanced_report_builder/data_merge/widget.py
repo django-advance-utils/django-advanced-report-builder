@@ -18,5 +18,5 @@ class DataMergeWidget(Input):
             context['data_merge'] = None
         else:
             context['data_merge'] = self.data_merge_data.build_menus()
-
+        context['disabled'] = attrs is not None and attrs.get('disabled', False)
         return context
