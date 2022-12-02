@@ -116,7 +116,6 @@ class TableUtilsMixin(ReportUtilsMixin):
             elif isinstance(django_field, NUMBER_FIELDS) and (django_field is None or django_field.choices is None):
                 data_attr = split_attr(table_field)
 
-
                 annotations_type = int(data_attr.get('annotations_type', 0))
                 if annotations_type != 0:
                     has_annotations = True
@@ -168,9 +167,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                 self.get_link_field(table_field=table_field,
                                     col_type_override=col_type_override,
                                     fields=fields)
-
             else:
-
                 data_attr = split_attr(table_field)
                 if col_type_override is not None:
                     if data_attr.get('annotation_label') == '1':
@@ -187,8 +184,6 @@ class TableUtilsMixin(ReportUtilsMixin):
                     if show_total == '1':
                         totals[field_name] = {'sum': 'to_fixed', 'decimal_places': 2,
                                               'css_class': css_class}
-
-
                 if field_attr:
                     field = (field, field_attr)
                 fields.append(field)
