@@ -42,16 +42,10 @@ def get_menu_fields(base_model, report_builder_class,
                 menus.append({'text': title, 'menu': menu})
 
 
-def get_data_merge_columns(base_model, report_builder_class, html, table):
-    display_fields = set()
-    all_fields = set()
-
-    get_menu_fields(base_model=base_model,
-                    report_builder_class=report_builder_class,
-                    codes=display_fields)
-
+def get_data_merge_variables(html):
     variables = re.findall('{{\s*([^*\s*}}]+)\s*}}', html)
-    columns = set()
+
+    all_fields = set()
     for variable in variables:
         if '|' in variable:
             field = variable.split('|')[0]
@@ -69,7 +63,12 @@ def get_data_merge_columns(base_model, report_builder_class, html, table):
                 break
             if field not in ['', 'not', 'and' 'or'] and field[0] not in ['(', ')', '"', "'"]:
                 all_fields.add(field)
+    return all_fields
 
+
+def get_data_merge_columns(base_model, report_builder_class, html, table):
+    all_fields = get_data_merge_variables(html)
+    columns = set()
     column_map = {}
     for field in all_fields:
         django_field, col_type_override, _, _ = get_field_details(base_model=base_model,
