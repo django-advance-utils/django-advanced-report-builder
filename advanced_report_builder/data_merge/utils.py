@@ -6,7 +6,8 @@ from advanced_report_builder.utils import get_field_details
 
 
 def get_menu_fields(base_model, report_builder_class,
-                    menus=None, codes=None, code_prefix='', previous_base_model=None, table=None):
+                    menus=None, codes=None, code_prefix='', next_code_prefix='__',
+                    previous_base_model=None, table=None):
 
     for report_builder_field in report_builder_class.fields:
         django_field, col_type_override, columns, _ = get_field_details(base_model=base_model,
@@ -35,7 +36,8 @@ def get_menu_fields(base_model, report_builder_class,
                             report_builder_class=new_report_builder_class,
                             menus=menu,
                             codes=codes,
-                            code_prefix=f"{code_prefix}{include_field}__",
+                            code_prefix=f"{code_prefix}{include_field}{next_code_prefix}",
+                            next_code_prefix=next_code_prefix,
                             previous_base_model=base_model,
                             table=table)
             if menus is not None:
