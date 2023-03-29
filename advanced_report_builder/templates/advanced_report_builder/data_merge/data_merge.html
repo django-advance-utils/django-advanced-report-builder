@@ -5,7 +5,7 @@
     function setup_tiny_{{ widget.attrs.id }}() {
         tinymce.init({
             selector: '#{{ widget.attrs.id }}_textarea',
-            height: 150,
+            height: {{ height }},
             menubar: false,
             content_css: [
                 '//fonts.googleapis.com/css?family=Lato:300,300i,400,400i'],
