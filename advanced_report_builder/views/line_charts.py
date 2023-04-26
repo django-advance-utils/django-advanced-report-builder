@@ -250,7 +250,7 @@ class LineChartFieldForm(ChartBaseFieldForm):
 class LineChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
     form_class = LineChartFieldForm
     size = 'xl'
-    template_name = 'advanced_report_builder/charts/modal.html'
+    template_name = 'advanced_report_builder/charts/modal_field.html'
     no_header_x = True
     helper_class = HorizontalNoEnterHelper
 
