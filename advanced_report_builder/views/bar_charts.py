@@ -6,11 +6,13 @@ from django.core.exceptions import FieldDoesNotExist
 from django.forms import CharField, ChoiceField, BooleanField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django_datatables.datatables import DatatableTable
 from django_menus.menu import MenuItem
 from django_modals.fields import FieldEx
 from django_modals.form_helpers import HorizontalNoEnterHelper
-from django_modals.modals import FormModal
+from django_modals.modals import FormModal, Modal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
+from django_modals.templatetags.modal_tags import show_modal
 from django_modals.widgets.colour_picker import ColourPickerWidget
 from django_modals.widgets.select2 import Select2Multiple
 from django_modals.widgets.widgets import Toggle
@@ -22,6 +24,7 @@ from advanced_report_builder.models import BarChartReport, ReportType
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute
 from advanced_report_builder.views.charts_base import ChartBaseView, ChartBaseFieldForm
+from advanced_report_builder.views.datatables.utils import TableUtilsMixin
 from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin, QueryBuilderModalBase
 
 
@@ -39,8 +42,18 @@ class BarChartView(ChartBaseView):
             raise ReportError(e)
         self.table.bar_chart_report = self.chart_report
         self.table.datatable_template = 'advanced_report_builder/charts/bar/middle.html'
+        self.table.breakdown_url = self.get_breakdown_url()
+
         context['bar_chart_report'] = self.chart_report
         return context
+
+    def get_breakdown_url(self):
+        if self.table.bar_chart_report.show_breakdown:
+            enable_links = self.slug.get('enable_links') == 'True'
+            slug = f'pk-{self.table.bar_chart_report.id}-data-99999-index-88888-enable_links-{enable_links}'
+            return reverse('advanced_report_builder:bar_chart_show_breakdown_modal',
+                           kwargs={'slug': slug})
+        return None
 
     def get_date_format(self):
         if self.chart_report.show_blank_dates:
@@ -300,3 +313,40 @@ class BarChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
         query_builder_filters = self.get_query_builder_report_type_field(report_type_id=report_type_id)
 
         return self.command_response(f'query_builder_{field_auto_id}', data=json.dumps(query_builder_filters))
+
+
+class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
+    button_container_class = 'text-center'
+    size = 'xl'
+
+    def modal_title(self):
+        return self.table_report.name
+
+    def add_table(self, base_model):
+        return DatatableTable(view=self, model=base_model)
+
+    def setup_table(self):
+        bar_chart_report = get_object_or_404(BarChartReport, pk=self.slug['pk'])
+        self.kwargs['enable_links'] = self.slug['enable_links'] == 'True'
+        # self.table_report = single_value_report
+        # base_model = single_value_report.get_base_modal()
+        # table = self.add_table(base_model=base_model)
+        # table.extra_filters = self.extra_filters
+        # table_fields = single_value_report.breakdown_fields
+        # report_builder_class = getattr(base_model,
+        #                                self.table_report.report_type.report_builder_class_name, None)
+        # fields_used = set()
+        # self.process_query_results(report_builder_class=report_builder_class,
+        #                            table=table,
+        #                            base_model=base_model,
+        #                            fields_used=fields_used,
+        #                            table_fields=table_fields)
+
+        table.ajax_data = False
+        table.table_options['pageLength'] = 25
+        table.table_options['bStateSave'] = False
+        return table
+
+    def modal_content(self):
+        table = self.setup_table()
+        return table.render()

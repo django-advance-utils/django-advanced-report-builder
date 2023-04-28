@@ -238,7 +238,7 @@ class SingleValueView(ChartBaseView):
 
     def get_breakdown_url(self):
         if self.table.single_value.show_breakdown:
-            return show_modal('advanced_report_builder:show_breakdown_modal',
+            return show_modal('advanced_report_builder:single_value_show_breakdown_modal',
                               'pk-',
                               self.table.single_value.id,
                               '-enable_links-',
@@ -413,7 +413,7 @@ class SingleValueModal(QueryBuilderModalBase):
         return self.command_response('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
 
 
-class ShowBreakdownModal(TableUtilsMixin, Modal):
+class SingleValueShowBreakdownModal(TableUtilsMixin, Modal):
     button_container_class = 'text-center'
     size = 'xl'
 

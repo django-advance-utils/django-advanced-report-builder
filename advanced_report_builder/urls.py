@@ -1,6 +1,6 @@
 from django.urls import path
 
-from advanced_report_builder.views.bar_charts import BarChartModal, BarChartFieldModal
+from advanced_report_builder.views.bar_charts import BarChartModal, BarChartFieldModal, BarChartShowBreakdownModal
 from advanced_report_builder.views.custom import CustomModal
 from advanced_report_builder.views.dashboard import DashboardReportModal, DashboardModal, DashboardAddReportModal
 from advanced_report_builder.views.datatables.modal import TableModal, TableFieldModal, TablePivotModal, TableQueryModal
@@ -10,7 +10,7 @@ from advanced_report_builder.views.kanban import KanbanModal, KanbanLaneModal, K
 from advanced_report_builder.views.line_charts import LineChartModal, LineChartFieldModal
 from advanced_report_builder.views.pie_charts import PieChartModal, PieChartFieldModal
 from advanced_report_builder.views.reports import DuplicateReportModal
-from advanced_report_builder.views.single_values import SingleValueModal, ShowBreakdownModal, SingleValueTableFieldModal
+from advanced_report_builder.views.single_values import SingleValueModal, SingleValueShowBreakdownModal, SingleValueTableFieldModal
 from advanced_report_builder.views.targets.views import TargetModal
 
 app_name = 'advanced_report_builder'
@@ -24,10 +24,13 @@ urlpatterns = [
 
     path('single-value/modal/<str:slug>/', SingleValueModal.as_view(), name='single_value_modal'),
     path('single-value/modal/field/<str:slug>/', SingleValueTableFieldModal.as_view(), name='single_value_field_modal'),
-    path('single-value/show-breakdown/<str:slug>/', ShowBreakdownModal.as_view(), name='show_breakdown_modal'),
+    path('single-value/show-breakdown/<str:slug>/', SingleValueShowBreakdownModal.as_view(),
+         name='single_value_show_breakdown_modal'),
 
     path('bar-chart/modal/<str:slug>/', BarChartModal.as_view(), name='bar_chart_modal'),
     path('bar-chart/modal/field/<str:slug>/', BarChartFieldModal.as_view(), name='bar_chart_field_modal'),
+    path('bar-chart/show-breakdown/<str:slug>/', BarChartShowBreakdownModal.as_view(),
+         name='bar_chart_show_breakdown_modal'),
 
     path('line-chart/modal/<str:slug>/', LineChartModal.as_view(), name='line_chart_modal'),
     path('line-chart/modal/field/<str:slug>/', LineChartFieldModal.as_view(), name='line_chart_field_modal'),

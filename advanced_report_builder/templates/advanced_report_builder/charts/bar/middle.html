@@ -3,19 +3,14 @@
 <canvas id="{{ datatable.table_id }}" width="400" height="400"></canvas>
 
 <script>
-
-
     (function () {
-
         var cell_data;
         var table = {{ datatable.model_table_setup }};
         table.find_column = django_datatables.PythonTable.prototype.find_column
-
         var labels = [];
         var datasets = [];
 
         for (var i = 0; i < table.initsetup.colOptions.length; i++) {
-
             if (i > 0) {
                 datasets[i - 1] = {
                     label: table.row_titles[i],
@@ -71,14 +66,10 @@
                 time: {
                     unit: '{{ datatable.bar_chart_report.get_chart_scale}}'
                 }
-
             {% endif %}
-
         };
-
         var y_axis = {
             {% if datatable.bar_chart_report.stacked %}stacked: true,{% endif %}
-
             display: true,
             {% if datatable.bar_chart_report.y_label %}
                 title: {
@@ -88,9 +79,6 @@
             {% endif %}
         };
         var ctx{{ datatable.table_id }} = document.getElementById('{{ datatable.table_id }}').getContext('2d');
-
-
-
         var bar{{ datatable.table_id }} = new Chart(ctx{{ datatable.table_id }}, {
             {% if datatable.bar_chart_report.show_totals %}plugins: [ChartDataLabels],{% endif %}
             type: 'bar',
@@ -98,7 +86,6 @@
             options: {
                 maintainAspectRatio: false,
                 {% if not datatable.bar_chart_report.is_orientation_vertical %}indexAxis: 'y',{% endif %}
-
                 scales: {
                     // This is because there is a bug in the library,
                     // where the axis label don't swap properly on orientation change.
@@ -114,7 +101,15 @@
                 legend: {
                     position: 'top',
                     display: false
-                },
+                }{% if datatable.bar_chart_report.show_breakdown %},
+               onClick: function (e, items){
+                     if (items.length === 0) {
+                         return
+                     }
+                     var breakdown_url = "{{ datatable.breakdown_url }}".replace("99999",  items[0].datasetIndex).replace("88888", items[0].index);
+                     django_modal.show_modal(breakdown_url);
+               }
+              {% endif %}
             }
         });
 
