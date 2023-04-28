@@ -7,7 +7,7 @@ from time_stamped_model.models import TimeStampedModel
 
 from advanced_report_builder.globals import DISPLAY_OPTION_CHOICES, DISPLAY_OPTION_2_PER_ROW, DISPLAY_OPTION_NONE, \
     DISPLAY_OPTION_CLASSES, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, ANNOTATION_CHOICE_COUNT, \
-    ANNOTATION_CHART_SCALE
+    ANNOTATION_CHART_SCALE, ANNOTATION_CHOICE_SUM, ANNOTATION_CHOICE_MAXIMUM, ANNOTATION_CHOICE_MINIMUM, ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT
 
 
 class Target(TimeStampedModel):
@@ -235,7 +235,8 @@ class SingleValueReport(Report):
     SINGLE_VALUE_TYPE_COUNT_AND_SUM = 3
     SINGLE_VALUE_TYPE_PERCENT = 4
     SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT = 5
-    SINGLE_VALUE_TYPE_AVERAGE = 6
+    SINGLE_VALUE_TYPE_AVERAGE_SUM_FROM_COUNT = 6
+    SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME = 7
 
     SINGLE_VALUE_TYPE_CHOICES = (
         (SINGLE_VALUE_TYPE_COUNT, 'Count'),
@@ -243,7 +244,8 @@ class SingleValueReport(Report):
         (SINGLE_VALUE_TYPE_COUNT_AND_SUM, 'Count & Sum'),
         (SINGLE_VALUE_TYPE_PERCENT, 'Percent'),
         (SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT, 'Percent from Count'),
-        (SINGLE_VALUE_TYPE_AVERAGE, 'Average')
+        (SINGLE_VALUE_TYPE_AVERAGE_SUM_FROM_COUNT, 'Average Sum from Count'),
+        (SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME, 'Average Sum over Time')
     )
 
     tile_colour = models.CharField(max_length=10, blank=True, null=True)
@@ -255,6 +257,10 @@ class SingleValueReport(Report):
     decimal_places = models.IntegerField(default=0)
     show_breakdown = models.BooleanField(default=False)
     breakdown_fields = models.JSONField(null=True, blank=True)
+
+    average_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES, blank=True, null=True)
+    average_start_period = models.PositiveSmallIntegerField(blank=True, null=True)
+    average_end_period = models.PositiveSmallIntegerField(blank=True, null=True)
 
     def is_percentage(self):
         return self.single_value_type in [self.SINGLE_VALUE_TYPE_PERCENT,

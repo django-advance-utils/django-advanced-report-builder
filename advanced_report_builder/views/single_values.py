@@ -3,6 +3,7 @@ import json
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Sum, ExpressionWrapper, FloatField
 from django.db.models.functions import Coalesce, NullIf
+from django.forms import ChoiceField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_datatables.datatables import DatatableTable
@@ -18,9 +19,10 @@ from django_modals.widgets.widgets import Toggle
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_CHOICE_SUM, \
-    ANNOTATION_CHOICE_AVG
+    ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT
 from advanced_report_builder.models import SingleValueReport, ReportType
 from advanced_report_builder.utils import get_field_details
+from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartBaseView
 from advanced_report_builder.views.datatables.modal import TableFieldModal, TableFieldForm
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
@@ -37,7 +39,7 @@ class SingleValueView(ChartBaseView):
         self.chart_report = self.report.singlevaluereport
         return super().dispatch(request, *args, **kwargs)
 
-    def _process_aggregations(self, fields, aggregations_type=ANNOTATION_CHOICE_SUM):
+    def _process_aggregations(self, fields, aggregations_type=ANNOTATION_CHOICE_SUM, divider=None):
         field = self.chart_report.field
         base_model = self.chart_report.get_base_modal()
         report_builder_class = getattr(base_model, self.chart_report.report_type.report_builder_class_name, None)
@@ -56,7 +58,8 @@ class SingleValueView(ChartBaseView):
                                   fields=fields,
                                   col_type_override=col_type_override,
                                   decimal_places=self.chart_report.decimal_places,
-                                  convert_currency_fields=True)
+                                  convert_currency_fields=True,
+                                  divider=divider)
         else:
             raise ReportError('not a number field')
 
@@ -205,8 +208,13 @@ class SingleValueView(ChartBaseView):
         elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_COUNT_AND_SUM:
             self._get_count(fields=fields)
             self._process_aggregations(fields=fields, aggregations_type=ANNOTATION_CHOICE_SUM)
-        elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE:
-            self._process_aggregations(fields=fields, aggregations_type=ANNOTATION_CHOICE_AVG)
+        elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE_SUM_FROM_COUNT:
+            self._process_aggregations(fields=fields, aggregations_type=ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT)
+        elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME:
+            divider = self.get_period_divider(annotation_value_choice=self.chart_report.average_scale,
+                                              start_date_type=self.chart_report.average_start_period,
+                                              end_date_type=self.chart_report.average_end_period)
+            self._process_aggregations(fields=fields, aggregations_type=ANNOTATION_CHOICE_SUM, divider=divider)
         elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_PERCENT:
             self._process_percentage(fields=fields)
         elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT:
@@ -215,6 +223,8 @@ class SingleValueView(ChartBaseView):
 
     def set_prefix(self):
         self.table.prefix = self.chart_report.prefix
+        if self.table.prefix:
+            self.table.prefix += ' '
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -263,6 +273,9 @@ class SingleValueModal(QueryBuilderModalBase):
                    'report_tags',
                    ('single_value_type', {'label': 'Value type'}),
                    ('numerator', {'label': 'Numerator field'}),
+                   'average_scale',
+                   'average_start_period',
+                   'average_end_period',
                    'field',
                    'prefix',
                    'tile_colour',
@@ -292,6 +305,15 @@ class SingleValueModal(QueryBuilderModalBase):
              'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: ('html', 'Denominator field')},
              'default': ('html', 'Field')},
 
+            {'selector': '#div_id_average_scale',
+             'values': {SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME: 'show'},
+             'default': 'hide'},
+            {'selector': '#div_id_average_start_period',
+             'values': {SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME: 'show'},
+             'default': 'hide'},
+            {'selector': '#div_id_average_end_period',
+             'values': {SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME: 'show'},
+             'default': 'hide'},
         ])
 
         form.add_trigger('show_breakdown', 'onchange', [
@@ -324,6 +346,10 @@ class SingleValueModal(QueryBuilderModalBase):
         form.fields['notes'].widget.attrs['rows'] = 3
         url = reverse('advanced_report_builder:single_value_field_modal',
                       kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
+
+        range_type_choices = VariableDate.RANGE_TYPE_CHOICES
+        form.fields['average_start_period'] = ChoiceField(required=False, choices=range_type_choices)
+        form.fields['average_end_period'] = ChoiceField(required=False, choices=range_type_choices)
         return ('name',
                 'notes',
                 'report_type',
@@ -331,6 +357,9 @@ class SingleValueModal(QueryBuilderModalBase):
                 'single_value_type',
                 'numerator',
                 'field',
+                'average_scale',
+                'average_start_period',
+                'average_end_period',
                 'prefix',
                 FieldEx('extra_query_data',
                         template='advanced_report_builder/query_builder.html',
@@ -357,10 +386,19 @@ class SingleValueModal(QueryBuilderModalBase):
 
     # noinspection PyUnusedLocal
     def clean(self, form, cleaned_data):
-        if (cleaned_data['single_value_type'] not in [SingleValueReport.SINGLE_VALUE_TYPE_COUNT,
-                                                      SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT] and
+        single_value_type = cleaned_data['single_value_type']
+        if (single_value_type not in [SingleValueReport.SINGLE_VALUE_TYPE_COUNT,
+                                      SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT] and
                 not cleaned_data['field']):
             raise ValidationError("Please select a field")
+
+        if single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME:
+            if cleaned_data['average_scale'] is None:
+                form.add_error('average_scale', "Please select a time scale")
+            if cleaned_data['average_start_period'] is None:
+                form.add_error('average_start_period', "Please select a start period")
+            if cleaned_data['average_end_period'] is None:
+                form.add_error('average_end_period', "Please select a end period")
 
     def ajax_get_fields(self, **kwargs):
         report_type_id = kwargs['report_type']
