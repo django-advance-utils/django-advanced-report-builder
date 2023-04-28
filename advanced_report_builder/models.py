@@ -285,6 +285,9 @@ class BarChartReport(Report):
     show_totals = models.BooleanField(default=False)
     show_blank_dates = models.BooleanField(default=True)
 
+    show_breakdown = models.BooleanField(default=False)
+    breakdown_fields = models.JSONField(null=True, blank=True)
+
     def is_orientation_vertical(self):
         return self.bar_chart_orientation == self.BAR_CHART_ORIENTATION_VERTICAL
 

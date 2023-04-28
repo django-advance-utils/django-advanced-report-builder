@@ -80,7 +80,8 @@ class FunnelChartModal(QueryBuilderModalBase):
                 'axis_value_type',
                 FieldEx('fields',
                         template='advanced_report_builder/select_column.html',
-                        extra_context={'select_column_url': url}),
+                        extra_context={'select_column_url': url,
+                                       'command_prefix': ''}),
                 FieldEx('query_data',
                         template='advanced_report_builder/query_builder.html'),
                 )

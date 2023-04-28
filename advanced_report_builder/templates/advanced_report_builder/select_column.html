@@ -65,14 +65,14 @@
     </div>
             <script>
             $(function () {
-                let selection_fields_id_name = '#{{ field.auto_id }}_selection';
-                let available_fields_id_name = '#{{ field.auto_id }}_available_fields';
-                let table_field_keys = '#{{ field.auto_id }}_keys';
-                let main_field = '#{{ field.auto_id }}';
-                let available_fields_data = {};
-                let initial = true;
+                let {{ command_prefix }}selection_fields_id_name = '#{{ field.auto_id }}_selection';
+                let {{ command_prefix }}available_fields_id_name = '#{{ field.auto_id }}_available_fields';
+                let {{ command_prefix }}table_field_keys = '#{{ field.auto_id }}_keys';
+                let {{ command_prefix }}main_field = '#{{ field.auto_id }}';
+                let {{ command_prefix }}available_fields_data = {};
+                let {{ command_prefix }}initial = true;
 
-                function get_field_html(field_id, label, colour, attr) {
+                function {{ command_prefix }}get_field_html(field_id, label, colour, attr) {
                     let data_attr = '';
                     if(attr !== undefined && attr !== '') {
                         data_attr = ` data-attr="${attr}"`
@@ -81,33 +81,33 @@
                             <a href="#" class="edit_field_link"><i class="edit-field fas fa-pencil-alt float-right" style="color:white;"></i></a><span>${label}</span></li>`
                 }
 
-                ajax_helpers.command_functions.report_fields = function (command) {
+                ajax_helpers.command_functions.{{ command_prefix }}report_fields = function (command) {
                     let data = jQuery.parseJSON(command.data);
-                    $(selection_fields_id_name).empty();
-                    $(available_fields_id_name).empty();
-                    $(table_field_keys).empty();
-                    available_fields_data = {};
+                    $({{ command_prefix }}selection_fields_id_name).empty();
+                    $({{ command_prefix }}available_fields_id_name).empty();
+                    $({{ command_prefix }}table_field_keys).empty();
+                    {{ command_prefix }}available_fields_data = {};
                     $.each(data['fields'], function (key, value) {
-                        available_fields_data[value.field] = value;
-                        $(available_fields_id_name).append(get_field_html(value.field, value.label, value.colour, ''));
+                        {{ command_prefix }}available_fields_data[value.field] = value;
+                        $({{ command_prefix }}available_fields_id_name).append({{ command_prefix }}get_field_html(value.field, value.label, value.colour, ''));
                     });
                     $.each(data['tables'], function (key, value) {
-                        $(table_field_keys).append('<div class="col-sm-12" style=";font-size: 12px;">' +
+                        $({{ command_prefix }}table_field_keys).append('<div class="col-sm-12" style=";font-size: 12px;">' +
                             '<i class="fa fa-square fa-2x" style="opacity:1;color: ' + value.colour + '"></i>' +
                             ' <span>' + value.name + '</span></div>');
                     });
-                    if(initial) {
-                        load_section();
-                        initial = false;
+                    if({{ command_prefix }}initial) {
+                        {{ command_prefix }}load_section();
+                        {{ command_prefix }}initial = false;
                     } else {
-                        $(main_field).val('[]')
+                        $({{ command_prefix }}main_field).val('[]')
                     }
 
                     $('.edit_field_link').click(function(){
                         let selector = 's' + String(new Date().getTime());
                         let parent_li = $(this).parent()
                         parent_li.attr('id', selector);
-                        let field_info = get_field_dict(parent_li);
+                        let field_info = {{ command_prefix }}get_field_dict(parent_li);
                         let field_info_b64 = (btoa(JSON.stringify(field_info)));
                         let url = "{{ select_column_url }}";
                         django_modal.show_modal(url.replace('99999', selector).replace('REPORT_TYPE_ID', $('#id_report_type').val()).replace('FIELD_INFO', field_info_b64))
@@ -115,10 +115,10 @@
 
                 }
 
-                $(selection_fields_id_name + ', ' + available_fields_id_name).sortable({
+                $({{ command_prefix }}selection_fields_id_name + ', ' + {{ command_prefix }}available_fields_id_name).sortable({
                     connectWith: ".connectedSortable",
                     stop: function () {
-                        update_selection();
+                        {{ command_prefix }}update_selection();
                     },
                     receive: function (event, ui) { //only when dropped from one to another!
                         let sourceList = ui.sender;
@@ -133,32 +133,32 @@
                 });
 
                 $('#id_report_type').on('change', function (e) {
-                    get_fields(this.value);
+                    {{ command_prefix }}get_fields(this.value);
                 });
                 $(document).ready(function () {
-                    get_fields($('#id_report_type').val());
+                    {{ command_prefix }}get_fields($('#id_report_type').val());
                 });
 
-                function get_fields(report_type_id) {
+                function {{ command_prefix }}get_fields(report_type_id) {
                     if (report_type_id === '') {
-                        $(selection_fields_id_name).empty();
-                        $(available_fields_id_name).empty();
-                        $(table_field_keys).empty();
+                        $({{ command_prefix }}selection_fields_id_name).empty();
+                        $({{ command_prefix }}available_fields_id_name).empty();
+                        $({{ command_prefix }}table_field_keys).empty();
                     } else {
-                        django_modal.send_inputs({'ajax': 'get_fields'})
+                        django_modal.send_inputs({'ajax': 'get_{{ command_prefix }}fields', 'field_auto_id': '{{ field.auto_id }}'})
                     }
                 }
 
 
-                function update_selection() {
+                function {{ command_prefix }}update_selection() {
                     let fields_selection = [];
-                    $(selection_fields_id_name).children().each(function () {
-                        fields_selection.push(get_field_dict($(this)))
+                    $({{ command_prefix }}selection_fields_id_name).children().each(function () {
+                        fields_selection.push({{ command_prefix }}get_field_dict($(this)))
                     });
-                    $(main_field).val(JSON.stringify(fields_selection))
+                    $({{ command_prefix }}main_field).val(JSON.stringify(fields_selection))
                 }
 
-                function get_field_dict(field) {
+                function {{ command_prefix }}get_field_dict(field) {
                     let data_origin = field.attr('data-origin');
                     let title = field.children("span").text()
                     let result = {
@@ -173,24 +173,25 @@
                     return result;
                 }
 
-                function load_section() {
-                    if($(main_field).val() !== '') {
-                        let fields = JSON.parse($(main_field).val())
+                function {{ command_prefix }}load_section() {
+
+                    if($({{ command_prefix }}main_field).val() !== '') {
+                        let fields = JSON.parse($({{ command_prefix }}main_field).val())
                         $.each(fields, function (key, value) {
-                            let field_data = available_fields_data[value.field];
-                            $(selection_fields_id_name).append(get_field_html(value.field, value.title, field_data.colour, value.data_attr));
+                            let field_data = {{ command_prefix }}available_fields_data[value.field];
+                            $({{ command_prefix }}selection_fields_id_name).append({{ command_prefix }}get_field_html(value.field, value.title, field_data.colour, value.data_attr));
                         });
                     }
                 }
                 $('#{{ field.auto_id }}_selected_search_input').keyup(function() {
-                    search_fields(this.value, selection_fields_id_name);
+                    {{ command_prefix }}search_fields(this.value, {{ command_prefix }}selection_fields_id_name);
                 })
                 $('#{{ field.auto_id }}_field_search_input').keyup(function() {
-                    search_fields(this.value, available_fields_id_name);
+                    {{ command_prefix }}search_fields(this.value, {{ command_prefix }}available_fields_id_name);
                 })
 
 
-                function search_fields(searchString, area_id) {
+                function {{ command_prefix }}search_fields(searchString, area_id) {
                     searchString = searchString.toUpperCase();
                     $(area_id + " li").each(function (index, value) {
                         let currentName = $(value).text()
@@ -202,9 +203,9 @@
                     });
                 }
 
-                ajax_helpers.command_functions.update_selection = function (command) {
+                ajax_helpers.command_functions.{{ command_prefix }}update_selection = function (command) {
 
-                    update_selection();
+                    {{ command_prefix }}update_selection();
                 };
             });
         </script>

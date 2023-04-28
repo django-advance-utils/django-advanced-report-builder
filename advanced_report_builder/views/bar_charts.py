@@ -13,6 +13,7 @@ from django_modals.modals import FormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
 from django_modals.widgets.select2 import Select2Multiple
+from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import DEFAULT_DATE_FORMAT, \
@@ -76,7 +77,8 @@ class BarChartModal(QueryBuilderModalBase):
                'stacked': RBToggle,
                'show_totals': RBToggle,
                'show_blank_dates': RBToggle,
-               'report_tags': Select2Multiple}
+               'report_tags': Select2Multiple,
+               'show_breakdown': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'})}
 
     form_fields = ['name',
                    'notes',
@@ -92,7 +94,8 @@ class BarChartModal(QueryBuilderModalBase):
                    'stacked',
                    'show_totals',
                    'show_blank_dates',
-                   ]
+                   'show_breakdown',
+                   'breakdown_fields']
 
     def form_setup(self, form, *_args, **_kwargs):
         if 'data' in _kwargs:
@@ -115,6 +118,12 @@ class BarChartModal(QueryBuilderModalBase):
         url = reverse('advanced_report_builder:bar_chart_field_modal',
                       kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
 
+        url_breakdown = None
+
+        form.add_trigger('show_breakdown', 'onchange', [
+            {'selector': '#div_id_breakdown_fields', 'values': {'checked': 'show'}, 'default': 'hide'},
+        ])
+
         return ('name',
                 'notes',
                 'report_type',
@@ -125,12 +134,18 @@ class BarChartModal(QueryBuilderModalBase):
                 'date_field',
                 FieldEx('fields',
                         template='advanced_report_builder/select_column.html',
-                        extra_context={'select_column_url': url}),
+                        extra_context={'select_column_url': url,
+                                       'command_prefix': ''}),
                 'x_label',
                 'y_label',
                 'stacked',
                 'show_totals',
                 'show_blank_dates',
+                'show_breakdown',
+                FieldEx('breakdown_fields',
+                        template='advanced_report_builder/select_column.html',
+                        extra_context={'select_column_url': url_breakdown,
+                                       'command_prefix': 'breakdown_'}),
                 FieldEx('query_data',
                         template='advanced_report_builder/query_builder.html'),
                 )
@@ -139,6 +154,26 @@ class BarChartModal(QueryBuilderModalBase):
         return self.get_fields_for_select2(field_type='date',
                                            report_type=kwargs['report_type'],
                                            search_string=kwargs.get('search'))
+
+    def _get_ajax_fields(self, report_type, prefix=''):
+        report_type_id = report_type
+        report_builder_fields, base_model = self.get_report_builder_class(report_type_id=report_type_id)
+        fields = []
+        tables = []
+        self._get_fields(base_model=base_model,
+                         fields=fields,
+                         tables=tables,
+                         report_builder_class=report_builder_fields)
+
+        self.add_command(f'{prefix}report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
+        return self.command_response()
+
+    def ajax_get_fields(self, **kwargs):
+        return self._get_ajax_fields(report_type=kwargs['report_type'])
+
+    def ajax_get_breakdown_fields(self, **kwargs):
+        return self._get_ajax_fields(report_type=kwargs['report_type'],
+                                     prefix='breakdown_')
 
 
 class BarChartFieldForm(ChartBaseFieldForm):
@@ -227,6 +262,7 @@ class BarChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
         self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
         self.add_command({'function': 'save_query_builder_id_query_data'})
         self.add_command({'function': 'update_selection'})
+        self.add_command({'function': 'breakdown_update_selection'})
         return self.command_response('close')
 
     # noinspection PyMethodMayBeStatic
