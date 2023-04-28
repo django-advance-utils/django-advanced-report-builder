@@ -3,6 +3,8 @@ import json
 import operator
 from functools import reduce
 
+from django.db.models import FloatField, ExpressionWrapper
+from django.db.models.functions import NullIf
 from django_datatables.columns import CurrencyPenceColumn, CurrencyColumn
 
 from advanced_report_builder.columns import ReportBuilderCurrencyPenceColumn, ReportBuilderCurrencyColumn, \
@@ -18,7 +20,7 @@ class ReportUtilsMixin(FilterQueryMixin):
 
     def get_number_field(self, annotations_type, index, table_field, data_attr, fields, col_type_override,
                          extra_filter=None, title_suffix='', multiple_index=0, decimal_places=None,
-                         convert_currency_fields=False, totals=None):
+                         convert_currency_fields=False, totals=None, divider=None):
         field_name = table_field['field']
         css_class = None
         annotation_filter = None
@@ -71,6 +73,8 @@ class ReportUtilsMixin(FilterQueryMixin):
                     function = function_type(raw_field_name, filter=annotation_filter)
                 else:
                     function = function_type(raw_field_name)
+                if divider:
+                    function = ExpressionWrapper(function / NullIf(divider, 0), output_field=FloatField())
                 if self.use_annotations:
                     number_function_kwargs['annotations'] = {new_field_name: function}
                 else:
@@ -92,6 +96,8 @@ class ReportUtilsMixin(FilterQueryMixin):
                         function = function_type(raw_field_name, filter=annotation_filter)
                     else:
                         function = function_type(raw_field_name)
+                    if divider:
+                        function = ExpressionWrapper(function / NullIf(divider, 0), output_field=FloatField())
                     if self.use_annotations:
                         field.annotations = {new_field_name: function}
                     else:
@@ -120,6 +126,7 @@ class ReportUtilsMixin(FilterQueryMixin):
                     function = function_type(field_name, filter=annotation_filter)
                 else:
                     function = function_type(field_name)
+
                 if self.use_annotations:
                     number_function_kwargs['annotations'] = {new_field_name: function}
                 else:

@@ -4,6 +4,7 @@ from datetime import timedelta, datetime
 
 from crispy_forms.bootstrap import StrictButton
 from date_offset.date_offset import DateOffset
+from dateutil.relativedelta import relativedelta
 from django.apps import apps
 from django.db import ProgrammingError, DataError
 from django.db.models import Q
@@ -16,9 +17,11 @@ from django_modals.forms import CrispyForm
 
 from advanced_report_builder.columns import ReportBuilderDateColumn
 from advanced_report_builder.exceptions import ReportError
-from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_VALUE_FUNCTIONS
+from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_VALUE_FUNCTIONS, ANNOTATION_VALUE_YEAR, \
+    ANNOTATION_VALUE_QUARTER, ANNOTATION_VALUE_WEEK, ANNOTATION_VALUE_DAY, ANNOTATION_VALUE_MONTH
 from advanced_report_builder.models import ReportType
 from advanced_report_builder.utils import split_slug, get_field_details, split_attr
+from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.report import ReportBase
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
 from advanced_report_builder.views.targets.utils import get_target_value
@@ -301,6 +304,35 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
     # noinspection PyMethodMayBeStatic
     def queries_menu(self):
         return []
+
+    @staticmethod
+    def get_period_divider(annotation_value_choice, start_date_type, end_date_type):
+        variable_date = VariableDate()
+        start_date_and_time, _, _ = variable_date.get_variable_dates(start_date_type)
+        _, end_date_and_time, _ = variable_date.get_variable_dates(end_date_type)
+        if annotation_value_choice == ANNOTATION_VALUE_YEAR:
+            divider = abs(end_date_and_time.year - start_date_and_time.year) + 1
+        elif annotation_value_choice == ANNOTATION_VALUE_QUARTER:
+            delta = relativedelta(end_date_and_time, start_date_and_time)
+            divider = delta.years * 4 + delta.months // 3
+        elif annotation_value_choice == ANNOTATION_VALUE_MONTH:
+            rdate = relativedelta(end_date_and_time, start_date_and_time)
+            divider = 0
+            if rdate.years is not None and abs(rdate.years) > 0:
+                divider += abs(rdate.years) * 12
+            if rdate.months is not None and abs(rdate.months) > 0:
+                divider += rdate.months
+            if rdate.days is not None and abs(rdate.days) > 0:
+                divider += 1
+        elif annotation_value_choice == ANNOTATION_VALUE_WEEK:
+            monday1 = (start_date_and_time - timedelta(days=start_date_and_time.weekday()))
+            monday2 = (end_date_and_time - timedelta(days=end_date_and_time.weekday()))
+            divider = int((monday2 - monday1).days / 7)
+        elif annotation_value_choice == ANNOTATION_VALUE_DAY:
+            divider = (end_date_and_time - start_date_and_time).days
+        else:
+            raise ReportError('unknown annotation_value_choice')
+        return divider
 
 
 class ChartBaseFieldForm(CrispyForm):

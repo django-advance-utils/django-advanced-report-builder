@@ -14,3 +14,5 @@ django-ajax-helpers==0.0.20
 time-stamped-model==0.2.3
 date-offset==0.0.2
 django-debug-toolbar==3.2.4
+
+python-dateutil==2.8.2
