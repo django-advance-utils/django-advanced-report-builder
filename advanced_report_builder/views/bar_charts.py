@@ -12,7 +12,6 @@ from django_modals.fields import FieldEx
 from django_modals.form_helpers import HorizontalNoEnterHelper
 from django_modals.modals import FormModal, Modal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
-from django_modals.templatetags.modal_tags import show_modal
 from django_modals.widgets.colour_picker import ColourPickerWidget
 from django_modals.widgets.select2 import Select2Multiple
 from django_modals.widgets.widgets import Toggle
@@ -22,7 +21,7 @@ from advanced_report_builder.globals import DEFAULT_DATE_FORMAT, \
     DATE_FORMAT_TYPES_DJANGO_FORMAT
 from advanced_report_builder.models import BarChartReport, ReportType
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute
+from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_field_details
 from advanced_report_builder.views.charts_base import ChartBaseView, ChartBaseFieldForm
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
 from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin, QueryBuilderModalBase
@@ -320,7 +319,8 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
     size = 'xl'
 
     def modal_title(self):
-        return self.table_report.name
+        # return self.table_report.name
+        return 'hello world'
 
     def add_table(self, base_model):
         return DatatableTable(view=self, model=base_model)
@@ -328,19 +328,31 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
     def setup_table(self):
         bar_chart_report = get_object_or_404(BarChartReport, pk=self.slug['pk'])
         self.kwargs['enable_links'] = self.slug['enable_links'] == 'True'
-        # self.table_report = single_value_report
-        # base_model = single_value_report.get_base_modal()
-        # table = self.add_table(base_model=base_model)
+        base_model = bar_chart_report.get_base_modal()
+        chart_fields = bar_chart_report.fields
+        report_builder_class = getattr(base_model,
+                                       bar_chart_report.report_type.report_builder_class_name, None)
+        table = self.add_table(base_model=base_model)
         # table.extra_filters = self.extra_filters
-        # table_fields = single_value_report.breakdown_fields
-        # report_builder_class = getattr(base_model,
-        #                                self.table_report.report_type.report_builder_class_name, None)
-        # fields_used = set()
-        # self.process_query_results(report_builder_class=report_builder_class,
-        #                            table=table,
-        #                            base_model=base_model,
-        #                            fields_used=fields_used,
-        #                            table_fields=table_fields)
+        table_fields = bar_chart_report.breakdown_fields
+        fields_used = set()
+        self.process_query_results(report_builder_class=report_builder_class,
+                                   table=table,
+                                   base_model=base_model,
+                                   fields_used=fields_used,
+                                   table_fields=table_fields)
+
+
+        for index, table_field in enumerate(chart_fields, 1):
+            field = table_field['field']
+
+            django_field, col_type_override, _, _ = get_field_details(base_model=base_model,
+                                                                      field=field,
+                                                                      report_builder_class=report_builder_class,
+                                                                      table=table)
+
+
+
 
         table.ajax_data = False
         table.table_options['pageLength'] = 25
