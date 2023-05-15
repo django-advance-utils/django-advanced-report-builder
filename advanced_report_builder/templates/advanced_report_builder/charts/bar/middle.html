@@ -106,7 +106,9 @@
                      if (items.length === 0) {
                          return
                      }
-                     var breakdown_url = "{{ datatable.breakdown_url }}".replace("99999",  items[0].datasetIndex).replace("88888", items[0].index);
+                     let _date = (table['data'][items[0].index][0]).replaceAll("-", "_");
+                     let breakdown_url = "{{ datatable.breakdown_url }}".replace(
+                         "99999",  items[0].datasetIndex).replace("88888", _date);
                      django_modal.show_modal(breakdown_url);
                }
               {% endif %}

@@ -18,7 +18,7 @@ from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import DEFAULT_DATE_FORMAT, \
-    DATE_FORMAT_TYPES_DJANGO_FORMAT
+    DATE_FORMAT_TYPES_DJANGO_FORMAT, NUMBER_FIELDS
 from advanced_report_builder.models import BarChartReport, ReportType
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_field_details
@@ -49,7 +49,7 @@ class BarChartView(ChartBaseView):
     def get_breakdown_url(self):
         if self.table.bar_chart_report.show_breakdown:
             enable_links = self.slug.get('enable_links') == 'True'
-            slug = f'pk-{self.table.bar_chart_report.id}-data-99999-index-88888-enable_links-{enable_links}'
+            slug = f'pk-{self.table.bar_chart_report.id}-data-99999-date-88888-enable_links-{enable_links}'
             return reverse('advanced_report_builder:bar_chart_show_breakdown_modal',
                            kwargs={'slug': slug})
         return None
@@ -327,13 +327,15 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
 
     def setup_table(self):
         bar_chart_report = get_object_or_404(BarChartReport, pk=self.slug['pk'])
+        self.chart_report = bar_chart_report
         self.kwargs['enable_links'] = self.slug['enable_links'] == 'True'
         base_model = bar_chart_report.get_base_modal()
         chart_fields = bar_chart_report.fields
+
         report_builder_class = getattr(base_model,
                                        bar_chart_report.report_type.report_builder_class_name, None)
         table = self.add_table(base_model=base_model)
-        # table.extra_filters = self.extra_filters
+
         table_fields = bar_chart_report.breakdown_fields
         fields_used = set()
         self.process_query_results(report_builder_class=report_builder_class,
@@ -341,18 +343,27 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
                                    base_model=base_model,
                                    fields_used=fields_used,
                                    table_fields=table_fields)
+        data_index = int(self.slug['data'])
+        table_field = chart_fields[data_index]
+        field = table_field['field']
+        django_field, col_type_override, _, _ = get_field_details(base_model=base_model,
+                                                                  field=field,
+                                                                  report_builder_class=report_builder_class,
+                                                                  table=table)
 
+        self.field_filter = None
+        if (isinstance(django_field, NUMBER_FIELDS) or
+                (col_type_override is not None and col_type_override.annotations)):
+            data_attr = split_attr(table_field)
 
-        for index, table_field in enumerate(chart_fields, 1):
-            field = table_field['field']
+            annotations_type = self.chart_report.axis_value_type
+            if annotations_type != 0:
+                b64_filter = data_attr.get('filter')
+                if b64_filter:
+                    _filter = decode_attribute(b64_filter)
+                    self.field_filter = json.loads(_filter)
 
-            django_field, col_type_override, _, _ = get_field_details(base_model=base_model,
-                                                                      field=field,
-                                                                      report_builder_class=report_builder_class,
-                                                                      table=table)
-
-
-
+        table.extra_filters = self.extra_filters
 
         table.ajax_data = False
         table.table_options['pageLength'] = 25
@@ -362,3 +373,14 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
     def modal_content(self):
         table = self.setup_table()
         return table.render()
+
+    def extra_filters(self, query):
+        report_query = self.get_report_query(report=self.chart_report)
+        if report_query:
+            query = self.process_query_filters(query=query,
+                                               search_filter_data=report_query.query)
+        if self.field_filter is not None:
+            query = self.process_query_filters(query=query,
+                                               search_filter_data=self.field_filter)
+
+        return query
