@@ -1,8 +1,13 @@
 import base64
 import json
+import operator
+from datetime import datetime, timedelta
+from functools import reduce
 
 from crispy_forms.layout import Div
+from date_offset.monthdelta import MonthDelta
 from django.core.exceptions import FieldDoesNotExist
+from django.db.models import Q
 from django.forms import CharField, ChoiceField, BooleanField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -18,7 +23,8 @@ from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import DEFAULT_DATE_FORMAT, \
-    DATE_FORMAT_TYPES_DJANGO_FORMAT, NUMBER_FIELDS
+    DATE_FORMAT_TYPES_DJANGO_FORMAT, NUMBER_FIELDS, ANNOTATION_VALUE_YEAR, ANNOTATION_VALUE_QUARTER, \
+    ANNOTATION_VALUE_MONTH, ANNOTATION_VALUE_WEEK, ANNOTATION_VALUE_DAY
 from advanced_report_builder.models import BarChartReport, ReportType
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_field_details
@@ -374,6 +380,28 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
         table = self.setup_table()
         return table.render()
 
+    def filter_date(self, query):
+        bar_chart_report = self.chart_report
+        start_date = datetime.strptime(self.slug['date'], '%Y_%m_%d').date()
+
+        if bar_chart_report.axis_scale == ANNOTATION_VALUE_YEAR:
+            end_date = start_date + MonthDelta(months=12)
+        elif bar_chart_report.axis_scale == ANNOTATION_VALUE_QUARTER:
+            end_date = start_date + MonthDelta(months=3)
+        elif bar_chart_report.axis_scale == ANNOTATION_VALUE_MONTH:
+            end_date = start_date + MonthDelta(months=1)
+        elif bar_chart_report.axis_scale == ANNOTATION_VALUE_WEEK:
+            end_date = start_date + timedelta(weeks=1)
+        elif bar_chart_report.axis_scale == ANNOTATION_VALUE_DAY:
+            end_date = start_date + timedelta(days=1)
+        else:
+            assert False
+
+        field = bar_chart_report.date_field
+        query_list = [(Q((field + "__gte", start_date))) & (Q((field + "__lt", end_date)))]
+
+        return query.filter(reduce(operator.and_, query_list))
+
     def extra_filters(self, query):
         report_query = self.get_report_query(report=self.chart_report)
         if report_query:
@@ -383,4 +411,5 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
             query = self.process_query_filters(query=query,
                                                search_filter_data=self.field_filter)
 
+        query = self.filter_date(query=query)
         return query
