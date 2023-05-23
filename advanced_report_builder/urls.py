@@ -1,6 +1,7 @@
 from django.urls import path
 
-from advanced_report_builder.views.bar_charts import BarChartModal, BarChartFieldModal, BarChartShowBreakdownModal
+from advanced_report_builder.views.bar_charts import BarChartModal, BarChartFieldModal, BarChartShowBreakdownModal, \
+    BarChartBreakdownFieldModal
 from advanced_report_builder.views.custom import CustomModal
 from advanced_report_builder.views.dashboard import DashboardReportModal, DashboardModal, DashboardAddReportModal
 from advanced_report_builder.views.datatables.modal import TableModal, TableFieldModal, TablePivotModal, TableQueryModal
@@ -29,6 +30,8 @@ urlpatterns = [
 
     path('bar-chart/modal/<str:slug>/', BarChartModal.as_view(), name='bar_chart_modal'),
     path('bar-chart/modal/field/<str:slug>/', BarChartFieldModal.as_view(), name='bar_chart_field_modal'),
+    path('bar-chart/modal/breakdown/field/<str:slug>/',
+         BarChartBreakdownFieldModal.as_view(), name='bar_chart_breakdown_field_modal'),
     path('bar-chart/show-breakdown/<str:slug>/', BarChartShowBreakdownModal.as_view(),
          name='bar_chart_show_breakdown_modal'),
 

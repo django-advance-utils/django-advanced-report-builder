@@ -29,6 +29,7 @@ from advanced_report_builder.models import BarChartReport, ReportType
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_field_details
 from advanced_report_builder.views.charts_base import ChartBaseView, ChartBaseFieldForm
+from advanced_report_builder.views.datatables.modal import TableFieldModal, TableFieldForm
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
 from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin, QueryBuilderModalBase
 
@@ -136,7 +137,8 @@ class BarChartModal(QueryBuilderModalBase):
         url = reverse('advanced_report_builder:bar_chart_field_modal',
                       kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
 
-        url_breakdown = None
+        url_breakdown = reverse('advanced_report_builder:bar_chart_breakdown_field_modal',
+                                kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
 
         form.add_trigger('show_breakdown', 'onchange', [
             {'selector': '#div_id_breakdown_fields', 'values': {'checked': 'show'}, 'default': 'hide'},
@@ -318,6 +320,34 @@ class BarChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
         query_builder_filters = self.get_query_builder_report_type_field(report_type_id=report_type_id)
 
         return self.command_response(f'query_builder_{field_auto_id}', data=json.dumps(query_builder_filters))
+
+
+class BarChartBreakdownFieldForm(TableFieldForm):
+    cancel_class = 'btn-secondary modal-cancel'
+
+    def cancel_button(self, css_class=cancel_class, **kwargs):
+        commands = [{'function': 'save_query_builder_id_query_data'},
+                    {'function': 'save_query_builder_id_extra_query_data'},
+                    {'function': 'close'}]
+        return self.button('Cancel', commands, css_class, **kwargs)
+
+
+class BarChartBreakdownFieldModal(TableFieldModal):
+    form_class = BarChartBreakdownFieldForm
+
+    def form_valid(self, form):
+        selector = self.slug['selector']
+
+        _attr = form.get_additional_attributes()
+        self.add_command({'function': 'set_attr',
+                          'selector': f'#{selector}',
+                          'attr': 'data-attr',
+                          'val': _attr})
+
+        self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
+        self.add_command({'function': 'save_query_builder_id_query_data'})
+        self.add_command({'function': 'breakdown_update_selection'})
+        return self.command_response('close')
 
 
 class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
