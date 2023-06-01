@@ -284,9 +284,11 @@ class TableFieldForm(ChartBaseFieldForm):
                                                           required=False)
             if 'annotations_type' in data_attr:
                 self.fields['annotations_type'].initial = data_attr['annotations_type']
-            self.fields['show_totals'] = BooleanField(required=False, widget=RBToggle())
+            self.fields['show_table_totals'] = BooleanField(required=False,
+                                                            widget=RBToggle(),
+                                                            label='Show totals')
             if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
-                self.fields['show_totals'].initial = True
+                self.fields['show_table_totals'].initial = True
             self.fields['decimal_places'] = IntegerField()
             self.fields['decimal_places'].initial = int(data_attr.get('decimal_places', 0))
             self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
@@ -312,9 +314,11 @@ class TableFieldForm(ChartBaseFieldForm):
                 self.fields['multiple_columns'].initial = True
                 self.fields['multiple_column_field'].initial = data_attr.get('multiple_column_field')
         elif isinstance(self.col_type_override, CURRENCY_COLUMNS):
-            self.fields['show_totals'] = BooleanField(required=False, widget=RBToggle())
+            self.fields['show_table_totals'] = BooleanField(required=False,
+                                                            widget=RBToggle(),
+                                                            label='Show totals')
             if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
-                self.fields['show_totals'].initial = True
+                self.fields['show_table_totals'].initial = True
         elif isinstance(self.col_type_override, LINK_COLUMNS):
             self.fields['link_html'] = CharField(required=False)
             if 'link_html' in data_attr:
@@ -343,7 +347,7 @@ class TableFieldForm(ChartBaseFieldForm):
         elif self.django_field is not None and isinstance(self.django_field, NUMBER_FIELDS):
             if int(self.cleaned_data['annotations_type']) != 0:
                 attributes.append(f'annotations_type-{self.cleaned_data["annotations_type"]}')
-            if self.cleaned_data['show_totals'] and self.cleaned_data["show_totals"]:
+            if self.cleaned_data['show_table_totals']:
                 attributes.append('show_totals-1')
             if self.cleaned_data['decimal_places'] > 0:
                 attributes.append(f'decimal_places-{self.cleaned_data["decimal_places"]}')
@@ -356,7 +360,7 @@ class TableFieldForm(ChartBaseFieldForm):
                     attributes.append('multiple_columns-1')
                     attributes.append(f'multiple_column_field-{self.cleaned_data["multiple_column_field"]}')
         elif isinstance(self.col_type_override, CURRENCY_COLUMNS):
-            if self.cleaned_data['show_totals'] and self.cleaned_data["show_totals"]:
+            if self.cleaned_data['show_table_totals']:
                 attributes.append('show_totals-1')
         elif isinstance(self.col_type_override, LINK_COLUMNS):
             if self.cleaned_data['link_css']:
@@ -421,7 +425,7 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
 
             return ['title',
                     'annotations_type',
-                    'show_totals',
+                    'show_table_totals',
                     'decimal_places',
                     Div(FieldEx('has_filter',
                                 template='django_modals/fields/label_checkbox.html',
@@ -440,7 +444,7 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
                     ]
         elif isinstance(col_type_override, CURRENCY_COLUMNS):
             return ['title',
-                    'show_totals']
+                    'show_table_totals']
         elif isinstance(col_type_override, LINK_COLUMNS):
             return ['title',
                     'link_css',

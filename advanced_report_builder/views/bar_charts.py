@@ -326,9 +326,7 @@ class BarChartBreakdownFieldForm(TableFieldForm):
     cancel_class = 'btn-secondary modal-cancel'
 
     def cancel_button(self, css_class=cancel_class, **kwargs):
-        commands = [{'function': 'save_query_builder_id_query_data'},
-                    {'function': 'save_query_builder_id_extra_query_data'},
-                    {'function': 'close'}]
+        commands = [{'function': 'close'}]
         return self.button('Cancel', commands, css_class, **kwargs)
 
 
