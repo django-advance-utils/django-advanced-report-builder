@@ -2,12 +2,9 @@
 
 {% block javascript %}
 <script>
-
-
     function save_modal_{{ form.form_id }}() {
         id_filter.save_query_builder();
         django_modal.process_commands_lock([{'function': 'post_modal'}]);
     }
-
 </script>
 {% endblock %}

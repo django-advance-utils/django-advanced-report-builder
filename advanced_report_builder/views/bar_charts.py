@@ -282,7 +282,6 @@ class BarChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
         self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
         self.add_command({'function': 'save_query_builder_id_query_data'})
         self.add_command({'function': 'update_selection'})
-        self.add_command({'function': 'breakdown_update_selection'})
         return self.command_response('close')
 
     # noinspection PyMethodMayBeStatic
@@ -325,10 +324,6 @@ class BarChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
 class BarChartBreakdownFieldForm(TableFieldForm):
     cancel_class = 'btn-secondary modal-cancel'
 
-    def cancel_button(self, css_class=cancel_class, **kwargs):
-        commands = [{'function': 'close'}]
-        return self.button('Cancel', commands, css_class, **kwargs)
-
 
 class BarChartBreakdownFieldModal(TableFieldModal):
     form_class = BarChartBreakdownFieldForm
@@ -343,7 +338,6 @@ class BarChartBreakdownFieldModal(TableFieldModal):
                           'val': _attr})
 
         self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
-        self.add_command({'function': 'save_query_builder_id_query_data'})
         self.add_command({'function': 'breakdown_update_selection'})
         return self.command_response('close')
 
@@ -352,15 +346,31 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
     button_container_class = 'text-center'
     size = 'xl'
 
+    def __init__(self, *args, **kwargs):
+        self.bar_chart_report = None
+        self.chart_report = None
+        self.field_filter = None
+        super().__init__(*args, **kwargs)
+
+    def get_bar_chart_report(self):
+        if self.bar_chart_report is None:
+            self.bar_chart_report = get_object_or_404(BarChartReport, pk=self.slug['pk'])
+        return self.bar_chart_report
+
     def modal_title(self):
-        # return self.table_report.name
-        return 'hello world'
+        bar_chart_report = self.get_bar_chart_report()
+
+        data_index = int(self.slug['data'])
+        field = bar_chart_report.fields[data_index]
+        title = field['title']
+        date_title = self.get_date_title()
+        return f"{bar_chart_report.name} - {title} - {date_title}"
 
     def add_table(self, base_model):
         return DatatableTable(view=self, model=base_model)
 
     def setup_table(self):
-        bar_chart_report = get_object_or_404(BarChartReport, pk=self.slug['pk'])
+        bar_chart_report = self.get_bar_chart_report()
         self.chart_report = bar_chart_report
         self.kwargs['enable_links'] = self.slug['enable_links'] == 'True'
         base_model = bar_chart_report.get_base_modal()
@@ -407,6 +417,24 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
     def modal_content(self):
         table = self.setup_table()
         return table.render()
+
+    def get_date_title(self):
+        bar_chart_report = self.bar_chart_report
+        start_date = datetime.strptime(self.slug['date'], '%Y_%m_%d').date()
+
+        if bar_chart_report.axis_scale == ANNOTATION_VALUE_YEAR:
+            return start_date.year
+        elif bar_chart_report.axis_scale in [ANNOTATION_VALUE_QUARTER, ANNOTATION_VALUE_MONTH]:
+            return start_date.strftime("%b %Y")
+        elif bar_chart_report.axis_scale == ANNOTATION_VALUE_WEEK:
+            end_date = start_date + timedelta(weeks=1)
+            return start_date.strftime("%d/%m/%Y") + ' - ' + end_date.strftime("%d/%b/%Y")
+
+        elif bar_chart_report.axis_scale == ANNOTATION_VALUE_DAY:
+            return start_date.strftime("%d/%m/%Y")
+        else:
+            assert False
+
 
     def filter_date(self, query):
         bar_chart_report = self.chart_report
