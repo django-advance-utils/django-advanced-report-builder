@@ -306,6 +306,27 @@ class Payment(TimeStampedModel):
                                      'model': 'report_builder_examples.UserProfile.ReportBuilder'}}
 
 
+class Contract(TimeStampedModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    notes = models.TextField()
+    start_date = models.DateField()
+    end_date = models.DateField()
+    amount = models.IntegerField()
+
+    class Datatable(DatatableModel):
+        currency_amount = CurrencyPenceColumn(column_name='currency_amount', field='amount')
+
+    class ReportBuilder(ReportBuilderFields):
+        colour = '#406440'
+        title = 'Payment'
+        fields = ['notes',
+                  'start_date',
+                  'currency_amount']
+
+        includes = {'company': {'title': 'Company',
+                                'model': 'report_builder_examples.Company.ReportBuilder'}}
+
+
 class ReportPermission(TimeStampedModel):
     report = models.OneToOneField(Report, primary_key=True, on_delete=models.CASCADE)
     requires_superuser = models.BooleanField(default=False)

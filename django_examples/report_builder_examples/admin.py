@@ -1,6 +1,6 @@
 from django.contrib import admin
 from report_builder_examples.models import Company, Person, Tags, Sector, Tally, Payment,\
-    CompanyInformation, ReportPermission, CompanyCategory
+    CompanyInformation, ReportPermission, CompanyCategory, Contract
 from django.contrib.auth.admin import UserAdmin
 
 from report_builder_examples.models import UserProfile
@@ -85,3 +85,11 @@ class ReportPermissionAdmin(admin.ModelAdmin):
 class CompanyCategoryAdmin(admin.ModelAdmin):
     list_display = ('name',
                     )
+
+
+@admin.register(Contract)
+class ContractAdmin(admin.ModelAdmin):
+    list_display = ('company',
+                    'start_date',
+                    'end_date',
+                    'amount')
