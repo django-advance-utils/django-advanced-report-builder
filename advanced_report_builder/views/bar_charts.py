@@ -347,6 +347,7 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
     size = 'xl'
 
     def __init__(self, *args, **kwargs):
+        self.date_field_path = None
         self.bar_chart_report = None
         self.chart_report = None
         self.field_filter = None
@@ -407,6 +408,12 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
                     _filter = decode_attribute(b64_filter)
                     self.field_filter = json.loads(_filter)
 
+        self.date_field_path = get_field_details(base_model=base_model,
+                                                 field=bar_chart_report.date_field,
+                                                 report_builder_class=report_builder_class,
+                                                 table=table)[3]
+
+        
         table.extra_filters = self.extra_filters
 
         table.ajax_data = False
@@ -435,7 +442,6 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
         else:
             assert False
 
-
     def filter_date(self, query):
         bar_chart_report = self.chart_report
         start_date = datetime.strptime(self.slug['date'], '%Y_%m_%d').date()
@@ -453,8 +459,8 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
         else:
             assert False
 
-        field = bar_chart_report.date_field
-        query_list = [(Q((field + "__gte", start_date))) & (Q((field + "__lt", end_date)))]
+        query_list = [(Q((self.date_field_path + "__gte", start_date))) &
+                      (Q((self.date_field_path + "__lt", end_date)))]
 
         return query.filter(reduce(operator.and_, query_list))
 
