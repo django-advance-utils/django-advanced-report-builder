@@ -117,4 +117,3 @@ def decode_attribute(data_attr):
     data_attr = data_attr.replace('@', '-')
     _data = base64.urlsafe_b64decode(data_attr)
     return _data.decode('utf-8', 'ignore')
-

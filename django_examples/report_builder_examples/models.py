@@ -321,6 +321,7 @@ class Contract(TimeStampedModel):
         title = 'Payment'
         fields = ['notes',
                   'start_date',
+                  'end_date',
                   'currency_amount']
 
         includes = {'company': {'title': 'Company',

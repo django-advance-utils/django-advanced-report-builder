@@ -7,7 +7,7 @@ from time_stamped_model.models import TimeStampedModel
 
 from advanced_report_builder.globals import DISPLAY_OPTION_CHOICES, DISPLAY_OPTION_2_PER_ROW, DISPLAY_OPTION_NONE, \
     DISPLAY_OPTION_CLASSES, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, ANNOTATION_CHOICE_COUNT, \
-    ANNOTATION_CHART_SCALE, ANNOTATION_CHOICE_SUM, ANNOTATION_CHOICE_MAXIMUM, ANNOTATION_CHOICE_MINIMUM, ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT
+    ANNOTATION_CHART_SCALE
 
 
 class Target(TimeStampedModel):
@@ -277,8 +277,22 @@ class BarChartReport(Report):
         (BAR_CHART_ORIENTATION_HORIZONTAL, 'Horizontal')
     )
 
+    DATE_FIELD_SINGLE = 1
+    DATE_FIELD_RANGE = 2
+
+    DATE_FIELD_CHOICES = (
+        (DATE_FIELD_SINGLE, 'Single'),
+        (DATE_FIELD_RANGE, 'Range')
+    )
+
     axis_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES)
+
+    date_field_type = models.PositiveSmallIntegerField(choices=DATE_FIELD_CHOICES,
+                                                       default=DATE_FIELD_SINGLE)
+
     date_field = models.CharField(max_length=200)
+    end_date_field = models.CharField(max_length=200, blank=True, null=True)
+
     axis_value_type = models.PositiveSmallIntegerField(choices=ANNOTATIONS_CHOICES,
                                                        default=ANNOTATION_CHOICE_COUNT, null=True, blank=True)
     fields = models.JSONField(null=True, blank=True)

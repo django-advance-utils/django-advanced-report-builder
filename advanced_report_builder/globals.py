@@ -32,12 +32,18 @@ ANNOTATION_VALUE_FUNCTIONS = {ANNOTATION_VALUE_YEAR: TruncYear,
                               ANNOTATION_VALUE_MONTH: TruncMonth,
                               ANNOTATION_VALUE_WEEK: TruncWeek,
                               ANNOTATION_VALUE_DAY: TruncDay}
+
 ANNOTATION_CHART_SCALE = {ANNOTATION_VALUE_YEAR: 'year',
                           ANNOTATION_VALUE_QUARTER: 'quarter',
                           ANNOTATION_VALUE_MONTH: 'month',
                           ANNOTATION_VALUE_WEEK: 'week',
                           ANNOTATION_VALUE_DAY: 'day'}
 
+GENERATE_SERIES_INTERVALS = {ANNOTATION_VALUE_YEAR: '1 year',
+                             ANNOTATION_VALUE_QUARTER: '3 month',
+                             ANNOTATION_VALUE_MONTH: '1 month',
+                             ANNOTATION_VALUE_WEEK: '1 week',
+                             ANNOTATION_VALUE_DAY: '1 day'}
 
 ANNOTATION_CHOICE_SUM = 1
 ANNOTATION_CHOICE_MAXIMUM = 2

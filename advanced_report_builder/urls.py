@@ -11,7 +11,8 @@ from advanced_report_builder.views.kanban import KanbanModal, KanbanLaneModal, K
 from advanced_report_builder.views.line_charts import LineChartModal, LineChartFieldModal
 from advanced_report_builder.views.pie_charts import PieChartModal, PieChartFieldModal
 from advanced_report_builder.views.reports import DuplicateReportModal
-from advanced_report_builder.views.single_values import SingleValueModal, SingleValueShowBreakdownModal, SingleValueTableFieldModal
+from advanced_report_builder.views.single_values import SingleValueModal, SingleValueShowBreakdownModal,\
+    SingleValueTableFieldModal
 from advanced_report_builder.views.targets.views import TargetModal
 
 app_name = 'advanced_report_builder'

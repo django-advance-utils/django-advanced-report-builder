@@ -18,13 +18,15 @@ from django_modals.form_helpers import HorizontalNoEnterHelper
 from django_modals.modals import FormModal, Modal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.colour_picker import ColourPickerWidget
-from django_modals.widgets.select2 import Select2Multiple
+from django_modals.widgets.select2 import Select2Multiple, Select2
 from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.exceptions import ReportError
+from advanced_report_builder.generate_series import GenerateSeries
 from advanced_report_builder.globals import DEFAULT_DATE_FORMAT, \
     DATE_FORMAT_TYPES_DJANGO_FORMAT, NUMBER_FIELDS, ANNOTATION_VALUE_YEAR, ANNOTATION_VALUE_QUARTER, \
-    ANNOTATION_VALUE_MONTH, ANNOTATION_VALUE_WEEK, ANNOTATION_VALUE_DAY
+    ANNOTATION_VALUE_MONTH, ANNOTATION_VALUE_WEEK, ANNOTATION_VALUE_DAY, ANNOTATION_VALUE_FUNCTIONS, \
+    GENERATE_SERIES_INTERVALS
 from advanced_report_builder.models import BarChartReport, ReportType
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_field_details
@@ -85,6 +87,54 @@ class BarChartView(ChartBaseView):
                 *self.duplicate_menu(request=self.request, report_id=chart_report_id)
                 ]
 
+    def get_date_field(self, index, fields, base_model, table):
+        if self.chart_report.date_field_type == BarChartReport.DATE_FIELD_SINGLE:
+            return super().get_date_field(index=index, fields=fields, base_model=base_model, table=table)
+
+        start_field_name = self.chart_report.date_field
+        end_field_name = self.chart_report.end_date_field
+
+        if start_field_name is None or end_field_name is None:
+            return
+        report_builder_class = getattr(base_model,
+                                       self.chart_report.report_type.report_builder_class_name, None)
+        start_django_field, start_col_type_override, _, _ = get_field_details(base_model=base_model,
+                                                                              field=start_field_name,
+                                                                              report_builder_class=report_builder_class,
+                                                                              table=table)
+        if start_col_type_override:
+            start_field_name = start_col_type_override.field
+
+        end_django_field, end_col_type_override, _, _ = get_field_details(base_model=base_model,
+                                                                          field=end_field_name,
+                                                                          report_builder_class=report_builder_class,
+                                                                          table=table)
+        if end_col_type_override:
+            end_field_name = end_col_type_override.field
+
+        date_format = self.get_date_format()
+
+        date_function_kwargs = {'title': start_field_name,
+                                'date_format': date_format}
+
+        annotations_value = self.chart_report.axis_scale
+
+        new_field_name = f'{annotations_value}_{start_field_name}_{index}'
+        function = ANNOTATION_VALUE_FUNCTIONS[annotations_value]
+        date_function_kwargs['annotations_value'] = {
+            new_field_name: GenerateSeries(start_date_field=function(start_field_name),
+                                           end_date_field=function(end_field_name),
+                                           interval=GENERATE_SERIES_INTERVALS[annotations_value])}
+        start_field_name = new_field_name
+
+        date_function_kwargs.update({'field': start_field_name,
+                                     'column_name': start_field_name,
+                                     'model_path': ''})
+
+        field = self.date_field(**date_function_kwargs)
+        fields.append(field)
+        return start_field_name
+
 
 class BarChartModal(QueryBuilderModalBase):
     template_name = 'advanced_report_builder/charts/modal.html'
@@ -96,6 +146,7 @@ class BarChartModal(QueryBuilderModalBase):
                'stacked': RBToggle,
                'show_totals': RBToggle,
                'show_blank_dates': RBToggle,
+               'date_field_type': Select2,
                'report_tags': Select2Multiple,
                'show_breakdown': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'})}
 
@@ -106,7 +157,9 @@ class BarChartModal(QueryBuilderModalBase):
                    ('bar_chart_orientation', {'label': 'Orientation'}),
                    'axis_value_type',
                    'axis_scale',
+                   'date_field_type',
                    'date_field',
+                   'end_date_field',
                    'fields',
                    'x_label',
                    'y_label',
@@ -119,16 +172,24 @@ class BarChartModal(QueryBuilderModalBase):
     def form_setup(self, form, *_args, **_kwargs):
         if 'data' in _kwargs:
             date_field = _kwargs['data'].get('date_field')
+            end_date_field = _kwargs['data'].get('end_date_field')
             report_type_id = _kwargs['data'].get('report_type')
             report_type = get_object_or_404(ReportType, id=report_type_id)
         else:
             date_field = form.instance.date_field
+            end_date_field = form.instance.end_date_field
             report_type = form.instance.report_type
 
         self.setup_field(field_type='date',
                          form=form,
                          field_name='date_field',
                          selected_field_id=date_field,
+                         report_type=report_type)
+
+        self.setup_field(field_type='date',
+                         form=form,
+                         field_name='end_date_field',
+                         selected_field_id=end_date_field,
                          report_type=report_type)
 
         form.fields['notes'].widget.attrs['rows'] = 3
@@ -144,6 +205,15 @@ class BarChartModal(QueryBuilderModalBase):
             {'selector': '#div_id_breakdown_fields', 'values': {'checked': 'show'}, 'default': 'hide'},
         ])
 
+        form.add_trigger('date_field_type', 'onchange', [
+            {'selector': '#div_id_end_date_field',
+             'values': {BarChartReport.DATE_FIELD_RANGE: 'show'},
+             'default': 'hide'},
+            {'selector': 'label[for=id_date_field]',
+             'values': {BarChartReport.DATE_FIELD_SINGLE: ('html', 'Date field'),
+                        BarChartReport.DATE_FIELD_RANGE: ('html', 'Start date field')}}
+        ])
+
         return ('name',
                 'notes',
                 'report_type',
@@ -151,7 +221,9 @@ class BarChartModal(QueryBuilderModalBase):
                 'bar_chart_orientation',
                 'axis_scale',
                 'axis_value_type',
+                'date_field_type',
                 'date_field',
+                'end_date_field',
                 FieldEx('fields',
                         template='advanced_report_builder/select_column.html',
                         extra_context={'select_column_url': url,
@@ -175,6 +247,9 @@ class BarChartModal(QueryBuilderModalBase):
                                            report_type=kwargs['report_type'],
                                            search_string=kwargs.get('search'))
 
+    def select2_end_date_field(self, **kwargs):
+        return self.select2_date_field(**kwargs)
+
     def _get_ajax_fields(self, report_type, prefix=''):
         report_type_id = report_type
         report_builder_fields, base_model = self.get_report_builder_class(report_type_id=report_type_id)
@@ -194,6 +269,12 @@ class BarChartModal(QueryBuilderModalBase):
     def ajax_get_breakdown_fields(self, **kwargs):
         return self._get_ajax_fields(report_type=kwargs['report_type'],
                                      prefix='breakdown_')
+
+    def clean(self, form, cleaned_data):
+        end_date_field = cleaned_data['end_date_field']
+        if (cleaned_data['date_field_type'] == BarChartReport.DATE_FIELD_RANGE and
+                (end_date_field is None or end_date_field == '')):
+            form.add_error('end_date_field', "Please select a date")
 
 
 class BarChartFieldForm(ChartBaseFieldForm):
@@ -348,6 +429,7 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
 
     def __init__(self, *args, **kwargs):
         self.date_field_path = None
+        self.end_date_field_path = None
         self.bar_chart_report = None
         self.chart_report = None
         self.field_filter = None
@@ -412,7 +494,11 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
                                                  field=bar_chart_report.date_field,
                                                  report_builder_class=report_builder_class,
                                                  table=table)[3]
-
+        if bar_chart_report.date_field_type == BarChartReport.DATE_FIELD_RANGE:
+            self.end_date_field_path = get_field_details(base_model=base_model,
+                                                         field=bar_chart_report.end_date_field,
+                                                         report_builder_class=report_builder_class,
+                                                         table=table)[3]
         
         table.extra_filters = self.extra_filters
 
@@ -459,8 +545,12 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
         else:
             assert False
 
-        query_list = [(Q((self.date_field_path + "__gte", start_date))) &
-                      (Q((self.date_field_path + "__lt", end_date)))]
+        if self.end_date_field_path is None:
+            query_list = [(Q((self.date_field_path + "__gte", start_date))) &
+                          (Q((self.date_field_path + "__lt", end_date)))]
+        else:
+            query_list = [(Q((self.date_field_path+"__lt", end_date))) &
+                          (Q((self.end_date_field_path+"__gte", start_date)))]
 
         return query.filter(reduce(operator.and_, query_list))
 

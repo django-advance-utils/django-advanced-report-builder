@@ -102,6 +102,9 @@
                     position: 'top',
                     display: false
                 }{% if datatable.bar_chart_report.show_breakdown %},
+                    onHover: (event, chartElement) => {
+                    event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                },
                onClick: function (e, items){
                      if (items.length === 0) {
                          return
