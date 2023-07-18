@@ -263,8 +263,7 @@ class SingleValueModal(QueryBuilderModalBase):
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
     model = SingleValueReport
-    widgets = {'tile_colour': ColourPickerWidget,
-               'report_tags': Select2Multiple,
+    widgets = {'report_tags': Select2Multiple,
                'show_breakdown': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'})}
 
     form_fields = ['name',

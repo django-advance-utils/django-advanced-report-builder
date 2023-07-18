@@ -1,10 +1,9 @@
+from django.conf import settings
 from django.urls import reverse
 from django_modals.modals import ModelFormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
-from django_modals.widgets.colour_picker import ColourPickerWidget
 
 from advanced_report_builder.models import Target
-from django.conf import settings
 
 
 class TargetModal(ModelFormModal):
@@ -13,7 +12,6 @@ class TargetModal(ModelFormModal):
                    'target_type',
                    'colour',
                    'default_value']
-    widgets = {'colour': ColourPickerWidget}
 
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF

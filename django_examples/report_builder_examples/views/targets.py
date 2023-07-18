@@ -1,6 +1,5 @@
-from django_datatables.columns import ColumnLink
 from django_modals.datatables import EditColumn
-from report_builder_examples.views.base import MainMenu, MainIndices
+from report_builder_examples.views.base import MainIndices
 
 from advanced_report_builder.models import Target
 

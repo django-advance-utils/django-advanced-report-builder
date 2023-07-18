@@ -4,6 +4,7 @@ from django.utils.dates import MONTHS
 from django_datatables.columns import DatatableColumn, NoHeadingColumn, ManyToManyColumn
 from django_datatables.model_def import DatatableModel
 from time_stamped_model.models import TimeStampedModel
+from django_modals.model_fields.colour import ColourField
 
 from advanced_report_builder.globals import DISPLAY_OPTION_CHOICES, DISPLAY_OPTION_2_PER_ROW, DISPLAY_OPTION_NONE, \
     DISPLAY_OPTION_CLASSES, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, ANNOTATION_CHOICE_COUNT, \
@@ -24,8 +25,8 @@ class Target(TimeStampedModel):
     slug = models.SlugField(unique=True)
     name = models.CharField(max_length=64)
     target_type = models.PositiveSmallIntegerField(choices=TARGET_TYPE_CHOICES)
-    colour = models.CharField(max_length=10, null=True, blank=True,
-                              help_text='The colour when it gets displayed on a report')
+    colour = ColourField(null=True, blank=True,
+                         help_text='The colour when it gets displayed on a report')
     default_value = models.IntegerField(blank=True, null=True)
     default_percentage = models.FloatField(blank=True, null=True)
     overridden = models.BooleanField(default=False)
@@ -248,7 +249,7 @@ class SingleValueReport(Report):
         (SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME, 'Average Sum over Time')
     )
 
-    tile_colour = models.CharField(max_length=10, blank=True, null=True)
+    tile_colour = ColourField(blank=True, null=True)
     field = models.CharField(max_length=200, blank=True, null=True)  # denominator
     numerator = models.CharField(max_length=200, blank=True, null=True)
     single_value_type = models.PositiveSmallIntegerField(choices=SINGLE_VALUE_TYPE_CHOICES,
