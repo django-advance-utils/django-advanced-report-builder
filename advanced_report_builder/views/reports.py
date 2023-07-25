@@ -1,4 +1,5 @@
 from ajax_helpers.mixins import AjaxHelpers
+from ajax_helpers.utils import is_ajax
 from django.conf import settings
 from django.contrib import messages
 from django.http import Http404
@@ -92,6 +93,11 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         return self.views.get(report.instance_type)
 
     def post(self, request, *args, **kwargs):
+        if is_ajax(request) and request.content_type in ['application/json', 'multipart/form-data']:
+            if hasattr(super(), 'post'):
+                # noinspection PyUnresolvedReferences
+                return super().post(request, *args, **kwargs)
+
         view = self.get_view(report=self.report)
         self.kwargs['report'] = self.report
         self.kwargs['enable_links'] = self.enable_links
