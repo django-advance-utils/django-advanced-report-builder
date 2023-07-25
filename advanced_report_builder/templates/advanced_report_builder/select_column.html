@@ -110,7 +110,11 @@
                         let field_info = {{ command_prefix }}get_field_dict(parent_li);
                         let field_info_b64 = (btoa(JSON.stringify(field_info)));
                         let url = "{{ select_column_url }}";
-                        django_modal.show_modal(url.replace('99999', selector).replace('REPORT_TYPE_ID', $('#id_report_type').val()).replace('FIELD_INFO', field_info_b64))
+                        {% if report_type_id %}
+                            django_modal.show_modal(url.replace('99999', selector).replace('REPORT_TYPE_ID', {{ report_type_id }}).replace('FIELD_INFO', field_info_b64))
+                        {% else %}
+                            django_modal.show_modal(url.replace('99999', selector).replace('REPORT_TYPE_ID', $('#id_report_type').val()).replace('FIELD_INFO', field_info_b64))
+                        {% endif %}
                     });
 
                 }
@@ -132,12 +136,18 @@
 
                 });
 
-                $('#id_report_type').on('change', function (e) {
-                    {{ command_prefix }}get_fields(this.value);
-                });
-                $(document).ready(function () {
-                    {{ command_prefix }}get_fields($('#id_report_type').val());
-                });
+                {% if report_type_id %}
+                     $(document).ready(function () {
+                        {{ command_prefix }}get_fields({{ report_type_id }});
+                    });
+                {% else %}
+                    $('#id_report_type').on('change', function (e) {
+                        {{ command_prefix }}get_fields(this.value);
+                    });
+                    $(document).ready(function () {
+                        {{ command_prefix }}get_fields($('#id_report_type').val());
+                    });
+                {% endif %}
 
                 function {{ command_prefix }}get_fields(report_type_id) {
                     if (report_type_id === '') {
