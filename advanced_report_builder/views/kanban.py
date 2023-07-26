@@ -30,7 +30,7 @@ from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, DAT
     DATE_FORMAT_TYPE_SHORT_WORDS_MM_YY
 from advanced_report_builder.models import KanbanReport, KanbanReportLane, ReportType, KanbanReportDescription
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import crispy_modal_link_args, get_field_details
+from advanced_report_builder.utils import crispy_modal_link_args, get_field_details, get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartJSTable
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
@@ -116,7 +116,8 @@ class KanbanView(ReportBase, FilterQueryMixin, TemplateView):
 
         table = self.chart_js_table(model=base_model)
 
-        report_builder_class = getattr(base_model, kanban_report_lane.report_type.report_builder_class_name, None)
+        report_builder_class = get_report_builder_class(model=base_model,
+                                                        report_type=kanban_report_lane.report_type)
         table_indexes = []
 
         if kanban_report_lane.heading_field is not None:
@@ -222,7 +223,8 @@ class KanbanView(ReportBase, FilterQueryMixin, TemplateView):
 
         for kanban_report_lane in kanban_report_lanes:
             base_model = kanban_report_lane.get_base_modal()
-            report_builder_class = getattr(base_model, kanban_report_lane.report_type.report_builder_class_name, None)
+            report_builder_class = get_report_builder_class(model=base_model,
+                                                            report_type=kanban_report_lane.report_type)
             if kanban_report_lane.multiple_type == KanbanReportLane.MULTIPLE_TYPE_NA:
                 self.get_lane(base_model=base_model,
                               kanban_report_lane=kanban_report_lane,

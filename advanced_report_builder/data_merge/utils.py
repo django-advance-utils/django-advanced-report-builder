@@ -2,7 +2,7 @@ import re
 
 from django.apps import apps
 
-from advanced_report_builder.utils import get_field_details
+from advanced_report_builder.utils import get_field_details, get_report_builder_class
 
 
 def get_menu_fields(base_model, report_builder_class,
@@ -26,7 +26,8 @@ def get_menu_fields(base_model, report_builder_class,
 
         new_model = apps.get_model(app_label, model)
         if new_model != previous_base_model:
-            new_report_builder_class = getattr(new_model, report_builder_fields_str, None)
+            new_report_builder_class = get_report_builder_class(model=new_model,
+                                                                class_name=report_builder_fields_str)
             title = new_report_builder_class.title
             if menus is not None:
                 menu = []

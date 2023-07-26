@@ -29,7 +29,8 @@ from advanced_report_builder.globals import DEFAULT_DATE_FORMAT, \
     GENERATE_SERIES_INTERVALS
 from advanced_report_builder.models import BarChartReport, ReportType
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_field_details
+from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_field_details, \
+    get_report_builder_class
 from advanced_report_builder.views.charts_base import ChartBaseView, ChartBaseFieldForm
 from advanced_report_builder.views.datatables.modal import TableFieldModal, TableFieldForm
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
@@ -96,8 +97,10 @@ class BarChartView(ChartBaseView):
 
         if start_field_name is None or end_field_name is None:
             return
-        report_builder_class = getattr(base_model,
-                                       self.chart_report.report_type.report_builder_class_name, None)
+
+        report_builder_class = get_report_builder_class(model=base_model,
+                                                        report_type=self.chart_report.report_type)
+
         start_django_field, start_col_type_override, _, _ = get_field_details(base_model=base_model,
                                                                               field=start_field_name,
                                                                               report_builder_class=report_builder_class,
@@ -302,10 +305,12 @@ class BarChartFieldForm(ChartBaseFieldForm):
 
         self.fields['multiple_columns'] = BooleanField(required=False, widget=RBToggle())
 
-        report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
+        report_builder_class = get_report_builder_class(model=base_model,
+                                                        report_type=report_type)
+
         fields = []
         self._get_query_builder_foreign_key_fields(base_model=base_model,
-                                                   report_builder_fields=report_builder_fields,
+                                                   report_builder_class=report_builder_class,
                                                    fields=fields)
 
         self.fields['multiple_column_field'] = ChoiceField(choices=fields, required=False)
@@ -458,9 +463,8 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
         self.kwargs['enable_links'] = self.slug['enable_links'] == 'True'
         base_model = bar_chart_report.get_base_modal()
         chart_fields = bar_chart_report.fields
-
-        report_builder_class = getattr(base_model,
-                                       bar_chart_report.report_type.report_builder_class_name, None)
+        report_builder_class = get_report_builder_class(model=base_model,
+                                                        report_type=bar_chart_report.report_type)
         table = self.add_table(base_model=base_model)
 
         table_fields = bar_chart_report.breakdown_fields

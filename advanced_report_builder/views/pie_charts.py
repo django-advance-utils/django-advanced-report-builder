@@ -14,7 +14,7 @@ from django_modals.widgets.select2 import Select2Multiple
 
 from advanced_report_builder.models import PieChartReport
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute
+from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_report_builder_class
 from advanced_report_builder.views.charts_base import ChartBaseView, ChartBaseFieldForm
 from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin, QueryBuilderModalBase
 
@@ -109,11 +109,11 @@ class PieChartFieldForm(ChartBaseFieldForm):
                 self.fields['filter'].initial = decode_attribute(data_attr['filter'])
 
         self.fields['multiple_columns'] = BooleanField(required=False, widget=RBToggle())
-
-        report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
+        report_builder_class = get_report_builder_class(model=base_model,
+                                                        report_type=report_type)
         fields = []
         self._get_query_builder_foreign_key_fields(base_model=base_model,
-                                                   report_builder_fields=report_builder_fields,
+                                                   report_builder_class=report_builder_class,
                                                    fields=fields)
 
         self.fields['multiple_column_field'] = ChoiceField(choices=fields, required=False)

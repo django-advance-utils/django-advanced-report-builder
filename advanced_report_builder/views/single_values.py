@@ -12,7 +12,6 @@ from django_modals.fields import FieldEx
 from django_modals.helper import show_modal
 from django_modals.modals import Modal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
-from django_modals.widgets.colour_picker import ColourPickerWidget
 from django_modals.widgets.select2 import Select2Multiple
 from django_modals.widgets.widgets import Toggle
 
@@ -21,7 +20,7 @@ from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_CHOICE_SUM, \
     ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT
 from advanced_report_builder.models import SingleValueReport, ReportType
-from advanced_report_builder.utils import get_field_details
+from advanced_report_builder.utils import get_field_details, get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartBaseView
 from advanced_report_builder.views.datatables.modal import TableFieldModal, TableFieldForm
@@ -42,7 +41,8 @@ class SingleValueView(ChartBaseView):
     def _process_aggregations(self, fields, aggregations_type=ANNOTATION_CHOICE_SUM, divider=None):
         field = self.chart_report.field
         base_model = self.chart_report.get_base_modal()
-        report_builder_class = getattr(base_model, self.chart_report.report_type.report_builder_class_name, None)
+        report_builder_class = get_report_builder_class(model=base_model,
+                                                        report_type=self.chart_report.report_type)
 
         django_field, col_type_override, _, _ = get_field_details(base_model=base_model,
                                                                   field=field,
@@ -140,7 +140,8 @@ class SingleValueView(ChartBaseView):
         denominator_field = self.chart_report.field
         numerator_field = self.chart_report.numerator
         base_model = self.chart_report.get_base_modal()
-        report_builder_class = getattr(base_model, self.chart_report.report_type.report_builder_class_name, None)
+        report_builder_class = get_report_builder_class(model=base_model,
+                                                        report_type=self.chart_report.report_type)
 
         deno_django_field, denominator_col_type_override, _, _ = get_field_details(
             base_model=base_model,
@@ -430,8 +431,8 @@ class SingleValueShowBreakdownModal(TableUtilsMixin, Modal):
         table = self.add_table(base_model=base_model)
         table.extra_filters = self.extra_filters
         table_fields = single_value_report.breakdown_fields
-        report_builder_class = getattr(base_model,
-                                       self.table_report.report_type.report_builder_class_name, None)
+        report_builder_class = get_report_builder_class(model=base_model,
+                                                        report_type=self.table_report.report_type)
         fields_used = set()
         self.process_query_results(report_builder_class=report_builder_class,
                                    table=table,

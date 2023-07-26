@@ -149,43 +149,51 @@ class Company(TimeStampedModel):
     class ReportBuilder(ReportBuilderFields):
         colour = '#00008b'
         title = 'Company'
-        fields = ['company_category_column',
-                  'arrow_icon_column',
-                  'name',
-                  'active',
-                  'company_number',
-                  'importance',
-                  'importance_choice',
-                  'people',
-                  'collink_1',
-                  'collink_2',
-                  'payments',
-                  'sector_names',
-                  'date_created',
-                  'date_modified',
-                  'background_colour_column',
-                  'text_colour_column',
-                  'Tags',
-                  ]
+
+        @property
+        def fields(self):
+            return ['company_category_column',
+                    'arrow_icon_column',
+                    'name',
+                    'active',
+                    'company_number',
+                    'importance',
+                    'importance_choice',
+                    'people',
+                    'collink_1',
+                    'collink_2',
+                    'payments',
+                    'sector_names',
+                    'date_created',
+                    'date_modified',
+                    'background_colour_column',
+                    'text_colour_column',
+                    'Tags',
+                    ]
+
         default_columns = ['.id']
         default_multiple_column_text = '{name}'
         default_multiple_column_fields = ['name']
 
-        includes = {'companyinformation': {'title': 'Company Information',
+        @property
+        def includes(self):
+            return {'companyinformation': {'title': 'Company Information',
                                            'model': 'report_builder_examples.CompanyInformation.ReportBuilder',
                                            'reversed': True},
                     'user_profile': {'title': 'User',
                                      'model': 'report_builder_examples.UserProfile.ReportBuilder'}}
 
-        pivot_fields = {'tags': {'title': 'Tags',
-                                 'type': 'tag',
-                                 'field': 'Tags',
-                                 'kwargs': {'collapsed': False}},
-                        'importance_choice': {'title': 'Importance choice',
-                                              'type': 'pivot',
-                                              'field': 'importance_choice',
-                                              'kwargs': {'collapsed': False}}
-                        }
+        @property
+        def pivot_fields(self):
+            return {'tags': {'title': 'Tags',
+                             'type': 'tag',
+                             'field': 'Tags',
+                             'kwargs': {'collapsed': False}},
+                    'importance_choice': {'title': 'Importance choice',
+                                          'type': 'pivot',
+                                          'field': 'importance_choice',
+                                          'kwargs': {'collapsed': False}}
+                    }
 
     def __str__(self):
         return self.name

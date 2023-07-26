@@ -6,6 +6,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 
 from advanced_report_builder.models import ReportQuery
+from advanced_report_builder.utils import get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
 
 
@@ -255,12 +256,14 @@ class FilterQueryMixin:
             if include is not None:
                 app_label, model, report_builder_fields_str = include['model'].split('.')
                 new_model = apps.get_model(app_label, model)
-                new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
+
+                new_report_builder_class = get_report_builder_class(model=new_model,
+                                                                    class_name=report_builder_fields_str)
 
                 if new_model != previous_base_model:
                     result = self._get_report_builder_class(base_model=new_model,
                                                             field_str=new_field_str,
-                                                            report_builder_class=new_report_builder_fields,
+                                                            report_builder_class=new_report_builder_class,
                                                             previous_base_model=base_model)
                     if result:
                         return result
@@ -269,8 +272,10 @@ class FilterQueryMixin:
             if include is not None:
                 app_label, model, report_builder_fields_str = include['model'].split('.')
                 new_model = apps.get_model(app_label, model)
-                new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
-                return new_report_builder_fields
+                new_report_builder_class = get_report_builder_class(model=new_model,
+                                                                    class_name=report_builder_fields_str)
+
+                return new_report_builder_class
         return None
 
     def _get_pivot_details(self, base_model, pivot_str, report_builder_class, previous_base_model=None, include_str=''):
@@ -294,12 +299,12 @@ class FilterQueryMixin:
             if include is not None:
                 app_label, model, report_builder_fields_str = include['model'].split('.')
                 new_model = apps.get_model(app_label, model)
-                new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
-
+                new_report_builder_class = get_report_builder_class(model=new_model,
+                                                                    class_name=report_builder_fields_str)
                 if new_model != previous_base_model:
                     result = self._get_pivot_details(base_model=new_model,
                                                      pivot_str=new_pivot_str,
-                                                     report_builder_class=new_report_builder_fields,
+                                                     report_builder_class=new_report_builder_class,
                                                      previous_base_model=base_model,
                                                      include_str=include_str)
                     if result:

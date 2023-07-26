@@ -20,7 +20,7 @@ from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_VALUE_FUNCTIONS, ANNOTATION_VALUE_YEAR, \
     ANNOTATION_VALUE_QUARTER, ANNOTATION_VALUE_WEEK, ANNOTATION_VALUE_DAY, ANNOTATION_VALUE_MONTH
 from advanced_report_builder.models import ReportType
-from advanced_report_builder.utils import split_slug, get_field_details, split_attr
+from advanced_report_builder.utils import split_slug, get_field_details, split_attr, get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.report import ReportBase
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
@@ -131,8 +131,9 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         field_name = self.chart_report.date_field
         if field_name is None:
             return
-        report_builder_class = getattr(base_model,
-                                       self.chart_report.report_type.report_builder_class_name, None)
+        report_builder_class = get_report_builder_class(model=base_model,
+                                                        report_type=self.chart_report.report_type)
+
         django_field, col_type_override, _, _ = get_field_details(base_model=base_model,
                                                                   field=field_name,
                                                                   report_builder_class=report_builder_class,
@@ -181,8 +182,8 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
             return fields
         chart_fields = self.chart_report.fields
 
-        report_builder_class = getattr(base_model,
-                                       self.chart_report.report_type.report_builder_class_name, None)
+        report_builder_class = get_report_builder_class(model=base_model,
+                                                        report_type=self.chart_report.report_type)
 
         for index, table_field in enumerate(chart_fields, 1):
             field = table_field['field']
@@ -359,24 +360,30 @@ class ChartBaseFieldForm(CrispyForm):
 
         report_type = get_object_or_404(ReportType, pk=self.slug['report_type_id'])
         base_model = report_type.content_type.model_class()
-        report_builder_class = getattr(base_model,
-                                       report_type.report_builder_class_name, None)
+
+        report_builder_class = get_report_builder_class(model=base_model,
+                                                        report_type=report_type)
+
         self.django_field, self.col_type_override, _, _ = get_field_details(base_model=base_model,
                                                                             field=data['field'],
                                                                             report_builder_class=report_builder_class)
 
         return report_type, base_model
 
-    def _get_query_builder_foreign_key_fields(self, base_model, report_builder_fields, fields,
+    def _get_query_builder_foreign_key_fields(self, base_model, report_builder_class, fields,
                                               prefix='', title_prefix='', previous_base_model=None):
-        for include_field, include in report_builder_fields.includes.items():
+        for include_field, include in report_builder_class.includes.items():
             app_label, model, report_builder_fields_str = include['model'].split('.')
             new_model = apps.get_model(app_label, model)
             if new_model != previous_base_model:
-                new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
+                new_report_builder_class = get_report_builder_class(model=new_model,
+                                                                    class_name=report_builder_fields_str)
+                if new_report_builder_class is not None:
+                    new_report_builder_class = new_report_builder_class()
+
                 fields.append((prefix + include_field, title_prefix + include['title']))
                 self._get_query_builder_foreign_key_fields(base_model=new_model,
-                                                           report_builder_fields=new_report_builder_fields,
+                                                           report_builder_class=new_report_builder_class,
                                                            fields=fields,
                                                            prefix=f"{prefix}{include_field}__",
                                                            title_prefix=f"{title_prefix}{include['title']} --> ",

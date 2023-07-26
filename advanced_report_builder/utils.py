@@ -117,3 +117,15 @@ def decode_attribute(data_attr):
     data_attr = data_attr.replace('@', '-')
     _data = base64.urlsafe_b64decode(data_attr)
     return _data.decode('utf-8', 'ignore')
+
+
+def get_report_builder_class(model, report_type=None, class_name=None):
+    if class_name is None:
+        class_name = report_type.report_builder_class_name
+
+    report_builder_class = getattr(model, class_name, None)
+    if report_builder_class is not None:
+        report_builder_class = report_builder_class()
+    return report_builder_class
+
+

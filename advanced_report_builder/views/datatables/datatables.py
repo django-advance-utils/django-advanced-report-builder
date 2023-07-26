@@ -5,7 +5,7 @@ from django_menus.menu import MenuItem
 
 from advanced_report_builder.columns import ArrowColumn
 from advanced_report_builder.exceptions import ReportError
-from advanced_report_builder.utils import get_field_details, make_slug_str
+from advanced_report_builder.utils import get_field_details, make_slug_str, get_report_builder_class
 from advanced_report_builder.utils import split_slug
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
 from advanced_report_builder.views.report import ReportBase
@@ -48,8 +48,8 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
         table_fields = self.table_report.table_fields
         pivot_fields = self.table_report.pivot_fields
         fields_used = set()
-        report_builder_class = getattr(base_model,
-                                       self.table_report.report_type.report_builder_class_name, None)
+        report_builder_class = get_report_builder_class(model=base_model,
+                                                        report_type=self.table_report.report_type)
         self.process_query_results(report_builder_class=report_builder_class,
                                    table=table,
                                    base_model=base_model,

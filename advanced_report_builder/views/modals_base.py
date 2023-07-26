@@ -15,7 +15,7 @@ from django_modals.widgets.select2 import Select2
 from advanced_report_builder.field_types import FieldTypes
 from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, LINK_COLUMNS, COLOUR_COLUMNS
 from advanced_report_builder.models import ReportQuery, ReportType
-from advanced_report_builder.utils import get_field_details
+from advanced_report_builder.utils import get_field_details, get_report_builder_class
 
 
 class QueryBuilderModelForm(ModelCrispyForm):
@@ -32,7 +32,8 @@ class QueryBuilderModalBaseMixin:
 
         report_type = get_object_or_404(ReportType, pk=report_type_id)
         base_model = report_type.content_type.model_class()
-        report_builder_class = getattr(base_model, report_type.report_builder_class_name, None)
+        report_builder_class = get_report_builder_class(model=base_model,
+                                                        report_type=report_type)
         return report_builder_class, base_model
 
     def get_query_builder_report_type_field(self, report_type_id):
@@ -68,7 +69,8 @@ class QueryBuilderModalBaseMixin:
         for include_field, include in report_builder_class.includes.items():
             app_label, model, report_builder_fields_str = include['model'].split('.')
             new_model = apps.get_model(app_label, model)
-            new_report_builder_fields = getattr(new_model, report_builder_fields_str, None)
+            new_report_builder_class = get_report_builder_class(model=new_model,
+                                                                class_name=report_builder_fields_str)
 
             if new_model != previous_base_model:
                 _foreign_key = getattr(base_model, include_field, None)
@@ -89,7 +91,7 @@ class QueryBuilderModalBaseMixin:
 
                 self._get_query_builder_fields(base_model=new_model,
                                                query_builder_filters=query_builder_filters,
-                                               report_builder_class=new_report_builder_fields,
+                                               report_builder_class=new_report_builder_class,
                                                prefix=f"{prefix}{include_field}__",
                                                title_prefix=f"{include['title']} --> ",
                                                previous_base_model=base_model)
@@ -157,10 +159,10 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
             tables.append({'name': title,
                            'colour': colour})
 
+        report_builder_class_fields = report_builder_class.fields
+
         if extra_fields:
-            report_builder_class_fields = report_builder_class.fields + extra_fields
-        else:
-            report_builder_class_fields = report_builder_class.fields
+            report_builder_class_fields += extra_fields
 
         for report_builder_field in report_builder_class_fields:
 
@@ -206,7 +208,8 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
 
             new_model = apps.get_model(app_label, model)
             if new_model != previous_base_model:
-                new_report_builder_class = getattr(new_model, report_builder_fields_str, None)
+                new_report_builder_class = get_report_builder_class(model=new_model,
+                                                                    class_name=report_builder_fields_str)
                 self._get_fields(base_model=new_model,
                                  fields=fields,
                                  report_builder_class=new_report_builder_class,
@@ -328,37 +331,38 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
         if selected_field_id:
             form.fields[field_name].initial = selected_field_id
             base_model = report_type.content_type.model_class()
-            report_builder_fields = getattr(base_model, report_type.report_builder_class_name, None)
+            report_builder_class = get_report_builder_class(model=base_model,
+                                                            report_type=report_type)
             if field_type == 'date':
                 self._get_date_fields(base_model=base_model,
                                       fields=_fields,
-                                      report_builder_class=report_builder_fields,
+                                      report_builder_class=report_builder_class,
                                       selected_field_id=selected_field_id)
             elif field_type == 'link':
                 self._get_column_link_fields(base_model=base_model,
                                              fields=_fields,
-                                             report_builder_class=report_builder_fields,
+                                             report_builder_class=report_builder_class,
                                              selected_field_id=selected_field_id)
             elif field_type == 'number':
                 self._get_number_fields(base_model=base_model,
                                         fields=_fields,
-                                        report_builder_class=report_builder_fields,
+                                        report_builder_class=report_builder_class,
                                         selected_field_id=selected_field_id)
             elif field_type == 'colour':
                 self._get_colour_fields(base_model=base_model,
                                         fields=_fields,
-                                        report_builder_class=report_builder_fields,
+                                        report_builder_class=report_builder_class,
                                         selected_field_id=selected_field_id)
             elif field_type == 'all':
                 self._get_fields(base_model=base_model,
                                  fields=_fields,
-                                 report_builder_class=report_builder_fields,
+                                 report_builder_class=report_builder_class,
                                  selected_field_id=selected_field_id,
                                  for_select2=True)
             elif field_type == 'order':
                 self._get_fields(base_model=base_model,
                                  fields=_fields,
-                                 report_builder_class=report_builder_fields,
+                                 report_builder_class=report_builder_class,
                                  selected_field_id=selected_field_id,
                                  for_select2=True,
                                  show_order_by_fields=True)
