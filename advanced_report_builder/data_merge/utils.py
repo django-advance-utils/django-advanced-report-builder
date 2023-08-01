@@ -28,7 +28,10 @@ def get_menu_fields(base_model, report_builder_class,
         if new_model != previous_base_model:
             new_report_builder_class = get_report_builder_class(model=new_model,
                                                                 class_name=report_builder_fields_str)
-            title = new_report_builder_class.title
+
+            title = include.get('title')
+            if title is None or title == '':
+                title = new_report_builder_class.title
             if menus is not None:
                 menu = []
             else:

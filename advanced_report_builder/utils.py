@@ -127,5 +127,3 @@ def get_report_builder_class(model, report_type=None, class_name=None):
     if report_builder_class is not None:
         report_builder_class = report_builder_class()
     return report_builder_class
-
-
