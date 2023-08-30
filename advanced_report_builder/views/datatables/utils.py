@@ -25,21 +25,25 @@ class TableUtilsMixin(ReportUtilsMixin):
 
         if date_format:
             date_format = DATE_FORMAT_TYPES_DJANGO_FORMAT.get(int(date_format))
-        title = table_field.get('title')
+
+        if int(data_attr.get('display_heading', 1)) == 0:
+            display_heading = False
+            title = ''
+        else:
+            display_heading = True
+            title = table_field.get('title')
 
         annotations_value = int(data_attr.get('annotations_value', 0))
         if col_type_override and annotations_value == 0:
             col_type_override.table = None
             field = copy.deepcopy(col_type_override)
-
-            if title:
+            if title or not display_heading:
                 field.title = title
             fields.append(field)
         else:
             if col_type_override:
                 field_name = col_type_override.field
-
-            date_function_kwargs = {'title': table_field.get('title'),
+            date_function_kwargs = {'title': title,
                                     'date_format': date_format}
 
             if annotations_value != 0:
@@ -108,14 +112,16 @@ class TableUtilsMixin(ReportUtilsMixin):
                                                                       report_builder_class=report_builder_class,
                                                                       field_attr=field_attr)
 
+            data_attr = split_attr(table_field)
+            if int(data_attr.get('display_heading', 1)) == 0:
+                field_attr['title'] = ''
+
             if isinstance(django_field, DATE_FIELDS):
                 field_name = self.get_date_field(index=index,
                                                  col_type_override=col_type_override,
                                                  table_field=table_field,
                                                  fields=fields)
             elif isinstance(django_field, NUMBER_FIELDS) and (django_field is None or django_field.choices is None):
-                data_attr = split_attr(table_field)
-
                 annotations_type = int(data_attr.get('annotations_type', 0))
                 if annotations_type != 0:
                     has_annotations = True
@@ -168,7 +174,6 @@ class TableUtilsMixin(ReportUtilsMixin):
                                     col_type_override=col_type_override,
                                     fields=fields)
             else:
-                data_attr = split_attr(table_field)
                 if col_type_override is not None:
                     if data_attr.get('annotation_label') == '1':
                         if isinstance(col_type_override.field, list):

@@ -32,7 +32,11 @@ class ReportUtilsMixin(FilterQueryMixin):
                 annotation_filter = self.process_filters(search_filter_data=_filter, extra_filter=extra_filter)
             elif extra_filter:
                 annotation_filter = reduce(operator.and_, [extra_filter])
-        title = title_suffix + ' ' + table_field.get('title')
+
+        if int(data_attr.get('display_heading', 1)) == 0:
+            title = ''
+        else:
+            title = title_suffix + ' ' + table_field.get('title')
         if col_type_override:
             col_type_override.table = None
             field = copy.deepcopy(col_type_override)

@@ -378,8 +378,6 @@ class ChartBaseFieldForm(CrispyForm):
             if new_model != previous_base_model:
                 new_report_builder_class = get_report_builder_class(model=new_model,
                                                                     class_name=report_builder_fields_str)
-                if new_report_builder_class is not None:
-                    new_report_builder_class = new_report_builder_class()
 
                 fields.append((prefix + include_field, title_prefix + include['title']))
                 self._get_query_builder_foreign_key_fields(base_model=new_model,

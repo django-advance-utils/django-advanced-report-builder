@@ -270,8 +270,13 @@ class TableFieldForm(ChartBaseFieldForm):
         report_type, base_model = self.get_report_type_details()
 
         self.fields['title'] = CharField(initial=data['title'])
-
         data_attr = split_attr(data)
+        self.fields['display_heading'] = BooleanField(required=False,
+                                                      widget=RBToggle(),
+                                                      label='Display heading')
+        if int(data_attr.get('display_heading', 1)) == 1:
+            self.fields['display_heading'].initial = True
+
         if self.django_field is not None and isinstance(self.django_field, DATE_FIELDS):
             self.fields['annotations_value'] = ChoiceField(choices=[(0, '-----')] + ANNOTATION_VALUE_CHOICES,
                                                            required=False)
@@ -341,6 +346,12 @@ class TableFieldForm(ChartBaseFieldForm):
     def get_additional_attributes(self):
         attributes = []
         self.get_report_type_details()
+
+        if self.cleaned_data['display_heading']:
+            attributes.append('display_heading-1')
+        else:
+            attributes.append('display_heading-0')
+
         if self.django_field is not None and isinstance(self.django_field, DATE_FIELDS):
             if self.cleaned_data['annotations_value']:
                 attributes.append(f'annotations_value-{self.cleaned_data["annotations_value"]}')
@@ -426,6 +437,7 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
             ])
 
             return ['title',
+                    'display_heading',
                     'annotations_type',
                     'show_table_totals',
                     'decimal_places',
