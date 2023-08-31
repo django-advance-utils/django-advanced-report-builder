@@ -23,7 +23,7 @@ from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.select2 import Select2Multiple, Select2
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
-from advanced_report_builder.data_merge.utils import get_menu_fields, get_data_merge_columns
+from advanced_report_builder.data_merge.mixin import DataMergeMixin
 from advanced_report_builder.data_merge.widget import DataMergeWidget
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, DATE_FORMAT_TYPE_DD_MM_YY_SLASH, \
@@ -78,7 +78,7 @@ class KanbanTable(ChartJSTable):
         return results_list
 
 
-class KanbanView(ReportBase, FilterQueryMixin, TemplateView):
+class KanbanView(DataMergeMixin, ReportBase, FilterQueryMixin, TemplateView):
     number_field = ReportBuilderNumberColumn
     template_name = 'advanced_report_builder/kanban/report.html'
     chart_js_table = KanbanTable
@@ -134,7 +134,7 @@ class KanbanView(ReportBase, FilterQueryMixin, TemplateView):
 
         if kanban_report_lane.kanban_report_description is not None:
             description = kanban_report_lane.kanban_report_description.description
-            columns, column_map = get_data_merge_columns(base_model=base_model,
+            columns, column_map = self.get_data_merge_columns(base_model=base_model,
                                                          report_builder_class=report_builder_class,
                                                          html=description,
                                                          table=table)
@@ -631,7 +631,7 @@ class KanbanLaneDuplicateModal(Modal):
         return self.command_response('reload')
 
 
-class KanbanDescriptionModal(QueryBuilderModalBase):
+class KanbanDescriptionModal(DataMergeMixin, QueryBuilderModalBase):
     template_name = 'advanced_report_builder/kanban/description_modal.html'
     size = 'xl'
     process = PROCESS_EDIT_DELETE
@@ -658,9 +658,9 @@ class KanbanDescriptionModal(QueryBuilderModalBase):
         if kwargs['report_type'] != '':
             report_builder_class, base_model = self.get_report_builder_class(report_type_id=kwargs['report_type'])
 
-            get_menu_fields(base_model=base_model,
-                            report_builder_class=report_builder_class,
-                            menus=menus)
+            self.get_menu_fields(base_model=base_model,
+                                 report_builder_class=report_builder_class,
+                                 menus=menus)
 
             menus = [{'code': 'data_merge',
                       'text': 'Data Merge',
