@@ -94,6 +94,7 @@ class ReportTag(TimeStampedModel):
 
     def save(self, *args, **kwargs):
         self.make_new_slug(allow_dashes=False, on_edit=True)
+        self.set_order_field()
         return super().save(*args, **kwargs)
 
 
