@@ -27,53 +27,66 @@ class VariableDate:
     RANGE_TYPE_LAST_28_DAYS = 15
     RANGE_TYPE_THIS_YEAR = 16
     RANGE_TYPE_LAST_YEAR = 17
+    RANGE_TYPE_LAST_12_MONTHS = 38
+    RANGE_TYPE_NEXT_12_MONTHS = 39
     RANGE_TYPE_LAST_WEEK = 18
-    RANGE_TYPE_LAST_18_MONTHS = 23
-    RANGE_TYPE_NEXT_2_MONTH = 24
-    RANGE_TYPE_LAST_2_MONTH = 25
-    RANGE_TYPE_NEXT_3_MONTH = 26
-    RANGE_TYPE_LAST_3_MONTH = 27
-    RANGE_TYPE_NEXT_6_MONTH = 28
-    RANGE_TYPE_LAST_6_MONTH = 29
+
+    RANGE_TYPE_NEXT_2_MONTHS = 24
+    RANGE_TYPE_LAST_2_MONTHS = 25
+    RANGE_TYPE_NEXT_3_MONTHS = 26
+    RANGE_TYPE_LAST_3_MONTHS = 27
+    RANGE_TYPE_NEXT_6_MONTHS = 28
+    RANGE_TYPE_LAST_6_MONTHS = 29
     RANGE_TYPE_NEXT_60_DAYS = 30
     RANGE_TYPE_LAST_60_DAYS = 31
     RANGE_TYPE_NEXT_90_DAYS = 32
     RANGE_TYPE_LAST_90_DAYS = 33
-
-    RANGE_TYPE_CHOICES = ((RANGE_TYPE_LAST_6_MONTH, 'Last 6 months'),
-                          (RANGE_TYPE_LAST_3_MONTH, 'Last 3 months'),
-                          (RANGE_TYPE_LAST_90_DAYS, 'Last 90 days'),
-                          (RANGE_TYPE_LAST_2_MONTH, 'Last 2 month'),
-                          (RANGE_TYPE_LAST_60_DAYS, 'Last 60 days'),
-                          (RANGE_TYPE_LAST_MONTH, 'Last month'),
-                          (RANGE_TYPE_LAST_28_DAYS, 'Last 28 days'),
-                          (RANGE_TYPE_LAST_14_DAYS, 'Last 14 days'),
-                          (RANGE_TYPE_LAST_7_DAYS, 'Last 7 days'),
-                          (RANGE_TYPE_LAST_WEEK, 'Last week'),
-                          (RANGE_TYPE_YESTERDAY, 'Yesterday'),
-                          (RANGE_TYPE_TODAY, 'Today'),
-                          (RANGE_TYPE_TOMORROW, 'Tomorrow'),
-                          (RANGE_TYPE_THIS_WEEK, 'This week'),
-                          (RANGE_TYPE_NEXT_7_DAYS, 'Next 7 days'),
-                          (RANGE_TYPE_NEXT_14_DAYS, 'Next 14 days'),
-                          (RANGE_TYPE_NEXT_WEEK, 'Next week'),
-                          (RANGE_TYPE_2_WEEKS_TIME, '2 weeks time'),
-                          (RANGE_TYPE_3_WEEKS_TIME, '3 weeks time'),
-                          (RANGE_TYPE_4_WEEKS_TIME, '4 weeks time'),
-                          (RANGE_TYPE_5_WEEKS_TIME, '5 weeks time'),
-                          (RANGE_TYPE_6_WEEKS_TIME, '6 weeks time'),
-                          (RANGE_TYPE_THIS_MONTH, 'This month'),
-                          (RANGE_TYPE_NEXT_28_DAYS, 'Next 28 days'),
-                          (RANGE_TYPE_NEXT_MONTH, 'Next month'),
-                          (RANGE_TYPE_NEXT_2_MONTH, 'Next 2 months'),
-                          (RANGE_TYPE_NEXT_60_DAYS, 'Next 60 days'),
-                          (RANGE_TYPE_NEXT_3_MONTH, 'Next 3 months'),
-                          (RANGE_TYPE_NEXT_90_DAYS, 'Next 90 days'),
-                          (RANGE_TYPE_NEXT_6_MONTH, 'Next 6 months'),
-                          (RANGE_TYPE_THIS_YEAR, 'This year'),
-                          (RANGE_TYPE_LAST_YEAR, 'Last year'),
-                          (RANGE_TYPE_LAST_18_MONTHS, 'Last 18 months')
-                          )
+    RANGE_TYPE_LAST_18_MONTHS = 23
+    RANGE_TYPE_LAST_24_MONTHS = 40
+    RANGE_TYPE_NEXT_24_MONTHS = 41
+    RANGE_TYPE_LAST_36_MONTHS = 42
+    RANGE_TYPE_NEXT_36_MONTHS = 43
+    RANGE_TYPE_CHOICES = (
+        (RANGE_TYPE_LAST_36_MONTHS, 'Last 36 months'),
+        (RANGE_TYPE_LAST_24_MONTHS, 'Last 24 months'),
+        (RANGE_TYPE_LAST_18_MONTHS, 'Last 18 months'),
+        (RANGE_TYPE_LAST_12_MONTHS, 'Last 12 months'),
+        (RANGE_TYPE_LAST_6_MONTHS, 'Last 6 months'),
+        (RANGE_TYPE_LAST_3_MONTHS, 'Last 3 months'),
+        (RANGE_TYPE_LAST_90_DAYS, 'Last 90 days'),
+        (RANGE_TYPE_LAST_2_MONTHS, 'Last 2 months'),
+        (RANGE_TYPE_LAST_60_DAYS, 'Last 60 days'),
+        (RANGE_TYPE_LAST_MONTH, 'Last month'),
+        (RANGE_TYPE_LAST_28_DAYS, 'Last 28 days'),
+        (RANGE_TYPE_LAST_14_DAYS, 'Last 14 days'),
+        (RANGE_TYPE_LAST_7_DAYS, 'Last 7 days'),
+        (RANGE_TYPE_LAST_WEEK, 'Last week'),
+        (RANGE_TYPE_YESTERDAY, 'Yesterday'),
+        (RANGE_TYPE_TODAY, 'Today'),
+        (RANGE_TYPE_TOMORROW, 'Tomorrow'),
+        (RANGE_TYPE_THIS_WEEK, 'This week'),
+        (RANGE_TYPE_NEXT_7_DAYS, 'Next 7 days'),
+        (RANGE_TYPE_NEXT_14_DAYS, 'Next 14 days'),
+        (RANGE_TYPE_NEXT_WEEK, 'Next week'),
+        (RANGE_TYPE_2_WEEKS_TIME, '2 weeks time'),
+        (RANGE_TYPE_3_WEEKS_TIME, '3 weeks time'),
+        (RANGE_TYPE_4_WEEKS_TIME, '4 weeks time'),
+        (RANGE_TYPE_5_WEEKS_TIME, '5 weeks time'),
+        (RANGE_TYPE_6_WEEKS_TIME, '6 weeks time'),
+        (RANGE_TYPE_THIS_MONTH, 'This month'),
+        (RANGE_TYPE_NEXT_28_DAYS, 'Next 28 days'),
+        (RANGE_TYPE_NEXT_MONTH, 'Next month'),
+        (RANGE_TYPE_NEXT_2_MONTHS, 'Next 2 months'),
+        (RANGE_TYPE_NEXT_60_DAYS, 'Next 60 days'),
+        (RANGE_TYPE_NEXT_3_MONTHS, 'Next 3 months'),
+        (RANGE_TYPE_NEXT_90_DAYS, 'Next 90 days'),
+        (RANGE_TYPE_NEXT_6_MONTHS, 'Next 6 months'),
+        (RANGE_TYPE_NEXT_12_MONTHS, 'Next 12 months'),
+        (RANGE_TYPE_NEXT_24_MONTHS, 'Next 24 months'),
+        (RANGE_TYPE_NEXT_36_MONTHS, 'Next 36 months'),
+        (RANGE_TYPE_THIS_YEAR, 'This year'),
+        (RANGE_TYPE_LAST_YEAR, 'Last year'),
+    )
 
     def get_variable_dates(self, range_type):
         today = date.today()
@@ -194,35 +207,65 @@ class VariableDate:
             start_date = date_offset.get_offset('-18m', today)
             end_date = today
             number_of_days = (end_date - start_date).days
-        elif range_type == self.RANGE_TYPE_LAST_2_MONTH:
+        elif range_type == self.RANGE_TYPE_LAST_2_MONTHS:
             date_offset = DateOffset()
             start_date = date_offset.get_offset('-2m', today)
             end_date = today
             number_of_days = (end_date - start_date).days
-        elif range_type == self.RANGE_TYPE_NEXT_2_MONTH:
+        elif range_type == self.RANGE_TYPE_NEXT_2_MONTHS:
             date_offset = DateOffset()
             start_date = today
             end_date = date_offset.get_offset('2m', today)
             number_of_days = (end_date - start_date).days
-        elif range_type == self.RANGE_TYPE_LAST_3_MONTH:
+        elif range_type == self.RANGE_TYPE_LAST_3_MONTHS:
             date_offset = DateOffset()
             start_date = date_offset.get_offset('-3m', today)
             end_date = today
             number_of_days = (end_date - start_date).days
-        elif range_type == self.RANGE_TYPE_NEXT_3_MONTH:
+        elif range_type == self.RANGE_TYPE_NEXT_3_MONTHS:
             date_offset = DateOffset()
             start_date = today
             end_date = date_offset.get_offset('3m', today)
             number_of_days = (end_date - start_date).days
-        elif range_type == self.RANGE_TYPE_LAST_6_MONTH:
+        elif range_type == self.RANGE_TYPE_LAST_6_MONTHS:
             date_offset = DateOffset()
             start_date = date_offset.get_offset('-6m', today)
             end_date = today
             number_of_days = (end_date - start_date).days
-        elif range_type == self.RANGE_TYPE_NEXT_6_MONTH:
+        elif range_type == self.RANGE_TYPE_NEXT_6_MONTHS:
             date_offset = DateOffset()
             start_date = today
             end_date = date_offset.get_offset('6m', today)
+            number_of_days = (end_date - start_date).days
+        elif range_type == self.RANGE_TYPE_LAST_12_MONTHS:
+            date_offset = DateOffset()
+            start_date = date_offset.get_offset('-12m', today)
+            end_date = today
+            number_of_days = (end_date - start_date).days
+        elif range_type == self.RANGE_TYPE_NEXT_12_MONTHS:
+            date_offset = DateOffset()
+            start_date = today
+            end_date = date_offset.get_offset('12m', today)
+            number_of_days = (end_date - start_date).days
+        elif range_type == self.RANGE_TYPE_LAST_24_MONTHS:
+            date_offset = DateOffset()
+            start_date = date_offset.get_offset('-24m', today)
+            end_date = today
+            number_of_days = (end_date - start_date).days
+        elif range_type == self.RANGE_TYPE_NEXT_24_MONTHS:
+            date_offset = DateOffset()
+            start_date = today
+            end_date = date_offset.get_offset('24m', today)
+            number_of_days = (end_date - start_date).days
+        elif range_type == self.RANGE_TYPE_LAST_36_MONTHS:
+            date_offset = DateOffset()
+            start_date = date_offset.get_offset('-36m', today)
+            end_date = today
+            number_of_days = (end_date - start_date).days
+        elif range_type == self.RANGE_TYPE_NEXT_36_MONTHS:
+            date_offset = DateOffset()
+            start_date = today
+            end_date = date_offset.get_offset('36m', today)
             number_of_days = (end_date - start_date).days
         else:
             assert False, 'unknown date value'
