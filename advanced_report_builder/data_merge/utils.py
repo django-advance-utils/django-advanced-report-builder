@@ -5,7 +5,7 @@ from django.apps import apps
 from advanced_report_builder.utils import get_field_details, get_report_builder_class
 
 
-class DataMergeMixin:
+class DataMergeUtils:
     def get_menu_fields(self, base_model, report_builder_class,
                         menus=None, codes=None, code_prefix='', next_code_prefix='__',
                         previous_base_model=None, table=None):
@@ -48,7 +48,8 @@ class DataMergeMixin:
                 if menus is not None:
                     menus.append({'text': title, 'menu': menu})
 
-    def get_data_merge_variables(self, html):
+    @staticmethod
+    def get_data_merge_variables(html):
         variables = re.findall('{{\s*([^*\s*}}]+)\s*}}', html)
 
         all_fields = set()

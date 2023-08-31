@@ -23,7 +23,7 @@ from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.select2 import Select2Multiple, Select2
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
-from advanced_report_builder.data_merge.mixin import DataMergeMixin
+from advanced_report_builder.data_merge.utils import DataMergeUtils
 from advanced_report_builder.data_merge.widget import DataMergeWidget
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, DATE_FORMAT_TYPE_DD_MM_YY_SLASH, \
@@ -78,7 +78,7 @@ class KanbanTable(ChartJSTable):
         return results_list
 
 
-class KanbanView(DataMergeMixin, ReportBase, FilterQueryMixin, TemplateView):
+class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
     number_field = ReportBuilderNumberColumn
     template_name = 'advanced_report_builder/kanban/report.html'
     chart_js_table = KanbanTable
@@ -631,7 +631,7 @@ class KanbanLaneDuplicateModal(Modal):
         return self.command_response('reload')
 
 
-class KanbanDescriptionModal(DataMergeMixin, QueryBuilderModalBase):
+class KanbanDescriptionModal(DataMergeUtils, QueryBuilderModalBase):
     template_name = 'advanced_report_builder/kanban/description_modal.html'
     size = 'xl'
     process = PROCESS_EDIT_DELETE
