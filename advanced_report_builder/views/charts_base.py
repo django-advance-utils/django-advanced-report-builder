@@ -17,10 +17,11 @@ from django_modals.forms import CrispyForm
 
 from advanced_report_builder.columns import ReportBuilderDateColumn
 from advanced_report_builder.exceptions import ReportError
+from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_VALUE_FUNCTIONS, ANNOTATION_VALUE_YEAR, \
     ANNOTATION_VALUE_QUARTER, ANNOTATION_VALUE_WEEK, ANNOTATION_VALUE_DAY, ANNOTATION_VALUE_MONTH
 from advanced_report_builder.models import ReportType
-from advanced_report_builder.utils import split_slug, get_field_details, split_attr, get_report_builder_class
+from advanced_report_builder.utils import split_slug, split_attr, get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.report import ReportBase
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
@@ -134,10 +135,10 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         report_builder_class = get_report_builder_class(model=base_model,
                                                         report_type=self.chart_report.report_type)
 
-        django_field, col_type_override, _, _ = get_field_details(base_model=base_model,
-                                                                  field=field_name,
-                                                                  report_builder_class=report_builder_class,
-                                                                  table=table)
+        django_field, col_type_override, _, _ = self.get_field_details(base_model=base_model,
+                                                                       field=field_name,
+                                                                       report_builder_class=report_builder_class,
+                                                                       table=table)
 
         if col_type_override:
             field_name = col_type_override.field
@@ -188,10 +189,10 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         for index, table_field in enumerate(chart_fields, 1):
             field = table_field['field']
 
-            django_field, col_type_override, _, _ = get_field_details(base_model=base_model,
-                                                                      field=field,
-                                                                      report_builder_class=report_builder_class,
-                                                                      table=table)
+            django_field, col_type_override, _, _ = self.get_field_details(base_model=base_model,
+                                                                           field=field,
+                                                                           report_builder_class=report_builder_class,
+                                                                           table=table)
 
             if (isinstance(django_field, NUMBER_FIELDS) or
                     (col_type_override is not None and col_type_override.annotations)):
@@ -336,7 +337,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         return divider
 
 
-class ChartBaseFieldForm(CrispyForm):
+class ChartBaseFieldForm(ReportBuilderFieldUtils, CrispyForm):
     cancel_class = 'btn-secondary modal-cancel'
 
     def __init__(self, *args, **kwargs):
@@ -364,9 +365,10 @@ class ChartBaseFieldForm(CrispyForm):
         report_builder_class = get_report_builder_class(model=base_model,
                                                         report_type=report_type)
 
-        self.django_field, self.col_type_override, _, _ = get_field_details(base_model=base_model,
-                                                                            field=data['field'],
-                                                                            report_builder_class=report_builder_class)
+        self.django_field, self.col_type_override, _, _ = self.get_field_details(
+            base_model=base_model,
+            field=data['field'],
+            report_builder_class=report_builder_class)
 
         return report_type, base_model
 

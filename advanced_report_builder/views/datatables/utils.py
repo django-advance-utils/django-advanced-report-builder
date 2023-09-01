@@ -6,7 +6,7 @@ from django_datatables.plugins.column_totals import ColumnTotals
 from advanced_report_builder.columns import ReportBuilderDateColumn
 from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, CURRENCY_COLUMNS, LINK_COLUMNS
 from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_FUNCTIONS
-from advanced_report_builder.utils import split_attr, get_field_details, decode_attribute
+from advanced_report_builder.utils import split_attr, decode_attribute
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
 
 
@@ -106,11 +106,11 @@ class TableUtilsMixin(ReportUtilsMixin):
                 field_attr['title'] = table_field['title']
 
             fields_used.add(field)
-            django_field, col_type_override, _, _ = get_field_details(base_model=base_model,
-                                                                      field=field,
-                                                                      table=table,
-                                                                      report_builder_class=report_builder_class,
-                                                                      field_attr=field_attr)
+            django_field, col_type_override, _, _ = self.get_field_details(base_model=base_model,
+                                                                           field=field,
+                                                                           table=table,
+                                                                           report_builder_class=report_builder_class,
+                                                                           field_attr=field_attr)
 
             data_attr = split_attr(table_field)
             if int(data_attr.get('display_heading', 1)) == 0:

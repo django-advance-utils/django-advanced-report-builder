@@ -30,7 +30,7 @@ from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, DAT
     DATE_FORMAT_TYPE_SHORT_WORDS_MM_YY
 from advanced_report_builder.models import KanbanReport, KanbanReportLane, ReportType, KanbanReportDescription
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import crispy_modal_link_args, get_field_details, get_report_builder_class
+from advanced_report_builder.utils import crispy_modal_link_args, get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartJSTable
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
@@ -135,9 +135,9 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
         if kanban_report_lane.kanban_report_description is not None:
             description = kanban_report_lane.kanban_report_description.description
             columns, column_map = self.get_data_merge_columns(base_model=base_model,
-                                                         report_builder_class=report_builder_class,
-                                                         html=description,
-                                                         table=table)
+                                                              report_builder_class=report_builder_class,
+                                                              html=description,
+                                                              table=table)
 
             table_indexes.append('description')
             table.add_columns(DescriptionColumn(column_name='description',
@@ -149,9 +149,9 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
         table.table_options['indexes'] = table_indexes
 
         if kanban_report_lane.link_field and self.kwargs.get('enable_links'):
-            _, col_type_override, _, _ = get_field_details(base_model=base_model,
-                                                           field=kanban_report_lane.link_field,
-                                                           report_builder_class=report_builder_class)
+            _, col_type_override, _, _ = self.get_field_details(base_model=base_model,
+                                                                field=kanban_report_lane.link_field,
+                                                                report_builder_class=report_builder_class)
             if isinstance(col_type_override.field, list):
                 field = col_type_override.field[0]
             else:
@@ -240,15 +240,16 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
                 multiple_type = kanban_report_lane.multiple_type
                 current_start_date = start_date_and_time
 
-                _, _, _, field_name = get_field_details(base_model=base_model,
-                                                        field=kanban_report_lane.multiple_type_date_field,
-                                                        report_builder_class=report_builder_class)
+                _, _, _, field_name = self.get_field_details(base_model=base_model,
+                                                             field=kanban_report_lane.multiple_type_date_field,
+                                                             report_builder_class=report_builder_class)
 
                 end_field_name = None
                 if kanban_report_lane.multiple_type_end_date_field:
-                    _, _, _, end_field_name = get_field_details(base_model=base_model,
-                                                                field=kanban_report_lane.multiple_type_end_date_field,
-                                                                report_builder_class=report_builder_class)
+                    _, _, _, end_field_name = self.get_field_details(
+                        base_model=base_model,
+                        field=kanban_report_lane.multiple_type_end_date_field,
+                        report_builder_class=report_builder_class)
 
                 sub_lanes = []
                 while (current_end_date := self.get_multiple_date(

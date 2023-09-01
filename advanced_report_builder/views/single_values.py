@@ -20,7 +20,7 @@ from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_CHOICE_SUM, \
     ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT
 from advanced_report_builder.models import SingleValueReport, ReportType
-from advanced_report_builder.utils import get_field_details, get_report_builder_class
+from advanced_report_builder.utils import get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartBaseView
 from advanced_report_builder.views.datatables.modal import TableFieldModal, TableFieldForm
@@ -44,9 +44,9 @@ class SingleValueView(ChartBaseView):
         report_builder_class = get_report_builder_class(model=base_model,
                                                         report_type=self.chart_report.report_type)
 
-        django_field, col_type_override, _, _ = get_field_details(base_model=base_model,
-                                                                  field=field,
-                                                                  report_builder_class=report_builder_class)
+        django_field, col_type_override, _, _ = self.get_field_details(base_model=base_model,
+                                                                       field=field,
+                                                                       report_builder_class=report_builder_class)
 
         if (isinstance(django_field, NUMBER_FIELDS) or
                 col_type_override is not None and col_type_override.annotations):
@@ -143,7 +143,7 @@ class SingleValueView(ChartBaseView):
         report_builder_class = get_report_builder_class(model=base_model,
                                                         report_type=self.chart_report.report_type)
 
-        deno_django_field, denominator_col_type_override, _, _ = get_field_details(
+        deno_django_field, denominator_col_type_override, _, _ = self.get_field_details(
             base_model=base_model,
             field=denominator_field,
             report_builder_class=report_builder_class)
@@ -151,7 +151,7 @@ class SingleValueView(ChartBaseView):
                 (denominator_col_type_override is not None and not denominator_col_type_override.annotations)):
             raise ReportError('denominator is not a number field')
 
-        num_django_field, numerator_col_type_override, _, _ = get_field_details(
+        num_django_field, numerator_col_type_override, _, _ = self.get_field_details(
             base_model=base_model,
             field=denominator_field,
             report_builder_class=report_builder_class)

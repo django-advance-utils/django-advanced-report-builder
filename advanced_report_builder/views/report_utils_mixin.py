@@ -9,12 +9,13 @@ from django_datatables.columns import CurrencyPenceColumn, CurrencyColumn
 
 from advanced_report_builder.columns import ReportBuilderCurrencyPenceColumn, ReportBuilderCurrencyColumn, \
     ReportBuilderNumberColumn
+from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import ANNOTATION_FUNCTIONS, ANNOTATION_CHOICE_COUNT
 from advanced_report_builder.utils import decode_attribute
 
 
-class ReportUtilsMixin(FilterQueryMixin):
+class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
     use_annotations = True
     number_field = ReportBuilderNumberColumn
 

@@ -13,9 +13,10 @@ from django_modals.modals import ModelFormModal
 from django_modals.widgets.select2 import Select2
 
 from advanced_report_builder.field_types import FieldTypes
+from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, LINK_COLUMNS, COLOUR_COLUMNS
 from advanced_report_builder.models import ReportQuery, ReportType
-from advanced_report_builder.utils import get_field_details, get_report_builder_class
+from advanced_report_builder.utils import get_report_builder_class
 
 
 class QueryBuilderModelForm(ModelCrispyForm):
@@ -23,7 +24,7 @@ class QueryBuilderModelForm(ModelCrispyForm):
         return StrictButton(button_text, onclick=f'save_modal_{ self.form_id }()', css_class=css_class, **kwargs)
 
 
-class QueryBuilderModalBaseMixin:
+class QueryBuilderModalBaseMixin(ReportBuilderFieldUtils):
 
     @staticmethod
     def get_report_builder_class(report_type_id):
@@ -56,9 +57,9 @@ class QueryBuilderModalBaseMixin:
         for report_builder_field in report_builder_class.fields:
             if (not isinstance(report_builder_field, str) or
                     report_builder_field not in report_builder_class.exclude_search_fields):
-                django_field, _, columns, _ = get_field_details(base_model=base_model,
-                                                                field=report_builder_field,
-                                                                report_builder_class=report_builder_class)
+                django_field, _, columns, _ = self.get_field_details(base_model=base_model,
+                                                                     field=report_builder_field,
+                                                                     report_builder_class=report_builder_class)
                 for column in columns:
                     field_types.get_filter(query_builder_filters=query_builder_filters,
                                            django_field=django_field,
@@ -169,7 +170,7 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
             if (not isinstance(report_builder_field, str) or
                     report_builder_field not in report_builder_class.exclude_display_fields or
                     (show_order_by_fields and report_builder_field in report_builder_class.order_by_fields)):
-                django_field, col_type_override, columns, _ = get_field_details(
+                django_field, col_type_override, columns, _ = self.get_field_details(
                     base_model=base_model,
                     field=report_builder_field,
                     report_builder_class=report_builder_class)

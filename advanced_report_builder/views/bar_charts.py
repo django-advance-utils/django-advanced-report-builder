@@ -29,7 +29,7 @@ from advanced_report_builder.globals import DEFAULT_DATE_FORMAT, \
     GENERATE_SERIES_INTERVALS
 from advanced_report_builder.models import BarChartReport, ReportType
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_field_details, \
+from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, \
     get_report_builder_class
 from advanced_report_builder.views.charts_base import ChartBaseView, ChartBaseFieldForm
 from advanced_report_builder.views.datatables.modal import TableFieldModal, TableFieldForm
@@ -101,17 +101,19 @@ class BarChartView(ChartBaseView):
         report_builder_class = get_report_builder_class(model=base_model,
                                                         report_type=self.chart_report.report_type)
 
-        start_django_field, start_col_type_override, _, _ = get_field_details(base_model=base_model,
-                                                                              field=start_field_name,
-                                                                              report_builder_class=report_builder_class,
-                                                                              table=table)
+        start_django_field, start_col_type_override, _, _ = self.get_field_details(
+            base_model=base_model,
+            field=start_field_name,
+            report_builder_class=report_builder_class,
+            table=table)
         if start_col_type_override:
             start_field_name = start_col_type_override.field
 
-        end_django_field, end_col_type_override, _, _ = get_field_details(base_model=base_model,
-                                                                          field=end_field_name,
-                                                                          report_builder_class=report_builder_class,
-                                                                          table=table)
+        end_django_field, end_col_type_override, _, _ = self.get_field_details(
+            base_model=base_model,
+            field=end_field_name,
+            report_builder_class=report_builder_class,
+            table=table)
         if end_col_type_override:
             end_field_name = end_col_type_override.field
 
@@ -477,10 +479,10 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
         data_index = int(self.slug['data'])
         table_field = chart_fields[data_index]
         field = table_field['field']
-        django_field, col_type_override, _, _ = get_field_details(base_model=base_model,
-                                                                  field=field,
-                                                                  report_builder_class=report_builder_class,
-                                                                  table=table)
+        django_field, col_type_override, _, _ = self.get_field_details(base_model=base_model,
+                                                                       field=field,
+                                                                       report_builder_class=report_builder_class,
+                                                                       table=table)
 
         self.field_filter = None
         if (isinstance(django_field, NUMBER_FIELDS) or
@@ -494,16 +496,16 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
                     _filter = decode_attribute(b64_filter)
                     self.field_filter = json.loads(_filter)
 
-        self.date_field_path = get_field_details(base_model=base_model,
-                                                 field=bar_chart_report.date_field,
-                                                 report_builder_class=report_builder_class,
-                                                 table=table)[3]
+        self.date_field_path = self.get_field_details(base_model=base_model,
+                                                      field=bar_chart_report.date_field,
+                                                      report_builder_class=report_builder_class,
+                                                      table=table)[3]
         if bar_chart_report.date_field_type == BarChartReport.DATE_FIELD_RANGE:
-            self.end_date_field_path = get_field_details(base_model=base_model,
-                                                         field=bar_chart_report.end_date_field,
-                                                         report_builder_class=report_builder_class,
-                                                         table=table)[3]
-        
+            self.end_date_field_path = self.get_field_details(base_model=base_model,
+                                                              field=bar_chart_report.end_date_field,
+                                                              report_builder_class=report_builder_class,
+                                                              table=table)[3]
+
         table.extra_filters = self.extra_filters
 
         table.ajax_data = False
