@@ -111,8 +111,13 @@ class RecordCountColumn(ColumnBase):
 
 
 class ReportBuilderManyToManyColumn(ManyToManyColumn):
+
+    def __init__(self, *arg, **kwargs):
+        if not self.initialise(locals()):
+            return
+        super().__init__(*arg, **kwargs)
+        if self.model_path is not None:
+            self.field = 'id'
+
     def row_result(self, data_dict, page_results):
-        model_path = ''
-        if self.model_path != '':
-            model_path = self.model_path[:-1]
-        return page_results['m2m' + self.column_name].get(data_dict[model_path + 'id'], self.blank)
+        return page_results['m2m' + self.column_name].get(data_dict[self.model_path + 'id'], self.blank)
