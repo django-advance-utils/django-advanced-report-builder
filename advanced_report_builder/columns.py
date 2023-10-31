@@ -1,6 +1,7 @@
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.db.models import Count
-from django_datatables.columns import ColumnBase, CurrencyPenceColumn, CurrencyColumn, NoHeadingColumn, ColumnLink
+from django_datatables.columns import ColumnBase, CurrencyPenceColumn, CurrencyColumn, NoHeadingColumn, ColumnLink, \
+    ManyToManyColumn
 from django_datatables.helpers import get_url, DUMMY_ID
 
 
@@ -107,3 +108,11 @@ class RecordCountColumn(ColumnBase):
         if 'column_name' not in kwargs:
             kwargs['column_name'] = 'record_count'
         super().__init__(field, **kwargs)
+
+
+class ReportBuilderManyToManyColumn(ManyToManyColumn):
+    def row_result(self, data_dict, page_results):
+        model_path = ''
+        if self.model_path != '':
+            model_path = self.model_path[:-1]
+        return page_results['m2m' + self.column_name].get(data_dict[model_path + 'id'], self.blank)

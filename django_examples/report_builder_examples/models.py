@@ -2,13 +2,14 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Count, Sum
-from django_datatables.columns import DatatableColumn, CurrencyPenceColumn, ColumnBase, ManyToManyColumn, \
-    DateColumn
+from django_datatables.columns import DatatableColumn, CurrencyPenceColumn, ColumnBase, DateColumn
 from django_datatables.model_def import DatatableModel
 from report_builder_examples.report_overrides import CustomDateColumn
 from time_stamped_model.models import TimeStampedModel
 
-from advanced_report_builder.columns import ColourColumn, ArrowColumn, FilterForeignKeyColumn, ReportBuilderColumnLink
+from advanced_report_builder.columns import (ColourColumn, ArrowColumn,
+                                             FilterForeignKeyColumn, ReportBuilderColumnLink,
+                                             ReportBuilderManyToManyColumn)
 from advanced_report_builder.models import Report
 from advanced_report_builder.report_builder import ReportBuilderFields
 
@@ -112,7 +113,7 @@ class Company(TimeStampedModel):
         text_colour_column = ColourColumn(title='Text Colour', field='text_colour')
 
         # sector_names = ManyToManyColumn(column_name='sectors', field='sectors__name')
-        sector_names = ManyToManyColumn(field='sectors__name')
+        sector_names = ReportBuilderManyToManyColumn(field='sectors__name')
 
         arrow_icon_column = ArrowColumn(title='Arrow Icon')
 
