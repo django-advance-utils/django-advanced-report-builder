@@ -4,7 +4,7 @@ from django_menus.menu import MenuItem
 from django_modals.modals import ModelFormModal
 from django_modals.widgets.widgets import Toggle
 from report_builder_examples.views.base import MainMenu, MainIndices
-from report_builder_examples.views.custom import Custom1
+from report_builder_examples.views.custom import Custom1, CustomWithQuery
 
 from advanced_report_builder.models import Report
 from advanced_report_builder.views.bar_charts import BarChartView
@@ -127,7 +127,8 @@ class ViewReport(MainMenu, ViewReportBase):
                        'kanbanreport': ViewKanbanViewReport,
                        }
 
-    custom_views = {'custom1': Custom1}
+    custom_views = {'custom1': Custom1,
+                    'custom_with_query': CustomWithQuery}
 
     def report_not_found(self):
         return redirect('report_builder_examples:index')

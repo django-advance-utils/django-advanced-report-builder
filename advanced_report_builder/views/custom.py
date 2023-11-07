@@ -1,14 +1,18 @@
 from django.views.generic import TemplateView
-from django_menus.menu import MenuMixin, MenuItem
+from django.views.generic import TemplateView
+from django_menus.menu import MenuItem
+from django_menus.menu import MenuMixin
 from django_modals.modals import ModelFormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.select2 import Select2Multiple
 
+from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.models import CustomReport
-from advanced_report_builder.utils import split_slug
+from advanced_report_builder.utils import split_slug, make_slug_str
+from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 
 
-class CustomBaseView(MenuMixin, TemplateView):
+class CustomBaseView(MenuMixin, FilterQueryMixin, TemplateView):
 
     def __init__(self, **kwargs):
         self.report = None
@@ -16,6 +20,7 @@ class CustomBaseView(MenuMixin, TemplateView):
         self.enable_edit = None
         self.dashboard_report = None
         self.show_toolbar = False
+        self.enable_queries = True
         super().__init__(**kwargs)
 
     def dispatch(self, request, *args, **kwargs):
@@ -33,6 +38,18 @@ class CustomBaseView(MenuMixin, TemplateView):
         context['show_toolbar'] = self.show_toolbar
         context['title'] = self.get_title()
         return context
+
+    def queries_menu(self):
+        report_queries = self.report.reportquery_set.all()
+        if len(report_queries) > 1:
+            dropdown = []
+            for report_query in report_queries:
+                slug_str = make_slug_str(self.slug, overrides={f'query{self.report.id}': report_query.id})
+                dropdown.append((self.request.resolver_match.view_name,
+                                 report_query.name, {'url_kwargs': {'slug': slug_str}}))
+            return [MenuItem(menu_display='Version', no_hover=True, css_classes='btn-secondary',
+                             dropdown=dropdown)]
+        return []
 
     def setup_menu(self):
         super().setup_menu()
@@ -70,15 +87,31 @@ class CustomBaseView(MenuMixin, TemplateView):
         else:
             return self.report.name
 
-    # noinspection PyMethodMayBeStatic
-    def queries_menu(self):
-        return []
-
     def get_dashboard_class(self, report):
         return None
 
+    def get_report_type(self):
+        return None
 
-class CustomModal(ModelFormModal):
+    def get_default_query(self):
+        return None
+
+    def get_default_filter(self, query):
+        return query
+
+    def get_query_results(self):
+        query = self.get_default_query()
+        if query is None:
+            return None
+
+        report_query = self.get_report_query(report=self.report)
+        if report_query:
+            result = self.process_query_filters(query=query, search_filter_data=report_query.query)
+            return result
+        return self.get_default_filter(query)
+
+
+class CustomModal(MultiQueryModalMixin, ModelFormModal):
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
     model = CustomReport
@@ -88,3 +121,17 @@ class CustomModal(ModelFormModal):
     form_fields = ['name',
                    'report_tags',
                    'notes']
+
+    ajax_commands = ['datatable', 'button']
+
+    def form_setup(self, form, *_args, **_kwargs):
+        fields = ['name',
+                   'report_tags',
+                   'notes']
+
+        if self.object.id and 'report_type' in self.slug:
+            self.add_extra_queries(form=form, fields=fields)
+        return fields
+
+    def get_report_type(self, **_kwargs):
+        return self.slug['report_type']

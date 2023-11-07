@@ -12,7 +12,7 @@ from django_menus.menu import HtmlMenu, MenuItem
 from django_modals.fields import FieldEx
 from django_modals.form_helpers import HorizontalNoEnterHelper
 from django_modals.forms import ModelCrispyForm
-from django_modals.modals import FormModal, ModelFormModal
+from django_modals.modals import FormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.select2 import Select2Multiple
 from django_modals.widgets.widgets import Toggle
@@ -24,9 +24,10 @@ from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_report_builder_class
 from advanced_report_builder.views.charts_base import ChartBaseFieldForm
 from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin, QueryBuilderModalBase
+from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 
 
-class TableModal(QueryBuilderModalBase):
+class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
     template_name = 'advanced_report_builder/datatables/modal.html'
     size = 'xl'
     model = TableReport
@@ -108,61 +109,8 @@ class TableModal(QueryBuilderModalBase):
                   ]
 
         if self.object.id:
+            self.add_extra_queries(form=form, fields=fields)
 
-            add_query_js = 'django_modal.process_commands_lock([{"function": "post_modal", ' \
-                            '"button": {"button": "add_query"}}])'
-
-            description_add_menu_items = [
-
-                MenuItem(add_query_js.replace('"', "&quot;"),
-                         menu_display='Add Query Version',
-                         css_classes='btn btn-primary',
-                         font_awesome='fas fa-pencil',
-                         link_type=MenuItem.HREF)]
-
-            menu = HtmlMenu(self.request,
-                            'advanced_report_builder/datatables/onclick_menu.html').add_items(
-                            *description_add_menu_items)
-
-            fields.append(Div(HTML(menu.render()), css_class='form-buttons'))
-            edit_query_js = 'django_modal.process_commands_lock([{"function": "post_modal", ' \
-                            '"button": {"button": "edit_query", "query_id": $(this).closest(\'tr\').attr(\'id\')}}])'
-
-            duplicate_query_js = 'django_modal.process_commands_lock([{"function": "post_modal", ' \
-                                 '"button": {"button": "duplicate_query", ' \
-                                 '"query_id": $(this).closest(\'tr\').attr(\'id\')}}])'
-
-            description_edit_menu_items = [
-                MenuItem(duplicate_query_js.replace('"', "&quot;"),
-                         menu_display='Duplicate',
-                         css_classes='btn btn-sm btn-outline-dark',
-                         font_awesome='fas fa-clone',
-                         link_type=MenuItem.HREF),
-
-                MenuItem(edit_query_js.replace('"', "&quot;"),
-                         menu_display='Edit',
-                         css_classes='btn btn-sm btn-outline-dark',
-                         font_awesome='fas fa-pencil',
-                         link_type=MenuItem.HREF)]
-
-            form.fields['queries'] = CharField(
-                required=False,
-                label='Queries Versions',
-                widget=DataTableReorderWidget(
-                    model=ReportQuery,
-                    order_field='order',
-                    fields=['_.index',
-                            '.id',
-                            'name',
-
-                            MenuColumn(column_name='menu', field='id',
-                                       column_defs={'orderable': False, 'className': 'dt-right'},
-                                       menu=HtmlMenu(self.request,
-                                                     'advanced_report_builder/datatables/onclick_menu.html').add_items(
-                                           *description_edit_menu_items)),
-                            ],
-                    attrs={'filter': {'report__id': self.object.id}}))
-            fields.append('queries')
         return fields
 
     def form_valid(self, form):
@@ -210,45 +158,6 @@ class TableModal(QueryBuilderModalBase):
         return self.get_fields_for_select2(field_type='order',
                                            report_type=kwargs['report_type'],
                                            search_string=kwargs.get('search'))
-
-    def datatable_sort(self, **kwargs):
-
-        form = self.get_form()
-        widget = form.fields[kwargs['table_id'][3:]].widget
-        _model = widget.attrs['table_model']
-        current_sort = dict(_model.objects.filter(report=self.object.id).values_list('id', 'order'))
-        for s in kwargs['sort']:
-            if current_sort[s[1]] != s[0]:
-                o = _model.objects.get(id=s[1])
-                o.order = s[0]
-                o.save()
-        return self.command_response('')
-
-    def button_duplicate_query(self, **_kwargs):
-        query_id = _kwargs['query_id'][1:]
-        report_query = ReportQuery.objects.get(pk=query_id)
-        report_query.slug = None
-        report_query.pk = None
-        report_query.order = None
-        report_query.save()
-
-        report_type = _kwargs['report_type']
-        url = reverse('advanced_report_builder:table_query_modal',
-                      kwargs={'slug': f'pk-{report_query.id}-report_type-{report_type}'})
-        return self.command_response('show_modal', modal=url)
-
-    def button_add_query(self, **_kwargs):
-        report_type = _kwargs['report_type']
-        url = reverse('advanced_report_builder:table_query_modal',
-                      kwargs={'slug': f'report_id-{self.object.id}-report_type-{report_type}'})
-        return self.command_response('show_modal', modal=url)
-
-    def button_edit_query(self, **_kwargs):
-        query_id = _kwargs['query_id'][1:]
-        report_type = _kwargs['report_type']
-        url = reverse('advanced_report_builder:table_query_modal',
-                      kwargs={'slug': f'pk-{query_id}-report_type-{report_type}'})
-        return self.command_response('show_modal', modal=url)
 
 
 class TableFieldForm(ChartBaseFieldForm):
@@ -515,31 +424,3 @@ class TableQueryForm(ModelCrispyForm):
 
     def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
         return StrictButton(button_text, onclick=f'save_modal_{self.form_id}()', css_class=css_class, **kwargs)
-
-
-class TableQueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
-    model = ReportQuery
-    process = PROCESS_EDIT_DELETE
-    permission_delete = PERMISSION_OFF
-    form_class = TableQueryForm
-    helper_class = HorizontalNoEnterHelper
-
-    template_name = 'advanced_report_builder/datatables/query_modal.html'
-    no_header_x = True
-
-    def post_save(self, created, form):
-        self.add_command({'function': 'save_query_builder_id_query'})
-        return self.command_response('close')
-
-    def form_setup(self, form, *_args, **_kwargs):
-        fields = ['name',
-                  FieldEx('query', template='advanced_report_builder/query_builder.html')]
-        return fields
-
-    def ajax_get_query_builder_fields(self, **kwargs):
-        field_auto_id = kwargs['field_auto_id']
-
-        report_type_id = self.slug['report_type']
-        query_builder_filters = self.get_query_builder_report_type_field(report_type_id=report_type_id)
-
-        return self.command_response(f'query_builder_{field_auto_id}', data=json.dumps(query_builder_filters))
