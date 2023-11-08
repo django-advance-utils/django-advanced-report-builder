@@ -1,8 +1,6 @@
 from django_menus.menu import MenuItem
 
-from advanced_report_builder.models import ReportType
 from advanced_report_builder.views.custom import CustomBaseView
-from report_builder_examples.models import Company
 
 
 class Custom1(CustomBaseView):
@@ -16,12 +14,7 @@ class Custom1(CustomBaseView):
 
 class CustomWithQuery(CustomBaseView):
     template_name = 'report_builder_examples/custom_with_queries.html'
-
-    def get_report_type(self):
-        return ReportType.objects.get(slug='company')
-
-    def get_default_query(self):
-        return Company.objects.all()
+    report_type_slug = 'company'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

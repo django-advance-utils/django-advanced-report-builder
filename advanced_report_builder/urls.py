@@ -5,7 +5,7 @@ from advanced_report_builder.views.bar_charts import BarChartModal, BarChartFiel
 from advanced_report_builder.views.custom import CustomModal
 from advanced_report_builder.views.dashboard import DashboardReportModal, DashboardModal, DashboardAddReportModal
 from advanced_report_builder.views.datatables.modal import TableModal, TableFieldModal, TablePivotModal
-from advanced_report_builder.views.query_modal.modal import QueryModal
+from advanced_report_builder.views.query_modal.modal import QueryModal, QueryOrderModal
 from advanced_report_builder.views.funnel_charts import FunnelChartModal, FunnelChartFieldModal
 from advanced_report_builder.views.kanban import KanbanModal, KanbanLaneModal, KanbanLaneDuplicateModal, \
     KanbanDescriptionModal, KanbanDescriptionDuplicateModal
@@ -22,6 +22,7 @@ app_name = 'advanced_report_builder'
 urlpatterns = [
 
     path('query/modal/query/<str:slug>', QueryModal.as_view(), name='query_modal'),
+    path('query/modal/query/order/<str:slug>', QueryOrderModal.as_view(), name='query_order_modal'),
 
     path('table/modal/<str:slug>/', TableModal.as_view(), name='table_modal'),
     path('table/modal/field/<str:slug>/', TableFieldModal.as_view(), name='table_field_modal'),

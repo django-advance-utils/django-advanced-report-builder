@@ -463,7 +463,7 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
         bar_chart_report = self.get_bar_chart_report()
         self.chart_report = bar_chart_report
         self.kwargs['enable_links'] = self.slug['enable_links'] == 'True'
-        base_model = bar_chart_report.get_base_modal()
+        base_model = bar_chart_report.get_base_model()
         chart_fields = bar_chart_report.fields
         report_builder_class = get_report_builder_class(model=base_model,
                                                         report_type=bar_chart_report.report_type)

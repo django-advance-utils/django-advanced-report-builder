@@ -150,7 +150,7 @@ class Report(TimeStampedModel):
             self.instance_type = self._meta.label_lower.split('.')[1]
         return super().save(*args, **kwargs)
 
-    def get_base_modal(self):
+    def get_base_model(self):
         return self.report_type.content_type.model_class()
 
     class Datatable(DatatableModel):
@@ -215,6 +215,19 @@ class ReportQuery(TimeStampedModel):
         ordering = ['order']
         verbose_name_plural = 'Report queries'
 
+
+class ReportQueryOrder(TimeStampedModel):
+    report_query = models.ForeignKey(ReportQuery, on_delete=models.CASCADE)
+    order_by_field = models.CharField(max_length=200, blank=True, null=True)
+    order_by_ascending = models.BooleanField(default=True)
+    order = models.PositiveSmallIntegerField()
+
+    class Meta:
+        ordering = ['order']
+
+    def save(self, *args, **kwargs):
+        self.set_order_field(extra_filters={'report_query': self.report_query})
+        return super().save(*args, **kwargs)
 
 class TableReport(Report):
     table_fields = models.JSONField(null=True, blank=True)
@@ -374,7 +387,7 @@ class KanbanReportDescription(TimeStampedModel):
         self.set_order_field(extra_filters={'kanban_report': self.kanban_report})
         return super().save(*args, **kwargs)
 
-    def get_base_modal(self):
+    def get_base_model(self):
         return self.report_type.content_type.model_class()
 
     def __str__(self):
@@ -431,7 +444,7 @@ class KanbanReportLane(TimeStampedModel):
         self.set_order_field(extra_filters={'kanban_report': self.kanban_report})
         return super().save(*args, **kwargs)
 
-    def get_base_modal(self):
+    def get_base_model(self):
         return self.report_type.content_type.model_class()
 
     class Meta:

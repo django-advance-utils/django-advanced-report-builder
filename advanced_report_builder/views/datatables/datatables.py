@@ -33,7 +33,7 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
         else:
             self.table_id = f'table_{self.table_report.id}'
 
-        self.base_model = self.table_report.get_base_modal()
+        self.base_model = self.table_report.get_base_model()
         self.add_table(self.table_id, model=self.base_model)
         try:
             return super().dispatch(request, *args, **kwargs)
@@ -44,7 +44,7 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
 
     def setup_table(self, table):
         table.extra_filters = self.extra_filters
-        base_model = self.table_report.get_base_modal()
+        base_model = self.table_report.get_base_model()
         table_fields = self.table_report.table_fields
         pivot_fields = self.table_report.pivot_fields
         fields_used = set()

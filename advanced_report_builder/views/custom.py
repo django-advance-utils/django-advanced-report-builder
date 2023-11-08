@@ -7,12 +7,13 @@ from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.select2 import Select2Multiple
 
 from advanced_report_builder.filter_query import FilterQueryMixin
-from advanced_report_builder.models import CustomReport
-from advanced_report_builder.utils import split_slug, make_slug_str
+from advanced_report_builder.models import CustomReport, ReportType
+from advanced_report_builder.utils import split_slug, make_slug_str, get_report_builder_class
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 
 
 class CustomBaseView(MenuMixin, FilterQueryMixin, TemplateView):
+    report_type_slug = None
 
     def __init__(self, **kwargs):
         self.report = None
@@ -21,6 +22,7 @@ class CustomBaseView(MenuMixin, FilterQueryMixin, TemplateView):
         self.dashboard_report = None
         self.show_toolbar = False
         self.enable_queries = True
+        self._report_type = None
         super().__init__(**kwargs)
 
     def dispatch(self, request, *args, **kwargs):
@@ -91,9 +93,17 @@ class CustomBaseView(MenuMixin, FilterQueryMixin, TemplateView):
         return None
 
     def get_report_type(self):
+        if self.report_type_slug is not None:
+            if self._report_type is None:
+                self._report_type =  ReportType.objects.get(slug=self.report_type_slug)
+            return self._report_type
         return None
 
     def get_default_query(self):
+        report_type = self.get_report_type()
+        if report_type is not None:
+            base_model = report_type.content_type.model_class()
+            return base_model.objects.all()
         return None
 
     def get_default_filter(self, query):
@@ -103,13 +113,18 @@ class CustomBaseView(MenuMixin, FilterQueryMixin, TemplateView):
         query = self.get_default_query()
         if query is None:
             return None
-
         report_query = self.get_report_query(report=self.report)
         if report_query:
-            result = self.process_query_filters(query=query, search_filter_data=report_query.query)
-            return result
+            query = self.process_query_filters(query=query, search_filter_data=report_query.query)
+            report_type = self.get_report_type()
+            if report_type is not None:
+                base_model = report_type.content_type.model_class()
+                query = self.apply_order_by(query=query,
+                                            report_query=report_query,
+                                            report_type=report_type,
+                                            base_model=base_model)
+            return query
         return self.get_default_filter(query)
-
 
 class CustomModal(MultiQueryModalMixin, ModelFormModal):
     process = PROCESS_EDIT_DELETE
@@ -122,15 +137,13 @@ class CustomModal(MultiQueryModalMixin, ModelFormModal):
                    'report_tags',
                    'notes']
 
-    ajax_commands = ['datatable', 'button']
-
     def form_setup(self, form, *_args, **_kwargs):
         fields = ['name',
                    'report_tags',
                    'notes']
 
         if self.object.id and 'report_type' in self.slug:
-            self.add_extra_queries(form=form, fields=fields)
+            self.add_extra_queries(form=form, fields=fields, show_order_by=True)
         return fields
 
     def get_report_type(self, **_kwargs):

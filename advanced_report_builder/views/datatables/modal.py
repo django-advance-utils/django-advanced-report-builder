@@ -34,6 +34,7 @@ class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
     ajax_commands = ['datatable', 'button']
+    show_order_by = False
 
     widgets = {'report_tags': Select2Multiple}
 
@@ -109,7 +110,7 @@ class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
                   ]
 
         if self.object.id:
-            self.add_extra_queries(form=form, fields=fields)
+            self.add_extra_queries(form=form, fields=fields, show_order_by=False)
 
         return fields
 
@@ -158,6 +159,7 @@ class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
         return self.get_fields_for_select2(field_type='order',
                                            report_type=kwargs['report_type'],
                                            search_string=kwargs.get('search'))
+
 
 
 class TableFieldForm(ChartBaseFieldForm):
@@ -414,7 +416,7 @@ class TablePivotModal(QueryBuilderModalBaseMixin, FormModal):
         return self.command_response('close')
 
 
-class TableQueryForm(ModelCrispyForm):
+class QueryForm(ModelCrispyForm):
     cancel_class = 'btn-secondary modal-cancel'
 
     class Meta:

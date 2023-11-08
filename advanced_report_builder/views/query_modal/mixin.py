@@ -9,6 +9,8 @@ from advanced_report_builder.models import ReportQuery
 
 
 class MultiQueryModalMixin:
+    show_order_by = True
+
     def datatable_sort(self, **kwargs):
         form = self.get_form()
         widget = form.fields[kwargs['table_id'][3:]].widget
@@ -20,8 +22,10 @@ class MultiQueryModalMixin:
                 o.order = s[0]
                 o.save()
         return self.command_response('')
+
     def get_report_type(self, **_kwargs):
         return _kwargs['report_type']
+
     def button_duplicate_query(self, **_kwargs):
         query_id = _kwargs['query_id'][1:]
         report_query = ReportQuery.objects.get(pk=query_id)
@@ -37,18 +41,24 @@ class MultiQueryModalMixin:
 
     def button_add_query(self, **_kwargs):
         report_type = self.get_report_type(**_kwargs)
+        show_order_by = 1 if self.show_order_by else 0
         url = reverse('advanced_report_builder:query_modal',
-                      kwargs={'slug': f'report_id-{self.object.id}-report_type-{report_type}'})
+                      kwargs={'slug': f'report_id-{self.object.id}-'
+                                      f'report_type-{report_type}-'
+                                      f'show_order_by-{show_order_by}'})
         return self.command_response('show_modal', modal=url)
 
     def button_edit_query(self, **_kwargs):
         query_id = _kwargs['query_id'][1:]
         report_type = self.get_report_type(**_kwargs)
+        show_order_by = 1 if self.show_order_by else 0
         url = reverse('advanced_report_builder:query_modal',
-                      kwargs={'slug': f'pk-{query_id}-report_type-{report_type}'})
+                      kwargs={'slug': f'pk-{query_id}-'
+                                      f'report_type-{report_type}-'
+                                      f'show_order_by-{show_order_by}'})
         return self.command_response('show_modal', modal=url)
 
-    def add_extra_queries(self, form, fields):
+    def add_extra_queries(self, form, fields, show_order_by=False):
         add_query_js = 'django_modal.process_commands_lock([{"function": "post_modal", ' \
                        '"button": {"button": "add_query"}}])'
 

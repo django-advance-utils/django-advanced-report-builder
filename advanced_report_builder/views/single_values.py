@@ -40,7 +40,7 @@ class SingleValueView(ChartBaseView):
 
     def _process_aggregations(self, fields, aggregations_type=ANNOTATION_CHOICE_SUM, divider=None):
         field = self.chart_report.field
-        base_model = self.chart_report.get_base_modal()
+        base_model = self.chart_report.get_base_model()
         report_builder_class = get_report_builder_class(model=base_model,
                                                         report_type=self.chart_report.report_type)
 
@@ -139,7 +139,7 @@ class SingleValueView(ChartBaseView):
     def _process_percentage(self, fields):
         denominator_field = self.chart_report.field
         numerator_field = self.chart_report.numerator
-        base_model = self.chart_report.get_base_modal()
+        base_model = self.chart_report.get_base_model()
         report_builder_class = get_report_builder_class(model=base_model,
                                                         report_type=self.chart_report.report_type)
 
@@ -427,7 +427,7 @@ class SingleValueShowBreakdownModal(TableUtilsMixin, Modal):
         single_value_report = get_object_or_404(SingleValueReport, pk=self.slug['pk'])
         self.kwargs['enable_links'] = self.slug['enable_links'] == 'True'
         self.table_report = single_value_report
-        base_model = single_value_report.get_base_modal()
+        base_model = single_value_report.get_base_model()
         table = self.add_table(base_model=base_model)
         table.extra_filters = self.extra_filters
         table_fields = single_value_report.breakdown_fields

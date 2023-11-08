@@ -5,6 +5,7 @@ from django.apps import apps
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 
+from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.models import ReportQuery
 from advanced_report_builder.utils import get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
@@ -24,7 +25,10 @@ class FilterQueryMixin:
         result = self.process_filters(search_filter_data=search_filter_data)
         if result:
             return query.filter(result)
+        # query.order_by('name')
+
         return query
+
 
     def process_filters(self, search_filter_data, extra_filter=None):
         if not search_filter_data:
@@ -238,6 +242,25 @@ class FilterQueryMixin:
         else:
             report_query = report.reportquery_set.first()
         return report_query
+
+    @staticmethod
+    def apply_order_by(query, report_query, base_model, report_type):
+        order_by = []
+        utils = ReportBuilderFieldUtils()
+        report_builder_class = get_report_builder_class(model=base_model,
+                                                        report_type=report_type)
+        for report_query_order in report_query.reportqueryorder_set.all():
+            field_name = report_query_order.order_by_field
+            field_name = utils.get_field_details(base_model=base_model,
+                                                 field=field_name,
+                                                 report_builder_class=report_builder_class)[3]
+            if report_query_order.order_by_ascending:
+                order_by.append(field_name)
+            else:
+                order_by.append(f'-{field_name}')
+        if len(order_by) > 0:
+            query = query.order_by(*order_by)
+        return query
 
     def get_title(self):
         if self.dashboard_report and self.dashboard_report.name_override:

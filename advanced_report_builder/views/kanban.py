@@ -222,7 +222,7 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
         headings = []
 
         for kanban_report_lane in kanban_report_lanes:
-            base_model = kanban_report_lane.get_base_modal()
+            base_model = kanban_report_lane.get_base_model()
             report_builder_class = get_report_builder_class(model=base_model,
                                                             report_type=kanban_report_lane.report_type)
             if kanban_report_lane.multiple_type == KanbanReportLane.MULTIPLE_TYPE_NA:
@@ -498,7 +498,7 @@ class KanbanLaneModal(QueryBuilderModalBase):
                          selected_field_id=heading_field,
                          report_type=report_type)
 
-        self.setup_field(field_type='all',
+        self.setup_field(field_type='django_order',
                          form=form,
                          field_name='order_by_field',
                          selected_field_id=order_by_field,
@@ -568,7 +568,7 @@ class KanbanLaneModal(QueryBuilderModalBase):
                                            search_string=kwargs.get('search'))
 
     def select2_order_by_field(self, **kwargs):
-        return self.get_fields_for_select2(field_type='all',
+        return self.get_fields_for_select2(field_type='django_order',
                                            report_type=kwargs['report_type'],
                                            search_string=kwargs.get('search'))
 
