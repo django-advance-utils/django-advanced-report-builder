@@ -41,7 +41,7 @@ class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
                   FieldEx('query', template='advanced_report_builder/query_builder.html')]
 
         if self.object.id and self.slug.get('show_order_by') == '1':
-                self.add_query_orders(form=form, fields=fields)
+            self.add_query_orders(form=form, fields=fields)
 
         return fields
 

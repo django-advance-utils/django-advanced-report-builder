@@ -67,7 +67,7 @@ class FieldTypes:
         else:
             full_field_name = prefix + field
         column_id = prefix + field
-        if django_field is not None:
+        if django_field is not None and not isinstance(column, ManyToManyColumn):
             if isinstance(column, FilterForeignKeyColumn):
                 query_builder_filters.append({"id": column_id,
                                               "label": title,
@@ -121,18 +121,17 @@ class FieldTypes:
                                     query_builder_filters=query_builder_filters,
                                     field=full_field_name,
                                     title=title)
-        else:
-            if isinstance(column, ManyToManyColumn):
-                choices = dict(column.options['lookup'])
-                query_builder_filter = {"id": column_id,
-                                        "label": title,
-                                        "field": prefix + column.field_id,
-                                        "type": "integer",
-                                        'input': 'select',
-                                        'multiple': True,
-                                        'values': choices,
-                                        "operators": self.get_operator(self.FIELD_TYPE_MULTIPLE_CHOICE)}
-                query_builder_filters.append(query_builder_filter)
+        elif isinstance(column, ManyToManyColumn):
+            choices = dict(column.options['lookup'])
+            query_builder_filter = {"id": column_id,
+                                    "label": title,
+                                    "field": prefix + column.field_id,
+                                    "type": "integer",
+                                    'input': 'select',
+                                    'multiple': True,
+                                    'values': choices,
+                                    "operators": self.get_operator(self.FIELD_TYPE_MULTIPLE_CHOICE)}
+            query_builder_filters.append(query_builder_filter)
 
     def get_foreign_key_null_field(self, query_builder_filters, field, title):
         query_builder_filters.append({"id": field,
