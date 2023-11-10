@@ -29,10 +29,16 @@ class MultiQueryModalMixin:
     def button_duplicate_query(self, **_kwargs):
         query_id = _kwargs['query_id'][1:]
         report_query = ReportQuery.objects.get(pk=query_id)
+        report_query_orders = report_query.reportqueryorder_set.all()
         report_query.slug = None
         report_query.pk = None
         report_query.order = None
         report_query.save()
+
+        for report_query_order in report_query_orders:
+            report_query_order.pk = None
+            report_query_order.report_query = report_query
+            report_query_order.save()
 
         report_type = self.get_report_type(**_kwargs)
         url = reverse('advanced_report_builder:query_modal',

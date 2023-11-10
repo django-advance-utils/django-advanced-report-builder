@@ -8,11 +8,13 @@ from django_datatables.widgets import DataTableReorderWidget
 from django_menus.menu import MenuItem, HtmlMenu
 from django_modals.fields import FieldEx
 from django_modals.form_helpers import HorizontalNoEnterHelper
+from django_modals.forms import ModelCrispyForm
 from django_modals.modals import ModelFormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 
 from advanced_report_builder.models import ReportQuery, ReportQueryOrder, ReportType
 from advanced_report_builder.toggle import RBToggle
+from advanced_report_builder.views.charts_base import ChartBaseFieldForm
 from advanced_report_builder.views.datatables.modal import QueryForm
 from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin
 
@@ -111,7 +113,6 @@ class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
                      font_awesome='fas fa-pencil',
                      link_type=MenuItem.HREF)]
 
-
         template = 'advanced_report_builder/datatables/onclick_menu.html'
         form.fields['orders'] = CharField(
             required=False,
@@ -170,9 +171,22 @@ class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
                 o.save()
         return self.command_response('')
 
+class OrderByFieldForm(ModelCrispyForm):
+
+    class Meta:
+        model = ReportQueryOrder
+        fields = ['order_by_field',
+                  'order_by_ascending']
+
+    cancel_class = 'btn-secondary modal-cancel'
+
+    def cancel_button(self, css_class=cancel_class, **kwargs):
+        commands = [{'function': 'save_query_builder_id_query'},
+                    {'function': 'close'}]
+        return self.button('Cancel', commands, css_class, **kwargs)
 
 class QueryOrderModal(QueryBuilderModalBaseMixin, ModelFormModal):
-
+    form_class = OrderByFieldForm
     ajax_commands = ['datatable', 'button']
     model = ReportQueryOrder
     process = PROCESS_EDIT_DELETE
@@ -180,13 +194,10 @@ class QueryOrderModal(QueryBuilderModalBaseMixin, ModelFormModal):
     helper_class = HorizontalNoEnterHelper
     no_header_x = True
 
-    widgets = {'order_by_ascending': RBToggle}
-
-    form_fields = ('order_by_field',
-                   'order_by_ascending')
-
-
     def form_setup(self, form, *_args, **_kwargs):
+
+        form.fields['order_by_ascending'].widget = RBToggle()
+
         report_type = ReportType.objects.get(id=self.slug['report_type'])
         if 'data' in _kwargs:
             order_by_field = _kwargs['data'].get('order_by_field')
@@ -203,3 +214,7 @@ class QueryOrderModal(QueryBuilderModalBaseMixin, ModelFormModal):
         return self.get_fields_for_select2(field_type='django_order',
                                            report_type=self.slug['report_type'],
                                            search_string=kwargs.get('search'))
+
+    def post_save(self, created, form):
+        self.add_command({'function': 'save_query_builder_id_query'})
+        return self.command_response('close')

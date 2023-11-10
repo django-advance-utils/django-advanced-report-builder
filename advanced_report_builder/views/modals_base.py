@@ -152,8 +152,6 @@ class QueryBuilderModalBaseMixin(ReportBuilderFieldUtils):
 
         return JsonResponse({'results': fields})
 
-
-
     def setup_field(self, field_type, form, field_name, selected_field_id, report_type):
         _fields = []
         if selected_field_id:
