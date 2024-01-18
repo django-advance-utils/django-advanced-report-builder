@@ -6,7 +6,7 @@ from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.select2 import Select2Multiple
 
 from advanced_report_builder.filter_query import FilterQueryMixin
-from advanced_report_builder.models import CustomReport, ReportType, ReportQuery
+from advanced_report_builder.models import CustomReport, ReportType
 from advanced_report_builder.utils import split_slug, make_slug_str
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 
@@ -150,11 +150,3 @@ class CustomModal(MultiQueryModalMixin, ModelFormModal):
     def get_report_type(self, **_kwargs):
         return self.slug['report_type']
 
-    def datatable_sort(self, **kwargs):
-        current_sort = dict(ReportQuery.objects.filter(report_id=self.object.id).values_list('id', 'order'))
-        for s in kwargs['sort']:
-            if current_sort[s[1]] != s[0]:
-                o = ReportQuery.objects.get(id=s[1])
-                o.order = s[0]
-                o.save()
-        return self.command_response('')

@@ -15,7 +15,7 @@ class MultiQueryModalMixin:
         form = self.get_form()
         widget = form.fields[kwargs['table_id'][3:]].widget
         _model = widget.attrs['table_model']
-        current_sort = dict(_model.objects.filter(report=self.object.id).values_list('id', 'order'))
+        current_sort = dict(_model.objects.filter(report_id=self.object.id).values_list('id', 'order'))
         for s in kwargs['sort']:
             if current_sort[s[1]] != s[0]:
                 o = _model.objects.get(id=s[1])
