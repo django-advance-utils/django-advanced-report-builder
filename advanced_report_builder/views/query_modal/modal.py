@@ -14,7 +14,6 @@ from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 
 from advanced_report_builder.models import ReportQuery, ReportQueryOrder, ReportType
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.views.charts_base import ChartBaseFieldForm
 from advanced_report_builder.views.datatables.modal import QueryForm
 from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin
 

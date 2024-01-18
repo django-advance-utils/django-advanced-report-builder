@@ -1,5 +1,4 @@
 from django.views.generic import TemplateView
-from django.views.generic import TemplateView
 from django_menus.menu import MenuItem
 from django_menus.menu import MenuMixin
 from django_modals.modals import ModelFormModal
@@ -7,8 +6,8 @@ from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.select2 import Select2Multiple
 
 from advanced_report_builder.filter_query import FilterQueryMixin
-from advanced_report_builder.models import CustomReport, ReportType
-from advanced_report_builder.utils import split_slug, make_slug_str, get_report_builder_class
+from advanced_report_builder.models import CustomReport, ReportType, ReportQuery
+from advanced_report_builder.utils import split_slug, make_slug_str
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 
 
@@ -126,10 +125,12 @@ class CustomBaseView(MenuMixin, FilterQueryMixin, TemplateView):
             return query
         return self.get_default_filter(query)
 
+
 class CustomModal(MultiQueryModalMixin, ModelFormModal):
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
     model = CustomReport
+    ajax_commands = ['datatable', 'button']
 
     widgets = {'report_tags': Select2Multiple}
 
@@ -139,8 +140,8 @@ class CustomModal(MultiQueryModalMixin, ModelFormModal):
 
     def form_setup(self, form, *_args, **_kwargs):
         fields = ['name',
-                   'report_tags',
-                   'notes']
+                  'report_tags',
+                  'notes']
 
         if self.object.id and 'report_type' in self.slug:
             self.add_extra_queries(form=form, fields=fields, show_order_by=True)
@@ -148,3 +149,12 @@ class CustomModal(MultiQueryModalMixin, ModelFormModal):
 
     def get_report_type(self, **_kwargs):
         return self.slug['report_type']
+
+    def datatable_sort(self, **kwargs):
+        current_sort = dict(ReportQuery.objects.filter(report_id=self.object.id).values_list('id', 'order'))
+        for s in kwargs['sort']:
+            if current_sort[s[1]] != s[0]:
+                o = ReportQuery.objects.get(id=s[1])
+                o.order = s[0]
+                o.save()
+        return self.command_response('')
