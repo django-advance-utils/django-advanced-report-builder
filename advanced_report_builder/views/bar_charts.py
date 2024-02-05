@@ -4,6 +4,7 @@ import operator
 from datetime import datetime, timedelta
 from functools import reduce
 
+from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Div
 from date_offset.monthdelta import MonthDelta
 from django.core.exceptions import FieldDoesNotExist
@@ -412,6 +413,17 @@ class BarChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
 class BarChartBreakdownFieldForm(TableFieldForm):
     cancel_class = 'btn-secondary modal-cancel'
 
+    def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
+        if isinstance(self.django_field, NUMBER_FIELDS):
+            return StrictButton(button_text, onclick=f'save_modal_{self.form_id}()', css_class=css_class, **kwargs)
+        else:
+            return super().submit_button(css_class, button_text, **kwargs)
+
+    def cancel_button(self, css_class=cancel_class, **kwargs):
+        commands = [{'function': 'save_query_builder_id_query_data'},
+                    {'function': 'close'}]
+        return self.button('Cancel', commands, css_class, **kwargs)
+
 
 class BarChartBreakdownFieldModal(TableFieldModal):
     form_class = BarChartBreakdownFieldForm
@@ -426,6 +438,7 @@ class BarChartBreakdownFieldModal(TableFieldModal):
                           'val': _attr})
 
         self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
+        self.add_command({'function': 'save_query_builder_id_query_data'})
         self.add_command({'function': 'breakdown_update_selection'})
         return self.command_response('close')
 
