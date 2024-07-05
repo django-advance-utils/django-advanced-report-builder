@@ -76,3 +76,8 @@ def get_report_builder_class(model, report_type=None, class_name=None):
     if report_builder_class is not None:
         report_builder_class = report_builder_class()
     return report_builder_class
+
+
+def get_query_js(button_name, field_id):
+    return ('django_modal.process_commands_lock([{"function": "post_modal", "button": {"button": "' +
+            button_name + '", "' + field_id + '": $(this).closest(\'tr\').attr(\'id\')}}])')

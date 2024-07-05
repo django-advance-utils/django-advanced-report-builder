@@ -354,12 +354,6 @@ class ChartBaseFieldForm(ReportBuilderFieldUtils, CrispyForm):
         self.col_type_override = None
         super().__init__(*args, **kwargs)
 
-    def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
-        if isinstance(self.django_field, NUMBER_FIELDS):
-            return StrictButton(button_text, onclick=f'save_modal_{self.form_id}()', css_class=css_class, **kwargs)
-        else:
-            return super().submit_button(css_class, button_text, **kwargs)
-
     def cancel_button(self, css_class=cancel_class, **kwargs):
         commands = [{'function': 'close'}]
         return self.button('Cancel', commands, css_class, **kwargs)

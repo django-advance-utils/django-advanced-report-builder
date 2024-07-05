@@ -1,5 +1,6 @@
 import json
 
+from crispy_forms.bootstrap import StrictButton
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Sum, ExpressionWrapper, FloatField
 from django.db.models.functions import Coalesce, NullIf
@@ -9,8 +10,10 @@ from django.urls import reverse
 from django_datatables.datatables import DatatableTable
 from django_menus.menu import MenuItem
 from django_modals.fields import FieldEx
+from django_modals.form_helpers import HorizontalNoEnterHelper
+from django_modals.forms import ModelCrispyForm
 from django_modals.helper import show_modal
-from django_modals.modals import Modal
+from django_modals.modals import Modal, ModelFormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.select2 import Select2Multiple
 from django_modals.widgets.widgets import Toggle
@@ -19,13 +22,13 @@ from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_CHOICE_SUM, \
     ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT
-from advanced_report_builder.models import SingleValueReport, ReportType
-from advanced_report_builder.utils import get_report_builder_class
+from advanced_report_builder.models import SingleValueReport, ReportType, ReportQuery
+from advanced_report_builder.utils import get_report_builder_class, get_query_js
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartBaseView
 from advanced_report_builder.views.datatables.modal import TableFieldModal, TableFieldForm
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
-from advanced_report_builder.views.modals_base import QueryBuilderModalBase
+from advanced_report_builder.views.modals_base import QueryBuilderModalBase, QueryBuilderModalBaseMixin
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 
 
@@ -299,14 +302,17 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
             {'selector': '#div_id_numerator',
              'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: 'show'},
              'default': 'hide'},
-            {'selector': '#div_id_extra_query_data',
+            {'selector': '.btn-query-edit',
+             'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: 'hide',
+                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'hide'},
+             'default': 'show'},
+            {'selector': '.btn-query-numerator-edit',
              'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: 'show',
                         SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'show'},
              'default': 'hide'},
             {'selector': 'label[for=id_field]',
              'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: ('html', 'Denominator field')},
              'default': ('html', 'Field')},
-
             {'selector': '#div_id_average_scale',
              'values': {SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME: 'show'},
              'default': 'hide'},
@@ -371,6 +377,12 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
                                          'command_prefix': ''})]
         if self.object.id:
             self.add_extra_queries(form=form, fields=fields)
+            if self.object.single_value_type in [SingleValueReport.SINGLE_VALUE_TYPE_PERCENT,
+                                                 SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT]:
+                self.add_page_command('set_css', selector='.btn-query-edit', prop='display', val='none')
+            else:
+                self.add_page_command('set_css', selector='.btn-query-numerator-edit',
+                                      prop='display', val='none')
         return fields
 
     def select2_field(self, **kwargs):
@@ -409,6 +421,25 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
                          tables=tables,
                          report_builder_class=report_builder_fields)
         return self.command_response('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
+
+    def query_menu(self):
+        edit_numerator_query_js = get_query_js('edit_numerator_query', 'query_id')
+        description_edit_menu_items = super().query_menu()
+        description_edit_menu_items.append(MenuItem(edit_numerator_query_js.replace('"', "&quot;"),
+                                                    menu_display='Edit',
+                                                    css_classes='btn btn-sm btn-outline-dark btn-query-numerator-edit',
+                                                    font_awesome='fas fa-pencil',
+                                                    link_type=MenuItem.HREF,
+                                                    hide=True))
+        return description_edit_menu_items
+
+    def button_edit_numerator_query(self, **_kwargs):
+        query_id = _kwargs['query_id'][1:]
+        report_type = self.get_report_type(**_kwargs)
+        url = reverse('advanced_report_builder:single_value_numerator_modal',
+                      kwargs={'slug': f'pk-{query_id}-'
+                                      f'report_type-{report_type}'})
+        return self.command_response('show_modal', modal=url)
 
 
 class SingleValueShowBreakdownModal(TableUtilsMixin, Modal):
@@ -466,6 +497,63 @@ class SingleValueTableFieldModal(TableFieldModal):
 
         self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
         self.add_command({'function': 'save_query_builder_id_filter'})
-        self.add_command({'function': 'save_query_builder_id_extra_query_data'})
         self.add_command({'function': 'update_selection'})
         return self.command_response('close')
+
+
+class QueryNumeratorForm(ModelCrispyForm):
+    cancel_class = 'btn-secondary modal-cancel'
+
+    class Meta:
+        model = ReportQuery
+        fields = ['name',
+                  'query',
+                  'extra_query']
+
+    def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
+        return StrictButton(button_text, onclick=f'save_modal_{self.form_id}()', css_class=css_class, **kwargs)
+
+    def setup_modal(self, *args, **kwargs):
+        self.fields['extra_query'].label = 'Numerator'
+        super().setup_modal(*args, **kwargs)
+
+
+class QueryNumeratorModal(QueryBuilderModalBaseMixin, ModelFormModal):
+    model = ReportQuery
+    process = PROCESS_EDIT_DELETE
+    permission_delete = PERMISSION_OFF
+    form_class = QueryNumeratorForm
+    helper_class = HorizontalNoEnterHelper
+    ajax_commands = ['datatable', 'button']
+
+    template_name = 'advanced_report_builder/extra_query_modal.html'
+    no_header_x = True
+
+    def __init__(self, *args, **kwargs):
+        self._base_and_class = None
+        super().__init__(*args, **kwargs)
+
+    def post_save(self, created, form):
+        self.add_command({'function': 'save_query_builder_id_extra_query'})
+        return self.command_response('close')
+
+    def form_setup(self, form, *_args, **_kwargs):
+        fields = ['name',
+                  FieldEx('query', template='advanced_report_builder/query_builder.html'),
+                  FieldEx('extra_query', template='advanced_report_builder/query_builder.html')]
+
+        return fields
+
+    def ajax_get_query_builder_fields(self, **kwargs):
+        field_auto_id = kwargs['field_auto_id']
+        report_type_id = self.slug['report_type']
+        query_builder_filters = self.get_query_builder_report_type_field(report_type_id=report_type_id)
+        return self.command_response(f'query_builder_{field_auto_id}', data=json.dumps(query_builder_filters))
+
+    def get_report_builder_base_and_class(self):
+        if self._base_and_class is None:
+            self._base_and_class = self.get_report_builder_class(report_type_id=self.slug['report_type'])
+        return self._base_and_class
+
+    def get_report_type(self):
+        return self.slug['report_type']

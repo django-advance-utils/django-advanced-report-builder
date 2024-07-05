@@ -7,12 +7,13 @@ from django_datatables.widgets import DataTableReorderWidget
 from django_menus.menu import MenuItem, HtmlMenu
 
 from advanced_report_builder.models import ReportQuery
+from advanced_report_builder.utils import get_query_js
 
 
 class MultiQueryModalMixin:
     show_order_by = True
 
-    ajax_commands = ['datatable', 'button']
+    ajax_commands = ['datatable', 'button', 'ajax']
 
     def datatable_sort(self, **kwargs):
         form = self.get_form()
@@ -67,6 +68,23 @@ class MultiQueryModalMixin:
                                       f'show_order_by-{show_order_by}'})
         return self.command_response('show_modal', modal=url)
 
+    def query_menu(self):
+        edit_query_js = get_query_js('edit_query', 'query_id')
+        duplicate_query_js = get_query_js('duplicate_query', 'query_id')
+        description_edit_menu_items = [
+            MenuItem(duplicate_query_js.replace('"', "&quot;"),
+                     menu_display='Duplicate',
+                     css_classes='btn btn-sm btn-outline-dark',
+                     font_awesome='fas fa-clone',
+                     link_type=MenuItem.HREF),
+            MenuItem(edit_query_js.replace('"', "&quot;"),
+                     menu_display='Edit',
+                     css_classes='btn btn-sm btn-outline-dark btn-query-edit',
+                     font_awesome='fas fa-pencil',
+                     link_type=MenuItem.HREF,
+                     hide=True)]
+        return description_edit_menu_items
+
     def add_extra_queries(self, form, fields):
         add_query_js = 'django_modal.process_commands_lock([{"function": "post_modal", ' \
                        '"button": {"button": "add_query"}}])'
@@ -84,25 +102,7 @@ class MultiQueryModalMixin:
             *description_add_menu_items)
 
         fields.append(Div(HTML(menu.render()), css_class='form-buttons'))
-        edit_query_js = 'django_modal.process_commands_lock([{"function": "post_modal", ' \
-                        '"button": {"button": "edit_query", "query_id": $(this).closest(\'tr\').attr(\'id\')}}])'
-
-        duplicate_query_js = 'django_modal.process_commands_lock([{"function": "post_modal", ' \
-                             '"button": {"button": "duplicate_query", ' \
-                             '"query_id": $(this).closest(\'tr\').attr(\'id\')}}])'
-
-        description_edit_menu_items = [
-            MenuItem(duplicate_query_js.replace('"', "&quot;"),
-                     menu_display='Duplicate',
-                     css_classes='btn btn-sm btn-outline-dark',
-                     font_awesome='fas fa-clone',
-                     link_type=MenuItem.HREF),
-
-            MenuItem(edit_query_js.replace('"', "&quot;"),
-                     menu_display='Edit',
-                     css_classes='btn btn-sm btn-outline-dark',
-                     font_awesome='fas fa-pencil',
-                     link_type=MenuItem.HREF)]
+        description_edit_menu_items = self.query_menu()
 
         form.fields['queries'] = CharField(
             required=False,

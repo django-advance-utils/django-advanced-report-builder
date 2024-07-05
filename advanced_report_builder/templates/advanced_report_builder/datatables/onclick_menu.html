@@ -5,6 +5,7 @@
             <a {% if value.dropdown %}id="{{ value.dropdown.id }}"{% endif %} href="#" onclick="{{ value.href }}"
                class="mr-1 mb-1 btn {{ value.css|default:"btn-primary" }}{% if value.active %} active{% endif %}" {{ value.attributes }}>
                 <span {% if value.show_caret %}class="dropdown-toggle"{% endif %}>{{ value.name }}{{ value.badge }}</span></a>
+
         {% else %}
             {{ value.render }}
         {% endif %}

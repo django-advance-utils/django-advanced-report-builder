@@ -15,6 +15,7 @@ from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 
 from advanced_report_builder.models import ReportQuery, ReportQueryOrder, ReportType
 from advanced_report_builder.toggle import RBToggle
+from advanced_report_builder.utils import get_query_js
 from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin
 
 
@@ -60,10 +61,8 @@ class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
 
     def ajax_get_query_builder_fields(self, **kwargs):
         field_auto_id = kwargs['field_auto_id']
-
         report_type_id = self.slug['report_type']
         query_builder_filters = self.get_query_builder_report_type_field(report_type_id=report_type_id)
-
         return self.command_response(f'query_builder_{field_auto_id}', data=json.dumps(query_builder_filters))
 
     def get_report_builder_base_and_class(self):
@@ -103,14 +102,8 @@ class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
             *description_add_menu_items)
 
         fields.append(Div(HTML(menu.render()), css_class='form-buttons'))
-        edit_query_js = 'django_modal.process_commands_lock([{"function": "post_modal", ' \
-                        '"button": {"button": "edit_query_order", ' \
-                        '"query_order_id": $(this).closest(\'tr\').attr(\'id\')}}])'
-
-        duplicate_query_js = 'django_modal.process_commands_lock([{"function": "post_modal", ' \
-                             '"button": {"button": "duplicate_query_order", ' \
-                             '"query_order_id": $(this).closest(\'tr\').attr(\'id\')}}])'
-
+        edit_query_js = get_query_js('edit_query_order', 'query_order_id')
+        duplicate_query_js = get_query_js('duplicate_query_order', 'query_order_id')
         description_edit_menu_items = [
             MenuItem(duplicate_query_js.replace('"', "&quot;"),
                      menu_display='Duplicate',
@@ -120,7 +113,7 @@ class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
 
             MenuItem(edit_query_js.replace('"', "&quot;"),
                      menu_display='Edit',
-                     css_classes='btn btn-sm btn-outline-dark',
+                     css_classes='btn btn-sm btn-outline-dark btn-query-edit',
                      font_awesome='fas fa-pencil',
                      link_type=MenuItem.HREF)]
 
