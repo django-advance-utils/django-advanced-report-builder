@@ -17,6 +17,7 @@ from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_report_builder_class
 from advanced_report_builder.views.charts_base import ChartBaseView, ChartBaseFieldForm
 from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin, QueryBuilderModalBase
+from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 
 
 class PieChartView(ChartBaseView):
@@ -49,12 +50,13 @@ class PieChartView(ChartBaseView):
         return None
 
 
-class PieChartModal(QueryBuilderModalBase):
+class PieChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
     template_name = 'advanced_report_builder/charts/modal.html'
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
     model = PieChartReport
     widgets = {'report_tags': Select2Multiple}
+    show_order_by = False
 
     form_fields = ['name',
                    'notes',
@@ -66,25 +68,23 @@ class PieChartModal(QueryBuilderModalBase):
                    ]
 
     def form_setup(self, form, *_args, **_kwargs):
-
-        self.add_query_data(form)
-
         url = reverse('advanced_report_builder:pie_chart_field_modal',
                       kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
         form.fields['notes'].widget.attrs['rows'] = 3
-        return ('name',
-                'notes',
-                'report_type',
-                'report_tags',
-                'axis_value_type',
-                'style',
-                FieldEx('fields',
-                        template='advanced_report_builder/select_column.html',
-                        extra_context={'select_column_url': url,
-                                       'command_prefix': ''}),
-                FieldEx('query_data',
-                        template='advanced_report_builder/query_builder.html'),
-                )
+        fields = ['name',
+                  'notes',
+                  'report_type',
+                  'report_tags',
+                  'axis_value_type',
+                  'style',
+                  FieldEx('fields',
+                          template='advanced_report_builder/select_column.html',
+                          extra_context={'select_column_url': url,
+                                         'command_prefix': ''}),
+                  ]
+        if self.object.id:
+            self.add_extra_queries(form=form, fields=fields)
+        return fields
 
 
 class PieChartFieldForm(ChartBaseFieldForm):
@@ -167,7 +167,7 @@ class PieChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
                           'val': _attr})
 
         self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
-        self.add_command({'function': 'save_query_builder_id_query_data'})
+        self.add_command({'function': 'save_query_builder_id_filter'})
         self.add_command({'function': 'update_selection'})
         return self.command_response('close')
 

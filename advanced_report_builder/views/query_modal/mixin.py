@@ -1,4 +1,5 @@
 from crispy_forms.layout import Div, HTML
+from django.conf import settings
 from django.forms import CharField
 from django.urls import reverse
 from django_datatables.columns import MenuColumn
@@ -10,6 +11,8 @@ from advanced_report_builder.models import ReportQuery
 
 class MultiQueryModalMixin:
     show_order_by = True
+
+    ajax_commands = ['datatable', 'button']
 
     def datatable_sort(self, **kwargs):
         form = self.get_form()
@@ -64,7 +67,7 @@ class MultiQueryModalMixin:
                                       f'show_order_by-{show_order_by}'})
         return self.command_response('show_modal', modal=url)
 
-    def add_extra_queries(self, form, fields, show_order_by=False):
+    def add_extra_queries(self, form, fields):
         add_query_js = 'django_modal.process_commands_lock([{"function": "post_modal", ' \
                        '"button": {"button": "add_query"}}])'
 
@@ -110,7 +113,6 @@ class MultiQueryModalMixin:
                 fields=['_.index',
                         '.id',
                         'name',
-
                         MenuColumn(column_name='menu', field='id',
                                    column_defs={'orderable': False, 'className': 'dt-right'},
                                    menu=HtmlMenu(self.request,
@@ -119,3 +121,12 @@ class MultiQueryModalMixin:
                         ],
                 attrs={'filter': {'report__id': self.object.id}}))
         fields.append('queries')
+
+    def post_save(self, created, form):
+        if created:
+            self.modal_redirect(self.request.resolver_match.view_name, slug=f'pk-{self.object.id}-new-True')
+        else:
+            url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME', '')
+            if url_name and self.slug.get('new'):
+                url = reverse(url_name, kwargs={'slug': self.object.slug})
+                self.command_response('redirect', url=url)

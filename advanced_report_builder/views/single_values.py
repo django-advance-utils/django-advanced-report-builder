@@ -26,6 +26,7 @@ from advanced_report_builder.views.charts_base import ChartBaseView
 from advanced_report_builder.views.datatables.modal import TableFieldModal, TableFieldForm
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
+from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 
 
 class SingleValueView(ChartBaseView):
@@ -259,11 +260,12 @@ class SingleValueView(ChartBaseView):
         return []
 
 
-class SingleValueModal(QueryBuilderModalBase):
+class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
     template_name = 'advanced_report_builder/single_values/modal.html'
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
     model = SingleValueReport
+    show_order_by = False
     widgets = {'report_tags': Select2Multiple,
                'show_breakdown': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'})}
 
@@ -342,7 +344,6 @@ class SingleValueModal(QueryBuilderModalBase):
                          selected_field_id=numerator,
                          report_type=report_type)
 
-        self.add_query_data(form, include_extra_query=True)
         form.fields['notes'].widget.attrs['rows'] = 3
         url = reverse('advanced_report_builder:single_value_field_modal',
                       kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
@@ -350,30 +351,27 @@ class SingleValueModal(QueryBuilderModalBase):
         range_type_choices = VariableDate.RANGE_TYPE_CHOICES
         form.fields['average_start_period'] = ChoiceField(required=False, choices=range_type_choices)
         form.fields['average_end_period'] = ChoiceField(required=False, choices=range_type_choices)
-        return ('name',
-                'notes',
-                'report_type',
-                'report_tags',
-                'single_value_type',
-                'numerator',
-                'field',
-                'average_scale',
-                'average_start_period',
-                'average_end_period',
-                'prefix',
-                FieldEx('extra_query_data',
-                        template='advanced_report_builder/query_builder.html',
-                        ),
-                'tile_colour',
-                'decimal_places',
-                'show_breakdown',
-                FieldEx('breakdown_fields',
-                        template='advanced_report_builder/select_column.html',
-                        extra_context={'select_column_url': url,
-                                       'command_prefix': ''}),
-                FieldEx('query_data',
-                        template='advanced_report_builder/query_builder.html')
-                )
+        fields = ['name',
+                  'notes',
+                  'report_type',
+                  'report_tags',
+                  'single_value_type',
+                  'numerator',
+                  'field',
+                  'average_scale',
+                  'average_start_period',
+                  'average_end_period',
+                  'prefix',
+                  'tile_colour',
+                  'decimal_places',
+                  'show_breakdown',
+                  FieldEx('breakdown_fields',
+                          template='advanced_report_builder/select_column.html',
+                          extra_context={'select_column_url': url,
+                                         'command_prefix': ''})]
+        if self.object.id:
+            self.add_extra_queries(form=form, fields=fields)
+        return fields
 
     def select2_field(self, **kwargs):
         return self.get_fields_for_select2(field_type='number',
@@ -453,12 +451,6 @@ class SingleValueShowBreakdownModal(TableUtilsMixin, Modal):
 class SingleValueTableFieldForm(TableFieldForm):
     cancel_class = 'btn-secondary modal-cancel'
 
-    def cancel_button(self, css_class=cancel_class, **kwargs):
-        commands = [{'function': 'save_query_builder_id_query_data'},
-                    {'function': 'save_query_builder_id_extra_query_data'},
-                    {'function': 'close'}]
-        return self.button('Cancel', commands, css_class, **kwargs)
-
 
 class SingleValueTableFieldModal(TableFieldModal):
     form_class = SingleValueTableFieldForm
@@ -473,7 +465,7 @@ class SingleValueTableFieldModal(TableFieldModal):
                           'val': _attr})
 
         self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
-        self.add_command({'function': 'save_query_builder_id_query_data'})
+        self.add_command({'function': 'save_query_builder_id_filter'})
         self.add_command({'function': 'save_query_builder_id_extra_query_data'})
         self.add_command({'function': 'update_selection'})
         return self.command_response('close')

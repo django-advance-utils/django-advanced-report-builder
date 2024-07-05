@@ -2,16 +2,11 @@ import base64
 import json
 
 from crispy_forms.bootstrap import StrictButton
-from crispy_forms.layout import Div, HTML
-from django.conf import settings
+from crispy_forms.layout import Div
 from django.forms import CharField, ChoiceField, BooleanField, IntegerField
 from django.urls import reverse
-from django_datatables.columns import MenuColumn
-from django_datatables.widgets import DataTableReorderWidget
-from django_menus.menu import HtmlMenu, MenuItem
 from django_modals.fields import FieldEx
 from django_modals.form_helpers import HorizontalNoEnterHelper
-from django_modals.forms import ModelCrispyForm
 from django_modals.modals import FormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.select2 import Select2Multiple
@@ -19,7 +14,7 @@ from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, \
     DATE_FORMAT_TYPES, CURRENCY_COLUMNS, LINK_COLUMNS
-from advanced_report_builder.models import TableReport, ReportQuery, ReportType
+from advanced_report_builder.models import TableReport, ReportType
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_report_builder_class
 from advanced_report_builder.views.charts_base import ChartBaseFieldForm
@@ -33,7 +28,6 @@ class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
     model = TableReport
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
-    ajax_commands = ['datatable', 'button']
     show_order_by = False
 
     widgets = {'report_tags': Select2Multiple}
@@ -110,7 +104,7 @@ class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
                   ]
 
         if self.object.id:
-            self.add_extra_queries(form=form, fields=fields, show_order_by=False)
+            self.add_extra_queries(form=form, fields=fields)
 
         return fields
 
@@ -123,15 +117,6 @@ class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
         if not self.response_commands:
             self.add_command('reload')
         return self.command_response()
-
-    def post_save(self, created, form):
-        if created:
-            self.modal_redirect(self.request.resolver_match.view_name, slug=f'pk-{self.object.id}-new-True')
-        else:
-            url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME', '')
-            if url_name and self.slug.get('new'):
-                url = reverse(url_name, kwargs={'slug': self.object.slug})
-                self.command_response('redirect', url=url)
 
     def ajax_get_fields(self, **kwargs):
         report_type_id = kwargs['report_type']
@@ -159,7 +144,6 @@ class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
         return self.get_fields_for_select2(field_type='order',
                                            report_type=kwargs['report_type'],
                                            search_string=kwargs.get('search'))
-
 
 
 class TableFieldForm(ChartBaseFieldForm):
@@ -415,14 +399,3 @@ class TablePivotModal(QueryBuilderModalBaseMixin, FormModal):
         self.add_command({'function': 'update_pivot_selection'})
         return self.command_response('close')
 
-
-class QueryForm(ModelCrispyForm):
-    cancel_class = 'btn-secondary modal-cancel'
-
-    class Meta:
-        model = ReportQuery
-        fields = ['name',
-                  'query']
-
-    def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
-        return StrictButton(button_text, onclick=f'save_modal_{self.form_id}()', css_class=css_class, **kwargs)

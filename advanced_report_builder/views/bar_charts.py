@@ -36,6 +36,7 @@ from advanced_report_builder.views.charts_base import ChartBaseView, ChartBaseFi
 from advanced_report_builder.views.datatables.modal import TableFieldModal, TableFieldForm
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
 from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin, QueryBuilderModalBase
+from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 
 
 class BarChartView(ChartBaseView):
@@ -142,11 +143,12 @@ class BarChartView(ChartBaseView):
         return start_field_name
 
 
-class BarChartModal(QueryBuilderModalBase):
+class BarChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
     template_name = 'advanced_report_builder/charts/modal.html'
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
     model = BarChartReport
+    show_order_by = False
     widgets = {'positive_bar_colour': ColourPickerWidget,
                'negative_bar_colour': ColourPickerWidget,
                'stacked': RBToggle,
@@ -200,7 +202,6 @@ class BarChartModal(QueryBuilderModalBase):
 
         form.fields['notes'].widget.attrs['rows'] = 3
 
-        self.add_query_data(form)
         url = reverse('advanced_report_builder:bar_chart_field_modal',
                       kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
 
@@ -220,33 +221,34 @@ class BarChartModal(QueryBuilderModalBase):
                         BarChartReport.DATE_FIELD_RANGE: ('html', 'Start date field')}}
         ])
 
-        return ('name',
-                'notes',
-                'report_type',
-                'report_tags',
-                'bar_chart_orientation',
-                'axis_scale',
-                'axis_value_type',
-                'date_field_type',
-                'date_field',
-                'end_date_field',
-                FieldEx('fields',
-                        template='advanced_report_builder/select_column.html',
-                        extra_context={'select_column_url': url,
-                                       'command_prefix': ''}),
-                'x_label',
-                'y_label',
-                'stacked',
-                'show_totals',
-                'show_blank_dates',
-                'show_breakdown',
-                FieldEx('breakdown_fields',
-                        template='advanced_report_builder/select_column.html',
-                        extra_context={'select_column_url': url_breakdown,
-                                       'command_prefix': 'breakdown_'}),
-                FieldEx('query_data',
-                        template='advanced_report_builder/query_builder.html'),
-                )
+        fields = ['name',
+                  'notes',
+                  'report_type',
+                  'report_tags',
+                  'bar_chart_orientation',
+                  'axis_scale',
+                  'axis_value_type',
+                  'date_field_type',
+                  'date_field',
+                  'end_date_field',
+                  FieldEx('fields',
+                          template='advanced_report_builder/select_column.html',
+                          extra_context={'select_column_url': url,
+                                         'command_prefix': ''}),
+                  'x_label',
+                  'y_label',
+                  'stacked',
+                  'show_totals',
+                  'show_blank_dates',
+                  'show_breakdown',
+                  FieldEx('breakdown_fields',
+                          template='advanced_report_builder/select_column.html',
+                          extra_context={'select_column_url': url_breakdown,
+                                         'command_prefix': 'breakdown_'})
+                  ]
+        if self.object.id:
+            self.add_extra_queries(form=form, fields=fields)
+        return fields
 
     def select2_date_field(self, **kwargs):
         return self.get_fields_for_select2(field_type='date',
@@ -369,7 +371,7 @@ class BarChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
                           'val': _attr})
 
         self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
-        self.add_command({'function': 'save_query_builder_id_query_data'})
+        self.add_command({'function': 'save_query_builder_id_filter'})
         self.add_command({'function': 'update_selection'})
         return self.command_response('close')
 
@@ -419,10 +421,6 @@ class BarChartBreakdownFieldForm(TableFieldForm):
         else:
             return super().submit_button(css_class, button_text, **kwargs)
 
-    def cancel_button(self, css_class=cancel_class, **kwargs):
-        commands = [{'function': 'save_query_builder_id_query_data'},
-                    {'function': 'close'}]
-        return self.button('Cancel', commands, css_class, **kwargs)
 
 
 class BarChartBreakdownFieldModal(TableFieldModal):
@@ -438,7 +436,7 @@ class BarChartBreakdownFieldModal(TableFieldModal):
                           'val': _attr})
 
         self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
-        self.add_command({'function': 'save_query_builder_id_query_data'})
+        self.add_command({'function': 'save_query_builder_id_filter'})
         self.add_command({'function': 'breakdown_update_selection'})
         return self.command_response('close')
 

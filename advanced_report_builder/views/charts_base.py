@@ -6,6 +6,7 @@ from crispy_forms.bootstrap import StrictButton
 from date_offset.date_offset import DateOffset
 from dateutil.relativedelta import relativedelta
 from django.apps import apps
+from django.core.exceptions import FieldError
 from django.db import ProgrammingError, DataError
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
@@ -21,7 +22,7 @@ from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_VALUE_FUNCTIONS, ANNOTATION_VALUE_YEAR, \
     ANNOTATION_VALUE_QUARTER, ANNOTATION_VALUE_WEEK, ANNOTATION_VALUE_DAY, ANNOTATION_VALUE_MONTH
 from advanced_report_builder.models import ReportType
-from advanced_report_builder.utils import split_slug, split_attr, get_report_builder_class
+from advanced_report_builder.utils import split_slug, split_attr, get_report_builder_class, make_slug_str
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.report import ReportBase
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
@@ -43,7 +44,7 @@ class ChartJSTable(DatatableTable):
             targets = []
             try:
                 data = self.get_table_array(self.kwargs.get('request'), self.get_query())
-            except DataError:
+            except (DataError, FieldError):
                 data = [['N/A']]
             if self.targets is not None:
                 targets = self.targets.all()
@@ -303,8 +304,16 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
     def edit_report_menu(request, chart_report_id, slug_str):
         return []
 
-    # noinspection PyMethodMayBeStatic
     def queries_menu(self):
+        report_queries = self.report.reportquery_set.all()
+        if len(report_queries) > 1:
+            dropdown = []
+            for report_query in report_queries:
+                slug_str = make_slug_str(self.slug, overrides={f'query{self.report.id}': report_query.id})
+                dropdown.append((self.request.resolver_match.view_name,
+                                 report_query.name, {'url_kwargs': {'slug': slug_str}}))
+            return [MenuItem(menu_display='Version', no_hover=True, css_classes='btn-secondary',
+                             dropdown=dropdown)]
         return []
 
     @staticmethod
@@ -352,8 +361,7 @@ class ChartBaseFieldForm(ReportBuilderFieldUtils, CrispyForm):
             return super().submit_button(css_class, button_text, **kwargs)
 
     def cancel_button(self, css_class=cancel_class, **kwargs):
-        commands = [{'function': 'save_query_builder_id_query_data'},
-                    {'function': 'close'}]
+        commands = [{'function': 'close'}]
         return self.button('Cancel', commands, css_class, **kwargs)
 
     def get_report_type_details(self):

@@ -23,6 +23,7 @@ from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_report_builder_class
 from advanced_report_builder.views.charts_base import ChartBaseView, ChartJSTable, ChartBaseFieldForm
 from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin, QueryBuilderModalBase
+from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 
 
 class LineChartJSTable(ChartJSTable):
@@ -113,11 +114,12 @@ class LineChartView(ChartBaseView):
                                          targets=targets)
 
 
-class LineChartModal(QueryBuilderModalBase):
+class LineChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
     template_name = 'advanced_report_builder/charts/modal.html'
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
     model = LineChartReport
+    show_order_by = False
     widgets = {'line_colour': ColourPickerWidget,
                'show_totals': RBToggle,
                'has_targets': RBToggle,
@@ -159,30 +161,31 @@ class LineChartModal(QueryBuilderModalBase):
                          report_type=report_type)
 
         form.fields['notes'].widget.attrs['rows'] = 3
-        self.add_query_data(form)
 
         url = reverse('advanced_report_builder:line_chart_field_modal',
                       kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
 
-        return ('name',
-                'notes',
-                'report_type',
-                'report_tags',
-                'axis_scale',
-                'axis_value_type',
-                'date_field',
-                FieldEx('fields',
-                        template='advanced_report_builder/select_column.html',
-                        extra_context={'select_column_url': url,
-                                       'command_prefix': ''}),
-                'x_label',
-                'y_label',
-                'show_totals',
-                'has_targets',
-                'targets',
-                FieldEx('query_data',
-                        template='advanced_report_builder/query_builder.html'),
-                )
+        fields = ['name',
+                  'notes',
+                  'report_type',
+                  'report_tags',
+                  'axis_scale',
+                  'axis_value_type',
+                  'date_field',
+                  FieldEx('fields',
+                          template='advanced_report_builder/select_column.html',
+                          extra_context={'select_column_url': url,
+                                         'command_prefix': ''}),
+                  'x_label',
+                  'y_label',
+                  'show_totals',
+                  'has_targets',
+                  'targets']
+        if self.object.id:
+            self.add_extra_queries(form=form, fields=fields)
+        return fields
+
+
 
     def select2_date_field(self, **kwargs):
         return self.get_fields_for_select2(field_type='date',
@@ -270,7 +273,7 @@ class LineChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
                           'val': _attr})
 
         self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
-        self.add_command({'function': 'save_query_builder_id_query_data'})
+        self.add_command({'function': 'save_query_builder_id_filter'})
         self.add_command({'function': 'update_selection'})
         return self.command_response('close')
 

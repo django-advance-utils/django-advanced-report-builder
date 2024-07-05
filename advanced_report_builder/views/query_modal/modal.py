@@ -1,5 +1,6 @@
 import json
 
+from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Div, HTML
 from django.forms import CharField
 from django.urls import reverse
@@ -14,8 +15,19 @@ from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 
 from advanced_report_builder.models import ReportQuery, ReportQueryOrder, ReportType
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.views.datatables.modal import QueryForm
 from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin
+
+
+class QueryForm(ModelCrispyForm):
+    cancel_class = 'btn-secondary modal-cancel'
+
+    class Meta:
+        model = ReportQuery
+        fields = ['name',
+                  'query']
+
+    def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
+        return StrictButton(button_text, onclick=f'save_modal_{self.form_id}()', css_class=css_class, **kwargs)
 
 
 class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
@@ -170,6 +182,7 @@ class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
                 o.save()
         return self.command_response('')
 
+
 class OrderByFieldForm(ModelCrispyForm):
 
     class Meta:
@@ -183,6 +196,7 @@ class OrderByFieldForm(ModelCrispyForm):
         commands = [{'function': 'save_query_builder_id_query'},
                     {'function': 'close'}]
         return self.button('Cancel', commands, css_class, **kwargs)
+
 
 class QueryOrderModal(QueryBuilderModalBaseMixin, ModelFormModal):
     form_class = OrderByFieldForm

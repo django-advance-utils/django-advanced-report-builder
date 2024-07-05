@@ -190,49 +190,26 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
         else:
             return self.command_response()
 
-    def add_query_data(self, form, include_extra_query=False):
-        form.fields['query_data'] = JSONField(required=False, label='Filter')
-
-        if include_extra_query:
-            form.fields['extra_query_data'] = JSONField(required=False, label='Numerator filter')
-
+    def add_query_data(self, form):
+        form.fields['extra_query_data'] = JSONField(required=False, label='Numerator filter')
         if self.object.id:
             query_id = self.slug.get('query_id')
             if query_id:
                 self.report_query = get_object_or_404(ReportQuery, id=query_id)
             else:
                 self.report_query = self.object.reportquery_set.first()
-
             if self.report_query:
-                self.show_query_name = self.object.reportquery_set.count() > 1
-                if self.show_query_name:
-                    form.fields['query_name'] = CharField(required=True, initial=self.report_query.name)
-
-                form.fields['query_data'].initial = self.report_query.query
-                if include_extra_query:
-                    form.fields['extra_query_data'].initial = self.report_query.extra_query
-
+                form.fields['extra_query_data'].initial = self.report_query.extra_query
 
     def form_valid(self, form):
         org_id = self.object.id if hasattr(self, 'object') else None
         chart_report = form.save()
-
-        extra_query_data = form.cleaned_data.get('extra_query_data')
-        if not self.report_query and (form.cleaned_data['query_data'] or extra_query_data):
-            ReportQuery(query=form.cleaned_data['query_data'],
-                        extra_query=extra_query_data,
-                        report=chart_report).save()
-        elif form.cleaned_data['query_data'] or extra_query_data:
-            self.report_query.extra_query = extra_query_data
-            self.report_query.query = form.cleaned_data['query_data']
-            if self.show_query_name:
-                self.report_query.name = form.cleaned_data['query_name']
-            self.report_query.save()
-        elif self.report_query:
-            self.report_query.delete()
-        url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME', '')
-        if org_id is None and url_name:
-            url = reverse(url_name, kwargs={'slug': chart_report.slug})
-            return self.command_response('redirect', url=url)
-        else:
-            return self.command_response('reload')
+        self.post_save(created=org_id is None, form=form)
+        if not self.response_commands:
+            url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME', '')
+            if org_id is None and url_name:
+                url = reverse(url_name, kwargs={'slug': chart_report.slug})
+                self.add_command('redirect', url=url)
+            else:
+                self.add_command('reload')
+        return self.command_response()

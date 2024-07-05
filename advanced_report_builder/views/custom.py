@@ -139,14 +139,9 @@ class CustomModal(MultiQueryModalMixin, ModelFormModal):
                    'notes']
 
     def form_setup(self, form, *_args, **_kwargs):
-        fields = ['name',
-                  'report_tags',
-                  'notes']
-
         if self.object.id and 'report_type' in self.slug:
-            self.add_extra_queries(form=form, fields=fields, show_order_by=True)
-        return fields
+            self.add_extra_queries(form=form, fields=self.form_fields)
+        return self.form_fields
 
     def get_report_type(self, **_kwargs):
         return self.slug['report_type']
-
