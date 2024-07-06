@@ -178,7 +178,7 @@ class BarChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
                    'breakdown_fields']
 
     def form_setup(self, form, *_args, **_kwargs):
-        if 'data' in _kwargs:
+        if 'data' in _kwargs and len(_kwargs['data']) > 0:
             date_field = _kwargs['data'].get('date_field')
             end_date_field = _kwargs['data'].get('end_date_field')
             report_type_id = _kwargs['data'].get('report_type')
@@ -420,7 +420,6 @@ class BarChartBreakdownFieldForm(TableFieldForm):
             return StrictButton(button_text, onclick=f'save_modal_{self.form_id}()', css_class=css_class, **kwargs)
         else:
             return super().submit_button(css_class, button_text, **kwargs)
-
 
 
 class BarChartBreakdownFieldModal(TableFieldModal):

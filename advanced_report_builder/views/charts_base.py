@@ -281,7 +281,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
 
         self.add_menu('button_menu', 'button_group').add_items(
             *report_menu,
-            *self.queries_menu(),
+            *self.queries_menu(report=self.report, dashboard_report=self.dashboard_report),
         )
 
     def pod_dashboard_edit_menu(self):
@@ -302,18 +302,6 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
 
     @staticmethod
     def edit_report_menu(request, chart_report_id, slug_str):
-        return []
-
-    def queries_menu(self):
-        report_queries = self.report.reportquery_set.all()
-        if len(report_queries) > 1:
-            dropdown = []
-            for report_query in report_queries:
-                slug_str = make_slug_str(self.slug, overrides={f'query{self.report.id}': report_query.id})
-                dropdown.append((self.request.resolver_match.view_name,
-                                 report_query.name, {'url_kwargs': {'slug': slug_str}}))
-            return [MenuItem(menu_display='Version', no_hover=True, css_classes='btn-secondary',
-                             dropdown=dropdown)]
         return []
 
     @staticmethod
@@ -353,6 +341,10 @@ class ChartBaseFieldForm(ReportBuilderFieldUtils, CrispyForm):
         self.django_field = None
         self.col_type_override = None
         super().__init__(*args, **kwargs)
+
+    def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
+        return StrictButton(button_text, onclick=f'save_modal_{self.form_id}()', css_class=css_class, **kwargs)
+
 
     def cancel_button(self, css_class=cancel_class, **kwargs):
         commands = [{'function': 'close'}]

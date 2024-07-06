@@ -215,6 +215,9 @@ class ReportQuery(TimeStampedModel):
         ordering = ['order']
         verbose_name_plural = 'Report queries'
 
+    def __str__(self):
+        return self.name
+
 
 class ReportQueryOrder(TimeStampedModel):
     report_query = models.ForeignKey(ReportQuery, on_delete=models.CASCADE)
@@ -482,6 +485,8 @@ class DashboardReport(TimeStampedModel):
     top = models.BooleanField(default=False)
     name_override = models.CharField(max_length=200, blank=True, null=True)
     display_option = models.PositiveIntegerField(choices=DISPLAY_OPTION_CHOICES, default=DISPLAY_OPTION_NONE)
+    show_versions = models.BooleanField(default=True)
+    report_query = models.ForeignKey(ReportQuery, blank=True, null=True, on_delete=models.CASCADE)
 
     def get_class(self, extra_class_name):
         if self.display_option != DISPLAY_OPTION_NONE:

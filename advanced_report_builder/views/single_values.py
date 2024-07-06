@@ -259,9 +259,6 @@ class SingleValueView(ChartBaseView):
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary']),
                 *self.duplicate_menu(request=self.request, report_id=chart_report_id)]
 
-    def queries_menu(self):
-        return []
-
 
 class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
     template_name = 'advanced_report_builder/single_values/modal.html'
@@ -328,7 +325,7 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
             {'selector': '#div_id_breakdown_fields', 'values': {'checked': 'show'}, 'default': 'hide'},
         ])
 
-        if 'data' in _kwargs:
+        if 'data' in _kwargs and len(_kwargs['data']) > 0:
             field = _kwargs['data'].get('field')
             numerator = _kwargs['data'].get('numerator')
             report_type_id = _kwargs['data'].get('report_type')

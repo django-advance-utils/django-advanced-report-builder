@@ -9,9 +9,10 @@ from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.models import CustomReport, ReportType
 from advanced_report_builder.utils import split_slug, make_slug_str
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
+from advanced_report_builder.views.report import ReportBase
 
 
-class CustomBaseView(MenuMixin, FilterQueryMixin, TemplateView):
+class CustomBaseView(ReportBase, FilterQueryMixin, TemplateView):
     report_type_slug = None
 
     def __init__(self, **kwargs):
@@ -40,18 +41,6 @@ class CustomBaseView(MenuMixin, FilterQueryMixin, TemplateView):
         context['title'] = self.get_title()
         return context
 
-    def queries_menu(self):
-        report_queries = self.report.reportquery_set.all()
-        if len(report_queries) > 1:
-            dropdown = []
-            for report_query in report_queries:
-                slug_str = make_slug_str(self.slug, overrides={f'query{self.report.id}': report_query.id})
-                dropdown.append((self.request.resolver_match.view_name,
-                                 report_query.name, {'url_kwargs': {'slug': slug_str}}))
-            return [MenuItem(menu_display='Version', no_hover=True, css_classes='btn-secondary',
-                             dropdown=dropdown)]
-        return []
-
     def setup_menu(self):
         super().setup_menu()
         if not self.show_toolbar:
@@ -66,7 +55,7 @@ class CustomBaseView(MenuMixin, FilterQueryMixin, TemplateView):
 
         self.add_menu('button_menu', 'button_group').add_items(
             *report_menu,
-            *self.queries_menu()
+            *self.queries_menu(report=self.report, dashboard_report=self.dashboard_report)
         )
 
     def pod_dashboard_edit_menu(self):
@@ -88,13 +77,10 @@ class CustomBaseView(MenuMixin, FilterQueryMixin, TemplateView):
         else:
             return self.report.name
 
-    def get_dashboard_class(self, report):
-        return None
-
     def get_report_type(self):
         if self.report_type_slug is not None:
             if self._report_type is None:
-                self._report_type =  ReportType.objects.get(slug=self.report_type_slug)
+                self._report_type = ReportType.objects.get(slug=self.report_type_slug)
             return self._report_type
         return None
 

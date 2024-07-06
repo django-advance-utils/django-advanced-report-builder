@@ -55,7 +55,6 @@ class PieChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
     model = PieChartReport
-    widgets = {'report_tags': Select2Multiple}
     show_order_by = False
 
     form_fields = ['name',
@@ -64,8 +63,9 @@ class PieChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
                    'report_tags',
                    'axis_value_type',
                    'style',
-                   'fields',
-                   ]
+                   'fields']
+
+    widgets = {'report_tags': Select2Multiple}
 
     def form_setup(self, form, *_args, **_kwargs):
         url = reverse('advanced_report_builder:pie_chart_field_modal',

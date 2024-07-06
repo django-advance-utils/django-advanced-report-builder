@@ -97,7 +97,7 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
             report_menu = self.pod_report_menu()
         self.add_menu('button_menu', 'button_group').add_items(
             *report_menu,
-            *self.queries_menu(),
+            *self.queries_menu(report=self.report, dashboard_report=self.dashboard_report),
         )
 
     def dispatch(self, request, *args, **kwargs):
@@ -313,7 +313,7 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
 
     # noinspection PyMethodMayBeStatic
-    def queries_menu(self):
+    def queries_menu(self, report, dashboard_report):
         return []
 
 

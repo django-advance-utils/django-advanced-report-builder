@@ -233,14 +233,20 @@ class FilterQueryMixin:
             query_list.append(~Q((query_string, current_user)))
 
     def get_report_query(self, report):
-
-        slug_key = self.slug.get(f'query{report.pk}')
+        dashboard_report = self.dashboard_report
+        if dashboard_report is not None:
+            slug_key = self.slug.get(f'query{report.pk}_{dashboard_report.pk}')
+        else:
+            slug_key = self.slug.get(f'query{report.pk}')
         if slug_key:
             report_query = get_object_or_404(ReportQuery, id=slug_key)
             if report_query.report_id != report.pk:
                 return None
         else:
-            report_query = report.reportquery_set.first()
+            if dashboard_report is not None and dashboard_report.report_query is not None:
+                report_query = dashboard_report.report_query
+            else:
+                report_query = report.reportquery_set.first()
         return report_query
 
     @staticmethod

@@ -120,6 +120,7 @@ class LineChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
     permission_delete = PERMISSION_OFF
     model = LineChartReport
     show_order_by = False
+
     widgets = {'line_colour': ColourPickerWidget,
                'show_totals': RBToggle,
                'has_targets': RBToggle,
@@ -146,7 +147,7 @@ class LineChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
             {'selector': '#div_id_targets', 'values': {'checked': 'show'}, 'default': 'hide'},
         ])
 
-        if 'data' in _kwargs:
+        if 'data' in _kwargs and len(_kwargs['data']) > 0:
             date_field = _kwargs['data'].get('date_field')
             report_type_id = _kwargs['data'].get('report_type')
             report_type = get_object_or_404(ReportType, id=report_type_id)
@@ -184,8 +185,6 @@ class LineChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
         if self.object.id:
             self.add_extra_queries(form=form, fields=fields)
         return fields
-
-
 
     def select2_date_field(self, **kwargs):
         return self.get_fields_for_select2(field_type='date',

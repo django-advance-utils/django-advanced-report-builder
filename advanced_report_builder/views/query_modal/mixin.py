@@ -25,7 +25,7 @@ class MultiQueryModalMixin:
                 o = _model.objects.get(id=s[1])
                 o.order = s[0]
                 o.save()
-        return self.command_response('')
+        return self.command_response('null')
 
     def get_report_type(self, **_kwargs):
         return _kwargs['report_type']
@@ -81,8 +81,7 @@ class MultiQueryModalMixin:
                      menu_display='Edit',
                      css_classes='btn btn-sm btn-outline-dark btn-query-edit',
                      font_awesome='fas fa-pencil',
-                     link_type=MenuItem.HREF,
-                     hide=True)]
+                     link_type=MenuItem.HREF)]
         return description_edit_menu_items
 
     def add_extra_queries(self, form, fields):
