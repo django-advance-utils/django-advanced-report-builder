@@ -243,11 +243,13 @@ class SingleValueView(ChartBaseView):
 
     def get_breakdown_url(self):
         if self.table.single_value.show_breakdown:
+            query_id = self.slug.get(f'query{self.report.pk}')
+            slug = f'pk-{self.table.single_value.id}-enable_links-{self.table.enable_links}'
+            if query_id is not None:
+                slug += f'-query{self.report.pk}-{query_id}'
+
             return show_modal('advanced_report_builder:single_value_show_breakdown_modal',
-                              'pk-',
-                              self.table.single_value.id,
-                              '-enable_links-',
-                              self.table.enable_links, href=True)
+                              slug, href=True)
         return None
 
     def pod_dashboard_view_menu(self):
