@@ -22,7 +22,7 @@ from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_VALUE_FUNCTIONS, ANNOTATION_VALUE_YEAR, \
     ANNOTATION_VALUE_QUARTER, ANNOTATION_VALUE_WEEK, ANNOTATION_VALUE_DAY, ANNOTATION_VALUE_MONTH
 from advanced_report_builder.models import ReportType
-from advanced_report_builder.utils import split_slug, split_attr, get_report_builder_class, make_slug_str
+from advanced_report_builder.utils import split_slug, split_attr, get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.report import ReportBase
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
@@ -344,7 +344,6 @@ class ChartBaseFieldForm(ReportBuilderFieldUtils, CrispyForm):
 
     def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
         return StrictButton(button_text, onclick=f'save_modal_{self.form_id}()', css_class=css_class, **kwargs)
-
 
     def cancel_button(self, css_class=cancel_class, **kwargs):
         commands = [{'function': 'close'}]

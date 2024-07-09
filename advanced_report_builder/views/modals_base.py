@@ -1,14 +1,12 @@
 import json
 
-from crispy_forms.bootstrap import StrictButton
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
-from django.forms import CharField, JSONField
+from django.forms import JSONField
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
-from django_modals.forms import ModelCrispyForm
 from django_modals.modals import ModelFormModal
 from django_modals.widgets.select2 import Select2
 
@@ -17,11 +15,6 @@ from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.globals import NUMBER_FIELDS
 from advanced_report_builder.models import ReportQuery, ReportType
 from advanced_report_builder.utils import get_report_builder_class
-
-
-class QueryBuilderModelForm(ModelCrispyForm):
-    def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
-        return StrictButton(button_text, onclick=f'save_modal_{ self.form_id }()', css_class=css_class, **kwargs)
 
 
 class QueryBuilderModalBaseMixin(ReportBuilderFieldUtils):
@@ -171,7 +164,6 @@ class QueryBuilderModalBaseMixin(ReportBuilderFieldUtils):
 
 
 class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
-    base_form = QueryBuilderModelForm
     size = 'xl'
 
     def __init__(self, *args, **kwargs):

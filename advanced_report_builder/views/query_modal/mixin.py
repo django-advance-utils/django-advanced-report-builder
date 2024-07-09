@@ -71,18 +71,21 @@ class MultiQueryModalMixin:
     def query_menu(self):
         edit_query_js = get_query_js('edit_query', 'query_id')
         duplicate_query_js = get_query_js('duplicate_query', 'query_id')
+
         description_edit_menu_items = [
             MenuItem(duplicate_query_js.replace('"', "&quot;"),
                      menu_display='Duplicate',
                      css_classes='btn btn-sm btn-outline-dark',
                      font_awesome='fas fa-clone',
                      link_type=MenuItem.HREF),
+
             MenuItem(edit_query_js.replace('"', "&quot;"),
                      menu_display='Edit',
-                     css_classes='btn btn-sm btn-outline-dark btn-query-edit',
+                     css_classes='btn btn-sm btn-outline-dark',
                      font_awesome='fas fa-pencil',
                      link_type=MenuItem.HREF)]
         return description_edit_menu_items
+
 
     def add_extra_queries(self, form, fields):
         add_query_js = 'django_modal.process_commands_lock([{"function": "post_modal", ' \
@@ -103,6 +106,7 @@ class MultiQueryModalMixin:
         fields.append(Div(HTML(menu.render()), css_class='form-buttons'))
         description_edit_menu_items = self.query_menu()
 
+
         form.fields['queries'] = CharField(
             required=False,
             label='Queries Versions',
@@ -116,7 +120,8 @@ class MultiQueryModalMixin:
                                    column_defs={'orderable': False, 'className': 'dt-right'},
                                    menu=HtmlMenu(self.request,
                                                  'advanced_report_builder/datatables/onclick_menu.html').add_items(
-                                       *description_edit_menu_items)),
+                                       *description_edit_menu_items
+                                   )),
                         ],
                 attrs={'filter': {'report__id': self.object.id}}))
         fields.append('queries')
