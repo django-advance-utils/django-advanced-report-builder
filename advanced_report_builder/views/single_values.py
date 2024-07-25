@@ -244,6 +244,9 @@ class SingleValueView(ChartBaseView):
     def get_breakdown_url(self):
         if self.table.single_value.show_breakdown:
             query_id = self.slug.get(f'query{self.report.pk}')
+            if query_id is None and self.dashboard_report is not None:
+                query_id = self.dashboard_report.report_query_id
+
             slug = f'pk-{self.table.single_value.id}-enable_links-{self.table.enable_links}'
             if query_id is not None:
                 slug += f'-query{self.report.pk}-{query_id}'
