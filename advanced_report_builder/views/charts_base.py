@@ -24,6 +24,7 @@ from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_VALUE_FUNC
 from advanced_report_builder.models import ReportType
 from advanced_report_builder.utils import split_slug, split_attr, get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
+from advanced_report_builder.views.helpers import QueryBuilderlForm
 from advanced_report_builder.views.report import ReportBase
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
 from advanced_report_builder.views.targets.utils import get_target_value
@@ -334,16 +335,13 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         return divider
 
 
-class ChartBaseFieldForm(ReportBuilderFieldUtils, CrispyForm):
+class ChartBaseFieldForm(ReportBuilderFieldUtils, QueryBuilderlForm):
     cancel_class = 'btn-secondary modal-cancel'
 
     def __init__(self, *args, **kwargs):
         self.django_field = None
         self.col_type_override = None
         super().__init__(*args, **kwargs)
-
-    def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
-        return StrictButton(button_text, onclick=f'save_modal_{self.form_id}()', css_class=css_class, **kwargs)
 
     def cancel_button(self, css_class=cancel_class, **kwargs):
         commands = [{'function': 'close'}]

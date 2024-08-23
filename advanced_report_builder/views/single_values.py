@@ -28,6 +28,7 @@ from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartBaseView
 from advanced_report_builder.views.datatables.modal import TableFieldModal, TableFieldForm
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
+from advanced_report_builder.views.helpers import QueryBuilderModelForm
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase, QueryBuilderModalBaseMixin
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 
@@ -505,7 +506,7 @@ class SingleValueTableFieldModal(TableFieldModal):
         return self.command_response('close')
 
 
-class QueryNumeratorForm(ModelCrispyForm):
+class QueryNumeratorForm(QueryBuilderModelForm):
     cancel_class = 'btn-secondary modal-cancel'
 
     class Meta:
@@ -513,9 +514,6 @@ class QueryNumeratorForm(ModelCrispyForm):
         fields = ['name',
                   'query',
                   'extra_query']
-
-    def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
-        return StrictButton(button_text, onclick=f'save_modal_{self.form_id}()', css_class=css_class, **kwargs)
 
     def setup_modal(self, *args, **kwargs):
         self.fields['extra_query'].label = 'Numerator'

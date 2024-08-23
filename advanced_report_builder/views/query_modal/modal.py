@@ -16,19 +16,17 @@ from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from advanced_report_builder.models import ReportQuery, ReportQueryOrder, ReportType
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import get_query_js
+from advanced_report_builder.views.helpers import QueryBuilderModelForm
 from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin
 
 
-class QueryForm(ModelCrispyForm):
+class QueryForm(QueryBuilderModelForm):
     cancel_class = 'btn-secondary modal-cancel'
 
     class Meta:
         model = ReportQuery
         fields = ['name',
                   'query']
-
-    def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
-        return StrictButton(button_text, onclick=f'save_modal_{self.form_id}()', css_class=css_class, **kwargs)
 
 
 class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
