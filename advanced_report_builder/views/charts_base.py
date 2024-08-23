@@ -24,7 +24,7 @@ from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_VALUE_FUNC
 from advanced_report_builder.models import ReportType
 from advanced_report_builder.utils import split_slug, split_attr, get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
-from advanced_report_builder.views.helpers import QueryBuilderlForm
+from advanced_report_builder.views.helpers import QueryBuilderForm
 from advanced_report_builder.views.report import ReportBase
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
 from advanced_report_builder.views.targets.utils import get_target_value
@@ -335,7 +335,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         return divider
 
 
-class ChartBaseFieldForm(ReportBuilderFieldUtils, QueryBuilderlForm):
+class ChartBaseFieldForm(ReportBuilderFieldUtils, QueryBuilderForm):
     cancel_class = 'btn-secondary modal-cancel'
 
     def __init__(self, *args, **kwargs):
