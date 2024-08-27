@@ -94,6 +94,7 @@ class ReportBuilderColumnLink(ColumnLink):
     @url.setter
     def url(self, url_name):
         if (not self.table or
+                self.table.view is None or
                 self.table.view.kwargs.get('enable_links') or
                 getattr(self.table.view, 'enable_links', False)):
             self._url = get_url(url_name)
