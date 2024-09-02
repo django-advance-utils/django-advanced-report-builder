@@ -62,6 +62,7 @@ class TableUtilsMixin(ReportUtilsMixin):
 
     @staticmethod
     def get_link_field(table_field, fields, col_type_override):
+        field_name = table_field['field']
         col_type_override.table = None
         field = copy.deepcopy(col_type_override)
         data_attr = split_attr(table_field)
@@ -86,6 +87,8 @@ class TableUtilsMixin(ReportUtilsMixin):
         elif 'title' in table_field:
             field.title = table_field['title']
         fields.append(field)
+
+        return field_name
 
     def process_query_results(self, report_builder_class, table, base_model,
                               fields_used, table_fields, pivot_fields=None):
@@ -170,9 +173,9 @@ class TableUtilsMixin(ReportUtilsMixin):
                                                        decimal_places=decimal_places)
 
             elif isinstance(col_type_override, LINK_COLUMNS):
-                self.get_link_field(table_field=table_field,
-                                    col_type_override=col_type_override,
-                                    fields=fields)
+                field_name = self.get_link_field(table_field=table_field,
+                                                 col_type_override=col_type_override,
+                                                 fields=fields)
             else:
                 if col_type_override is not None:
                     if data_attr.get('annotation_label') == '1':
@@ -189,6 +192,15 @@ class TableUtilsMixin(ReportUtilsMixin):
                     if show_total == '1':
                         totals[field_name] = {'sum': 'to_fixed', 'decimal_places': 2,
                                               'css_class': css_class}
+                elif col_type_override.annotations is not None:
+                    css_class = col_type_override.column_defs.get('className')
+                    show_total = data_attr.get('show_totals')
+                    if show_total == '1':
+                        self.set_annotation_total(totals=totals,
+                                                  field_name=field_name,
+                                                  col_type_override=col_type_override,
+                                                  decimal_places=2,
+                                                  css_class=css_class)
                 if field_attr:
                     field = (field, field_attr)
                 fields.append(field)
@@ -217,7 +229,6 @@ class TableUtilsMixin(ReportUtilsMixin):
                                      filter_title=pivot_field_details['title'],
                                      **pivot_field_details['kwargs'])
                 table.show_pivot_table = True
-
         if totals:
             totals[first_field_name] = {'text': 'Totals'}
             table.add_plugin(self.column_totals_class, totals)

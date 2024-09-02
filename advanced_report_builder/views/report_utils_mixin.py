@@ -162,3 +162,6 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
     # noinspection PyUnusedLocal,PyMethodMayBeStatic
     def set_number_total(self, totals, field_name, col_type_override, decimal_places, css_class):
         totals[field_name] = {'sum': 'to_fixed', 'decimal_places': decimal_places, 'css_class': css_class}
+
+    def set_annotation_total(self, totals, field_name, col_type_override, decimal_places, css_class):
+        return self.set_number_total(totals, field_name, col_type_override, decimal_places, css_class)

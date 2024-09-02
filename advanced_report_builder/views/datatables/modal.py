@@ -230,6 +230,12 @@ class TableFieldForm(ChartBaseFieldForm):
             self.fields['is_icon'] = BooleanField(required=False, widget=RBToggle())
             if 'is_icon' in data_attr and data_attr['is_icon'] == '1':
                 self.fields['is_icon'].initial = True
+        elif self.col_type_override.annotations is not None:
+            self.fields['show_table_totals'] = BooleanField(required=False,
+                                                            widget=RBToggle(),
+                                                            label='Show totals')
+            if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
+                self.fields['show_table_totals'].initial = True
         else:
             self.fields['annotation_label'] = BooleanField(required=False, widget=RBToggle())
             if 'annotation_label' in data_attr and data_attr['annotation_label'] == '1':
@@ -278,6 +284,10 @@ class TableFieldForm(ChartBaseFieldForm):
                 attributes.append(f'link_html-{b64_link_html}')
             if self.cleaned_data['is_icon'] and self.cleaned_data["is_icon"]:
                 attributes.append('is_icon-1')
+
+        elif self.col_type_override.annotations is not None:
+            if self.cleaned_data['show_table_totals']:
+                attributes.append('show_totals-1')
         else:
             if self.cleaned_data['annotation_label'] and self.cleaned_data["annotation_label"]:
                 attributes.append('annotation_label-1')
