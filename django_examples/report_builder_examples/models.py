@@ -180,7 +180,8 @@ class Company(TimeStampedModel):
         def includes(self):
             return {'companyinformation': {'title': 'Company Information',
                                            'model': 'report_builder_examples.CompanyInformation.ReportBuilder',
-                                           'reversed': True},
+                                           'reversed': True,
+                                           'allow_pivots': False},
                     'user_profile': {'title': 'User',
                                      'model': 'report_builder_examples.UserProfile.ReportBuilder'}}
 
@@ -219,6 +220,14 @@ class CompanyInformation(models.Model):
         default_columns = ['.id']
         includes = {'company': {'title': 'Company',
                                 'model': 'report_builder_examples.Company.ReportBuilder'}}
+
+        @property
+        def pivot_fields(self):
+            return {'incorporated_date': {'title': 'Importance Date',
+                                          'type': 'pivot',
+                                          'field': 'incorporated_date',
+                                          'kwargs': {'collapsed': False}}
+                    }
 
 
 class Person(models.Model):

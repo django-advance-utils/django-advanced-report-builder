@@ -151,7 +151,7 @@ class ReportBuilderFieldUtils:
                     previous_base_model=None, selected_field_id=None, for_select2=False,
                     pivot_fields=None, allow_annotations_fields=True, field_types=None,
                     column_types=None, search_string=None, show_order_by_fields=False, extra_fields=None,
-                    must_have_django_field=False):
+                    must_have_django_field=False, allow_pivots=True):
         if title is None:
             title = report_builder_class.title
         if colour is None:
@@ -198,7 +198,7 @@ class ReportBuilderFieldUtils:
                                                    'label': full_title,
                                                    'colour': colour})
 
-        if not for_select2 and pivot_fields is not None:
+        if allow_pivots and not for_select2 and pivot_fields is not None:
             for pivot_code, pivot_field in report_builder_class.pivot_fields.items():
                 full_id = prefix + pivot_code
                 full_title = title_prefix + pivot_field['title']
@@ -209,6 +209,9 @@ class ReportBuilderFieldUtils:
 
         for include_field, include in report_builder_class.includes.items():
             app_label, model, report_builder_fields_str = include['model'].split('.')
+            local_allow_pivots = allow_pivots
+            if local_allow_pivots and not include.get('allow_pivots', True):
+                local_allow_pivots = False
 
             new_model = apps.get_model(app_label, model)
             if new_model != previous_base_model:
@@ -230,7 +233,8 @@ class ReportBuilderFieldUtils:
                                  field_types=field_types,
                                  column_types=column_types,
                                  search_string=search_string,
-                                 show_order_by_fields=show_order_by_fields)
+                                 show_order_by_fields=show_order_by_fields,
+                                 allow_pivots=local_allow_pivots)
 
     @staticmethod
     def _is_search_match(search_string, title):
