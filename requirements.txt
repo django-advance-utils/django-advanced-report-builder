@@ -1,6 +1,6 @@
-Django==3.2.7
+Django==5.0.7
 psycopg2-binary>=2.8
-django-crispy-forms==1.12.0
+django-crispy-forms==1.14.0
 
 #django-tab-menus==0.0.15
 git+https://github.com/jonesim/django-menus.git@ad597ee3969e730e9760b1a596af7fb3aee42f3a
@@ -16,6 +16,6 @@ git+https://github.com/jonesim/ajax-helpers.git@7ea2d695e93c14a7bc37bf7a1f5c951c
 
 time-stamped-model==0.2.3
 date-offset==0.0.2
-django-debug-toolbar==3.2.4
+django-debug-toolbar==4.3.0
 
 python-dateutil==2.8.2
