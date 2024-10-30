@@ -52,7 +52,7 @@ class DataMergeUtils(ReportBuilderFieldUtils):
 
     @staticmethod
     def get_data_merge_variables(html):
-        variables = re.findall('{{\s*([^*\s*}}]+)\s*}}', html)
+        variables = re.findall(r'{{\s*([^*\s*}}]+)\s*}}', html)
 
         all_fields = set()
         for variable in variables:
@@ -64,7 +64,7 @@ class DataMergeUtils(ReportBuilderFieldUtils):
                 field = variable
             all_fields.add(field)
 
-        variables = re.findall('{%\s*(if|elif|with)\s([^%}]+)\s*%}', html)
+        variables = re.findall(r'{%\s*(if|elif|with)\s([^%}]+)\s*%}', html)
 
         for variable in variables:
             for field in variable[1].split(' '):
