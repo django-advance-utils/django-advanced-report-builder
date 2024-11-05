@@ -23,6 +23,7 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                          extra_filter=None, title_suffix='', multiple_index=0, decimal_places=None,
                          convert_currency_fields=False, totals=None, divider=None):
         field_name = table_field['field']
+        new_field_name = field_name
         css_class = None
         annotation_filter = None
         if annotations_type != 0:
@@ -91,7 +92,7 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                     number_function_kwargs['annotations'] = []
 
                 number_function_kwargs.update({'field': new_field_name,
-                                               'column_name': field_name})
+                                               'column_name': new_field_name})
                 field = self.number_field(**number_function_kwargs)
             else:
                 css_class = field.column_defs.get('className')
@@ -159,11 +160,10 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
             show_total = data_attr.get('show_totals')
             if show_total == '1':
                 self.set_number_total(totals=totals,
-                                      field_name=field_name,
+                                      field_name=new_field_name,
                                       col_type_override=col_type_override,
                                       decimal_places=decimal_places,
                                       css_class=css_class)
-
         return field_name
 
     @staticmethod

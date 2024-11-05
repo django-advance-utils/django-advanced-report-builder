@@ -191,7 +191,8 @@ class TableUtilsMixin(ReportUtilsMixin):
                     table_field=table_field,
                     numerator_column=decode_attribute(numerator_column),
                     denominator_column=decode_attribute(denominator_column),
-                    index=index)
+                    index=index,
+                    totals=totals)
                 fields.append(field)
 
             else:
@@ -269,7 +270,7 @@ class TableUtilsMixin(ReportUtilsMixin):
         return query
 
     def get_mathematical_percentage_field(self, field_attr, data_attr, table_field,
-                                          numerator_column, denominator_column, index):
+                                          numerator_column, denominator_column, index, totals):
         expression = ExpressionWrapper(NullIf(F(numerator_column) * 100.00, 0) / F(denominator_column),
                                        output_field=FloatField())
         decimal_places = data_attr.get('decimal_places', 2)
@@ -277,10 +278,21 @@ class TableUtilsMixin(ReportUtilsMixin):
             field_attr['decimal_places'] = int(decimal_places)
         field_attr['options'] = {}
         field = table_field['field']
-        field_attr['annotations'] = {f'{field}_{index}': expression}
+        field_name = f'{field}_{index}'
+        field_attr['annotations'] = {field_name: expression}
 
-        field_attr.update({'field': f'{field}_{index}',
-                           'column_name': f'{field}_{index}',
+        field_attr.update({'field': field_name,
+                           'column_name': field_name,
                            'model_path': ''})
         field = self.number_field(**field_attr)
+
+        # if totals is not None:
+        #     show_total = data_attr.get('show_totals')
+        #     if show_total == '1':
+        #         self.set_number3_total(totals=totals,
+        #                               field_name=field_name,
+        #                               col_type_override=None,
+        #                               decimal_places=decimal_places,
+        #                               css_class='')
+
         return field
