@@ -468,10 +468,12 @@ class SingleValueShowBreakdownModal(TableUtilsMixin, Modal):
         report_builder_class = get_report_builder_class(model=base_model,
                                                         report_type=self.table_report.report_type)
         fields_used = set()
+        fields_map = {}
         self.process_query_results(report_builder_class=report_builder_class,
                                    table=table,
                                    base_model=base_model,
                                    fields_used=fields_used,
+                                   fields_map=fields_map,
                                    table_fields=table_fields)
 
         table.ajax_data = False

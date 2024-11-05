@@ -55,7 +55,9 @@ class TallyAdmin(admin.ModelAdmin):
                     'lorries',
                     'motor_bikes',
                     'push_bikes',
-                    'tractors')
+                    'tractors',
+                    'user_profile',
+                    'verified')
 
 
 @admin.register(Payment)

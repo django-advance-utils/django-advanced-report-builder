@@ -481,10 +481,12 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
 
         table_fields = bar_chart_report.breakdown_fields
         fields_used = set()
+        fields_map = {}
         self.process_query_results(report_builder_class=report_builder_class,
                                    table=table,
                                    base_model=base_model,
                                    fields_used=fields_used,
+                                   fields_map=fields_map,
                                    table_fields=table_fields)
         data_index = int(self.slug['data'])
         table_field = chart_fields[data_index]

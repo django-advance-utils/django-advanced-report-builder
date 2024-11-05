@@ -274,6 +274,7 @@ class Tally(models.Model):
     motor_bikes = models.IntegerField()
     push_bikes = models.IntegerField()
     tractors = models.IntegerField()
+    verified = models.BooleanField(default=False)
     user_profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE, null=True, blank=True)
 
     class Meta:
@@ -283,13 +284,15 @@ class Tally(models.Model):
         default_columns = ['.id']
         colour = '#006400'
         title = 'Tally'
-        fields = ['date',
+        fields = ['id',
+                  'date',
                   'cars',
                   'vans',
                   'buses',
                   'lorries',
                   'push_bikes',
-                  'tractors']
+                  'tractors',
+                  'verified']
 
         includes = {'user_profile': {'title': 'User',
                                      'model': 'report_builder_examples.UserProfile.ReportBuilder'}}

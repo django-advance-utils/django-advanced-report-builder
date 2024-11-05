@@ -35,6 +35,7 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
 
         self.base_model = self.table_report.get_base_model()
         self.add_table(self.table_id, model=self.base_model)
+
         try:
             return super().dispatch(request, *args, **kwargs)
         except DatatableError as de:
@@ -48,12 +49,14 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
         table_fields = self.table_report.table_fields
         pivot_fields = self.table_report.pivot_fields
         fields_used = set()
+        fields_map = {}
         report_builder_class = get_report_builder_class(model=base_model,
                                                         report_type=self.table_report.report_type)
         self.process_query_results(report_builder_class=report_builder_class,
                                    table=table,
                                    base_model=base_model,
                                    fields_used=fields_used,
+                                   fields_map=fields_map,
                                    table_fields=table_fields,
                                    pivot_fields=pivot_fields)
 
@@ -61,6 +64,8 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
             order_by_field = self.table_report.order_by_field
             if order_by_field not in fields_used:
                 table.add_columns(f'.{order_by_field}')
+            elif order_by_field in fields_map:
+                order_by_field = fields_map[order_by_field]
             if self.table_report.order_by_ascending:
                 table.sort(order_by_field)
             else:

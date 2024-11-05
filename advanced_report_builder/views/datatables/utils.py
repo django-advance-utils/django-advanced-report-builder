@@ -91,7 +91,7 @@ class TableUtilsMixin(ReportUtilsMixin):
         return field_name
 
     def process_query_results(self, report_builder_class, table, base_model,
-                              fields_used, table_fields, pivot_fields=None):
+                              fields_used, fields_map, table_fields, pivot_fields=None):
         first_field_name = None
 
         field_name = None
@@ -107,7 +107,7 @@ class TableUtilsMixin(ReportUtilsMixin):
             field_attr = {}
             if 'title' in table_field:
                 field_attr['title'] = table_field['title']
-
+            original_field_name = field
             fields_used.add(field)
             django_field, col_type_override, _, _ = self.get_field_details(base_model=base_model,
                                                                            field=field,
@@ -206,6 +206,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                 fields.append(field)
             if not first_field_name:
                 first_field_name = field_name
+            fields_map[original_field_name] = field_name
 
         if not has_annotations and len(report_builder_class.default_columns) > 0:
             table.add_columns(*report_builder_class.default_columns)

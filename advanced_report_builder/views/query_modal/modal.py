@@ -1,6 +1,5 @@
 import json
 
-from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Div, HTML
 from django.forms import CharField
 from django.urls import reverse
