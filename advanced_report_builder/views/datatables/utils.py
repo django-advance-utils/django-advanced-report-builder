@@ -1,6 +1,7 @@
 import copy
 
-from django.db.models import Q
+from django.db.models import Q, ExpressionWrapper, FloatField, F
+from django.db.models.functions import NullIf
 from django_datatables.plugins.column_totals import ColumnTotals
 
 from advanced_report_builder.columns import ReportBuilderDateColumn
@@ -176,6 +177,23 @@ class TableUtilsMixin(ReportUtilsMixin):
                 field_name = self.get_link_field(table_field=table_field,
                                                  col_type_override=col_type_override,
                                                  fields=fields)
+
+            elif django_field is None and table_field['field'] == 'rb_percentage':
+
+                numerator_column = data_attr.get('numerator_column')
+                denominator_column = data_attr.get('denominator_column')
+                if not numerator_column or not denominator_column:
+                    continue
+
+                field = self.get_mathematical_percentage_field(
+                    field_attr=field_attr,
+                    data_attr=data_attr,
+                    table_field=table_field,
+                    numerator_column=decode_attribute(numerator_column),
+                    denominator_column=decode_attribute(denominator_column),
+                    index=index)
+                fields.append(field)
+
             else:
                 if col_type_override is not None:
                     if data_attr.get('annotation_label') == '1':
@@ -204,6 +222,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                 if field_attr:
                     field = (field, field_attr)
                 fields.append(field)
+
             if not first_field_name:
                 first_field_name = field_name
             fields_map[original_field_name] = field_name
@@ -248,3 +267,20 @@ class TableUtilsMixin(ReportUtilsMixin):
             query = self.process_query_filters(query=query,
                                                search_filter_data=report_query.query)
         return query
+
+    def get_mathematical_percentage_field(self, field_attr, data_attr, table_field,
+                                          numerator_column, denominator_column, index):
+        expression = ExpressionWrapper(NullIf(F(numerator_column) * 100.00, 0) / F(denominator_column),
+                                       output_field=FloatField())
+        decimal_places = data_attr.get('decimal_places', 2)
+        if decimal_places:
+            field_attr['decimal_places'] = int(decimal_places)
+        field_attr['options'] = {}
+        field = table_field['field']
+        field_attr['annotations'] = {f'{field}_{index}': expression}
+
+        field_attr.update({'field': f'{field}_{index}',
+                           'column_name': f'{field}_{index}',
+                           'model_path': ''})
+        field = self.number_field(**field_attr)
+        return field

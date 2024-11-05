@@ -2,7 +2,6 @@ import base64
 import json
 from datetime import timedelta, datetime
 
-from crispy_forms.bootstrap import StrictButton
 from date_offset.date_offset import DateOffset
 from dateutil.relativedelta import relativedelta
 from django.apps import apps
@@ -14,7 +13,6 @@ from django.utils.safestring import mark_safe
 from django.views.generic import TemplateView
 from django_datatables.datatables import DatatableTable
 from django_menus.menu import MenuItem
-from django_modals.forms import CrispyForm
 
 from advanced_report_builder.columns import ReportBuilderDateColumn
 from advanced_report_builder.exceptions import ReportError

@@ -64,7 +64,10 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                                                    multiple_index=multiple_index)
 
             elif annotations_type == ANNOTATION_CHOICE_COUNT:
-                new_field_name = f'{annotations_type}_{field_name}_{index}'
+                new_field_name = self.get_new_annotation_field_name(annotations_type=annotations_type,
+                                                                    field_name=field_name,
+                                                                    index=index,
+                                                                    data_attr=data_attr)
                 number_function_kwargs = {}
                 if title:
                     number_function_kwargs['title'] = title
@@ -95,7 +98,10 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                 if title:
                     field.title = title
                 if annotations_type != 0:
-                    new_field_name = f'{annotations_type}_{field_name}_{index}'
+                    new_field_name = self.get_new_annotation_field_name(annotations_type=annotations_type,
+                                                                        field_name=field_name,
+                                                                        index=index,
+                                                                        data_attr=data_attr)
                     function_type = ANNOTATION_FUNCTIONS[annotations_type]
                     if annotation_filter:
                         function = function_type(raw_field_name, filter=annotation_filter)
@@ -125,7 +131,11 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                 self.set_extra_number_field_kwargs(data_attr=data_attr,
                                                    options=number_function_kwargs['options'],
                                                    multiple_index=multiple_index)
-                new_field_name = f'{annotations_type}_{field_name}_{index}'
+
+                new_field_name = self.get_new_annotation_field_name(annotations_type=annotations_type,
+                                                                    field_name=field_name,
+                                                                    index=index,
+                                                                    data_attr=data_attr)
                 function_type = ANNOTATION_FUNCTIONS[annotations_type]
                 if annotation_filter:
                     function = function_type(field_name, filter=annotation_filter)
@@ -155,6 +165,13 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                                       css_class=css_class)
 
         return field_name
+
+    @staticmethod
+    def get_new_annotation_field_name(annotations_type, field_name, index, data_attr):
+        annotation_column_id = data_attr.get('annotation_column_id')
+        if annotation_column_id:
+            return decode_attribute(annotation_column_id)
+        return f'{annotations_type}_{field_name}_{index}'
 
     def set_extra_number_field_kwargs(self, data_attr, options, multiple_index):
         pass

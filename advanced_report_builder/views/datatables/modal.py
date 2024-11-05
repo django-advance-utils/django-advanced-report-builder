@@ -128,7 +128,8 @@ class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
                          fields=fields,
                          tables=tables,
                          report_builder_class=report_builder_class,
-                         pivot_fields=pivot_fields)
+                         pivot_fields=pivot_fields,
+                         include_mathematical_columns=True)
 
         self.add_command('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
         self.add_command('report_pivots', data=json.dumps({'pivot_fields': pivot_fields}))
@@ -184,6 +185,13 @@ class TableFieldForm(ChartBaseFieldForm):
                                                           required=False)
             if 'annotations_type' in data_attr:
                 self.fields['annotations_type'].initial = data_attr['annotations_type']
+
+            annotation_column_help_text = 'Not required however useful for mathematical columns.'
+            self.fields['annotation_column_id'] = CharField(required=False,
+                                                            help_text=annotation_column_help_text)
+            if 'annotation_column_id' in data_attr:
+                self.fields['annotation_column_id'].initial = decode_attribute(data_attr['annotation_column_id'])
+
             self.fields['show_table_totals'] = BooleanField(required=False,
                                                             widget=RBToggle(),
                                                             label='Show totals')
@@ -236,6 +244,21 @@ class TableFieldForm(ChartBaseFieldForm):
                                                             label='Show totals')
             if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
                 self.fields['show_table_totals'].initial = True
+        elif self.django_field is None and data['field'] == 'rb_percentage':
+            self.fields['numerator_column'] = CharField(required=False)
+            if 'numerator_column' in data_attr:
+                self.fields['numerator_column'].initial = decode_attribute(data_attr['numerator_column'])
+            self.fields['denominator_column'] = CharField(required=False)
+            if 'denominator_column' in data_attr:
+                self.fields['denominator_column'].initial = decode_attribute(data_attr['denominator_column'])
+            self.fields['decimal_places'] = IntegerField()
+            self.fields['decimal_places'].initial = int(data_attr.get('decimal_places', 0))
+            self.fields['show_table_totals'] = BooleanField(required=False,
+                                                            widget=RBToggle(),
+                                                            label='Show totals')
+            if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
+                self.fields['show_table_totals'].initial = True
+
         else:
             self.fields['annotation_label'] = BooleanField(required=False, widget=RBToggle())
             if 'annotation_label' in data_attr and data_attr['annotation_label'] == '1':
@@ -245,6 +268,7 @@ class TableFieldForm(ChartBaseFieldForm):
 
     def get_additional_attributes(self):
         attributes = []
+        data = json.loads(base64.b64decode(self.slug['data']))
         self.get_report_type_details()
 
         if self.cleaned_data['display_heading']:
@@ -260,6 +284,9 @@ class TableFieldForm(ChartBaseFieldForm):
         elif self.django_field is not None and isinstance(self.django_field, NUMBER_FIELDS):
             if int(self.cleaned_data['annotations_type']) != 0:
                 attributes.append(f'annotations_type-{self.cleaned_data["annotations_type"]}')
+            if self.cleaned_data['annotation_column_id']:
+                b64_annotation_column_id = encode_attribute(self.cleaned_data['annotation_column_id'])
+                attributes.append(f'annotation_column_id-{b64_annotation_column_id}')
             if self.cleaned_data['show_table_totals']:
                 attributes.append('show_totals-1')
             if self.cleaned_data['decimal_places'] > 0:
@@ -284,8 +311,18 @@ class TableFieldForm(ChartBaseFieldForm):
                 attributes.append(f'link_html-{b64_link_html}')
             if self.cleaned_data['is_icon'] and self.cleaned_data["is_icon"]:
                 attributes.append('is_icon-1')
-
         elif self.col_type_override.annotations is not None:
+            if self.cleaned_data['show_table_totals']:
+                attributes.append('show_totals-1')
+        elif self.django_field is None and data['field'] == 'rb_percentage':
+            if self.cleaned_data['numerator_column']:
+                b64_numerator_column = encode_attribute(self.cleaned_data['numerator_column'])
+                attributes.append(f'numerator_column-{b64_numerator_column}')
+            if self.cleaned_data['denominator_column']:
+                b64_denominator_column = encode_attribute(self.cleaned_data['denominator_column'])
+                attributes.append(f'denominator_column-{b64_denominator_column}')
+            if self.cleaned_data['decimal_places'] > 0:
+                attributes.append(f'decimal_places-{self.cleaned_data["decimal_places"]}')
             if self.cleaned_data['show_table_totals']:
                 attributes.append('show_totals-1')
         else:
@@ -331,7 +368,7 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
                                                                        report_builder_class=report_builder_class)
         if django_field is not None and isinstance(django_field, NUMBER_FIELDS):
             form.add_trigger('annotations_type', 'onchange', [
-                {'selector': '#annotations_fields_div', 'values': {'': 'hide'}, 'default': 'show'}])
+                {'selector': '#annotations_fields_div', 'values': {'0': 'hide'}, 'default': 'show'}])
 
             form.add_trigger('has_filter', 'onchange', [
                 {'selector': '#filter_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'}])
@@ -342,10 +379,11 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
 
             return ['title',
                     'display_heading',
-                    'annotations_type',
                     'show_table_totals',
                     'decimal_places',
-                    Div(FieldEx('has_filter',
+                    'annotations_type',
+                    Div('annotation_column_id',
+                        FieldEx('has_filter',
                                 template='django_modals/fields/label_checkbox.html',
                                 field_class='col-6 input-group-sm'),
                         Div(

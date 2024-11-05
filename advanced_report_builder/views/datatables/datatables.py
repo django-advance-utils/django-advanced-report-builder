@@ -5,7 +5,7 @@ from django_menus.menu import MenuItem
 
 from advanced_report_builder.columns import ArrowColumn
 from advanced_report_builder.exceptions import ReportError
-from advanced_report_builder.utils import make_slug_str, get_report_builder_class
+from advanced_report_builder.utils import get_report_builder_class
 from advanced_report_builder.utils import split_slug
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
 from advanced_report_builder.views.report import ReportBase
@@ -138,7 +138,6 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
                          font_awesome='fas fa-pencil-alt', css_classes=['btn-primary']),
                 *self.duplicate_menu(request=self.request, report_id=chart_report_id)
                 ]
-
 
     def get_dashboard_class(self, report):
         pivot_fields = report.tablereport.pivot_fields

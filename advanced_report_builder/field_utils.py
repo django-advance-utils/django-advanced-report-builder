@@ -151,7 +151,7 @@ class ReportBuilderFieldUtils:
                     previous_base_model=None, selected_field_id=None, for_select2=False,
                     pivot_fields=None, allow_annotations_fields=True, field_types=None,
                     column_types=None, search_string=None, show_order_by_fields=False, extra_fields=None,
-                    must_have_django_field=False, allow_pivots=True):
+                    must_have_django_field=False, allow_pivots=True, include_mathematical_columns=False):
         if title is None:
             title = report_builder_class.title
         if colour is None:
@@ -235,6 +235,9 @@ class ReportBuilderFieldUtils:
                                  search_string=search_string,
                                  show_order_by_fields=show_order_by_fields,
                                  allow_pivots=local_allow_pivots)
+
+        if include_mathematical_columns:
+            fields.append({'colour': '#D4AF37', 'field': 'rb_percentage', 'label': 'Percentage Field'})
 
     @staticmethod
     def _is_search_match(search_string, title):
