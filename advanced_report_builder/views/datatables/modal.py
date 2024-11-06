@@ -279,6 +279,9 @@ class TableFieldForm(ChartBaseFieldForm):
             self.fields['multiple_column_field'].initial = data_attr.get('multiple_column_field')
 
     def setup_standard_mathematical_fields(self, data, data_attr):
+        self.fields['column_id'] = CharField(required=False)
+        if 'column_id' in data_attr:
+            self.fields['column_id'].initial = decode_attribute(data_attr['column_id'])
         if data['field'] in ['rb_division', 'rb_percentage']:
             self.fields['numerator_column'] = CharField(required=False)
             if 'numerator_column' in data_attr:
@@ -296,8 +299,8 @@ class TableFieldForm(ChartBaseFieldForm):
         else:  # add and sub
             self.fields['first_value_column'] = CharField(required=False)
             if 'first_value_column' in data_attr:
-                self.fields['first_value_column'].initial = decode_attribute(data_attr['first_column'])
-            self.fields['second_column'] = CharField(required=False)
+                self.fields['first_value_column'].initial = decode_attribute(data_attr['first_value_column'])
+            self.fields['second_value_column'] = CharField(required=False)
             if 'second_value_column' in data_attr:
                 self.fields['second_value_column'].initial = decode_attribute(data_attr['second_value_column'])
 
@@ -310,6 +313,10 @@ class TableFieldForm(ChartBaseFieldForm):
             self.fields['show_table_totals'].initial = True
 
     def save_mathematical_fields(self, data, attributes):
+        if self.cleaned_data['column_id']:
+            b64_column_id = encode_attribute(self.cleaned_data['column_id'])
+            attributes.append(f'column_id-{b64_column_id}')
+
         if data['field'] in ['rb_division', 'rb_percentage']:
             if self.cleaned_data['numerator_column']:
                 b64_numerator_column = encode_attribute(self.cleaned_data['numerator_column'])
@@ -394,8 +401,6 @@ class TableFieldForm(ChartBaseFieldForm):
         if attributes:
             return '-'.join(attributes)
         return None
-
-
 
 
 class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):

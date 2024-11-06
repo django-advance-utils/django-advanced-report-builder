@@ -187,6 +187,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                                               fields=fields,
                                               field_attr=field_attr,
                                               table_field=table_field,
+                                              col_type_override=col_type_override,
                                               index=index,
                                               totals=totals)
             else:
@@ -263,37 +264,109 @@ class TableUtilsMixin(ReportUtilsMixin):
                                                search_filter_data=report_query.query)
         return query
 
-    def setup_mathematical_field(self, data_attr, fields, field_attr, table_field, index, totals):
+    def setup_mathematical_field(self, data_attr, fields, field_attr, table_field, col_type_override, index, totals):
         field = table_field['field']
         if field == 'rb_percentage':
-            self.get_mathematical_percentage_field(
-                fields=fields,
-                field_attr=field_attr,
-                data_attr=data_attr,
-                table_field=table_field,
-                index=index,
-                totals=totals)
+            self.get_mathematical_percentage_field(fields=fields,
+                                                   field_attr=field_attr,
+                                                   data_attr=data_attr,
+                                                   table_field=table_field,
+                                                   index=index,
+                                                   totals=totals)
+        elif field == 'rb_division':
+            values = self.decode_mathematical_columns(data_attr=data_attr,
+                                                      first_value_column_name='numerator_column',
+                                                      second_value_column_name='denominator_column')
+            if values is not None:
+                expression = ExpressionWrapper(NullIf(F(values[0]), 0) / F(values[1]),
+                                               output_field=FloatField())
+                self.get_mathematical_field(fields=fields,
+                                            field_attr=field_attr,
+                                            data_attr=data_attr,
+                                            table_field=table_field,
+                                            col_type_override=col_type_override,
+                                            index=index,
+                                            totals=totals,
+                                            expression=expression)
+        elif field == 'rb_times':
+            values = self.decode_mathematical_columns(data_attr=data_attr,
+                                                      first_value_column_name='multiplicand_column',
+                                                      second_value_column_name='multiplier_column')
+            if values is not None:
+                expression = ExpressionWrapper(NullIf(F(values[0]), 0) * F(values[1]),
+                                               output_field=FloatField())
+                self.get_mathematical_field(fields=fields,
+                                            field_attr=field_attr,
+                                            data_attr=data_attr,
+                                            table_field=table_field,
+                                            col_type_override=col_type_override,
+                                            index=index,
+                                            totals=totals,
+                                            expression=expression)
+        elif field == 'rb_addition':
+            values = self.decode_mathematical_columns(data_attr=data_attr)
+            if values is not None:
+                expression = ExpressionWrapper(NullIf(F(values[0]), 0) + F(values[1]),
+                                               output_field=FloatField())
+                self.get_mathematical_field(fields=fields,
+                                            field_attr=field_attr,
+                                            data_attr=data_attr,
+                                            table_field=table_field,
+                                            col_type_override=col_type_override,
+                                            index=index,
+                                            totals=totals,
+                                            expression=expression)
+        elif field == 'rb_subtraction':
+            values = self.decode_mathematical_columns(data_attr=data_attr)
+            if values is not None:
+                expression = ExpressionWrapper(NullIf(F(values[0]), 0) - F(values[1]),
+                                               output_field=FloatField())
+                self.get_mathematical_field(fields=fields,
+                                            field_attr=field_attr,
+                                            data_attr=data_attr,
+                                            table_field=table_field,
+                                            col_type_override=col_type_override,
+                                            index=index,
+                                            totals=totals,
+                                            expression=expression)
 
-    def get_mathematical_percentage_field(self, fields, field_attr, data_attr, table_field, index, totals):
 
-        numerator_column = data_attr.get('numerator_column')
-        denominator_column = data_attr.get('denominator_column')
-        if not numerator_column or not denominator_column:
+    @staticmethod
+    def decode_mathematical_columns(data_attr,
+                                    first_value_column_name='first_value_column',
+                                    second_value_column_name='second_value_column'):
+        first_value_column = data_attr.get(first_value_column_name)
+        second_value_column = data_attr.get(second_value_column_name)
+        if not first_value_column or not second_value_column:
+            return None
+
+        first_value_column = decode_attribute(first_value_column)
+        second_value_column = decode_attribute(second_value_column)
+
+        return first_value_column, second_value_column
+
+    def get_mathematical_percentage_field(self, fields, field_attr, data_attr,
+                                          table_field, index, totals):
+
+        values = self.decode_mathematical_columns(data_attr=data_attr,
+                                                  first_value_column_name='numerator_column',
+                                                  second_value_column_name='denominator_column')
+        if values is None:
             return False
 
-        numerator_column = decode_attribute(numerator_column)
-        denominator_column = decode_attribute(denominator_column)
-
-
-
-        expression = ExpressionWrapper(NullIf(F(numerator_column) * 100.00, 0) / F(denominator_column),
+        expression = ExpressionWrapper(NullIf(F(values[0]) * 100.00, 0) / F(values[1]),
                                        output_field=FloatField())
         decimal_places = data_attr.get('decimal_places', 2)
         if decimal_places:
             field_attr['decimal_places'] = int(decimal_places)
         field_attr['options'] = {}
         field = table_field['field']
-        field_name = f'{field}_{index}'
+
+        column_id = data_attr.get('column_id')
+        if column_id:
+            field_name = decode_attribute(column_id)
+        else:
+            field_name = f'{field}_{index}'
         field_attr['annotations'] = {field_name: expression}
 
         field_attr.update({'field': field_name,
@@ -306,9 +379,36 @@ class TableUtilsMixin(ReportUtilsMixin):
             if show_total == '1':
                 self.set_percentage_total(totals=totals,
                                           field_name=field_name,
-                                          denominator=denominator_column,
-                                          numerator=numerator_column,
-                                          decimal_places=decimal_places,
-                                          css_class='')
+                                          denominator=values[1],
+                                          numerator=values[0],
+                                          decimal_places=decimal_places)
+        fields.append(field)
+
+    def get_mathematical_field(self, fields, field_attr, data_attr, table_field,
+                               col_type_override, index, totals, expression):
+        decimal_places = data_attr.get('decimal_places', 2)
+        if decimal_places:
+            field_attr['decimal_places'] = int(decimal_places)
+        field_attr['options'] = {}
+        field = table_field['field']
+        column_id = data_attr.get('column_id')
+        if column_id:
+            field_name = decode_attribute(column_id)
+        else:
+            field_name = f'{field}_{index}'
+        field_attr['annotations'] = {field_name: expression}
+
+        field_attr.update({'field': field_name,
+                           'column_name': field_name,
+                           'model_path': ''})
+        field = self.number_field(**field_attr)
+
+        if totals is not None:
+            show_total = data_attr.get('show_totals')
+            if show_total == '1':
+                self.set_number_total(totals=totals,
+                                      field_name=field_name,
+                                      col_type_override=col_type_override,
+                                      decimal_places=decimal_places)
         fields.append(field)
 
