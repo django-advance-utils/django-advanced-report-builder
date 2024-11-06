@@ -160,6 +160,13 @@ class TableFieldForm(ChartBaseFieldForm):
         else:
             return super().submit_button(css_class, button_text, **kwargs)
 
+    def is_mathematical_field(self, data):
+        return self.django_field is None and data['field'] in ['rb_addition',
+                                                               'rb_subtraction',
+                                                               'rb_times',
+                                                               'rb_division',
+                                                               'rb_percentage']
+
     def setup_modal(self, *args, **kwargs):
         data = json.loads(base64.b64decode(self.slug['data']))
         report_type, base_model = self.get_report_type_details()
@@ -173,98 +180,162 @@ class TableFieldForm(ChartBaseFieldForm):
             self.fields['display_heading'].initial = True
 
         if self.django_field is not None and isinstance(self.django_field, DATE_FIELDS):
-            self.fields['annotations_value'] = ChoiceField(choices=[(0, '-----')] + ANNOTATION_VALUE_CHOICES,
-                                                           required=False)
-            if 'annotations_value' in data_attr:
-                self.fields['annotations_value'].initial = data_attr['annotations_value']
-            self.fields['date_format'] = ChoiceField(choices=[(0, '-----')] + DATE_FORMAT_TYPES, required=False)
-            if 'date_format' in data_attr:
-                self.fields['date_format'].initial = data_attr['date_format']
+            self.setup_date_fields(data_attr)
         elif self.django_field is not None and isinstance(self.django_field, NUMBER_FIELDS):
-            self.fields['annotations_type'] = ChoiceField(choices=[(0, '-----')] + ANNOTATIONS_CHOICES,
-                                                          required=False)
-            if 'annotations_type' in data_attr:
-                self.fields['annotations_type'].initial = data_attr['annotations_type']
-
-            annotation_column_help_text = 'Not required however useful for mathematical columns.'
-            self.fields['annotation_column_id'] = CharField(required=False,
-                                                            help_text=annotation_column_help_text)
-            if 'annotation_column_id' in data_attr:
-                self.fields['annotation_column_id'].initial = decode_attribute(data_attr['annotation_column_id'])
-
-            self.fields['show_table_totals'] = BooleanField(required=False,
-                                                            widget=RBToggle(),
-                                                            label='Show totals')
-            if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
-                self.fields['show_table_totals'].initial = True
-            self.fields['decimal_places'] = IntegerField()
-            self.fields['decimal_places'].initial = int(data_attr.get('decimal_places', 0))
-            self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
-
-            self.fields['filter'] = CharField(required=False)
-
-            if data_attr.get('has_filter') == '1':
-                self.fields['has_filter'].initial = True
-                if 'filter' in data_attr:
-                    self.fields['filter'].initial = decode_attribute(data_attr['filter'])
-
-            self.fields['multiple_columns'] = BooleanField(required=False, widget=RBToggle())
-
-            report_builder_class = get_report_builder_class(model=base_model,
-                                                            report_type=report_type)
-            fields = []
-            self._get_query_builder_foreign_key_fields(base_model=base_model,
-                                                       report_builder_class=report_builder_class,
-                                                       fields=fields)
-
-            self.fields['multiple_column_field'] = ChoiceField(choices=fields, required=False)
-
-            if data_attr.get('multiple_columns') == '1':
-                self.fields['multiple_columns'].initial = True
-                self.fields['multiple_column_field'].initial = data_attr.get('multiple_column_field')
+            self.setup_number_fields(data_attr=data_attr,
+                                     base_model=base_model,
+                                     report_type=report_type)
         elif isinstance(self.col_type_override, CURRENCY_COLUMNS):
-            self.fields['show_table_totals'] = BooleanField(required=False,
-                                                            widget=RBToggle(),
-                                                            label='Show totals')
-            if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
-                self.fields['show_table_totals'].initial = True
+            self.setup_currency_fields(data_attr=data_attr)
         elif isinstance(self.col_type_override, LINK_COLUMNS):
-            self.fields['link_html'] = CharField(required=False)
-            if 'link_html' in data_attr:
-                self.fields['link_html'].initial = decode_attribute(data_attr['link_html'])
-            self.fields['link_css'] = CharField(required=False)
-            if 'link_css' in data_attr:
-                self.fields['link_css'].initial = decode_attribute(data_attr['link_css'])
-            self.fields['is_icon'] = BooleanField(required=False, widget=RBToggle())
-            if 'is_icon' in data_attr and data_attr['is_icon'] == '1':
-                self.fields['is_icon'].initial = True
+            self.setup_link_fields(data_attr=data_attr)
         elif self.col_type_override.annotations is not None:
-            self.fields['show_table_totals'] = BooleanField(required=False,
-                                                            widget=RBToggle(),
-                                                            label='Show totals')
-            if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
-                self.fields['show_table_totals'].initial = True
-        elif self.django_field is None and data['field'] == 'rb_percentage':
-            self.fields['numerator_column'] = CharField(required=False)
-            if 'numerator_column' in data_attr:
-                self.fields['numerator_column'].initial = decode_attribute(data_attr['numerator_column'])
-            self.fields['denominator_column'] = CharField(required=False)
-            if 'denominator_column' in data_attr:
-                self.fields['denominator_column'].initial = decode_attribute(data_attr['denominator_column'])
-            self.fields['decimal_places'] = IntegerField()
-            self.fields['decimal_places'].initial = int(data_attr.get('decimal_places', 0))
-            self.fields['show_table_totals'] = BooleanField(required=False,
-                                                            widget=RBToggle(),
-                                                            label='Show totals')
-            if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
-                self.fields['show_table_totals'].initial = True
-
+            self.setup_annotation_fields(data_attr=data_attr)
+        elif self.is_mathematical_field(data=data):
+            self.setup_standard_mathematical_fields(data=data,
+                                                    data_attr=data_attr)
         else:
             self.fields['annotation_label'] = BooleanField(required=False, widget=RBToggle())
             if 'annotation_label' in data_attr and data_attr['annotation_label'] == '1':
                 self.fields['annotation_label'].initial = True
 
         super().setup_modal(*args, **kwargs)
+
+    def setup_annotation_fields(self, data_attr):
+        self.fields['show_table_totals'] = BooleanField(required=False,
+                                                        widget=RBToggle(),
+                                                        label='Show totals')
+        if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
+            self.fields['show_table_totals'].initial = True
+
+    def setup_currency_fields(self, data_attr):
+        self.fields['show_table_totals'] = BooleanField(required=False,
+                                                        widget=RBToggle(),
+                                                        label='Show totals')
+        if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
+            self.fields['show_table_totals'].initial = True
+
+    def setup_link_fields(self, data_attr):
+        self.fields['link_html'] = CharField(required=False)
+        if 'link_html' in data_attr:
+            self.fields['link_html'].initial = decode_attribute(data_attr['link_html'])
+        self.fields['link_css'] = CharField(required=False)
+        if 'link_css' in data_attr:
+            self.fields['link_css'].initial = decode_attribute(data_attr['link_css'])
+        self.fields['is_icon'] = BooleanField(required=False, widget=RBToggle())
+        if 'is_icon' in data_attr and data_attr['is_icon'] == '1':
+            self.fields['is_icon'].initial = True
+
+    def setup_date_fields(self, data_attr):
+        self.fields['annotations_value'] = ChoiceField(choices=[(0, '-----')] + ANNOTATION_VALUE_CHOICES,
+                                                       required=False)
+        if 'annotations_value' in data_attr:
+            self.fields['annotations_value'].initial = data_attr['annotations_value']
+        self.fields['date_format'] = ChoiceField(choices=[(0, '-----')] + DATE_FORMAT_TYPES, required=False)
+        if 'date_format' in data_attr:
+            self.fields['date_format'].initial = data_attr['date_format']
+
+    def setup_number_fields(self, data_attr, base_model, report_type):
+        self.fields['annotations_type'] = ChoiceField(choices=[(0, '-----')] + ANNOTATIONS_CHOICES,
+                                                      required=False)
+        if 'annotations_type' in data_attr:
+            self.fields['annotations_type'].initial = data_attr['annotations_type']
+
+        annotation_column_help_text = 'Not required however useful for mathematical columns.'
+        self.fields['annotation_column_id'] = CharField(required=False,
+                                                        help_text=annotation_column_help_text)
+        if 'annotation_column_id' in data_attr:
+            self.fields['annotation_column_id'].initial = decode_attribute(data_attr['annotation_column_id'])
+
+        self.fields['show_table_totals'] = BooleanField(required=False,
+                                                        widget=RBToggle(),
+                                                        label='Show totals')
+        if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
+            self.fields['show_table_totals'].initial = True
+        self.fields['decimal_places'] = IntegerField()
+        self.fields['decimal_places'].initial = int(data_attr.get('decimal_places', 0))
+        self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
+
+        self.fields['filter'] = CharField(required=False)
+
+        if data_attr.get('has_filter') == '1':
+            self.fields['has_filter'].initial = True
+            if 'filter' in data_attr:
+                self.fields['filter'].initial = decode_attribute(data_attr['filter'])
+
+        self.fields['multiple_columns'] = BooleanField(required=False, widget=RBToggle())
+
+        report_builder_class = get_report_builder_class(model=base_model,
+                                                        report_type=report_type)
+        fields = []
+        self._get_query_builder_foreign_key_fields(base_model=base_model,
+                                                   report_builder_class=report_builder_class,
+                                                   fields=fields)
+
+        self.fields['multiple_column_field'] = ChoiceField(choices=fields, required=False)
+
+        if data_attr.get('multiple_columns') == '1':
+            self.fields['multiple_columns'].initial = True
+            self.fields['multiple_column_field'].initial = data_attr.get('multiple_column_field')
+
+    def setup_standard_mathematical_fields(self, data, data_attr):
+        if data['field'] in ['rb_division', 'rb_percentage']:
+            self.fields['numerator_column'] = CharField(required=False)
+            if 'numerator_column' in data_attr:
+                self.fields['numerator_column'].initial = decode_attribute(data_attr['numerator_column'])
+            self.fields['denominator_column'] = CharField(required=False)
+            if 'denominator_column' in data_attr:
+                self.fields['denominator_column'].initial = decode_attribute(data_attr['denominator_column'])
+        elif data['field'] == 'rb_times':
+            self.fields['multiplicand_column'] = CharField(required=False)
+            if 'multiplicand_column' in data_attr:
+                self.fields['multiplicand_column'].initial = decode_attribute(data_attr['multiplicand_column'])
+            self.fields['multiplier_column'] = CharField(required=False)
+            if 'multiplier_column' in data_attr:
+                self.fields['multiplier_column'].initial = decode_attribute(data_attr['multiplier_column'])
+        else:  # add and sub
+            self.fields['first_value_column'] = CharField(required=False)
+            if 'first_value_column' in data_attr:
+                self.fields['first_value_column'].initial = decode_attribute(data_attr['first_column'])
+            self.fields['second_column'] = CharField(required=False)
+            if 'second_value_column' in data_attr:
+                self.fields['second_value_column'].initial = decode_attribute(data_attr['second_value_column'])
+
+        self.fields['decimal_places'] = IntegerField()
+        self.fields['decimal_places'].initial = int(data_attr.get('decimal_places', 0))
+        self.fields['show_table_totals'] = BooleanField(required=False,
+                                                        widget=RBToggle(),
+                                                        label='Show totals')
+        if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
+            self.fields['show_table_totals'].initial = True
+
+    def save_mathematical_fields(self, data, attributes):
+        if data['field'] in ['rb_division', 'rb_percentage']:
+            if self.cleaned_data['numerator_column']:
+                b64_numerator_column = encode_attribute(self.cleaned_data['numerator_column'])
+                attributes.append(f'numerator_column-{b64_numerator_column}')
+            if self.cleaned_data['denominator_column']:
+                b64_denominator_column = encode_attribute(self.cleaned_data['denominator_column'])
+                attributes.append(f'denominator_column-{b64_denominator_column}')
+        elif data['field'] == 'rb_times':
+            if self.cleaned_data['multiplicand_column']:
+                b64_multiplicand_column = encode_attribute(self.cleaned_data['multiplicand_column'])
+                attributes.append(f'multiplicand_column-{b64_multiplicand_column}')
+            if self.cleaned_data['multiplier_column']:
+                b64_multiplier_column = encode_attribute(self.cleaned_data['multiplier_column'])
+                attributes.append(f'multiplier_column-{b64_multiplier_column}')
+        else:
+            if self.cleaned_data['first_value_column']:
+                b64_first_value_column = encode_attribute(self.cleaned_data['first_value_column'])
+                attributes.append(f'first_value_column-{b64_first_value_column}')
+            if self.cleaned_data['second_value_column']:
+                b64_second_value_column = encode_attribute(self.cleaned_data['second_value_column'])
+                attributes.append(f'second_value_column-{b64_second_value_column}')
+
+        if self.cleaned_data['decimal_places'] > 0:
+            attributes.append(f'decimal_places-{self.cleaned_data["decimal_places"]}')
+        if self.cleaned_data['show_table_totals']:
+            attributes.append('show_totals-1')
 
     def get_additional_attributes(self):
         attributes = []
@@ -314,17 +385,8 @@ class TableFieldForm(ChartBaseFieldForm):
         elif self.col_type_override.annotations is not None:
             if self.cleaned_data['show_table_totals']:
                 attributes.append('show_totals-1')
-        elif self.django_field is None and data['field'] == 'rb_percentage':
-            if self.cleaned_data['numerator_column']:
-                b64_numerator_column = encode_attribute(self.cleaned_data['numerator_column'])
-                attributes.append(f'numerator_column-{b64_numerator_column}')
-            if self.cleaned_data['denominator_column']:
-                b64_denominator_column = encode_attribute(self.cleaned_data['denominator_column'])
-                attributes.append(f'denominator_column-{b64_denominator_column}')
-            if self.cleaned_data['decimal_places'] > 0:
-                attributes.append(f'decimal_places-{self.cleaned_data["decimal_places"]}')
-            if self.cleaned_data['show_table_totals']:
-                attributes.append('show_totals-1')
+        elif self.is_mathematical_field(data=data):
+            self.save_mathematical_fields(data=data, attributes=attributes)
         else:
             if self.cleaned_data['annotation_label'] and self.cleaned_data["annotation_label"]:
                 attributes.append('annotation_label-1')
@@ -332,6 +394,8 @@ class TableFieldForm(ChartBaseFieldForm):
         if attributes:
             return '-'.join(attributes)
         return None
+
+
 
 
 class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):

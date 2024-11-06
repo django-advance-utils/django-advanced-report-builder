@@ -237,7 +237,12 @@ class ReportBuilderFieldUtils:
                                  allow_pivots=local_allow_pivots)
 
         if include_mathematical_columns:
-            fields.append({'colour': '#D4AF37', 'field': 'rb_percentage', 'label': 'Percentage Field'})
+            fields.extend([{'colour': '#D4AF37', 'field': 'rb_addition', 'label': 'Maths: Addition Field'},
+                          {'colour': '#D4AF37', 'field': 'rb_subtraction', 'label': 'Maths: Subtraction Field'},
+                          {'colour': '#D4AF37', 'field': 'rb_times', 'label': 'Maths: Times Field'},
+                          {'colour': '#D4AF37', 'field': 'rb_division', 'label': 'Maths: Division Field'},
+                          {'colour': '#D4AF37', 'field': 'rb_percentage', 'label': 'Maths: Percentage Field'}]
+                          )
 
     @staticmethod
     def _is_search_match(search_string, title):

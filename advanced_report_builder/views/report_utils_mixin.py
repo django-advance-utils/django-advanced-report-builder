@@ -182,3 +182,10 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
 
     def set_annotation_total(self, totals, field_name, col_type_override, decimal_places, css_class):
         return self.set_number_total(totals, field_name, col_type_override, decimal_places, css_class)
+
+    def set_percentage_total(self, totals, field_name, denominator, numerator, decimal_places, css_class):
+        totals[field_name] = {'sum': 'percentage',
+                              'decimal_places': decimal_places,
+                              'denominator': denominator,
+                              'numerator': numerator,
+                              'css_class': css_class}

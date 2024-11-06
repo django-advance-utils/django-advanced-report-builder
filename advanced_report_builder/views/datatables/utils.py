@@ -178,23 +178,17 @@ class TableUtilsMixin(ReportUtilsMixin):
                                                  col_type_override=col_type_override,
                                                  fields=fields)
 
-            elif django_field is None and table_field['field'] == 'rb_percentage':
-
-                numerator_column = data_attr.get('numerator_column')
-                denominator_column = data_attr.get('denominator_column')
-                if not numerator_column or not denominator_column:
-                    continue
-
-                field = self.get_mathematical_percentage_field(
-                    field_attr=field_attr,
-                    data_attr=data_attr,
-                    table_field=table_field,
-                    numerator_column=decode_attribute(numerator_column),
-                    denominator_column=decode_attribute(denominator_column),
-                    index=index,
-                    totals=totals)
-                fields.append(field)
-
+            elif django_field is None and table_field['field'] in ['rb_addition',
+                                                                   'rb_subtraction',
+                                                                   'rb_times',
+                                                                   'rb_division',
+                                                                   'rb_percentage']:
+                self.setup_mathematical_field(data_attr=data_attr,
+                                              fields=fields,
+                                              field_attr=field_attr,
+                                              table_field=table_field,
+                                              index=index,
+                                              totals=totals)
             else:
                 if col_type_override is not None:
                     if data_attr.get('annotation_label') == '1':
@@ -269,8 +263,29 @@ class TableUtilsMixin(ReportUtilsMixin):
                                                search_filter_data=report_query.query)
         return query
 
-    def get_mathematical_percentage_field(self, field_attr, data_attr, table_field,
-                                          numerator_column, denominator_column, index, totals):
+    def setup_mathematical_field(self, data_attr, fields, field_attr, table_field, index, totals):
+        field = table_field['field']
+        if field == 'rb_percentage':
+            self.get_mathematical_percentage_field(
+                fields=fields,
+                field_attr=field_attr,
+                data_attr=data_attr,
+                table_field=table_field,
+                index=index,
+                totals=totals)
+
+    def get_mathematical_percentage_field(self, fields, field_attr, data_attr, table_field, index, totals):
+
+        numerator_column = data_attr.get('numerator_column')
+        denominator_column = data_attr.get('denominator_column')
+        if not numerator_column or not denominator_column:
+            return False
+
+        numerator_column = decode_attribute(numerator_column)
+        denominator_column = decode_attribute(denominator_column)
+
+
+
         expression = ExpressionWrapper(NullIf(F(numerator_column) * 100.00, 0) / F(denominator_column),
                                        output_field=FloatField())
         decimal_places = data_attr.get('decimal_places', 2)
@@ -286,13 +301,14 @@ class TableUtilsMixin(ReportUtilsMixin):
                            'model_path': ''})
         field = self.number_field(**field_attr)
 
-        # if totals is not None:
-        #     show_total = data_attr.get('show_totals')
-        #     if show_total == '1':
-        #         self.set_number3_total(totals=totals,
-        #                               field_name=field_name,
-        #                               col_type_override=None,
-        #                               decimal_places=decimal_places,
-        #                               css_class='')
+        if totals is not None:
+            show_total = data_attr.get('show_totals')
+            if show_total == '1':
+                self.set_percentage_total(totals=totals,
+                                          field_name=field_name,
+                                          denominator=denominator_column,
+                                          numerator=numerator_column,
+                                          decimal_places=decimal_places,
+                                          css_class='')
+        fields.append(field)
 
-        return field

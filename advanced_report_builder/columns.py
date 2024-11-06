@@ -37,7 +37,7 @@ class ReportBuilderNumberColumn(ColumnBase):
         if number is None:
             return ''
         else:
-            number = self.decimal_places.format(data[self.field])
+            number = self.decimal_places.format(number)
         if '.' in number:
             return number.rstrip('0').rstrip('.')
         else:
