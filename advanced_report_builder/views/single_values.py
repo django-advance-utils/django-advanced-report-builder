@@ -1,6 +1,5 @@
 import json
 
-from crispy_forms.bootstrap import StrictButton
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Sum, ExpressionWrapper, FloatField
 from django.db.models.functions import Coalesce, NullIf
@@ -11,7 +10,6 @@ from django_datatables.datatables import DatatableTable
 from django_menus.menu import MenuItem
 from django_modals.fields import FieldEx
 from django_modals.form_helpers import HorizontalNoEnterHelper
-from django_modals.forms import ModelCrispyForm
 from django_modals.helper import show_modal
 from django_modals.modals import Modal, ModelFormModal
 from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
@@ -492,20 +490,6 @@ class SingleValueTableFieldForm(TableFieldForm):
 
 class SingleValueTableFieldModal(TableFieldModal):
     form_class = SingleValueTableFieldForm
-
-    def form_valid(self, form):
-        selector = self.slug['selector']
-
-        _attr = form.get_additional_attributes()
-        self.add_command({'function': 'set_attr',
-                          'selector': f'#{selector}',
-                          'attr': 'data-attr',
-                          'val': _attr})
-
-        self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
-        self.add_command({'function': 'save_query_builder_id_filter'})
-        self.add_command({'function': 'update_selection'})
-        return self.command_response('close')
 
 
 class QueryNumeratorForm(QueryBuilderModelForm):

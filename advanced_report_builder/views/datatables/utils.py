@@ -1,11 +1,13 @@
 import copy
 
+from crispy_forms.templatetags.crispy_forms_field import css_class
 from django.db.models import Q, ExpressionWrapper, FloatField, F
 from django.db.models.functions import NullIf
+from django_datatables.helpers import render_replace
 from django_datatables.plugins.column_totals import ColumnTotals
 
 from advanced_report_builder.columns import ReportBuilderDateColumn
-from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, CURRENCY_COLUMNS, LINK_COLUMNS
+from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, CURRENCY_COLUMNS, LINK_COLUMNS, ALIGNMENT_CLASS
 from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_FUNCTIONS
 from advanced_report_builder.utils import split_attr, decode_attribute
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
@@ -108,6 +110,7 @@ class TableUtilsMixin(ReportUtilsMixin):
             field_attr = {}
             if 'title' in table_field:
                 field_attr['title'] = table_field['title']
+
             original_field_name = field
             fields_used.add(field)
             django_field, col_type_override, _, _ = self.get_field_details(base_model=base_model,
@@ -117,8 +120,11 @@ class TableUtilsMixin(ReportUtilsMixin):
                                                                            field_attr=field_attr)
 
             data_attr = split_attr(table_field)
+
             if int(data_attr.get('display_heading', 1)) == 0:
                 field_attr['title'] = ''
+
+
 
             if isinstance(django_field, DATE_FIELDS):
                 field_name = self.get_date_field(index=index,
@@ -330,7 +336,6 @@ class TableUtilsMixin(ReportUtilsMixin):
                                             totals=totals,
                                             expression=expression)
 
-
     @staticmethod
     def decode_mathematical_columns(data_attr,
                                     first_value_column_name='first_value_column',
@@ -357,8 +362,8 @@ class TableUtilsMixin(ReportUtilsMixin):
         expression = ExpressionWrapper(NullIf(F(values[0]) * 100.00, 0) / F(values[1]),
                                        output_field=FloatField())
         decimal_places = data_attr.get('decimal_places', 2)
-        if decimal_places:
-            field_attr['decimal_places'] = int(decimal_places)
+        field_attr['decimal_places'] = int(decimal_places)
+        alignment_class = ALIGNMENT_CLASS.get(int(data_attr.get('alignment', 0)))
         field_attr['options'] = {}
         field = table_field['field']
 
@@ -371,7 +376,11 @@ class TableUtilsMixin(ReportUtilsMixin):
 
         field_attr.update({'field': field_name,
                            'column_name': field_name,
-                           'model_path': ''})
+                           'model_path': '',
+                           'render': [render_replace(html='%1%&thinsp;%', column=field_name)],
+                           'hidden': data_attr.get('hidden', 0) == '1'})
+        if alignment_class != '':
+            field_attr['column_defs'] = {'className': alignment_class}
         field = self.number_field(**field_attr)
 
         if totals is not None:
@@ -381,14 +390,15 @@ class TableUtilsMixin(ReportUtilsMixin):
                                           field_name=field_name,
                                           denominator=values[1],
                                           numerator=values[0],
-                                          decimal_places=decimal_places)
+                                          decimal_places=decimal_places,
+                                          css_class=alignment_class)
         fields.append(field)
 
     def get_mathematical_field(self, fields, field_attr, data_attr, table_field,
                                col_type_override, index, totals, expression):
         decimal_places = data_attr.get('decimal_places', 2)
-        if decimal_places:
-            field_attr['decimal_places'] = int(decimal_places)
+        alignment_class = ALIGNMENT_CLASS.get(int(data_attr.get('alignment', 0)))
+        field_attr['decimal_places'] = int(decimal_places)
         field_attr['options'] = {}
         field = table_field['field']
         column_id = data_attr.get('column_id')
@@ -400,7 +410,12 @@ class TableUtilsMixin(ReportUtilsMixin):
 
         field_attr.update({'field': field_name,
                            'column_name': field_name,
-                           'model_path': ''})
+                           'model_path': '',
+                           'trim_zeros': False,
+                           'hidden': data_attr.get('hidden', 0) == '1',
+                           'css_class': alignment_class})
+        if alignment_class != '':
+            field_attr['column_defs'] = {'className': alignment_class}
         field = self.number_field(**field_attr)
 
         if totals is not None:
@@ -409,6 +424,6 @@ class TableUtilsMixin(ReportUtilsMixin):
                 self.set_number_total(totals=totals,
                                       field_name=field_name,
                                       col_type_override=col_type_override,
-                                      decimal_places=decimal_places)
+                                      decimal_places=decimal_places,
+                                      css_class=alignment_class)
         fields.append(field)
-

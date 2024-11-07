@@ -26,11 +26,12 @@ class ReportBuilderDateColumn(ColumnBase):
 
 class ReportBuilderNumberColumn(ColumnBase):
 
-    def __init__(self, *,  decimal_places=0, **kwargs):
+    def __init__(self, *,  decimal_places=0, trim_zeros=True, **kwargs):
         if not self.initialise(locals()):
             return
         super().__init__(**kwargs)
         self.decimal_places = f'{{:.{decimal_places}f}}'
+        self.trim_zeros = trim_zeros
 
     def row_result(self, data, _page_data):
         number = data.get(self.field)
@@ -38,7 +39,7 @@ class ReportBuilderNumberColumn(ColumnBase):
             return ''
         else:
             number = self.decimal_places.format(number)
-        if '.' in number:
+        if self.trim_zeros and '.' in number:
             return number.rstrip('0').rstrip('.')
         else:
             return number

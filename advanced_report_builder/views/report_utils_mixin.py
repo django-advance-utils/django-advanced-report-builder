@@ -11,7 +11,7 @@ from advanced_report_builder.columns import ReportBuilderCurrencyPenceColumn, Re
     ReportBuilderNumberColumn
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.filter_query import FilterQueryMixin
-from advanced_report_builder.globals import ANNOTATION_FUNCTIONS, ANNOTATION_CHOICE_COUNT
+from advanced_report_builder.globals import ANNOTATION_FUNCTIONS, ANNOTATION_CHOICE_COUNT, ALIGNMENT_CLASS
 from advanced_report_builder.utils import decode_attribute
 
 
@@ -23,6 +23,7 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                          extra_filter=None, title_suffix='', multiple_index=0, decimal_places=None,
                          convert_currency_fields=False, totals=None, divider=None):
         field_name = table_field['field']
+        alignment_class = ALIGNMENT_CLASS.get(int(data_attr.get('alignment', 0)))
         new_field_name = field_name
         css_class = None
         annotation_filter = None
@@ -72,6 +73,11 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                 number_function_kwargs = {}
                 if title:
                     number_function_kwargs['title'] = title
+
+                if alignment_class != '':
+                    css_class = alignment_class
+                    number_function_kwargs['column_defs'] = {'className': css_class}
+
                 function_type = ANNOTATION_FUNCTIONS[annotations_type]
 
                 number_function_kwargs['options'] = {}
@@ -96,6 +102,12 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                 field = self.number_field(**number_function_kwargs)
             else:
                 css_class = field.column_defs.get('className')
+                if css_class is None:
+                    css_class = alignment_class
+                else:
+                    css_class += ' ' + alignment_class
+                field.column_defs['className'] = css_class
+
                 if title:
                     field.title = title
                 if annotations_type != 0:

@@ -272,7 +272,6 @@ class LineChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
                           'val': _attr})
 
         self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
-        self.add_command({'function': 'save_query_builder_id_filter'})
         self.add_command({'function': 'update_selection'})
         return self.command_response('close')
 

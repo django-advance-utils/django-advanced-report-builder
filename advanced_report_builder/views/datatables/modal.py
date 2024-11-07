@@ -13,7 +13,7 @@ from django_modals.widgets.select2 import Select2Multiple
 from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, \
-    DATE_FORMAT_TYPES, CURRENCY_COLUMNS, LINK_COLUMNS
+    DATE_FORMAT_TYPES, CURRENCY_COLUMNS, LINK_COLUMNS, ALIGNMENT_CHOICES
 from advanced_report_builder.models import TableReport, ReportType
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_report_builder_class
@@ -198,7 +198,6 @@ class TableFieldForm(ChartBaseFieldForm):
             self.fields['annotation_label'] = BooleanField(required=False, widget=RBToggle())
             if 'annotation_label' in data_attr and data_attr['annotation_label'] == '1':
                 self.fields['annotation_label'].initial = True
-
         super().setup_modal(*args, **kwargs)
 
     def setup_annotation_fields(self, data_attr):
@@ -252,6 +251,11 @@ class TableFieldForm(ChartBaseFieldForm):
                                                         label='Show totals')
         if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
             self.fields['show_table_totals'].initial = True
+
+        self.fields['alignment'] = ChoiceField(choices=ALIGNMENT_CHOICES, required=False)
+        if 'alignment' in data_attr:
+            self.fields['alignment'].initial = data_attr['alignment']
+
         self.fields['decimal_places'] = IntegerField()
         self.fields['decimal_places'].initial = int(data_attr.get('decimal_places', 0))
         self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
@@ -279,6 +283,11 @@ class TableFieldForm(ChartBaseFieldForm):
             self.fields['multiple_column_field'].initial = data_attr.get('multiple_column_field')
 
     def setup_standard_mathematical_fields(self, data, data_attr):
+
+        self.fields['hidden'] = BooleanField(required=False, widget=RBToggle(), label='Hidden')
+        if int(data_attr.get('hidden', 0)) == 1:
+            self.fields['hidden'].initial = True
+
         self.fields['column_id'] = CharField(required=False)
         if 'column_id' in data_attr:
             self.fields['column_id'].initial = decode_attribute(data_attr['column_id'])
@@ -303,7 +312,6 @@ class TableFieldForm(ChartBaseFieldForm):
             self.fields['second_value_column'] = CharField(required=False)
             if 'second_value_column' in data_attr:
                 self.fields['second_value_column'].initial = decode_attribute(data_attr['second_value_column'])
-
         self.fields['decimal_places'] = IntegerField()
         self.fields['decimal_places'].initial = int(data_attr.get('decimal_places', 0))
         self.fields['show_table_totals'] = BooleanField(required=False,
@@ -312,11 +320,20 @@ class TableFieldForm(ChartBaseFieldForm):
         if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
             self.fields['show_table_totals'].initial = True
 
+        self.fields['alignment'] = ChoiceField(choices=ALIGNMENT_CHOICES, required=False)
+        if 'alignment' in data_attr:
+            self.fields['alignment'].initial = data_attr['alignment']
+
     def save_mathematical_fields(self, data, attributes):
+        if self.cleaned_data['hidden']:
+            attributes.append('hidden-1')
+
+        alignment = self.cleaned_data.get('alignment')
+        if alignment:
+            attributes.append(f'alignment-{alignment}')
         if self.cleaned_data['column_id']:
             b64_column_id = encode_attribute(self.cleaned_data['column_id'])
             attributes.append(f'column_id-{b64_column_id}')
-
         if data['field'] in ['rb_division', 'rb_percentage']:
             if self.cleaned_data['numerator_column']:
                 b64_numerator_column = encode_attribute(self.cleaned_data['numerator_column'])
@@ -339,8 +356,53 @@ class TableFieldForm(ChartBaseFieldForm):
                 b64_second_value_column = encode_attribute(self.cleaned_data['second_value_column'])
                 attributes.append(f'second_value_column-{b64_second_value_column}')
 
+        attributes.append(f'decimal_places-{self.cleaned_data.get("decimal_places", 0)}')
+        if self.cleaned_data['show_table_totals']:
+            attributes.append('show_totals-1')
+
+    def save_number_fields(self, attributes):
+        alignment = self.cleaned_data.get('alignment')
+        if alignment:
+            attributes.append(f'alignment-{alignment}')
+        if int(self.cleaned_data['annotations_type']) != 0:
+            attributes.append(f'annotations_type-{self.cleaned_data["annotations_type"]}')
+        if self.cleaned_data['annotation_column_id']:
+            b64_annotation_column_id = encode_attribute(self.cleaned_data['annotation_column_id'])
+            attributes.append(f'annotation_column_id-{b64_annotation_column_id}')
+        if self.cleaned_data['show_table_totals']:
+            attributes.append('show_totals-1')
         if self.cleaned_data['decimal_places'] > 0:
             attributes.append(f'decimal_places-{self.cleaned_data["decimal_places"]}')
+        if self.cleaned_data['has_filter']:
+            attributes.append(f'has_filter-1')
+            if self.cleaned_data['filter']:
+                b64_filter = encode_attribute(self.cleaned_data['filter'])
+                attributes.append(f'filter-{b64_filter}')
+            if self.cleaned_data['multiple_columns']:
+                attributes.append('multiple_columns-1')
+                attributes.append(f'multiple_column_field-{self.cleaned_data["multiple_column_field"]}')
+
+    def save_date_fields(self, attributes):
+        if self.cleaned_data['annotations_value']:
+            attributes.append(f'annotations_value-{self.cleaned_data["annotations_value"]}')
+        if self.cleaned_data['date_format']:
+            attributes.append(f'date_format-{self.cleaned_data["date_format"]}')
+
+    def save_currency_fields(self, attributes):
+        if self.cleaned_data['show_table_totals']:
+            attributes.append('show_totals-1')
+
+    def save_link_fields(self, attributes):
+        if self.cleaned_data['link_css']:
+            b64_link_css = encode_attribute(self.cleaned_data['link_css'])
+            attributes.append(f'link_css-{b64_link_css}')
+        if self.cleaned_data['link_html']:
+            b64_link_html = encode_attribute(self.cleaned_data['link_html'])
+            attributes.append(f'link_html-{b64_link_html}')
+        if self.cleaned_data['is_icon'] and self.cleaned_data["is_icon"]:
+            attributes.append('is_icon-1')
+
+    def save_annotations_fields(self, attributes):
         if self.cleaned_data['show_table_totals']:
             attributes.append('show_totals-1')
 
@@ -355,43 +417,15 @@ class TableFieldForm(ChartBaseFieldForm):
             attributes.append('display_heading-0')
 
         if self.django_field is not None and isinstance(self.django_field, DATE_FIELDS):
-            if self.cleaned_data['annotations_value']:
-                attributes.append(f'annotations_value-{self.cleaned_data["annotations_value"]}')
-            if self.cleaned_data['date_format']:
-                attributes.append(f'date_format-{self.cleaned_data["date_format"]}')
+            self.save_date_fields(attributes=attributes)
         elif self.django_field is not None and isinstance(self.django_field, NUMBER_FIELDS):
-            if int(self.cleaned_data['annotations_type']) != 0:
-                attributes.append(f'annotations_type-{self.cleaned_data["annotations_type"]}')
-            if self.cleaned_data['annotation_column_id']:
-                b64_annotation_column_id = encode_attribute(self.cleaned_data['annotation_column_id'])
-                attributes.append(f'annotation_column_id-{b64_annotation_column_id}')
-            if self.cleaned_data['show_table_totals']:
-                attributes.append('show_totals-1')
-            if self.cleaned_data['decimal_places'] > 0:
-                attributes.append(f'decimal_places-{self.cleaned_data["decimal_places"]}')
-            if self.cleaned_data['has_filter']:
-                attributes.append(f'has_filter-1')
-                if self.cleaned_data['filter']:
-                    b64_filter = encode_attribute(self.cleaned_data['filter'])
-                    attributes.append(f'filter-{b64_filter}')
-                if self.cleaned_data['multiple_columns']:
-                    attributes.append('multiple_columns-1')
-                    attributes.append(f'multiple_column_field-{self.cleaned_data["multiple_column_field"]}')
+            self.save_number_fields(attributes=attributes)
         elif isinstance(self.col_type_override, CURRENCY_COLUMNS):
-            if self.cleaned_data['show_table_totals']:
-                attributes.append('show_totals-1')
+            self.save_currency_fields(attributes=attributes)
         elif isinstance(self.col_type_override, LINK_COLUMNS):
-            if self.cleaned_data['link_css']:
-                b64_link_css = encode_attribute(self.cleaned_data['link_css'])
-                attributes.append(f'link_css-{b64_link_css}')
-            if self.cleaned_data['link_html']:
-                b64_link_html = encode_attribute(self.cleaned_data['link_html'])
-                attributes.append(f'link_html-{b64_link_html}')
-            if self.cleaned_data['is_icon'] and self.cleaned_data["is_icon"]:
-                attributes.append('is_icon-1')
+            self.save_link_fields(attributes=attributes)
         elif self.col_type_override.annotations is not None:
-            if self.cleaned_data['show_table_totals']:
-                attributes.append('show_totals-1')
+            self.save_annotations_fields(attributes=attributes)
         elif self.is_mathematical_field(data=data):
             self.save_mathematical_fields(data=data, attributes=attributes)
         else:
@@ -409,6 +443,7 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
     template_name = 'advanced_report_builder/datatables/fields/modal.html'
     no_header_x = True
     helper_class = HorizontalNoEnterHelper
+    update_selection_command = 'update_selection'
 
     @property
     def modal_title(self):
@@ -425,7 +460,7 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
                           'val': _attr})
 
         self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
-        self.add_command({'function': 'update_selection'})
+        self.add_command({'function': self.update_selection_command})
         return self.command_response('close')
 
     def form_setup(self, form, *_args, **_kwargs):
@@ -450,6 +485,7 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
                     'display_heading',
                     'show_table_totals',
                     'decimal_places',
+                    'alignment',
                     'annotations_type',
                     Div('annotation_column_id',
                         FieldEx('has_filter',
@@ -515,4 +551,3 @@ class TablePivotModal(QueryBuilderModalBaseMixin, FormModal):
 
         self.add_command({'function': 'update_pivot_selection'})
         return self.command_response('close')
-

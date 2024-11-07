@@ -371,7 +371,6 @@ class BarChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
                           'val': _attr})
 
         self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
-        self.add_command({'function': 'save_query_builder_id_filter'})
         self.add_command({'function': 'update_selection'})
         return self.command_response('close')
 
@@ -424,20 +423,7 @@ class BarChartBreakdownFieldForm(TableFieldForm):
 
 class BarChartBreakdownFieldModal(TableFieldModal):
     form_class = BarChartBreakdownFieldForm
-
-    def form_valid(self, form):
-        selector = self.slug['selector']
-
-        _attr = form.get_additional_attributes()
-        self.add_command({'function': 'set_attr',
-                          'selector': f'#{selector}',
-                          'attr': 'data-attr',
-                          'val': _attr})
-
-        self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
-        self.add_command({'function': 'save_query_builder_id_filter'})
-        self.add_command({'function': 'breakdown_update_selection'})
-        return self.command_response('close')
+    update_selection_command = 'breakdown_update_selection'
 
 
 class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
