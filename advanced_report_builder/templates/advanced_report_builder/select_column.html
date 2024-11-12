@@ -88,6 +88,7 @@
                     $({{ command_prefix }}table_field_keys).empty();
                     {{ command_prefix }}available_fields_data = {};
                     $.each(data['fields'], function (key, value) {
+
                         {{ command_prefix }}available_fields_data[value.field] = value;
                         $({{ command_prefix }}available_fields_id_name).append({{ command_prefix }}get_field_html(value.field, value.label, value.colour, ''));
                     });
@@ -189,7 +190,13 @@
                         let fields = JSON.parse($({{ command_prefix }}main_field).val())
                         $.each(fields, function (key, value) {
                             let field_data = {{ command_prefix }}available_fields_data[value.field];
-                            $({{ command_prefix }}selection_fields_id_name).append({{ command_prefix }}get_field_html(value.field, value.title, field_data.colour, value.data_attr));
+                            if(field_data == undefined) {
+                                $({{ command_prefix }}selection_fields_id_name).append({{ command_prefix }}get_field_html(value.field, value.title, '#D3D3D3'));
+                            }
+                            else
+                            {
+                                $({{ command_prefix }}selection_fields_id_name).append({{ command_prefix }}get_field_html(value.field, value.title, field_data.colour, value.data_attr));
+                            }
                         });
                     }
                 }
