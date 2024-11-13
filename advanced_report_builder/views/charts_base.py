@@ -8,11 +8,14 @@ from django.apps import apps
 from django.core.exceptions import FieldError
 from django.db import ProgrammingError, DataError
 from django.db.models import Q
+from django.forms import ChoiceField
 from django.shortcuts import get_object_or_404
+from django.template.defaultfilters import title
 from django.utils.safestring import mark_safe
 from django.views.generic import TemplateView
 from django_datatables.datatables import DatatableTable
 from django_menus.menu import MenuItem
+from django_modals.widgets.select2 import Select2
 
 from advanced_report_builder.columns import ReportBuilderDateColumn
 from advanced_report_builder.exceptions import ReportError
@@ -199,22 +202,52 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
                 data_attr = split_attr(table_field)
                 if data_attr.get('multiple_columns') == '1':
                     query = self.extra_filters(query=table.model.objects)
+
                     multiple_column_field = data_attr.get('multiple_column_field')
+                    if multiple_column_field is None:
+                        return
                     report_builder_class = self._get_report_builder_class(base_model=base_model,
                                                                           field_str=multiple_column_field,
                                                                           report_builder_class=report_builder_class)
-                    _fields = report_builder_class.default_multiple_column_fields
+                    try:
+                        _fields = report_builder_class.default_multiple_column_fields
+                    except AttributeError:
+                        return
                     default_multiple_column_fields = [multiple_column_field + '__' + x for x in _fields]
                     order_by = f'{multiple_column_field}__{report_builder_class.default_multiple_pk}'
+                    positive_colour_field = self.get_field_path(
+                        field_name=data_attr.get('positive_colour_field'),
+                        base_model=base_model,
+                        report_builder_class=report_builder_class,
+                        table=table)
+                    if positive_colour_field is not None:
+                        default_multiple_column_fields.append(positive_colour_field)
+
+                    negative_colour_field = self.get_field_path(
+                        field_name=data_attr.get('negative_colour_field'),
+                        base_model=base_model,
+                        report_builder_class=report_builder_class,
+                        table=table)
+                    if negative_colour_field is not None:
+                        default_multiple_column_fields.append(negative_colour_field)
+
                     results = query.order_by(order_by).distinct(multiple_column_field).\
                         values(multiple_column_field, *default_multiple_column_fields)
 
                     for multiple_index, result in enumerate(results):
+
                         suffix = self._set_multiple_title(database_values=result,
                                                           value_prefix=multiple_column_field,
                                                           fields=_fields,
                                                           text=report_builder_class.default_multiple_column_text)
                         extra_filter = Q((multiple_column_field, result[multiple_column_field]))
+
+                        additional_options = {}
+                        if positive_colour_field is not None:
+                            additional_options['positive_colour'] = result[positive_colour_field]
+
+                        if negative_colour_field is not None:
+                            additional_options['negative_colour'] = result[negative_colour_field]
 
                         self.get_number_field(annotations_type=self.chart_report.axis_value_type,
                                               index=f'{index}_{multiple_index}',
@@ -224,7 +257,8 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
                                               col_type_override=col_type_override,
                                               extra_filter=extra_filter,
                                               title_suffix=suffix,
-                                              multiple_index=multiple_index)
+                                              multiple_index=multiple_index,
+                                              additional_options=additional_options)
 
                 else:
                     self.get_number_field(annotations_type=self.chart_report.axis_value_type,
@@ -234,6 +268,16 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
                                           fields=fields,
                                           col_type_override=col_type_override)
         return fields
+
+    def get_field_path(self, field_name, base_model, report_builder_class, table):
+        if field_name:
+            _, _, _, field_path = self.get_field_details(
+                base_model=base_model,
+                field=field_name,
+                report_builder_class=report_builder_class,
+                table=table)
+            return field_path
+        return None
 
     # noinspection PyUnresolvedReferences
     @staticmethod
@@ -262,6 +306,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         self.table.extra_filters = self.extra_filters
         fields = self.process_query_results(base_model=base_model, table=self.table)
         self.table.add_columns(*fields)
+
         context['show_toolbar'] = self.show_toolbar
         context['datatable'] = self.table
         context['title'] = self.get_title()
@@ -377,3 +422,17 @@ class ChartBaseFieldForm(ReportBuilderFieldUtils, QueryBuilderForm):
                                                            prefix=f"{prefix}{include_field}__",
                                                            title_prefix=f"{title_prefix}{include['title']} --> ",
                                                            previous_base_model=base_model)
+
+    def setup_colour_field(self, form_fields, base_model, report_builder_class, name, data_attr, label=None):
+        colour_fields = []
+        self._get_colour_fields(base_model=base_model,
+                                report_builder_class=report_builder_class,
+                                fields=colour_fields)
+        dropdown_colour_fields = [['', '----']]
+        for colour_field in colour_fields:
+            dropdown_colour_fields.append([colour_field['id'], colour_field['text']])
+
+        form_fields[name] = ChoiceField(choices=dropdown_colour_fields, required=False, widget=Select2(), label=label)
+        if name in data_attr:
+            form_fields[name].initial = data_attr.get(name)
+

@@ -20,6 +20,8 @@ def get_merged_name(default=None, **kwargs):
 
 
 class UserProfile(AbstractUser):
+    colour = models.CharField(max_length=9, null=True, blank=True)
+
     class Datatable(DatatableModel):
         class FullNameColumn(DatatableColumn):
 
@@ -40,6 +42,7 @@ class UserProfile(AbstractUser):
                 return get_merged_name(default=username, first_name=first_name, last_name=last_name)
 
         full_name = FullNameColumn(title='Name')
+        colour_column = ColourColumn(title='Colour', field='colour')
 
     class ReportBuilder(ReportBuilderFields):
         colour = '#606440'
@@ -47,9 +50,11 @@ class UserProfile(AbstractUser):
         fields = ['first_name',
                   'last_name',
                   'username',
-                  'full_name']
-        default_multiple_column_text = '{first_name} {last_name}'
-        default_multiple_column_fields = ['first_name',
+                  'full_name',
+                  'colour_column']
+        default_multiple_column_text = '{username} - {first_name} {last_name}'
+        default_multiple_column_fields = ['username',
+                                          'first_name',
                                           'last_name']
 
 
@@ -175,6 +180,7 @@ class Company(TimeStampedModel):
         default_columns = ['.id']
         default_multiple_column_text = '{name}'
         default_multiple_column_fields = ['name']
+
 
         @property
         def includes(self):

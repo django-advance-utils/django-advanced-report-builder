@@ -21,7 +21,7 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
 
     def get_number_field(self, annotations_type, index, table_field, data_attr, fields, col_type_override,
                          extra_filter=None, title_suffix='', multiple_index=0, decimal_places=None,
-                         convert_currency_fields=False, totals=None, divider=None):
+                         convert_currency_fields=False, totals=None, divider=None, additional_options=None):
         field_name = table_field['field']
         alignment_class = ALIGNMENT_CLASS.get(int(data_attr.get('alignment', 0)))
         new_field_name = field_name
@@ -38,6 +38,8 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
 
         if int(data_attr.get('display_heading', 1)) == 0:
             title = ''
+        elif int(data_attr.get('append_column_title', 0)) == 0:
+            title = title_suffix
         else:
             title = title_suffix + ' ' + table_field.get('title')
         if col_type_override:
@@ -63,7 +65,8 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                     field.title = title
                 self.set_extra_number_field_kwargs(data_attr=data_attr,
                                                    options=field.options,
-                                                   multiple_index=multiple_index)
+                                                   multiple_index=multiple_index,
+                                                   additional_options=additional_options)
 
             elif annotations_type == ANNOTATION_CHOICE_COUNT:
                 new_field_name = self.get_new_annotation_field_name(annotations_type=annotations_type,
@@ -83,7 +86,8 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                 number_function_kwargs['options'] = {}
                 self.set_extra_number_field_kwargs(data_attr=data_attr,
                                                    options=number_function_kwargs['options'],
-                                                   multiple_index=multiple_index)
+                                                   multiple_index=multiple_index,
+                                                   additional_options=additional_options)
                 if annotation_filter:
                     function = function_type(raw_field_name, filter=annotation_filter)
                 else:
@@ -132,7 +136,8 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                     field.field = new_field_name
                     self.set_extra_number_field_kwargs(data_attr=data_attr,
                                                        options=field.options,
-                                                       multiple_index=multiple_index)
+                                                       multiple_index=multiple_index,
+                                                       additional_options=additional_options)
             fields.append(field)
         else:
             number_function_kwargs = {'title': title}
@@ -143,7 +148,8 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                 number_function_kwargs['options'] = {}
                 self.set_extra_number_field_kwargs(data_attr=data_attr,
                                                    options=number_function_kwargs['options'],
-                                                   multiple_index=multiple_index)
+                                                   multiple_index=multiple_index,
+                                                   additional_options=additional_options)
 
                 new_field_name = self.get_new_annotation_field_name(annotations_type=annotations_type,
                                                                     field_name=field_name,
@@ -185,7 +191,7 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
             return decode_attribute(annotation_column_id)
         return f'{annotations_type}_{field_name}_{index}'
 
-    def set_extra_number_field_kwargs(self, data_attr, options, multiple_index):
+    def set_extra_number_field_kwargs(self, data_attr, options, multiple_index, additional_options):
         pass
 
     # noinspection PyUnusedLocal,PyMethodMayBeStatic

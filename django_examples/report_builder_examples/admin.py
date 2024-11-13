@@ -4,7 +4,7 @@ from report_builder_examples.models import Company, Person, Tags, Sector, Tally,
 from django.contrib.auth.admin import UserAdmin
 
 from report_builder_examples.models import UserProfile
-
+from django.utils.translation import gettext_lazy as _
 
 @admin.register(Sector)
 class SectorAdmin(admin.ModelAdmin):
@@ -70,7 +70,15 @@ class PaymentAdmin(admin.ModelAdmin):
                     'user_profile')
 
 
-admin.site.register(UserProfile, UserAdmin)
+@admin.register(UserProfile)
+class UserProfileAdmin(UserAdmin):
+    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff')
+    fieldsets = (
+        (None, {'fields': ('username', 'password')}),
+        (_('Personal info'), {'fields': ('first_name', 'last_name', 'email')}),
+        (_('Permissions'), {'fields': ('is_active', 'is_staff', 'is_superuser')}),  # Removed groups + user_permissions
+        (_('Important dates'), {'fields': ('colour',)}),
+    )
 
 
 @admin.register(ReportPermission)

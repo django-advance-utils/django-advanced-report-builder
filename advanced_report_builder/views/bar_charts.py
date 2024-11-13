@@ -74,11 +74,18 @@ class BarChartView(ChartBaseView):
             date_format = DATE_FORMAT_TYPES_DJANGO_FORMAT[default_format_type]
         return date_format
 
-    def set_extra_number_field_kwargs(self, data_attr, options, multiple_index):
-        negative_bar_colour = data_attr.get('negative_bar_colour') or '801C70'
-        positive_bar_colour = data_attr.get('positive_bar_colour') or '801C70'
-        negative_bar_colour = self.add_colour_offset(negative_bar_colour, multiple_index=multiple_index)
-        positive_bar_colour = self.add_colour_offset(positive_bar_colour, multiple_index=multiple_index)
+    def set_extra_number_field_kwargs(self, data_attr, options, multiple_index, additional_options):
+        negative_bar_colour = None
+        positive_bar_colour = None
+        if additional_options is not None:
+            negative_bar_colour = additional_options.get('negative_colour')
+            positive_bar_colour = additional_options.get('positive_colour')
+        if negative_bar_colour is None or negative_bar_colour == '':
+            negative_bar_colour = data_attr.get('negative_bar_colour') or '801C70'
+            negative_bar_colour = self.add_colour_offset(negative_bar_colour, multiple_index=multiple_index)
+        if positive_bar_colour is None or positive_bar_colour == '':
+            positive_bar_colour = data_attr.get('positive_bar_colour') or '801C70'
+            positive_bar_colour = self.add_colour_offset(positive_bar_colour, multiple_index=multiple_index)
 
         options.update({'colours': {'negative': negative_bar_colour,
                                     'positive': positive_bar_colour}})
@@ -309,20 +316,35 @@ class BarChartFieldForm(ChartBaseFieldForm):
                 self.fields['filter'].initial = decode_attribute(data_attr['filter'])
 
         self.fields['multiple_columns'] = BooleanField(required=False, widget=RBToggle())
-
+        self.fields['append_column_title'] = BooleanField(required=False, widget=RBToggle())
         report_builder_class = get_report_builder_class(model=base_model,
                                                         report_type=report_type)
 
-        fields = []
+        self.setup_colour_field(form_fields=self.fields,
+                                base_model=base_model,
+                                report_builder_class=report_builder_class,
+                                name='positive_colour_field',
+                                data_attr=data_attr)
+        self.setup_colour_field(form_fields=self.fields,
+                                base_model=base_model,
+                                report_builder_class=report_builder_class,
+                                name='negative_colour_field',
+                                data_attr=data_attr)
+
+        multiple_column_field = []
         self._get_query_builder_foreign_key_fields(base_model=base_model,
                                                    report_builder_class=report_builder_class,
-                                                   fields=fields)
-
-        self.fields['multiple_column_field'] = ChoiceField(choices=fields, required=False)
+                                                   fields=multiple_column_field)
+        self.fields['multiple_column_field'] = ChoiceField(choices=multiple_column_field,
+                                                           required=False,
+                                                           widget=Select2())
 
         if data_attr.get('multiple_columns') == '1':
             self.fields['multiple_columns'].initial = True
             self.fields['multiple_column_field'].initial = data_attr.get('multiple_column_field')
+
+            if data_attr.get('append_column_title') == '1':
+                self.fields['append_column_title'].initial = True
 
         super().setup_modal(*args, **kwargs)
 
@@ -342,7 +364,18 @@ class BarChartFieldForm(ChartBaseFieldForm):
 
             if self.cleaned_data['multiple_columns']:
                 attributes.append('multiple_columns-1')
-                attributes.append(f'multiple_column_field-{self.cleaned_data["multiple_column_field"]}')
+
+                if self.cleaned_data["multiple_column_field"]:
+                    attributes.append(f'multiple_column_field-{self.cleaned_data["multiple_column_field"]}')
+
+                if self.cleaned_data['append_column_title']:
+                    attributes.append('append_column_title-1')
+
+                if self.cleaned_data["positive_colour_field"]:
+                    attributes.append(f'positive_colour_field-{self.cleaned_data["positive_colour_field"]}')
+
+                if self.cleaned_data["negative_colour_field"]:
+                    attributes.append(f'negative_colour_field-{self.cleaned_data["negative_colour_field"]}')
 
         if attributes:
             return '-'.join(attributes)
@@ -396,7 +429,12 @@ class BarChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
                                 template='django_modals/fields/label_checkbox.html',
                                 field_class='col-6 input-group-sm'),
                         Div(
+                            FieldEx('append_column_title',
+                                    template='django_modals/fields/label_checkbox.html',
+                                    field_class='col-6 input-group-sm'),
                             FieldEx('multiple_column_field'),
+                            FieldEx('positive_colour_field'),
+                            FieldEx('negative_colour_field'),
                             css_id='multiple_columns_fields_div'),
                         css_id='filter_fields_div'),
                     css_id='annotations_fields_div')

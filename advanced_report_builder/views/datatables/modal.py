@@ -281,6 +281,9 @@ class TableFieldForm(ChartBaseFieldForm):
         if data_attr.get('multiple_columns') == '1':
             self.fields['multiple_columns'].initial = True
             self.fields['multiple_column_field'].initial = data_attr.get('multiple_column_field')
+            if data_attr.get('append_column_title') == '1':
+                self.fields['append_column_title'].initial = True
+
 
     def setup_standard_mathematical_fields(self, data, data_attr):
 

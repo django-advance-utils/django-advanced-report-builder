@@ -37,9 +37,13 @@ class FunnelChartView(ChartBaseView):
         context['funnel_chart_report'] = self.chart_report
         return context
 
-    def set_extra_number_field_kwargs(self, data_attr, options, multiple_index):
-        funnel_colour = data_attr.get('funnel_colour') or '801C70'
-        funnel_colour = self.add_colour_offset(funnel_colour, multiple_index=multiple_index)
+    def set_extra_number_field_kwargs(self, data_attr, options, multiple_index, additional_options):
+        funnel_colour = None
+        if additional_options is not None:
+            funnel_colour = additional_options.get('positive_colour')
+        if funnel_colour is None or funnel_colour == '':
+            funnel_colour = data_attr.get('funnel_colour') or '801C70'
+            funnel_colour = self.add_colour_offset(funnel_colour, multiple_index=multiple_index)
         options.update({'colour': funnel_colour})
 
     def edit_report_menu(self, request, chart_report_id, slug_str):
@@ -110,20 +114,29 @@ class FunnelChartFieldForm(ChartBaseFieldForm):
                 self.fields['filter'].initial = decode_attribute(data_attr['filter'])
 
         self.fields['multiple_columns'] = BooleanField(required=False, widget=RBToggle())
+        self.fields['append_column_title'] = BooleanField(required=False, widget=RBToggle())
 
         report_builder_class = get_report_builder_class(model=base_model,
                                                         report_type=report_type)
+        self.setup_colour_field(form_fields=self.fields,
+                                base_model=base_model,
+                                report_builder_class=report_builder_class,
+                                name='positive_colour_field',
+                                data_attr=data_attr,
+                                label='Funnel colour field')
 
-        fields = []
+        multiple_column_field = []
         self._get_query_builder_foreign_key_fields(base_model=base_model,
                                                    report_builder_class=report_builder_class,
-                                                   fields=fields)
+                                                   fields=multiple_column_field)
 
-        self.fields['multiple_column_field'] = ChoiceField(choices=fields, required=False)
 
+        self.fields['multiple_column_field'] = ChoiceField(choices=multiple_column_field, required=False)
         if data_attr.get('multiple_columns') == '1':
             self.fields['multiple_columns'].initial = True
             self.fields['multiple_column_field'].initial = data_attr.get('multiple_column_field')
+            if data_attr.get('append_column_title') == '1':
+                self.fields['append_column_title'].initial = True
 
         super().setup_modal(*args, **kwargs)
 
@@ -141,7 +154,11 @@ class FunnelChartFieldForm(ChartBaseFieldForm):
                 attributes.append(f'filter-{b64_filter}')
             if self.cleaned_data['multiple_columns']:
                 attributes.append('multiple_columns-1')
+                if self.cleaned_data["positive_colour_field"]:
+                    attributes.append(f'positive_colour_field-{self.cleaned_data["positive_colour_field"]}')
                 attributes.append(f'multiple_column_field-{self.cleaned_data["multiple_column_field"]}')
+                if self.cleaned_data['append_column_title']:
+                    attributes.append('append_column_title-1')
 
         if attributes:
             return '-'.join(attributes)
@@ -194,7 +211,11 @@ class FunnelChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
                                 template='django_modals/fields/label_checkbox.html',
                                 field_class='col-6 input-group-sm'),
                         Div(
+                            FieldEx('append_column_title',
+                                    template='django_modals/fields/label_checkbox.html',
+                                    field_class='col-6 input-group-sm'),
                             FieldEx('multiple_column_field'),
+                            FieldEx('positive_colour_field'),
                             css_id='multiple_columns_fields_div'),
                         css_id='filter_fields_div'),
                     css_id='annotations_fields_div')
