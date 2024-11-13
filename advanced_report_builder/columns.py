@@ -78,7 +78,7 @@ class ColourColumn(ColumnBase):
             return
         kwargs['render'] = [
             render_replace(html='<span style="display: inline-block; width: 60px; height: 15px;'
-                                ' background-color: #%1%;; vertical-align: middle;"></span>',
+                                ' background-color: #%1%; vertical-align: middle;"></span>',
                            column=kwargs['column_name'])]
         super().__init__(**kwargs)
 
