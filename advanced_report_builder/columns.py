@@ -2,7 +2,7 @@ from django.contrib.humanize.templatetags.humanize import intcomma
 from django.db.models import Count
 from django_datatables.columns import ColumnBase, CurrencyPenceColumn, CurrencyColumn, NoHeadingColumn, ColumnLink, \
     ManyToManyColumn
-from django_datatables.helpers import get_url, DUMMY_ID
+from django_datatables.helpers import get_url, DUMMY_ID, render_replace
 
 
 class ReportBuilderDateColumn(ColumnBase):
@@ -65,17 +65,22 @@ class ReportBuilderCurrencyColumn(CurrencyColumn):
 
 class ArrowColumn(NoHeadingColumn):
     def __init__(self, **kwargs):
+        if not self.initialise(locals()):
+            return
         kwargs['render'] = [{'html': '<i class="fa fa-angle-right fa-2x"></i>', 'function': 'Html'}]
         kwargs['width'] = '10px'
         super().__init__(**kwargs)
 
 
 class ColourColumn(ColumnBase):
-    def row_result(self, data, _page_data):
-        colour = data.get(self.field)
-        if colour is not None:
-            return '#' + colour
-        return ''
+    def __init__(self, **kwargs):
+        if not self.initialise(locals()):
+            return
+        kwargs['render'] = [
+            render_replace(html='<span style="display: inline-block; width: 60px; height: 15px;'
+                                ' background-color: #%1%;; vertical-align: middle;"></span>',
+                           column=kwargs['column_name'])]
+        super().__init__(**kwargs)
 
 
 class FilterForeignKeyColumn(ColumnBase):
