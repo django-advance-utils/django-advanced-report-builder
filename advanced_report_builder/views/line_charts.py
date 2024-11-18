@@ -41,7 +41,8 @@ class LineChartJSTable(ChartJSTable):
 
         new_results = []
         for record in results:
-
+            if record[0] == '' or record[0] is None:
+                continue
             current_date = datetime.strptime(record[0], '%Y-%m-%d').date()
             if current_date != next_date:
                 while next_date < current_date:
