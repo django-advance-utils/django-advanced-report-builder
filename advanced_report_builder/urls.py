@@ -2,6 +2,8 @@ from django.urls import path
 
 from advanced_report_builder.views.bar_charts import BarChartModal, BarChartFieldModal, BarChartShowBreakdownModal, \
     BarChartBreakdownFieldModal
+from advanced_report_builder.views.calendar import CalendarModal, CalendarDataSetModal, CalendarDataSetDuplicateModal, \
+    CalendarDescriptionModal, CalendarDescriptionDuplicateModal
 from advanced_report_builder.views.custom import CustomModal
 from advanced_report_builder.views.dashboard import DashboardReportModal, DashboardModal, DashboardAddReportModal
 from advanced_report_builder.views.datatables.modal import TableModal, TableFieldModal, TablePivotModal
@@ -58,6 +60,15 @@ urlpatterns = [
     path('kanban/modal/description/<str:slug>/', KanbanDescriptionModal.as_view(), name='kanban_description_modal'),
     path('kanban/modal/description/duplicate/<str:slug>/', KanbanDescriptionDuplicateModal.as_view(),
          name='kanban_description_duplicate_modal'),
+
+    path('calendar/modal/<str:slug>/', CalendarModal.as_view(), name='calendar_modal'),
+    path('calendar/modal/data-set/<str:slug>/', CalendarDataSetModal.as_view(), name='calendar_data_set_modal'),
+    path('calendar/modal/lane/duplicate/<str:slug>/', CalendarDataSetDuplicateModal.as_view(),
+         name='calendar_data_set_duplicate_modal'),
+    path('calendar/modal/description/<str:slug>/', CalendarDescriptionModal.as_view(),
+         name='calendar_description_modal'),
+    path('calendar/modal/description/duplicate/<str:slug>/', CalendarDescriptionDuplicateModal.as_view(),
+         name='calendar_description_duplicate_modal'),
 
     path('custom/modal/<str:slug>/', CustomModal.as_view(), name='custom_modal'),
 

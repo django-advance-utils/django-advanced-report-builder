@@ -1,8 +1,9 @@
 import copy
 
-from crispy_forms.templatetags.crispy_forms_field import css_class
 from django.db.models import Q, ExpressionWrapper, FloatField, F
 from django.db.models.functions import NullIf
+from django.template import Template, Context, TemplateSyntaxError
+from django_datatables.columns import ColumnBase
 from django_datatables.helpers import render_replace
 from django_datatables.plugins.column_totals import ColumnTotals
 
@@ -427,3 +428,19 @@ class TableUtilsMixin(ReportUtilsMixin):
                                       decimal_places=decimal_places,
                                       css_class=alignment_class)
         fields.append(field)
+
+
+class DescriptionColumn(ColumnBase):
+    def row_result(self, data, _page_data, columns):
+        html = self.options['html']
+
+        for column in columns:
+            if not isinstance(column, DescriptionColumn):
+                data[column.column_name] = column.row_result(data, _page_data)
+
+        try:
+            template = Template(html)
+            context = Context(data)
+            return template.render(context)
+        except TemplateSyntaxError as e:
+            return f'Error in description ({e})'

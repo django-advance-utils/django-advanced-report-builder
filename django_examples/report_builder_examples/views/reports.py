@@ -47,6 +47,9 @@ class ViewReports(MainIndices):
                                MenuItem('advanced_report_builder:kanban_modal,-',
                                         'Kanban',
                                         font_awesome='fas fa-chart-bar fa-flip-vertical'),
+                               MenuItem('advanced_report_builder:calendar_modal,-',
+                                        'Calendar',
+                                        font_awesome='far fa-calendar'),
                                ]),
         )
 

@@ -163,7 +163,8 @@ class Report(TimeStampedModel):
                             'piechartreport': 'Pie Chart',
                             'funnelchartreport': 'Funnel Chart',
                             'kanbanreport': 'Kanban',
-                            'customreport': 'Custom'}
+                            'customreport': 'Custom',
+                            'calendarreport': 'Calendar'}
 
             def col_setup(self):
                 self.field = ['instance_type', 'customreport__output_type']
@@ -185,7 +186,8 @@ class Report(TimeStampedModel):
                             'piechartreport': '<i class="fas fa-chart-pie"></i>',
                             'funnelchartreport': '<i class="fas fa-filter"></i>',
                             'kanbanreport': '<i class="fas fa-chart-bar fa-flip-vertical"></i>',
-                            'customreport': '<i class="fas fa-file"></i>'}
+                            'customreport': '<i class="fas fa-file"></i>',
+                            'calendarreport': '<i class="fas fa-calendar"></i>'}
 
             def col_setup(self):
                 self.field = ['instance_type']
@@ -231,6 +233,7 @@ class ReportQueryOrder(TimeStampedModel):
     def save(self, *args, **kwargs):
         self.set_order_field(extra_filters={'report_query': self.report_query})
         return super().save(*args, **kwargs)
+
 
 class TableReport(Report):
     table_fields = models.JSONField(null=True, blank=True)
@@ -445,6 +448,56 @@ class KanbanReportLane(TimeStampedModel):
 
     def save(self, *args, **kwargs):
         self.set_order_field(extra_filters={'kanban_report': self.kanban_report})
+        return super().save(*args, **kwargs)
+
+    def get_base_model(self):
+        return self.report_type.content_type.model_class()
+
+    class Meta:
+        ordering = ('order',)
+
+
+class CalendarReport(Report):
+    pass
+
+
+class CalendarReportDescription(TimeStampedModel):
+    calendar_report = models.ForeignKey(CalendarReport, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200)
+    report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
+    description = models.TextField(blank=True, null=True)
+    order = models.PositiveSmallIntegerField()
+
+    def save(self, *args, **kwargs):
+        self.set_order_field(extra_filters={'calendar_report': self.calendar_report})
+        return super().save(*args, **kwargs)
+
+    def get_base_model(self):
+        return self.report_type.content_type.model_class()
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ('order',)
+    
+
+class CalendarReportDataSet(TimeStampedModel):
+    calendar_report = models.ForeignKey(CalendarReport, on_delete=models.CASCADE)
+    order = models.PositiveSmallIntegerField()
+    report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
+    heading_field = models.CharField(max_length=200, blank=True, null=True)
+    name = models.CharField(max_length=200)
+    start_date_field = models.CharField(max_length=200, blank=True, null=True)
+    end_date_field = models.CharField(max_length=200, blank=True, null=True)
+    background_colour_field = models.CharField(max_length=200, blank=True, null=True)
+    link_field = models.CharField(max_length=200, blank=True, null=True)
+    calendar_report_description = models.ForeignKey(CalendarReportDescription,
+                                                    null=True, blank=False, on_delete=models.CASCADE)
+    query_data = models.JSONField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        self.set_order_field(extra_filters={'calendar_report': self.calendar_report})
         return super().save(*args, **kwargs)
 
     def get_base_model(self):

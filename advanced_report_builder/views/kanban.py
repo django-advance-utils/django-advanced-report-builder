@@ -7,10 +7,9 @@ from django.db.models import Q
 from django.forms import CharField, ChoiceField
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.template import Template, Context, TemplateSyntaxError
 from django.urls import reverse
 from django.views.generic import TemplateView
-from django_datatables.columns import ColumnBase, MenuColumn
+from django_datatables.columns import MenuColumn
 from django_datatables.datatables import DatatableExcludedRow
 from django_datatables.helpers import DUMMY_ID, row_link
 from django_datatables.widgets import DataTableReorderWidget
@@ -33,24 +32,9 @@ from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import crispy_modal_link_args, get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartJSTable
+from advanced_report_builder.views.datatables.utils import DescriptionColumn
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
 from advanced_report_builder.views.report import ReportBase
-
-
-class DescriptionColumn(ColumnBase):
-    def row_result(self, data, _page_data, columns):
-        html = self.options['html']
-
-        for column in columns:
-            if not isinstance(column, DescriptionColumn):
-                data[column.column_name] = column.row_result(data, _page_data)
-
-        try:
-            template = Template(html)
-            context = Context(data)
-            return template.render(context)
-        except TemplateSyntaxError as e:
-            return f'Error in description ({e})'
 
 
 class KanbanTable(ChartJSTable):
@@ -639,8 +623,7 @@ class KanbanDescriptionModal(DataMergeUtils, QueryBuilderModalBase):
     permission_delete = PERMISSION_OFF
     model = KanbanReportDescription
 
-    widgets = {'report_tags': Select2Multiple,
-               'order_by_ascending': RBToggle}
+    widgets = {'report_tags': Select2Multiple}
 
     form_fields = ['name',
                    'report_type',

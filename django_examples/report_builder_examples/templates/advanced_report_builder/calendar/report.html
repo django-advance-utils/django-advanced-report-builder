@@ -1,0 +1,23 @@
+{% load datatable_tags %}
+{% load ajax_helpers %}
+
+
+<div class="card report-card">
+    <div class="card-header">
+        <div class="d-flex align-items-center">
+            <h5 class="mr-auto">{{ title }}</h5>
+
+            {% block button_menu %}{{ menus.button_menu.render }}{% endblock %}
+        </div>
+    </div>
+    <div class="dashboard-tile detail">
+
+
+        <div class="content" style="padding: 2px;">
+
+            <div class="col-xs-12" style="overflow: auto;">
+                test
+            </div>
+        </div>
+    </div>
+</div>
