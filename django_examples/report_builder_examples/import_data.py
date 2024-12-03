@@ -91,6 +91,8 @@ def import_report_types():
                     ['company', 'Company', 'ReportBuilder'],
                     ['sector', 'Sector', 'ReportBuilder'],
                     ['person', 'Person', 'ReportBuilder'],
+                    ['event', 'Event', 'ReportBuilder'],
+                    ['contract', 'Contract', 'ReportBuilder'],
                     ]
 
     for report_type in report_types:

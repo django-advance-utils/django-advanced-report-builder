@@ -1,10 +1,12 @@
 from django.contrib import admin
 from report_builder_examples.models import Company, Person, Tags, Sector, Tally, Payment,\
-    CompanyInformation, ReportPermission, CompanyCategory, Contract
+    CompanyInformation, ReportPermission, CompanyCategory, Contract, Event
 from django.contrib.auth.admin import UserAdmin
 
 from report_builder_examples.models import UserProfile
 from django.utils.translation import gettext_lazy as _
+
+
 
 @admin.register(Sector)
 class SectorAdmin(admin.ModelAdmin):
@@ -103,3 +105,12 @@ class ContractAdmin(admin.ModelAdmin):
                     'start_date',
                     'end_date',
                     'amount')
+
+
+@admin.register(Event)
+class EventAdmin(admin.ModelAdmin):
+    list_display = ('name',
+                    'description',
+                    'start_date_time',
+                    'end_date_time',
+                    'user_profile')

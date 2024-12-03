@@ -1,7 +1,7 @@
 import json
 
 from django.conf import settings
-from django.forms import CharField, ChoiceField
+from django.forms import CharField
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -23,9 +23,7 @@ from advanced_report_builder.data_merge.utils import DataMergeUtils
 from advanced_report_builder.data_merge.widget import DataMergeWidget
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.models import ReportType, CalendarReportDescription, CalendarReportDataSet, CalendarReport
-from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import crispy_modal_link_args
-from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartJSTable
 from advanced_report_builder.views.datatables.utils import DescriptionColumn
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
