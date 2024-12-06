@@ -458,7 +458,7 @@ class KanbanReportLane(TimeStampedModel):
 
 
 class CalendarReport(Report):
-    pass
+    height = models.PositiveSmallIntegerField(default=600)
 
 
 class CalendarReportDescription(TimeStampedModel):

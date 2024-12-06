@@ -304,7 +304,8 @@ class CalendarModal(ModelFormModal):
 
     form_fields = ['name',
                    'notes',
-                   'report_tags']
+                   'report_tags',
+                   'height']
 
     def form_setup(self, form, *_args, **_kwargs):
         org_id = self.object.id if hasattr(self, 'object') else None
