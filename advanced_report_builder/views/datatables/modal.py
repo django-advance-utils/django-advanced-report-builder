@@ -508,9 +508,11 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
                     ]
         elif isinstance(col_type_override, CURRENCY_COLUMNS):
             return ['title',
+                    'display_heading',
                     'show_table_totals']
         elif isinstance(col_type_override, LINK_COLUMNS):
             return ['title',
+                    'display_heading',
                     'link_css',
                     'link_html',
                     'is_icon']

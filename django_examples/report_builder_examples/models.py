@@ -121,6 +121,7 @@ class Company(TimeStampedModel):
         sector_names = ReportBuilderManyToManyColumn(field='sectors__name')
 
         arrow_icon_column = ArrowColumn(title='Arrow Icon')
+        total_contract_amount = CurrencyPenceColumn(annotations={'total_contract_amount': Sum('contract__amount')})
 
         class Tags(DatatableColumn):
             def setup_results(self, request, all_results):
@@ -175,6 +176,7 @@ class Company(TimeStampedModel):
                     'background_colour_column',
                     'text_colour_column',
                     'Tags',
+                    'total_contract_amount',
                     ]
 
         default_columns = ['.id']
