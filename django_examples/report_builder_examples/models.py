@@ -9,7 +9,7 @@ from time_stamped_model.models import TimeStampedModel
 
 from advanced_report_builder.columns import (ColourColumn, ArrowColumn,
                                              FilterForeignKeyColumn, ReportBuilderColumnLink,
-                                             ReportBuilderManyToManyColumn)
+                                             ReportBuilderManyToManyColumn, ReverseForeignKeyFieldColumn)
 from advanced_report_builder.models import Report
 from advanced_report_builder.report_builder import ReportBuilderFields
 
@@ -121,7 +121,11 @@ class Company(TimeStampedModel):
         sector_names = ReportBuilderManyToManyColumn(field='sectors__name')
 
         arrow_icon_column = ArrowColumn(title='Arrow Icon')
+
         total_contract_amount = CurrencyPenceColumn(annotations={'total_contract_amount': Sum('contract__amount')})
+        contract_notes = ReverseForeignKeyFieldColumn(
+            field_name='contract__notes',
+            report_builder_class_name='report_builder_examples.Contract.ReportBuilder')
 
         class Tags(DatatableColumn):
             def setup_results(self, request, all_results):
@@ -177,6 +181,7 @@ class Company(TimeStampedModel):
                     'text_colour_column',
                     'Tags',
                     'total_contract_amount',
+                    'contract_notes',
                     ]
 
         default_columns = ['.id']

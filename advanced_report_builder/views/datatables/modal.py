@@ -3,6 +3,7 @@ import json
 
 from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Div
+from django.apps import apps
 from django.forms import CharField, ChoiceField, BooleanField, IntegerField
 from django.urls import reverse
 from django_modals.fields import FieldEx
@@ -13,7 +14,8 @@ from django_modals.widgets.select2 import Select2Multiple
 from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, \
-    DATE_FORMAT_TYPES, CURRENCY_COLUMNS, LINK_COLUMNS, ALIGNMENT_CHOICES
+    DATE_FORMAT_TYPES, CURRENCY_COLUMNS, LINK_COLUMNS, ALIGNMENT_CHOICES, REVERSE_FOREIGN_KEY_COLUMNS, \
+    REVERSE_FOREIGN_KEY_DELIMITER_CHOICES
 from advanced_report_builder.models import TableReport, ReportType
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_report_builder_class
@@ -189,6 +191,8 @@ class TableFieldForm(ChartBaseFieldForm):
             self.setup_currency_fields(data_attr=data_attr)
         elif isinstance(self.col_type_override, LINK_COLUMNS):
             self.setup_link_fields(data_attr=data_attr)
+        elif isinstance(self.col_type_override, REVERSE_FOREIGN_KEY_COLUMNS):
+            self.setup_reverse_foreign_key(data_attr=data_attr)
         elif self.col_type_override.annotations is not None:
             self.setup_annotation_fields(data_attr=data_attr)
         elif self.is_mathematical_field(data=data):
@@ -224,6 +228,18 @@ class TableFieldForm(ChartBaseFieldForm):
         self.fields['is_icon'] = BooleanField(required=False, widget=RBToggle())
         if 'is_icon' in data_attr and data_attr['is_icon'] == '1':
             self.fields['is_icon'].initial = True
+
+    def setup_reverse_foreign_key(self, data_attr):
+        self.fields['delimiter_type'] = ChoiceField(choices=REVERSE_FOREIGN_KEY_DELIMITER_CHOICES, required=False)
+
+        self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
+
+        self.fields['filter'] = CharField(required=False)
+
+        if data_attr.get('has_filter') == '1':
+            self.fields['has_filter'].initial = True
+            if 'filter' in data_attr:
+                self.fields['filter'].initial = decode_attribute(data_attr['filter'])
 
     def setup_date_fields(self, data_attr):
         self.fields['annotations_value'] = ChoiceField(choices=[(0, '-----')] + ANNOTATION_VALUE_CHOICES,
@@ -284,9 +300,7 @@ class TableFieldForm(ChartBaseFieldForm):
             if data_attr.get('append_column_title') == '1':
                 self.fields['append_column_title'].initial = True
 
-
     def setup_standard_mathematical_fields(self, data, data_attr):
-
         self.fields['hidden'] = BooleanField(required=False, widget=RBToggle(), label='Hidden')
         if int(data_attr.get('hidden', 0)) == 1:
             self.fields['hidden'].initial = True
@@ -405,6 +419,15 @@ class TableFieldForm(ChartBaseFieldForm):
         if self.cleaned_data['is_icon'] and self.cleaned_data["is_icon"]:
             attributes.append('is_icon-1')
 
+    def save_reverse_foreign_key_fields(self, attributes):
+        if int(self.cleaned_data['delimiter_type']) != 0:
+            attributes.append(f'delimiter_type-{self.cleaned_data["delimiter_type"]}')
+        if self.cleaned_data['has_filter']:
+            attributes.append(f'has_filter-1')
+            if self.cleaned_data['filter']:
+                b64_filter = encode_attribute(self.cleaned_data['filter'])
+                attributes.append(f'filter-{b64_filter}')
+
     def save_annotations_fields(self, attributes):
         if self.cleaned_data['show_table_totals']:
             attributes.append('show_totals-1')
@@ -427,6 +450,8 @@ class TableFieldForm(ChartBaseFieldForm):
             self.save_currency_fields(attributes=attributes)
         elif isinstance(self.col_type_override, LINK_COLUMNS):
             self.save_link_fields(attributes=attributes)
+        elif isinstance(self.col_type_override, REVERSE_FOREIGN_KEY_COLUMNS):
+            self.save_reverse_foreign_key_fields(attributes=attributes)
         elif self.col_type_override.annotations is not None:
             self.save_annotations_fields(attributes=attributes)
         elif self.is_mathematical_field(data=data):
@@ -516,13 +541,41 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
                     'link_css',
                     'link_html',
                     'is_icon']
+        elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_COLUMNS):
+            form.add_trigger('has_filter', 'onchange', [
+                {'selector': '#filter_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'}])
+
+            return ['title',
+                    'display_heading',
+                    'delimiter_type',
+
+                    FieldEx('has_filter',
+                            template='django_modals/fields/label_checkbox.html',
+                            field_class='col-6 input-group-sm'),
+                    Div(
+                        FieldEx('filter',
+                                template='advanced_report_builder/datatables/fields/single_query_builder.html',
+                                extra_context={
+                                    'report_builder_class_name': col_type_override.report_builder_class_name
+                                }),
+                        css_id='filter_fields_div')]
 
     def ajax_get_query_builder_fields(self, **kwargs):
         field_auto_id = kwargs['field_auto_id']
+        report_builder_class_name = kwargs.get('report_builder_class_name')
 
-        report_type_id = self.slug['report_type_id']
-        query_builder_filters = self.get_query_builder_report_type_field(report_type_id=report_type_id)
-
+        if report_builder_class_name != '' and report_builder_class_name is not None:
+            app_label, model, report_builder_fields_str = report_builder_class_name.split('.')
+            new_model = apps.get_model(app_label, model)
+            report_builder_class = get_report_builder_class(model=new_model,
+                                                  class_name=report_builder_fields_str)
+            query_builder_filters = []
+            self._get_query_builder_fields(base_model=new_model,
+                                           query_builder_filters=query_builder_filters,
+                                           report_builder_class=report_builder_class)
+        else:
+            report_type_id = self.slug['report_type_id']
+            query_builder_filters = self.get_query_builder_report_type_field(report_type_id=report_type_id)
         return self.command_response(f'query_builder_{field_auto_id}', data=json.dumps(query_builder_filters))
 
 

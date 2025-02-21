@@ -1,5 +1,6 @@
 from django.contrib.humanize.templatetags.humanize import intcomma
-from django.db.models import Count
+from django.contrib.postgres.aggregates import StringAgg
+from django.db.models import Count, Q
 from django_datatables.columns import ColumnBase, CurrencyPenceColumn, CurrencyColumn, NoHeadingColumn, ColumnLink, \
     ManyToManyColumn
 from django_datatables.helpers import get_url, DUMMY_ID, render_replace
@@ -88,6 +89,19 @@ class FilterForeignKeyColumn(ColumnBase):
         values = self.model.objects.distinct(self.field).order_by(self.field).values_list(self.field, flat=True)
         return {v: v for v in values if v}
 
+class ReverseForeignKeyFieldColumn(ColumnBase):
+    def __init__(self, field_name, report_builder_class_name, **kwargs):
+        if not self.initialise(locals()):
+            return
+
+        super().__init__(**kwargs)
+        self.field_name = field_name
+        self.setup_annotations(delimiter=', ')
+
+        self.report_builder_class_name = report_builder_class_name
+
+    def setup_annotations(self, delimiter):
+        self.annotations = {self.field_name: StringAgg(self.field_name, delimiter=delimiter, distinct=True)}
 
 class ReportBuilderColumnLink(ColumnLink):
     """ Sometimes you may want to have a report where the links don't work.
