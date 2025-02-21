@@ -3,7 +3,7 @@ from django.db.models import Sum, Max, Min, Count, Avg
 from django.db.models.functions import TruncMonth, TruncQuarter, TruncYear, TruncWeek, TruncDay
 from django_datatables.columns import CurrencyColumn, CurrencyPenceColumn, ColumnLink
 
-from advanced_report_builder.columns import ColourColumn
+from advanced_report_builder.columns import ColourColumn, ReverseForeignKeyFieldColumn
 
 NUMBER_FIELDS = (models.IntegerField,
                  models.PositiveSmallIntegerField,
@@ -14,6 +14,18 @@ BOOLEAN_FIELD = models.BooleanField
 CURRENCY_COLUMNS = (CurrencyColumn, CurrencyPenceColumn)
 LINK_COLUMNS = ColumnLink
 COLOUR_COLUMNS = ColourColumn
+REVERSE_FOREIGN_KEY_COLUMNS = ReverseForeignKeyFieldColumn
+
+
+REVERSE_FOREIGN_KEY_DELIMITER_COMMA = 1
+REVERSE_FOREIGN_KEY_DELIMITER_SEMICOLON = 2
+REVERSE_FOREIGN_KEY_DELIMITER_PIPE = 3
+REVERSE_FOREIGN_KEY_DELIMITER_SPACE = 4
+
+REVERSE_FOREIGN_KEY_DELIMITER_CHOICES = [(REVERSE_FOREIGN_KEY_DELIMITER_COMMA, ', '),
+                                         (REVERSE_FOREIGN_KEY_DELIMITER_SEMICOLON, ';'),
+                                         (REVERSE_FOREIGN_KEY_DELIMITER_PIPE, ' | '),
+                                         (REVERSE_FOREIGN_KEY_DELIMITER_PIPE, 'Space')]
 
 ANNOTATION_VALUE_YEAR = 1
 ANNOTATION_VALUE_QUARTER = 2

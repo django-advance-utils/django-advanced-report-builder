@@ -63,7 +63,7 @@
 
             function initialise_query_builder(report_type_id) {
                 query_builder.queryBuilder('destroy');
-                django_modal.send_inputs({'ajax': 'get_query_builder_fields', 'field_auto_id': '{{ field.auto_id }}'})
+                django_modal.send_inputs({'ajax': 'get_query_builder_fields', 'field_auto_id': '{{ field.auto_id }}', 'report_builder_class_name': '{{ report_builder_class_name }}'})
             }
 
             $(document).ready(function () {
