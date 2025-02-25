@@ -231,11 +231,10 @@ class TableFieldForm(ChartBaseFieldForm):
 
     def setup_reverse_foreign_key(self, data_attr):
         self.fields['delimiter_type'] = ChoiceField(choices=REVERSE_FOREIGN_KEY_DELIMITER_CHOICES, required=False)
-
+        if 'delimiter_type' in data_attr:
+            self.fields['delimiter_type'].initial = data_attr['delimiter_type']
         self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
-
         self.fields['filter'] = CharField(required=False)
-
         if data_attr.get('has_filter') == '1':
             self.fields['has_filter'].initial = True
             if 'filter' in data_attr:

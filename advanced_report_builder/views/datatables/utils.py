@@ -7,7 +7,7 @@ from django_datatables.plugins.column_totals import ColumnTotals
 
 from advanced_report_builder.columns import ReportBuilderDateColumn
 from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, CURRENCY_COLUMNS, LINK_COLUMNS, ALIGNMENT_CLASS, \
-    REVERSE_FOREIGN_KEY_COLUMNS
+    REVERSE_FOREIGN_KEY_COLUMNS, REVERSE_FOREIGN_KEY_DELIMITER_COMMA, REVERSE_FOREIGN_KEY_DELIMITER_VALUES
 from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_FUNCTIONS
 from advanced_report_builder.utils import split_attr, decode_attribute
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
@@ -180,7 +180,9 @@ class TableUtilsMixin(ReportUtilsMixin):
                 field_name = table_field['field']
                 col_type_override.table = None
                 field = copy.deepcopy(col_type_override)
-                col_type_override.setup_annotations(delimiter=' | ')
+                delimiter_type = int(data_attr.get('delimiter_type', REVERSE_FOREIGN_KEY_DELIMITER_COMMA))
+                delimiter = REVERSE_FOREIGN_KEY_DELIMITER_VALUES[delimiter_type]
+                field.setup_annotations(delimiter=delimiter)
                 if field_attr:
                     field = (field, field_attr)
                 fields.append(field)

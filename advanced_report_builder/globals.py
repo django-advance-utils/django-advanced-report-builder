@@ -25,7 +25,12 @@ REVERSE_FOREIGN_KEY_DELIMITER_SPACE = 4
 REVERSE_FOREIGN_KEY_DELIMITER_CHOICES = [(REVERSE_FOREIGN_KEY_DELIMITER_COMMA, ', '),
                                          (REVERSE_FOREIGN_KEY_DELIMITER_SEMICOLON, ';'),
                                          (REVERSE_FOREIGN_KEY_DELIMITER_PIPE, ' | '),
-                                         (REVERSE_FOREIGN_KEY_DELIMITER_PIPE, 'Space')]
+                                         (REVERSE_FOREIGN_KEY_DELIMITER_SPACE, 'Space')]
+
+REVERSE_FOREIGN_KEY_DELIMITER_VALUES = {REVERSE_FOREIGN_KEY_DELIMITER_COMMA: ', ',
+                                        REVERSE_FOREIGN_KEY_DELIMITER_SEMICOLON: ';',
+                                        REVERSE_FOREIGN_KEY_DELIMITER_PIPE: ' | ',
+                                        REVERSE_FOREIGN_KEY_DELIMITER_SPACE: ' '}
 
 ANNOTATION_VALUE_YEAR = 1
 ANNOTATION_VALUE_QUARTER = 2
