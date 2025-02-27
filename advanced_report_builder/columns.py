@@ -1,6 +1,7 @@
 from django.contrib.humanize.templatetags.humanize import intcomma
-from django.contrib.postgres.aggregates import StringAgg
-from django.db.models import Count, Q
+from django.contrib.postgres.aggregates import StringAgg, BoolOr
+from django.db.models import Count, Q, BooleanField
+from django.db.models.functions import Cast
 from django_datatables.columns import ColumnBase, CurrencyPenceColumn, CurrencyColumn, NoHeadingColumn, ColumnLink, \
     ManyToManyColumn
 from django_datatables.helpers import get_url, DUMMY_ID, render_replace
@@ -89,19 +90,38 @@ class FilterForeignKeyColumn(ColumnBase):
         values = self.model.objects.distinct(self.field).order_by(self.field).values_list(self.field, flat=True)
         return {v: v for v in values if v}
 
-class ReverseForeignKeyFieldColumn(ColumnBase):
+
+class ReverseForeignKeyStrFieldColumn(ColumnBase):
     def __init__(self, field_name, report_builder_class_name, **kwargs):
         if not self.initialise(locals()):
             return
-
         super().__init__(**kwargs)
         self.field_name = field_name
-        self.setup_annotations(delimiter=', ')
-
         self.report_builder_class_name = report_builder_class_name
 
-    def setup_annotations(self, delimiter):
-        self.annotations = {self.field_name: StringAgg(self.field_name, delimiter=delimiter, distinct=True)}
+    def setup_annotations(self, delimiter, sub_filter=None, field_name=None):
+        if field_name is None:
+            field_name = self.field_name
+        self.annotations = {field_name: StringAgg(self.field_name,
+                                                  delimiter=delimiter,
+                                                  distinct=True,
+                                                  filter=sub_filter)}
+
+
+class ReverseForeignKeyBoolOrFieldColumn(ColumnBase):
+    def __init__(self, field_name, report_builder_class_name, **kwargs):
+        if not self.initialise(locals()):
+            return
+        super().__init__(**kwargs)
+        self.field_name = field_name
+        self.report_builder_class_name = report_builder_class_name
+
+    def setup_annotations(self, sub_filter=None, field_name=None):
+        if field_name is None:
+            field_name = self.field_name
+        self.annotations = {field_name: BoolOr(Cast(self.field_name, BooleanField()),
+                                                  filter=sub_filter)}
+
 
 class ReportBuilderColumnLink(ColumnLink):
     """ Sometimes you may want to have a report where the links don't work.

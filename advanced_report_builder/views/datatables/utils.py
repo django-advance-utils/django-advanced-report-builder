@@ -1,4 +1,5 @@
 import copy
+import json
 
 from django.db.models import Q, ExpressionWrapper, FloatField, F
 from django.db.models.functions import NullIf
@@ -7,7 +8,8 @@ from django_datatables.plugins.column_totals import ColumnTotals
 
 from advanced_report_builder.columns import ReportBuilderDateColumn
 from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, CURRENCY_COLUMNS, LINK_COLUMNS, ALIGNMENT_CLASS, \
-    REVERSE_FOREIGN_KEY_COLUMNS, REVERSE_FOREIGN_KEY_DELIMITER_COMMA, REVERSE_FOREIGN_KEY_DELIMITER_VALUES
+    REVERSE_FOREIGN_KEY_STR_COLUMNS, REVERSE_FOREIGN_KEY_DELIMITER_COMMA, REVERSE_FOREIGN_KEY_DELIMITER_VALUES, \
+    REVERSE_FOREIGN_KEY_BOOL_COLUMNS
 from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_FUNCTIONS
 from advanced_report_builder.utils import split_attr, decode_attribute
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
@@ -176,17 +178,20 @@ class TableUtilsMixin(ReportUtilsMixin):
                                                        col_type_override=col_type_override,
                                                        decimal_places=decimal_places)
 
-            elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_COLUMNS):
+            elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_STR_COLUMNS):
                 field_name = table_field['field']
-                col_type_override.table = None
-                field = copy.deepcopy(col_type_override)
-                delimiter_type = int(data_attr.get('delimiter_type', REVERSE_FOREIGN_KEY_DELIMITER_COMMA))
-                delimiter = REVERSE_FOREIGN_KEY_DELIMITER_VALUES[delimiter_type]
-                field.setup_annotations(delimiter=delimiter)
-                if field_attr:
-                    field = (field, field_attr)
+                field = self.get_reverse_foreign_key_str_field(col_type_override=col_type_override,
+                                                               data_attr=data_attr,
+                                                               field_attr=field_attr,
+                                                               index=index)
                 fields.append(field)
-
+            elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_BOOL_COLUMNS):
+                field_name = table_field['field']
+                field = self.get_reverse_foreign_key_bool_field(col_type_override=col_type_override,
+                                                                data_attr=data_attr,
+                                                                field_attr=field_attr,
+                                                                index=index)
+                fields.append(field)
             elif isinstance(col_type_override, LINK_COLUMNS):
                 field_name = self.get_link_field(table_field=table_field,
                                                  col_type_override=col_type_override,
@@ -435,3 +440,33 @@ class TableUtilsMixin(ReportUtilsMixin):
                                       decimal_places=decimal_places,
                                       css_class=alignment_class)
         fields.append(field)
+
+    def get_reverse_foreign_key_str_field(self, col_type_override, data_attr, field_attr, index):
+        col_type_override.table = None
+        field_name = f'{col_type_override.field_name}_{index}'
+        field = copy.deepcopy(col_type_override)
+        delimiter_type = int(data_attr.get('delimiter_type', REVERSE_FOREIGN_KEY_DELIMITER_COMMA))
+        delimiter = REVERSE_FOREIGN_KEY_DELIMITER_VALUES[delimiter_type]
+        sub_query = None
+        if int(data_attr.get('has_filter', 0)) == 1:
+            _filter = json.loads(decode_attribute(data_attr['filter']))
+            prefix_field_name = col_type_override.field_name.split('__')[0]
+            sub_query = self.process_filters(search_filter_data=_filter, prefix_field_name=prefix_field_name)
+        field.setup_annotations(delimiter=delimiter, sub_filter=sub_query, field_name=field_name)
+        if field_attr:
+            field = (field, field_attr)
+        return field
+
+    def get_reverse_foreign_key_bool_field(self, col_type_override, data_attr, field_attr, index):
+        col_type_override.table = None
+        field_name = f'{col_type_override.field_name}_{index}'
+        field = copy.deepcopy(col_type_override)
+        sub_query = None
+        if int(data_attr.get('has_filter', 0)) == 1:
+            _filter = json.loads(decode_attribute(data_attr['filter']))
+            prefix_field_name = col_type_override.field_name.split('__')[0]
+            sub_query = self.process_filters(search_filter_data=_filter, prefix_field_name=prefix_field_name)
+        field.setup_annotations(sub_filter=sub_query, field_name=field_name)
+        if field_attr:
+            field = (field, field_attr)
+        return field

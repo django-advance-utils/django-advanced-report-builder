@@ -3,7 +3,8 @@ from django.db.models import Sum, Max, Min, Count, Avg
 from django.db.models.functions import TruncMonth, TruncQuarter, TruncYear, TruncWeek, TruncDay
 from django_datatables.columns import CurrencyColumn, CurrencyPenceColumn, ColumnLink
 
-from advanced_report_builder.columns import ColourColumn, ReverseForeignKeyFieldColumn
+from advanced_report_builder.columns import ColourColumn, ReverseForeignKeyStrFieldColumn, \
+    ReverseForeignKeyBoolOrFieldColumn
 
 NUMBER_FIELDS = (models.IntegerField,
                  models.PositiveSmallIntegerField,
@@ -14,8 +15,8 @@ BOOLEAN_FIELD = models.BooleanField
 CURRENCY_COLUMNS = (CurrencyColumn, CurrencyPenceColumn)
 LINK_COLUMNS = ColumnLink
 COLOUR_COLUMNS = ColourColumn
-REVERSE_FOREIGN_KEY_COLUMNS = ReverseForeignKeyFieldColumn
-
+REVERSE_FOREIGN_KEY_STR_COLUMNS = ReverseForeignKeyStrFieldColumn
+REVERSE_FOREIGN_KEY_BOOL_COLUMNS = ReverseForeignKeyBoolOrFieldColumn
 
 REVERSE_FOREIGN_KEY_DELIMITER_COMMA = 1
 REVERSE_FOREIGN_KEY_DELIMITER_SEMICOLON = 2

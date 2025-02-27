@@ -30,15 +30,16 @@ class FilterQueryMixin:
         return query
 
 
-    def process_filters(self, search_filter_data, extra_filter=None):
+    def process_filters(self, search_filter_data, extra_filter=None, prefix_field_name=None):
         if not search_filter_data:
             return []
 
-        query_list = self._process_group(query_data=search_filter_data)
+        query_list = self._process_group(query_data=search_filter_data,
+                                         prefix_field_name=prefix_field_name)
         if extra_filter:
             query_list.append(extra_filter)
 
-        reduce_by = self._format_group_conditions(search_filter_data['condition'])
+        reduce_by = self._format_group_conditions(display_condition=search_filter_data['condition'])
 
         if query_list:
             return reduce(reduce_by, query_list)
@@ -88,18 +89,20 @@ class FilterQueryMixin:
 
         return reduce_by
 
-    def _process_group(self, query_data):
+    def _process_group(self, query_data, prefix_field_name):
         query_list = []
 
         for rule in query_data['rules']:
             if condition := rule.get('condition'):
-                reduce_by = self._format_group_conditions(condition)
-                sub_query_list = self._process_group(query_data=rule)
+                reduce_by = self._format_group_conditions(display_condition=condition)
+                sub_query_list = self._process_group(query_data=rule, prefix_field_name=prefix_field_name)
                 if sub_query_list:
                     query_list.append(reduce(reduce_by, sub_query_list))
                 continue
 
             field = rule['field']
+            if prefix_field_name is not None:
+                field = prefix_field_name + '__' + field
             _id = rule['id']
             display_operator = rule['operator']
             query_string = field + self._get_operator(display_operator)

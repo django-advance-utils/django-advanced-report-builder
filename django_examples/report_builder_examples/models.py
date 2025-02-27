@@ -9,7 +9,8 @@ from time_stamped_model.models import TimeStampedModel
 
 from advanced_report_builder.columns import (ColourColumn, ArrowColumn,
                                              FilterForeignKeyColumn, ReportBuilderColumnLink,
-                                             ReportBuilderManyToManyColumn, ReverseForeignKeyFieldColumn)
+                                             ReportBuilderManyToManyColumn, ReverseForeignKeyStrFieldColumn,
+                                             ReverseForeignKeyBoolOrFieldColumn)
 from advanced_report_builder.models import Report
 from advanced_report_builder.report_builder import ReportBuilderFields
 
@@ -123,8 +124,12 @@ class Company(TimeStampedModel):
         arrow_icon_column = ArrowColumn(title='Arrow Icon')
 
         total_contract_amount = CurrencyPenceColumn(annotations={'total_contract_amount': Sum('contract__amount')})
-        contract_notes = ReverseForeignKeyFieldColumn(
+        contract_notes = ReverseForeignKeyStrFieldColumn(
             field_name='contract__notes',
+            report_builder_class_name='report_builder_examples.Contract.ReportBuilder')
+
+        contract_valid = ReverseForeignKeyBoolOrFieldColumn(
+            field_name='contract__valid',
             report_builder_class_name='report_builder_examples.Contract.ReportBuilder')
 
         class Tags(DatatableColumn):
@@ -182,6 +187,7 @@ class Company(TimeStampedModel):
                     'Tags',
                     'total_contract_amount',
                     'contract_notes',
+                    'contract_valid',
                     ]
 
         default_columns = ['.id']
@@ -346,6 +352,7 @@ class Contract(TimeStampedModel):
     start_date = models.DateField()
     end_date = models.DateField()
     amount = models.IntegerField()
+    valid = models.BooleanField(default=False)
 
     class Datatable(DatatableModel):
         currency_amount = CurrencyPenceColumn(column_name='currency_amount', field='amount')
@@ -356,7 +363,8 @@ class Contract(TimeStampedModel):
         fields = ['notes',
                   'start_date',
                   'end_date',
-                  'currency_amount']
+                  'currency_amount',
+                  'valid']
 
         includes = {'company': {'title': 'Company',
                                 'model': 'report_builder_examples.Company.ReportBuilder'}}
