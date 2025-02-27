@@ -9,7 +9,7 @@ from django_datatables.plugins.column_totals import ColumnTotals
 from advanced_report_builder.columns import ReportBuilderDateColumn
 from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, CURRENCY_COLUMNS, LINK_COLUMNS, ALIGNMENT_CLASS, \
     REVERSE_FOREIGN_KEY_STR_COLUMNS, REVERSE_FOREIGN_KEY_DELIMITER_COMMA, REVERSE_FOREIGN_KEY_DELIMITER_VALUES, \
-    REVERSE_FOREIGN_KEY_BOOL_COLUMNS
+    REVERSE_FOREIGN_KEY_BOOL_COLUMNS, ANNOTATION_BOOLEAN_XOR
 from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_FUNCTIONS
 from advanced_report_builder.utils import split_attr, decode_attribute
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
@@ -466,7 +466,8 @@ class TableUtilsMixin(ReportUtilsMixin):
             _filter = json.loads(decode_attribute(data_attr['filter']))
             prefix_field_name = col_type_override.field_name.split('__')[0]
             sub_query = self.process_filters(search_filter_data=_filter, prefix_field_name=prefix_field_name)
-        field.setup_annotations(sub_filter=sub_query, field_name=field_name)
+        annotations_type = int(data_attr.get('annotations_type', ANNOTATION_BOOLEAN_XOR))
+        field.setup_annotations(annotations_type=annotations_type, sub_filter=sub_query, field_name=field_name)
         if field_attr:
             field = (field, field_attr)
         return field

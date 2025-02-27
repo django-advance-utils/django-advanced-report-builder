@@ -1,6 +1,6 @@
 from django.contrib.humanize.templatetags.humanize import intcomma
-from django.contrib.postgres.aggregates import StringAgg, BoolOr
-from django.db.models import Count, Q, BooleanField
+from django.contrib.postgres.aggregates import StringAgg, BoolOr, BoolAnd, ArrayAgg
+from django.db.models import Count, BooleanField
 from django.db.models.functions import Cast
 from django_datatables.columns import ColumnBase, CurrencyPenceColumn, CurrencyColumn, NoHeadingColumn, ColumnLink, \
     ManyToManyColumn
@@ -116,11 +116,23 @@ class ReverseForeignKeyBoolOrFieldColumn(ColumnBase):
         self.field_name = field_name
         self.report_builder_class_name = report_builder_class_name
 
-    def setup_annotations(self, sub_filter=None, field_name=None):
+    def setup_annotations(self, annotations_type, sub_filter=None, field_name=None, ):
+        from advanced_report_builder.globals import ANNOTATION_BOOLEAN_XOR, ANNOTATION_BOOLEAN_AND, \
+            ANNOTATION_BOOLEAN_ARRAY
         if field_name is None:
             field_name = self.field_name
-        self.annotations = {field_name: BoolOr(Cast(self.field_name, BooleanField()),
-                                                  filter=sub_filter)}
+
+
+        if annotations_type == ANNOTATION_BOOLEAN_XOR:
+            self.annotations = {field_name: BoolOr(Cast(self.field_name, BooleanField()),
+                                                   filter=sub_filter)}
+        elif annotations_type == ANNOTATION_BOOLEAN_AND:
+            self.annotations = {field_name: BoolAnd(Cast(self.field_name, BooleanField()),
+                                                    filter=sub_filter)}
+        elif annotations_type == ANNOTATION_BOOLEAN_ARRAY:
+            self.annotations = {field_name: ArrayAgg(self.field_name,
+                                                     distinct=True,
+                                                     filter=sub_filter)}
 
 
 class ReportBuilderColumnLink(ColumnLink):

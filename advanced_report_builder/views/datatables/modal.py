@@ -15,7 +15,7 @@ from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, \
     DATE_FORMAT_TYPES, CURRENCY_COLUMNS, LINK_COLUMNS, ALIGNMENT_CHOICES, REVERSE_FOREIGN_KEY_STR_COLUMNS, \
-    REVERSE_FOREIGN_KEY_DELIMITER_CHOICES, REVERSE_FOREIGN_KEY_BOOL_COLUMNS
+    REVERSE_FOREIGN_KEY_DELIMITER_CHOICES, REVERSE_FOREIGN_KEY_BOOL_COLUMNS, ANNOTATION_BOOLEAN_CHOICES
 from advanced_report_builder.models import TableReport, ReportType
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_report_builder_class
@@ -243,6 +243,11 @@ class TableFieldForm(ChartBaseFieldForm):
                 self.fields['filter'].initial = decode_attribute(data_attr['filter'])
 
     def setup_reverse_foreign_bool_key(self, data_attr):
+        self.fields['annotations_type'] = ChoiceField(choices=ANNOTATION_BOOLEAN_CHOICES,
+                                                       required=False,
+                                                      label='Type')
+        if 'annotations_type' in data_attr:
+            self.fields['annotations_type'].initial = data_attr['annotations_type']
         self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
         self.fields['filter'] = CharField(required=False)
         if data_attr.get('has_filter') == '1':
@@ -438,6 +443,8 @@ class TableFieldForm(ChartBaseFieldForm):
                 attributes.append(f'filter-{b64_filter}')
 
     def save_reverse_foreign_key_bool_fields(self, attributes):
+        if int(self.cleaned_data['annotations_type']) != 0:
+            attributes.append(f'annotations_type-{self.cleaned_data["annotations_type"]}')
         if self.cleaned_data['has_filter']:
             attributes.append(f'has_filter-1')
             if self.cleaned_data['filter']:
@@ -583,6 +590,7 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
 
             return ['title',
                     'display_heading',
+                    'annotations_type',
                     FieldEx('has_filter',
                             template='django_modals/fields/label_checkbox.html',
                             field_class='col-6 input-group-sm'),

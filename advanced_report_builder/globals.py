@@ -51,6 +51,14 @@ ANNOTATION_VALUE_FUNCTIONS = {ANNOTATION_VALUE_YEAR: TruncYear,
                               ANNOTATION_VALUE_WEEK: TruncWeek,
                               ANNOTATION_VALUE_DAY: TruncDay}
 
+ANNOTATION_BOOLEAN_XOR = 1
+ANNOTATION_BOOLEAN_AND = 2
+ANNOTATION_BOOLEAN_ARRAY = 3
+
+ANNOTATION_BOOLEAN_CHOICES = [(ANNOTATION_BOOLEAN_XOR, 'XOR'),
+                              (ANNOTATION_BOOLEAN_AND, 'And'),
+                              (ANNOTATION_BOOLEAN_ARRAY, 'Array')]
+
 ANNOTATION_CHART_SCALE = {ANNOTATION_VALUE_YEAR: 'year',
                           ANNOTATION_VALUE_QUARTER: 'quarter',
                           ANNOTATION_VALUE_MONTH: 'month',
