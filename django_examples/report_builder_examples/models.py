@@ -10,7 +10,7 @@ from time_stamped_model.models import TimeStampedModel
 from advanced_report_builder.columns import (ColourColumn, ArrowColumn,
                                              FilterForeignKeyColumn, ReportBuilderColumnLink,
                                              ReportBuilderManyToManyColumn, ReverseForeignKeyStrFieldColumn,
-                                             ReverseForeignKeyBoolOrFieldColumn)
+                                             ReverseForeignKeyBoolFieldColumn, ReverseForeignKeyChoiceFieldColumn)
 from advanced_report_builder.models import Report
 from advanced_report_builder.report_builder import ReportBuilderFields
 
@@ -128,8 +128,12 @@ class Company(TimeStampedModel):
             field_name='contract__notes',
             report_builder_class_name='report_builder_examples.Contract.ReportBuilder')
 
-        contract_valid = ReverseForeignKeyBoolOrFieldColumn(
+        contract_valid = ReverseForeignKeyBoolFieldColumn(
             field_name='contract__valid',
+            report_builder_class_name='report_builder_examples.Contract.ReportBuilder')
+
+        contract_temperature = ReverseForeignKeyChoiceFieldColumn(
+            field_name='contract__temperature',
             report_builder_class_name='report_builder_examples.Contract.ReportBuilder')
 
         class Tags(DatatableColumn):
@@ -188,6 +192,7 @@ class Company(TimeStampedModel):
                     'total_contract_amount',
                     'contract_notes',
                     'contract_valid',
+                    'contract_temperature',
                     ]
 
         default_columns = ['.id']
@@ -347,12 +352,15 @@ class Payment(TimeStampedModel):
 
 
 class Contract(TimeStampedModel):
+    TEMPERATURE_TYPES = ((0, 'Cold'), (1, 'Warm'), (2, 'Hot'))
+
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     notes = models.TextField()
     start_date = models.DateField()
     end_date = models.DateField()
     amount = models.IntegerField()
     valid = models.BooleanField(default=False)
+    temperature = models.IntegerField(choices=TEMPERATURE_TYPES, default=0)
 
     class Datatable(DatatableModel):
         currency_amount = CurrencyPenceColumn(column_name='currency_amount', field='amount')
@@ -364,7 +372,8 @@ class Contract(TimeStampedModel):
                   'start_date',
                   'end_date',
                   'currency_amount',
-                  'valid']
+                  'valid',
+                  'temperature']
 
         includes = {'company': {'title': 'Company',
                                 'model': 'report_builder_examples.Company.ReportBuilder'}}

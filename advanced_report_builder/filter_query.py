@@ -29,7 +29,6 @@ class FilterQueryMixin:
 
         return query
 
-
     def process_filters(self, search_filter_data, extra_filter=None, prefix_field_name=None):
         if not search_filter_data:
             return []

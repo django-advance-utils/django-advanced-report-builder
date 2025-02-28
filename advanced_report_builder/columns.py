@@ -108,7 +108,7 @@ class ReverseForeignKeyStrFieldColumn(ColumnBase):
                                                   filter=sub_filter)}
 
 
-class ReverseForeignKeyBoolOrFieldColumn(ColumnBase):
+class ReverseForeignKeyBoolFieldColumn(ColumnBase):
     def __init__(self, field_name, report_builder_class_name, **kwargs):
         if not self.initialise(locals()):
             return
@@ -116,7 +116,7 @@ class ReverseForeignKeyBoolOrFieldColumn(ColumnBase):
         self.field_name = field_name
         self.report_builder_class_name = report_builder_class_name
 
-    def setup_annotations(self, annotations_type, sub_filter=None, field_name=None, ):
+    def setup_annotations(self, annotations_type, sub_filter=None, field_name=None):
         from advanced_report_builder.globals import ANNOTATION_BOOLEAN_XOR, ANNOTATION_BOOLEAN_AND, \
             ANNOTATION_BOOLEAN_ARRAY
         if field_name is None:
@@ -133,6 +133,23 @@ class ReverseForeignKeyBoolOrFieldColumn(ColumnBase):
             self.annotations = {field_name: ArrayAgg(self.field_name,
                                                      distinct=True,
                                                      filter=sub_filter)}
+
+
+class ReverseForeignKeyChoiceFieldColumn(ColumnBase):
+    def __init__(self, field_name, report_builder_class_name, **kwargs):
+        if not self.initialise(locals()):
+            return
+        super().__init__(**kwargs)
+        self.field_name = field_name
+        self.report_builder_class_name = report_builder_class_name
+
+    def setup_annotations(self, sub_filter=None, field_name=None):
+        if field_name is None:
+            field_name = self.field_name
+
+        self.annotations = {field_name: ArrayAgg(self.field_name,
+                                                 distinct=True,
+                                                 filter=sub_filter)}
 
 
 class ReportBuilderColumnLink(ColumnLink):
