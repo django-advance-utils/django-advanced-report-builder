@@ -9,8 +9,8 @@ from time_stamped_model.models import TimeStampedModel
 
 from advanced_report_builder.columns import (ColourColumn, ArrowColumn,
                                              FilterForeignKeyColumn, ReportBuilderColumnLink,
-                                             ReportBuilderManyToManyColumn, ReverseForeignKeyStrFieldColumn,
-                                             ReverseForeignKeyBoolFieldColumn, ReverseForeignKeyChoiceFieldColumn)
+                                             ReportBuilderManyToManyColumn, ReverseForeignKeyStrColumn,
+                                             ReverseForeignKeyBoolColumn, ReverseForeignKeyChoiceColumn)
 from advanced_report_builder.models import Report
 from advanced_report_builder.report_builder import ReportBuilderFields
 
@@ -124,15 +124,15 @@ class Company(TimeStampedModel):
         arrow_icon_column = ArrowColumn(title='Arrow Icon')
 
         total_contract_amount = CurrencyPenceColumn(annotations={'total_contract_amount': Sum('contract__amount')})
-        contract_notes = ReverseForeignKeyStrFieldColumn(
+        contract_notes = ReverseForeignKeyStrColumn(
             field_name='contract__notes',
             report_builder_class_name='report_builder_examples.Contract.ReportBuilder')
 
-        contract_valid = ReverseForeignKeyBoolFieldColumn(
+        contract_valid = ReverseForeignKeyBoolColumn(
             field_name='contract__valid',
             report_builder_class_name='report_builder_examples.Contract.ReportBuilder')
 
-        contract_temperature = ReverseForeignKeyChoiceFieldColumn(
+        contract_temperature = ReverseForeignKeyChoiceColumn(
             field_name='contract__temperature',
             report_builder_class_name='report_builder_examples.Contract.ReportBuilder')
 

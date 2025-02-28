@@ -3,8 +3,9 @@ from django.contrib.postgres.aggregates import StringAgg, BoolOr, BoolAnd, Array
 from django.db.models import Count, BooleanField
 from django.db.models.functions import Cast
 from django_datatables.columns import ColumnBase, CurrencyPenceColumn, CurrencyColumn, NoHeadingColumn, ColumnLink, \
-    ManyToManyColumn
+    ManyToManyColumn, ChoiceColumn
 from django_datatables.helpers import get_url, DUMMY_ID, render_replace
+from django_datatables.model_def import DatatableModel
 
 
 class ReportBuilderDateColumn(ColumnBase):
@@ -91,7 +92,7 @@ class FilterForeignKeyColumn(ColumnBase):
         return {v: v for v in values if v}
 
 
-class ReverseForeignKeyStrFieldColumn(ColumnBase):
+class ReverseForeignKeyStrColumn(ColumnBase):
     def __init__(self, field_name, report_builder_class_name, **kwargs):
         if not self.initialise(locals()):
             return
@@ -108,7 +109,7 @@ class ReverseForeignKeyStrFieldColumn(ColumnBase):
                                                   filter=sub_filter)}
 
 
-class ReverseForeignKeyBoolFieldColumn(ColumnBase):
+class ReverseForeignKeyBoolColumn(ColumnBase):
     def __init__(self, field_name, report_builder_class_name, **kwargs):
         if not self.initialise(locals()):
             return
@@ -135,13 +136,24 @@ class ReverseForeignKeyBoolFieldColumn(ColumnBase):
                                                      filter=sub_filter)}
 
 
-class ReverseForeignKeyChoiceFieldColumn(ColumnBase):
+class ReverseForeignKeyChoiceColumn(ColumnBase):
     def __init__(self, field_name, report_builder_class_name, **kwargs):
         if not self.initialise(locals()):
             return
-        super().__init__(**kwargs)
         self.field_name = field_name
+        self.choices = None
         self.report_builder_class_name = report_builder_class_name
+        super().__init__( **kwargs)
+
+    def setup_results(self, request, all_results):
+        _, django_field, _ = DatatableModel.get_setup_data(self.model, self.field_name)
+        self.choices = {c[0]: c[1] for c in django_field.choices}
+
+    def row_result(self, data, _page_data):
+        results = []
+        for x in data.get(self.field):
+            results.append(self.choices.get(x, ''))
+        return results
 
     def setup_annotations(self, sub_filter=None, field_name=None):
         if field_name is None:
