@@ -4,15 +4,16 @@ from django.db import models
 from django.db.models import Count, Sum
 from django_datatables.columns import DatatableColumn, CurrencyPenceColumn, ColumnBase, DateColumn
 from django_datatables.model_def import DatatableModel
-from report_builder_examples.report_overrides import CustomDateColumn
 from time_stamped_model.models import TimeStampedModel
 
 from advanced_report_builder.columns import (ColourColumn, ArrowColumn,
                                              FilterForeignKeyColumn, ReportBuilderColumnLink,
                                              ReportBuilderManyToManyColumn, ReverseForeignKeyStrColumn,
-                                             ReverseForeignKeyBoolColumn, ReverseForeignKeyChoiceColumn)
+                                             ReverseForeignKeyBoolColumn, ReverseForeignKeyChoiceColumn,
+                                             ReverseForeignKeyDateColumn)
 from advanced_report_builder.models import Report
 from advanced_report_builder.report_builder import ReportBuilderFields
+from report_builder_examples.report_overrides import CustomDateColumn
 
 
 def get_merged_name(default=None, **kwargs):
@@ -136,6 +137,10 @@ class Company(TimeStampedModel):
             field_name='contract__temperature',
             report_builder_class_name='report_builder_examples.Contract.ReportBuilder')
 
+        contract_created = ReverseForeignKeyDateColumn(
+            field_name='contract__created',
+            report_builder_class_name='report_builder_examples.Contract.ReportBuilder')
+
         class Tags(DatatableColumn):
             def setup_results(self, request, all_results):
                 tags = Tags.objects.values_list('company__id', 'id')
@@ -193,6 +198,7 @@ class Company(TimeStampedModel):
                     'contract_notes',
                     'contract_valid',
                     'contract_temperature',
+                    'contract_created',
                     ]
 
         default_columns = ['.id']

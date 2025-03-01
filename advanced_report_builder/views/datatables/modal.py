@@ -13,9 +13,11 @@ from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.select2 import Select2Multiple
 from django_modals.widgets.widgets import Toggle
 
-from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, \
-    DATE_FORMAT_TYPES, CURRENCY_COLUMNS, LINK_COLUMNS, ALIGNMENT_CHOICES, REVERSE_FOREIGN_KEY_STR_COLUMNS, \
-    REVERSE_FOREIGN_KEY_DELIMITER_CHOICES, REVERSE_FOREIGN_KEY_BOOL_COLUMNS, ANNOTATION_BOOLEAN_CHOICES
+from advanced_report_builder.column_types import NUMBER_FIELDS, DATE_FIELDS, CURRENCY_COLUMNS, LINK_COLUMNS, \
+    REVERSE_FOREIGN_KEY_STR_COLUMNS, REVERSE_FOREIGN_KEY_BOOL_COLUMNS, REVERSE_FOREIGN_KEY_CHOICE_COLUMNS, \
+    REVERSE_FOREIGN_KEY_DATE_COLUMNS
+from advanced_report_builder.globals import ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, \
+    DATE_FORMAT_TYPES, ALIGNMENT_CHOICES, ANNOTATION_BOOLEAN_CHOICES, REVERSE_FOREIGN_KEY_DELIMITER_CHOICES
 from advanced_report_builder.models import TableReport, ReportType
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_report_builder_class
@@ -195,6 +197,10 @@ class TableFieldForm(ChartBaseFieldForm):
             self.setup_reverse_foreign_str_key(data_attr=data_attr)
         elif isinstance(self.col_type_override, REVERSE_FOREIGN_KEY_BOOL_COLUMNS):
             self.setup_reverse_foreign_bool_key(data_attr=data_attr)
+        elif isinstance(self.col_type_override, REVERSE_FOREIGN_KEY_CHOICE_COLUMNS):
+            self.setup_reverse_foreign_choice_key(data_attr=data_attr)
+        elif isinstance(self.col_type_override, REVERSE_FOREIGN_KEY_DATE_COLUMNS):
+            self.setup_reverse_foreign_date_key(data_attr=data_attr)
         elif self.col_type_override.annotations is not None:
             self.setup_annotation_fields(data_attr=data_attr)
         elif self.is_mathematical_field(data=data):
@@ -248,6 +254,28 @@ class TableFieldForm(ChartBaseFieldForm):
                                                       label='Type')
         if 'annotations_type' in data_attr:
             self.fields['annotations_type'].initial = data_attr['annotations_type']
+        self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
+        self.fields['filter'] = CharField(required=False)
+        if data_attr.get('has_filter') == '1':
+            self.fields['has_filter'].initial = True
+            if 'filter' in data_attr:
+                self.fields['filter'].initial = decode_attribute(data_attr['filter'])
+
+    def setup_reverse_foreign_choice_key(self, data_attr):
+        self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
+        self.fields['filter'] = CharField(required=False)
+        if data_attr.get('has_filter') == '1':
+            self.fields['has_filter'].initial = True
+            if 'filter' in data_attr:
+                self.fields['filter'].initial = decode_attribute(data_attr['filter'])
+
+    def setup_reverse_foreign_date_key(self, data_attr):
+        self.fields['delimiter_type'] = ChoiceField(choices=REVERSE_FOREIGN_KEY_DELIMITER_CHOICES, required=False)
+        if 'delimiter_type' in data_attr:
+            self.fields['delimiter_type'].initial = data_attr['delimiter_type']
+        self.fields['date_format'] = ChoiceField(choices=[(0, '-----')] + DATE_FORMAT_TYPES, required=False)
+        if 'date_format' in data_attr:
+            self.fields['date_format'].initial = data_attr['date_format']
         self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
         self.fields['filter'] = CharField(required=False)
         if data_attr.get('has_filter') == '1':
@@ -451,6 +479,24 @@ class TableFieldForm(ChartBaseFieldForm):
                 b64_filter = encode_attribute(self.cleaned_data['filter'])
                 attributes.append(f'filter-{b64_filter}')
 
+    def save_reverse_foreign_key_choice_fields(self, attributes):
+        if self.cleaned_data['has_filter']:
+            attributes.append(f'has_filter-1')
+            if self.cleaned_data['filter']:
+                b64_filter = encode_attribute(self.cleaned_data['filter'])
+                attributes.append(f'filter-{b64_filter}')
+
+    def save_reverse_foreign_key_date_fields(self, attributes):
+        if int(self.cleaned_data['delimiter_type']) != 0:
+            attributes.append(f'delimiter_type-{self.cleaned_data["delimiter_type"]}')
+        if self.cleaned_data['date_format']:
+            attributes.append(f'date_format-{self.cleaned_data["date_format"]}')
+        if self.cleaned_data['has_filter']:
+            attributes.append(f'has_filter-1')
+            if self.cleaned_data['filter']:
+                b64_filter = encode_attribute(self.cleaned_data['filter'])
+                attributes.append(f'filter-{b64_filter}')
+
     def save_annotations_fields(self, attributes):
         if self.cleaned_data['show_table_totals']:
             attributes.append('show_totals-1')
@@ -477,6 +523,10 @@ class TableFieldForm(ChartBaseFieldForm):
             self.save_reverse_foreign_key_str_fields(attributes=attributes)
         elif isinstance(self.col_type_override, REVERSE_FOREIGN_KEY_BOOL_COLUMNS):
             self.save_reverse_foreign_key_bool_fields(attributes=attributes)
+        elif isinstance(self.col_type_override, REVERSE_FOREIGN_KEY_CHOICE_COLUMNS):
+            self.save_reverse_foreign_key_choice_fields(attributes=attributes)
+        elif isinstance(self.col_type_override, REVERSE_FOREIGN_KEY_DATE_COLUMNS):
+            self.save_reverse_foreign_key_date_fields(attributes=attributes)
         elif self.col_type_override.annotations is not None:
             self.save_annotations_fields(attributes=attributes)
         elif self.is_mathematical_field(data=data):
@@ -591,6 +641,40 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
             return ['title',
                     'display_heading',
                     'annotations_type',
+                    FieldEx('has_filter',
+                            template='django_modals/fields/label_checkbox.html',
+                            field_class='col-6 input-group-sm'),
+                    Div(
+                        FieldEx('filter',
+                                template='advanced_report_builder/datatables/fields/single_query_builder.html',
+                                extra_context={
+                                    'report_builder_class_name': col_type_override.report_builder_class_name
+                                }),
+                        css_id='filter_fields_div')]
+        elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_CHOICE_COLUMNS):
+            form.add_trigger('has_filter', 'onchange', [
+                {'selector': '#filter_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'}])
+
+            return ['title',
+                    'display_heading',
+                    FieldEx('has_filter',
+                            template='django_modals/fields/label_checkbox.html',
+                            field_class='col-6 input-group-sm'),
+                    Div(
+                        FieldEx('filter',
+                                template='advanced_report_builder/datatables/fields/single_query_builder.html',
+                                extra_context={
+                                    'report_builder_class_name': col_type_override.report_builder_class_name
+                                }),
+                        css_id='filter_fields_div')]
+        elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_DATE_COLUMNS):
+            form.add_trigger('has_filter', 'onchange', [
+                {'selector': '#filter_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'}])
+
+            return ['title',
+                    'display_heading',
+                    'delimiter_type',
+                    'date_format',
                     FieldEx('has_filter',
                             template='django_modals/fields/label_checkbox.html',
                             field_class='col-6 input-group-sm'),

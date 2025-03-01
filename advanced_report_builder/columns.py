@@ -3,9 +3,14 @@ from django.contrib.postgres.aggregates import StringAgg, BoolOr, BoolAnd, Array
 from django.db.models import Count, BooleanField
 from django.db.models.functions import Cast
 from django_datatables.columns import ColumnBase, CurrencyPenceColumn, CurrencyColumn, NoHeadingColumn, ColumnLink, \
-    ManyToManyColumn, ChoiceColumn
+    ManyToManyColumn
 from django_datatables.helpers import get_url, DUMMY_ID, render_replace
 from django_datatables.model_def import DatatableModel
+
+from advanced_report_builder.globals import REVERSE_FOREIGN_KEY_DELIMITER_COMMA, REVERSE_FOREIGN_KEY_DELIMITER_VALUES, \
+    DATE_FORMAT_TYPE_DD_MM_YY_SLASH, DATE_FORMAT_TYPES_DJANGO_FORMAT
+from advanced_report_builder.globals import ANNOTATION_BOOLEAN_XOR, ANNOTATION_BOOLEAN_AND, \
+    ANNOTATION_BOOLEAN_ARRAY
 
 
 class ReportBuilderDateColumn(ColumnBase):
@@ -100,9 +105,11 @@ class ReverseForeignKeyStrColumn(ColumnBase):
         self.field_name = field_name
         self.report_builder_class_name = report_builder_class_name
 
-    def setup_annotations(self, delimiter, sub_filter=None, field_name=None):
+    def setup_annotations(self, delimiter_type=None, sub_filter=None, field_name=None):
         if field_name is None:
             field_name = self.field_name
+        delimiter = REVERSE_FOREIGN_KEY_DELIMITER_VALUES[delimiter_type]
+
         self.annotations = {field_name: StringAgg(self.field_name,
                                                   delimiter=delimiter,
                                                   distinct=True,
@@ -118,11 +125,9 @@ class ReverseForeignKeyBoolColumn(ColumnBase):
         self.report_builder_class_name = report_builder_class_name
 
     def setup_annotations(self, annotations_type, sub_filter=None, field_name=None):
-        from advanced_report_builder.globals import ANNOTATION_BOOLEAN_XOR, ANNOTATION_BOOLEAN_AND, \
-            ANNOTATION_BOOLEAN_ARRAY
+
         if field_name is None:
             field_name = self.field_name
-
 
         if annotations_type == ANNOTATION_BOOLEAN_XOR:
             self.annotations = {field_name: BoolOr(Cast(self.field_name, BooleanField()),
@@ -162,6 +167,44 @@ class ReverseForeignKeyChoiceColumn(ColumnBase):
         self.annotations = {field_name: ArrayAgg(self.field_name,
                                                  distinct=True,
                                                  filter=sub_filter)}
+
+
+class ReverseForeignKeyDateColumn(ColumnBase):
+    def __init__(self, field_name, report_builder_class_name, **kwargs):
+        if not self.initialise(locals()):
+            return
+        super().__init__(**kwargs)
+        self.field_name = field_name
+        self.report_builder_class_name = report_builder_class_name
+        self.delimiter_type = REVERSE_FOREIGN_KEY_DELIMITER_COMMA
+        self.date_format_type = DATE_FORMAT_TYPE_DD_MM_YY_SLASH
+
+    def setup_annotations(self, delimiter_type=None, date_format_type=None,
+                          sub_filter=None, field_name=None):
+        if field_name is None:
+            field_name = self.field_name
+        self.delimiter_type = delimiter_type
+        self.date_format_type = date_format_type
+
+        self.annotations = {field_name: ArrayAgg(self.field_name,
+                                                 distinct=True,
+                                                 filter=sub_filter)}
+
+    def row_result(self, data, _page_data):
+        field = self.field
+        if isinstance(field, list):
+            field = field[-1]
+        try:
+            date_formate_type_str = DATE_FORMAT_TYPES_DJANGO_FORMAT[self.date_format_type]
+            results = []
+            if data[field] is None:
+                return ''
+            for value in data[field]:
+                results.append(value.strftime(date_formate_type_str))
+            delimiter = REVERSE_FOREIGN_KEY_DELIMITER_VALUES[self.delimiter_type]
+            return delimiter.join(results)
+        except AttributeError:
+            return ""
 
 
 class ReportBuilderColumnLink(ColumnLink):

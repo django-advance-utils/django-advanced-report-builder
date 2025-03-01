@@ -10,9 +10,9 @@ from django.urls import reverse
 from django_modals.modals import ModelFormModal
 from django_modals.widgets.select2 import Select2
 
+from advanced_report_builder.column_types import NUMBER_FIELDS
 from advanced_report_builder.field_types import FieldTypes
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
-from advanced_report_builder.globals import NUMBER_FIELDS
 from advanced_report_builder.models import ReportQuery, ReportType
 from advanced_report_builder.utils import get_report_builder_class
 

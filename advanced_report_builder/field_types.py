@@ -1,8 +1,8 @@
 from django.db import models
 from django_datatables.columns import ManyToManyColumn
 
+from advanced_report_builder.column_types import DATE_FIELDS
 from advanced_report_builder.columns import FilterForeignKeyColumn
-from advanced_report_builder.globals import DATE_FIELDS
 from advanced_report_builder.variable_date import VariableDate
 
 

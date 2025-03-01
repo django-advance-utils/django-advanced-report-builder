@@ -16,9 +16,10 @@ from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.select2 import Select2Multiple
 from django_modals.widgets.widgets import Toggle
 
+from advanced_report_builder.column_types import NUMBER_FIELDS
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.exceptions import ReportError
-from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_CHOICE_SUM, \
+from advanced_report_builder.globals import ANNOTATION_CHOICE_SUM, \
     ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT
 from advanced_report_builder.models import SingleValueReport, ReportType, ReportQuery
 from advanced_report_builder.utils import get_report_builder_class, get_query_js

@@ -1,8 +1,9 @@
 from django_datatables.columns import ColumnNameError
 from django_datatables.datatables import ColumnInitialisor
 from django.apps import apps
+
+from advanced_report_builder.column_types import NUMBER_FIELDS, LINK_COLUMNS, COLOUR_COLUMNS, DATE_FIELDS
 from advanced_report_builder.exceptions import ReportError
-from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, LINK_COLUMNS, COLOUR_COLUMNS
 from advanced_report_builder.utils import get_report_builder_class
 
 

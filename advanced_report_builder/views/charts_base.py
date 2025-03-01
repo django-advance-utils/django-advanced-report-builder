@@ -10,17 +10,17 @@ from django.db import ProgrammingError, DataError
 from django.db.models import Q
 from django.forms import ChoiceField
 from django.shortcuts import get_object_or_404
-from django.template.defaultfilters import title
 from django.utils.safestring import mark_safe
 from django.views.generic import TemplateView
 from django_datatables.datatables import DatatableTable
 from django_menus.menu import MenuItem
 from django_modals.widgets.select2 import Select2
 
+from advanced_report_builder.column_types import NUMBER_FIELDS
 from advanced_report_builder.columns import ReportBuilderDateColumn
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
-from advanced_report_builder.globals import NUMBER_FIELDS, ANNOTATION_VALUE_FUNCTIONS, ANNOTATION_VALUE_YEAR, \
+from advanced_report_builder.globals import ANNOTATION_VALUE_FUNCTIONS, ANNOTATION_VALUE_YEAR, \
     ANNOTATION_VALUE_QUARTER, ANNOTATION_VALUE_WEEK, ANNOTATION_VALUE_DAY, ANNOTATION_VALUE_MONTH
 from advanced_report_builder.models import ReportType
 from advanced_report_builder.utils import split_slug, split_attr, get_report_builder_class

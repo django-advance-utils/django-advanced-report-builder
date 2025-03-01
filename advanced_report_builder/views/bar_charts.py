@@ -22,10 +22,11 @@ from django_modals.widgets.colour_picker import ColourPickerWidget
 from django_modals.widgets.select2 import Select2Multiple, Select2
 from django_modals.widgets.widgets import Toggle
 
+from advanced_report_builder.column_types import NUMBER_FIELDS
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.generate_series import GenerateSeries
 from advanced_report_builder.globals import DEFAULT_DATE_FORMAT, \
-    DATE_FORMAT_TYPES_DJANGO_FORMAT, NUMBER_FIELDS, ANNOTATION_VALUE_YEAR, ANNOTATION_VALUE_QUARTER, \
+    DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_YEAR, ANNOTATION_VALUE_QUARTER, \
     ANNOTATION_VALUE_MONTH, ANNOTATION_VALUE_WEEK, ANNOTATION_VALUE_DAY, ANNOTATION_VALUE_FUNCTIONS, \
     GENERATE_SERIES_INTERVALS
 from advanced_report_builder.models import BarChartReport, ReportType

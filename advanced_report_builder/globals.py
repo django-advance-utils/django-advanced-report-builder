@@ -1,37 +1,23 @@
-from django.db import models
 from django.db.models import Sum, Max, Min, Count, Avg
 from django.db.models.functions import TruncMonth, TruncQuarter, TruncYear, TruncWeek, TruncDay
-from django_datatables.columns import CurrencyColumn, CurrencyPenceColumn, ColumnLink
 
-from advanced_report_builder.columns import ColourColumn, ReverseForeignKeyStrColumn, \
-    ReverseForeignKeyBoolColumn, ReverseForeignKeyChoiceColumn
-
-NUMBER_FIELDS = (models.IntegerField,
-                 models.PositiveSmallIntegerField,
-                 models.PositiveIntegerField,
-                 models.FloatField)
-DATE_FIELDS = (models.DateTimeField, models.DateField)
-BOOLEAN_FIELD = models.BooleanField
-CURRENCY_COLUMNS = (CurrencyColumn, CurrencyPenceColumn)
-LINK_COLUMNS = ColumnLink
-COLOUR_COLUMNS = ColourColumn
-REVERSE_FOREIGN_KEY_STR_COLUMNS = ReverseForeignKeyStrColumn
-REVERSE_FOREIGN_KEY_BOOL_COLUMNS = ReverseForeignKeyBoolColumn
-REVERSE_FOREIGN_KEY_CHOICE_COLUMNS = ReverseForeignKeyChoiceColumn
 
 REVERSE_FOREIGN_KEY_DELIMITER_COMMA = 1
 REVERSE_FOREIGN_KEY_DELIMITER_SEMICOLON = 2
 REVERSE_FOREIGN_KEY_DELIMITER_PIPE = 3
-REVERSE_FOREIGN_KEY_DELIMITER_SPACE = 4
+REVERSE_FOREIGN_KEY_DELIMITER_DASH = 4
+REVERSE_FOREIGN_KEY_DELIMITER_SPACE = 5
 
 REVERSE_FOREIGN_KEY_DELIMITER_CHOICES = [(REVERSE_FOREIGN_KEY_DELIMITER_COMMA, ', '),
                                          (REVERSE_FOREIGN_KEY_DELIMITER_SEMICOLON, ';'),
                                          (REVERSE_FOREIGN_KEY_DELIMITER_PIPE, ' | '),
+                                         (REVERSE_FOREIGN_KEY_DELIMITER_DASH, ' - '),
                                          (REVERSE_FOREIGN_KEY_DELIMITER_SPACE, 'Space')]
 
 REVERSE_FOREIGN_KEY_DELIMITER_VALUES = {REVERSE_FOREIGN_KEY_DELIMITER_COMMA: ', ',
                                         REVERSE_FOREIGN_KEY_DELIMITER_SEMICOLON: ';',
                                         REVERSE_FOREIGN_KEY_DELIMITER_PIPE: ' | ',
+                                        REVERSE_FOREIGN_KEY_DELIMITER_DASH: ' - ',
                                         REVERSE_FOREIGN_KEY_DELIMITER_SPACE: ' '}
 
 ANNOTATION_VALUE_YEAR = 1
