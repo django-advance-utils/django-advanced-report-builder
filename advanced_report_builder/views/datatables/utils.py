@@ -495,11 +495,12 @@ class TableUtilsMixin(ReportUtilsMixin):
         field_name = f'{col_type_override.field_name}_{index}'
         field = copy.deepcopy(col_type_override)
         sub_query = None
+        delimiter_type = int(data_attr.get('delimiter_type', REVERSE_FOREIGN_KEY_DELIMITER_COMMA))
         if int(data_attr.get('has_filter', 0)) == 1:
             _filter = json.loads(decode_attribute(data_attr['filter']))
             prefix_field_name = col_type_override.field_name.split('__')[0]
             sub_query = self.process_filters(search_filter_data=_filter, prefix_field_name=prefix_field_name)
-        field.setup_annotations(sub_filter=sub_query, field_name=field_name)
+        field.setup_annotations(delimiter_type=delimiter_type, sub_filter=sub_query, field_name=field_name)
         if field_attr:
             field = (field, field_attr)
         return field

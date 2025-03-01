@@ -264,6 +264,9 @@ class TableFieldForm(ChartBaseFieldForm):
                 self.fields['filter'].initial = decode_attribute(data_attr['filter'])
 
     def setup_reverse_foreign_choice_key(self, data_attr):
+        self.fields['delimiter_type'] = ChoiceField(choices=REVERSE_FOREIGN_KEY_DELIMITER_CHOICES, required=False)
+        if 'delimiter_type' in data_attr:
+            self.fields['delimiter_type'].initial = data_attr['delimiter_type']
         self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
         self.fields['filter'] = CharField(required=False)
         if data_attr.get('has_filter') == '1':
@@ -487,6 +490,8 @@ class TableFieldForm(ChartBaseFieldForm):
                 attributes.append(f'filter-{b64_filter}')
 
     def save_reverse_foreign_key_choice_fields(self, attributes):
+        if int(self.cleaned_data['delimiter_type']) != 0:
+            attributes.append(f'delimiter_type-{self.cleaned_data["delimiter_type"]}')
         if self.cleaned_data['has_filter']:
             attributes.append(f'has_filter-1')
             if self.cleaned_data['filter']:
@@ -666,6 +671,7 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
 
             return ['title',
                     'display_heading',
+                    'delimiter_type',
                     FieldEx('has_filter',
                             template='django_modals/fields/label_checkbox.html',
                             field_class='col-6 input-group-sm'),

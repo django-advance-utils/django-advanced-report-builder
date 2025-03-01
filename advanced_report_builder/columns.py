@@ -149,6 +149,7 @@ class ReverseForeignKeyChoiceColumn(ColumnBase):
         self.field_name = field_name
         self.choices = None
         self.report_builder_class_name = report_builder_class_name
+        self.delimiter_type = REVERSE_FOREIGN_KEY_DELIMITER_COMMA
         super().__init__( **kwargs)
 
     def setup_results(self, request, all_results):
@@ -159,12 +160,13 @@ class ReverseForeignKeyChoiceColumn(ColumnBase):
         results = []
         for x in data.get(self.field):
             results.append(self.choices.get(x, ''))
-        return results
+        delimiter = REVERSE_FOREIGN_KEY_DELIMITER_VALUES[self.delimiter_type]
+        return delimiter.join(results)
 
-    def setup_annotations(self, sub_filter=None, field_name=None):
+    def setup_annotations(self, delimiter_type=None, sub_filter=None, field_name=None):
         if field_name is None:
             field_name = self.field_name
-
+        self.delimiter_type = delimiter_type
         self.annotations = {field_name: ArrayAgg(self.field_name,
                                                  distinct=True,
                                                  filter=sub_filter)}
