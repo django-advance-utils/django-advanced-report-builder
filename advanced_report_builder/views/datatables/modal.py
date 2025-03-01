@@ -17,7 +17,9 @@ from advanced_report_builder.column_types import NUMBER_FIELDS, DATE_FIELDS, CUR
     REVERSE_FOREIGN_KEY_STR_COLUMNS, REVERSE_FOREIGN_KEY_BOOL_COLUMNS, REVERSE_FOREIGN_KEY_CHOICE_COLUMNS, \
     REVERSE_FOREIGN_KEY_DATE_COLUMNS
 from advanced_report_builder.globals import ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, \
-    DATE_FORMAT_TYPES, ALIGNMENT_CHOICES, ANNOTATION_BOOLEAN_CHOICES, REVERSE_FOREIGN_KEY_DELIMITER_CHOICES
+    DATE_FORMAT_TYPES, ALIGNMENT_CHOICES, REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_CHOICES, \
+    REVERSE_FOREIGN_KEY_DELIMITER_CHOICES, REVERSE_FOREIGN_KEY_ANNOTATION_DATE_CHOICES, \
+    REVERSE_FOREIGN_KEY_ANNOTATION_DATE_ARRAY
 from advanced_report_builder.models import TableReport, ReportType
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_report_builder_class
@@ -249,8 +251,8 @@ class TableFieldForm(ChartBaseFieldForm):
                 self.fields['filter'].initial = decode_attribute(data_attr['filter'])
 
     def setup_reverse_foreign_bool_key(self, data_attr):
-        self.fields['annotations_type'] = ChoiceField(choices=ANNOTATION_BOOLEAN_CHOICES,
-                                                       required=False,
+        self.fields['annotations_type'] = ChoiceField(choices=REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_CHOICES,
+                                                      required=False,
                                                       label='Type')
         if 'annotations_type' in data_attr:
             self.fields['annotations_type'].initial = data_attr['annotations_type']
@@ -270,6 +272,11 @@ class TableFieldForm(ChartBaseFieldForm):
                 self.fields['filter'].initial = decode_attribute(data_attr['filter'])
 
     def setup_reverse_foreign_date_key(self, data_attr):
+        self.fields['annotations_type'] = ChoiceField(choices=REVERSE_FOREIGN_KEY_ANNOTATION_DATE_CHOICES,
+                                                      required=False,
+                                                      label='Type')
+        if 'annotations_type' in data_attr:
+            self.fields['annotations_type'].initial = data_attr['annotations_type']
         self.fields['delimiter_type'] = ChoiceField(choices=REVERSE_FOREIGN_KEY_DELIMITER_CHOICES, required=False)
         if 'delimiter_type' in data_attr:
             self.fields['delimiter_type'].initial = data_attr['delimiter_type']
@@ -487,6 +494,8 @@ class TableFieldForm(ChartBaseFieldForm):
                 attributes.append(f'filter-{b64_filter}')
 
     def save_reverse_foreign_key_date_fields(self, attributes):
+        if int(self.cleaned_data['annotations_type']) != 0:
+            attributes.append(f'annotations_type-{self.cleaned_data["annotations_type"]}')
         if int(self.cleaned_data['delimiter_type']) != 0:
             attributes.append(f'delimiter_type-{self.cleaned_data["delimiter_type"]}')
         if self.cleaned_data['date_format']:
@@ -671,10 +680,17 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
             form.add_trigger('has_filter', 'onchange', [
                 {'selector': '#filter_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'}])
 
+            form.add_trigger('annotations_type', 'onchange', [
+                {'selector': '#div_id_delimiter_type',
+                 'values': {f'{REVERSE_FOREIGN_KEY_ANNOTATION_DATE_ARRAY}': 'show'},
+                 'default': 'hide'},
+            ])
+
             return ['title',
                     'display_heading',
-                    'delimiter_type',
                     'date_format',
+                    'annotations_type',
+                    'delimiter_type',
                     FieldEx('has_filter',
                             template='django_modals/fields/label_checkbox.html',
                             field_class='col-6 input-group-sm'),

@@ -11,7 +11,7 @@ from advanced_report_builder.column_types import DATE_FIELDS, NUMBER_FIELDS, REV
     LINK_COLUMNS, CURRENCY_COLUMNS
 from advanced_report_builder.columns import ReportBuilderDateColumn
 from advanced_report_builder.globals import (ALIGNMENT_CLASS, REVERSE_FOREIGN_KEY_DELIMITER_COMMA,
-                                             ANNOTATION_BOOLEAN_XOR, DATE_FORMAT_TYPE_DD_MM_YY_SLASH)
+                                             REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_XOR, DATE_FORMAT_TYPE_DD_MM_YY_SLASH)
 from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_FUNCTIONS
 from advanced_report_builder.utils import split_attr, decode_attribute
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
@@ -484,7 +484,7 @@ class TableUtilsMixin(ReportUtilsMixin):
             _filter = json.loads(decode_attribute(data_attr['filter']))
             prefix_field_name = col_type_override.field_name.split('__')[0]
             sub_query = self.process_filters(search_filter_data=_filter, prefix_field_name=prefix_field_name)
-        annotations_type = int(data_attr.get('annotations_type', ANNOTATION_BOOLEAN_XOR))
+        annotations_type = int(data_attr.get('annotations_type', REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_XOR))
         field.setup_annotations(annotations_type=annotations_type, sub_filter=sub_query, field_name=field_name)
         if field_attr:
             field = (field, field_attr)
@@ -511,13 +511,16 @@ class TableUtilsMixin(ReportUtilsMixin):
         sub_query = None
         delimiter_type = int(data_attr.get('delimiter_type', REVERSE_FOREIGN_KEY_DELIMITER_COMMA))
         date_format_type = int(data_attr.get('date_format', DATE_FORMAT_TYPE_DD_MM_YY_SLASH))
+        annotations_type = int(data_attr.get('annotations_type', REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_XOR))
 
         if int(data_attr.get('has_filter', 0)) == 1:
             _filter = json.loads(decode_attribute(data_attr['filter']))
             prefix_field_name = col_type_override.field_name.split('__')[0]
             sub_query = self.process_filters(search_filter_data=_filter, prefix_field_name=prefix_field_name)
+
         field.setup_annotations(delimiter_type=delimiter_type,
                                 date_format_type=date_format_type,
+                                annotations_type=annotations_type,
                                 sub_filter=sub_query,
                                 field_name=field_name)
         if field_attr:
