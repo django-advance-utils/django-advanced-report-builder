@@ -31,9 +31,17 @@ from advanced_report_builder.globals import (
     DATE_FORMAT_TYPE_DD_MM_YY_SLASH,
     DATE_FORMAT_TYPE_SHORT_WORDS_MM_YY,
 )
-from advanced_report_builder.models import KanbanReport, KanbanReportLane, ReportType, KanbanReportDescription
+from advanced_report_builder.models import (
+    KanbanReport,
+    KanbanReportLane,
+    ReportType,
+    KanbanReportDescription,
+)
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import crispy_modal_link_args, get_report_builder_class
+from advanced_report_builder.utils import (
+    crispy_modal_link_args,
+    get_report_builder_class,
+)
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartJSTable
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
@@ -115,7 +123,15 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
             query = query.filter(table.extra_query_filter)
         return self.view_filter(query, table)
 
-    def get_lane(self, base_model, kanban_report_lane, lanes, label=None, extra_query_filter=None, multiple=False):
+    def get_lane(
+        self,
+        base_model,
+        kanban_report_lane,
+        lanes,
+        label=None,
+        extra_query_filter=None,
+        multiple=False,
+    ):
         table = self.chart_js_table(model=base_model)
 
         report_builder_class = get_report_builder_class(model=base_model, report_type=kanban_report_lane.report_type)
@@ -136,12 +152,20 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
         if kanban_report_lane.kanban_report_description is not None:
             description = kanban_report_lane.kanban_report_description.description
             columns, column_map = self.get_data_merge_columns(
-                base_model=base_model, report_builder_class=report_builder_class, html=description, table=table
+                base_model=base_model,
+                report_builder_class=report_builder_class,
+                html=description,
+                table=table,
             )
 
             table_indexes.append('description')
             table.add_columns(
-                DescriptionColumn(column_name='description', field='', html=description, column_map=column_map)
+                DescriptionColumn(
+                    column_name='description',
+                    field='',
+                    html=description,
+                    column_map=column_map,
+                )
             )
             table.add_columns(*columns)
 
@@ -149,7 +173,9 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
 
         if kanban_report_lane.link_field and self.kwargs.get('enable_links'):
             _, col_type_override, _, _ = self.get_field_details(
-                base_model=base_model, field=kanban_report_lane.link_field, report_builder_class=report_builder_class
+                base_model=base_model,
+                field=kanban_report_lane.link_field,
+                report_builder_class=report_builder_class,
             )
             if isinstance(col_type_override.field, list):
                 field = col_type_override.field[0]
@@ -174,16 +200,30 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
         table.extra_query_filter = extra_query_filter
         table.view_filter = self.view_filter_extra
         lanes.append(
-            {'datatable': table, 'label': label, 'kanban_report_lane': kanban_report_lane, 'multiple': multiple}
+            {
+                'datatable': table,
+                'label': label,
+                'kanban_report_lane': kanban_report_lane,
+                'multiple': multiple,
+            }
         )
 
     @staticmethod
     def get_multiple_date(multiple_type, current_date):
-        if multiple_type in (KanbanReportLane.MULTIPLE_TYPE_DAILY, KanbanReportLane.MULTIPLE_TYPE_DAILY_WITHIN):
+        if multiple_type in (
+            KanbanReportLane.MULTIPLE_TYPE_DAILY,
+            KanbanReportLane.MULTIPLE_TYPE_DAILY_WITHIN,
+        ):
             return current_date + timedelta(days=1)
-        elif multiple_type in (KanbanReportLane.MULTIPLE_TYPE_WEEKLY, KanbanReportLane.MULTIPLE_TYPE_WEEKLY_WITHIN):
+        elif multiple_type in (
+            KanbanReportLane.MULTIPLE_TYPE_WEEKLY,
+            KanbanReportLane.MULTIPLE_TYPE_WEEKLY_WITHIN,
+        ):
             return current_date + timedelta(days=7)
-        elif multiple_type in (KanbanReportLane.MULTIPLE_TYPE_MONTHLY, KanbanReportLane.MULTIPLE_TYPE_MONTHLY_WITHIN):
+        elif multiple_type in (
+            KanbanReportLane.MULTIPLE_TYPE_MONTHLY,
+            KanbanReportLane.MULTIPLE_TYPE_MONTHLY_WITHIN,
+        ):
             start_date = date(current_date.year, current_date.month, 1)
             number_of_days = monthrange(start_date.year, current_date.month)[1]
             result = datetime.combine(start_date, datetime.min.time()) + timedelta(days=number_of_days)
@@ -200,14 +240,23 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
         return DATE_FORMAT_TYPES_DJANGO_FORMAT[DATE_FORMAT_TYPE_SHORT_WORDS_MM_YY]
 
     def get_full_label(self, multiple_type, current_date, label):
-        if multiple_type in (KanbanReportLane.MULTIPLE_TYPE_DAILY, KanbanReportLane.MULTIPLE_TYPE_DAILY_WITHIN):
+        if multiple_type in (
+            KanbanReportLane.MULTIPLE_TYPE_DAILY,
+            KanbanReportLane.MULTIPLE_TYPE_DAILY_WITHIN,
+        ):
             date_string = date.strftime(current_date, self.get_date_format())
             return f'{label} {date_string}'
-        elif multiple_type in (KanbanReportLane.MULTIPLE_TYPE_WEEKLY, KanbanReportLane.MULTIPLE_TYPE_WEEKLY_WITHIN):
+        elif multiple_type in (
+            KanbanReportLane.MULTIPLE_TYPE_WEEKLY,
+            KanbanReportLane.MULTIPLE_TYPE_WEEKLY_WITHIN,
+        ):
             date_string = date.strftime(current_date, self.get_date_format())
             week_number = current_date.isocalendar()[1]
             return f'{label} {date_string} (w/c {week_number})'
-        elif multiple_type in (KanbanReportLane.MULTIPLE_TYPE_MONTHLY, KanbanReportLane.MULTIPLE_TYPE_MONTHLY_WITHIN):
+        elif multiple_type in (
+            KanbanReportLane.MULTIPLE_TYPE_MONTHLY,
+            KanbanReportLane.MULTIPLE_TYPE_MONTHLY_WITHIN,
+        ):
             date_string = date.strftime(current_date, self.get_month_format())
             return f'{label} {date_string}'
         assert False
@@ -225,7 +274,11 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
                 model=base_model, report_type=kanban_report_lane.report_type
             )
             if kanban_report_lane.multiple_type == KanbanReportLane.MULTIPLE_TYPE_NA:
-                self.get_lane(base_model=base_model, kanban_report_lane=kanban_report_lane, lanes=lanes)
+                self.get_lane(
+                    base_model=base_model,
+                    kanban_report_lane=kanban_report_lane,
+                    lanes=lanes,
+                )
                 headings.append({'label': kanban_report_lane.name, 'row_span': 2, 'col_span': 1})
             else:
                 variable_date = VariableDate()
@@ -284,7 +337,13 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
                     )
                     current_start_date = current_end_date
 
-                headings.append({'label': kanban_report_lane.name, 'col_span': len(sub_lanes), 'row_span': 1})
+                headings.append(
+                    {
+                        'label': kanban_report_lane.name,
+                        'col_span': len(sub_lanes),
+                        'row_span': 1,
+                    }
+                )
 
                 lanes += sub_lanes
 
@@ -457,7 +516,10 @@ class KanbanModal(ModelFormModal):
 
     def post_save(self, created, form):
         if created:
-            self.modal_redirect(self.request.resolver_match.view_name, slug=f'pk-{self.object.id}-new-True')
+            self.modal_redirect(
+                self.request.resolver_match.view_name,
+                slug=f'pk-{self.object.id}-new-True',
+            )
         else:
             url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME', '')
             if url_name and self.slug.get('new'):
@@ -545,7 +607,10 @@ class KanbanLaneModal(QueryBuilderModalBase):
         form.fields['kanban_report_description'].widget = Select2(attrs={'ajax': True})
         if kanban_report_description is not None:
             form.fields['kanban_report_description'].widget.select_data = [
-                {'id': kanban_report_description.id, 'text': kanban_report_description.name}
+                {
+                    'id': kanban_report_description.id,
+                    'text': kanban_report_description.name,
+                }
             ]
         form.fields['kanban_report_description'].label = 'Description'
 
@@ -582,7 +647,11 @@ class KanbanLaneModal(QueryBuilderModalBase):
         )
 
         self.setup_field(
-            field_type='link', form=form, field_name='link_field', selected_field_id=link_field, report_type=report_type
+            field_type='link',
+            form=form,
+            field_name='link_field',
+            selected_field_id=link_field,
+            report_type=report_type,
         )
 
         self.setup_field(
@@ -626,37 +695,51 @@ class KanbanLaneModal(QueryBuilderModalBase):
 
     def select2_link_field(self, **kwargs):
         return self.get_fields_for_select2(
-            field_type='link', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+            field_type='link',
+            report_type=kwargs['report_type'],
+            search_string=kwargs.get('search'),
         )
 
     def select2_heading_field(self, **kwargs):
         return self.get_fields_for_select2(
-            field_type='all', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+            field_type='all',
+            report_type=kwargs['report_type'],
+            search_string=kwargs.get('search'),
         )
 
     def select2_order_by_field(self, **kwargs):
         return self.get_fields_for_select2(
-            field_type='django_order', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+            field_type='django_order',
+            report_type=kwargs['report_type'],
+            search_string=kwargs.get('search'),
         )
 
     def select2_multiple_type_date_field(self, **kwargs):
         return self.get_fields_for_select2(
-            field_type='date', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+            field_type='date',
+            report_type=kwargs['report_type'],
+            search_string=kwargs.get('search'),
         )
 
     def select2_multiple_type_end_date_field(self, **kwargs):
         return self.get_fields_for_select2(
-            field_type='date', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+            field_type='date',
+            report_type=kwargs['report_type'],
+            search_string=kwargs.get('search'),
         )
 
     def select2_background_colour_field(self, **kwargs):
         return self.get_fields_for_select2(
-            field_type='colour', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+            field_type='colour',
+            report_type=kwargs['report_type'],
+            search_string=kwargs.get('search'),
         )
 
     def select2_heading_colour_field(self, **kwargs):
         return self.get_fields_for_select2(
-            field_type='colour', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+            field_type='colour',
+            report_type=kwargs['report_type'],
+            search_string=kwargs.get('search'),
         )
 
     def select2_kanban_report_description(self, **kwargs):
@@ -688,7 +771,10 @@ class KanbanLaneDuplicateModal(Modal):
         return 'Are you sure you want to duplicate this lane?'
 
     def get_modal_buttons(self):
-        return [modal_button_method('Confirm', 'duplicate'), modal_button('Cancel', 'close', 'btn-secondary')]
+        return [
+            modal_button_method('Confirm', 'duplicate'),
+            modal_button('Cancel', 'close', 'btn-secondary'),
+        ]
 
     def button_duplicate(self, **_kwargs):
         kanban_report_lane = get_object_or_404(KanbanReportLane, id=self.slug['pk'])
@@ -721,7 +807,11 @@ class KanbanDescriptionModal(DataMergeUtils, QueryBuilderModalBase):
         if kwargs['report_type'] != '':
             report_builder_class, base_model = self.get_report_builder_class(report_type_id=kwargs['report_type'])
 
-            self.get_menu_fields(base_model=base_model, report_builder_class=report_builder_class, menus=menus)
+            self.get_menu_fields(
+                base_model=base_model,
+                report_builder_class=report_builder_class,
+                menus=menus,
+            )
 
             menus = [{'code': 'data_merge', 'text': 'Data Merge', 'menu': menus}]
 
@@ -737,7 +827,10 @@ class KanbanDescriptionDuplicateModal(Modal):
         return 'Are you sure you want to duplicate this description?'
 
     def get_modal_buttons(self):
-        return [modal_button_method('Confirm', 'duplicate'), modal_button('Cancel', 'close', 'btn-secondary')]
+        return [
+            modal_button_method('Confirm', 'duplicate'),
+            modal_button('Cancel', 'close', 'btn-secondary'),
+        ]
 
     def button_duplicate(self, **_kwargs):
         kanban_report_description = get_object_or_404(KanbanReportDescription, id=self.slug['pk'])

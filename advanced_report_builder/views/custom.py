@@ -54,7 +54,8 @@ class CustomBaseView(ReportBase, FilterQueryMixin, TemplateView):
             report_menu = self.pod_report_menu()
 
         self.add_menu('button_menu', 'button_group').add_items(
-            *report_menu, *self.queries_menu(report=self.report, dashboard_report=self.dashboard_report)
+            *report_menu,
+            *self.queries_menu(report=self.report, dashboard_report=self.dashboard_report),
         )
 
     def pod_dashboard_edit_menu(self):
@@ -109,7 +110,10 @@ class CustomBaseView(ReportBase, FilterQueryMixin, TemplateView):
             if report_type is not None:
                 base_model = report_type.content_type.model_class()
                 query = self.apply_order_by(
-                    query=query, report_query=report_query, report_type=report_type, base_model=base_model
+                    query=query,
+                    report_query=report_query,
+                    report_type=report_type,
+                    base_model=base_model,
                 )
             return query
         return self.get_default_filter(query)

@@ -205,7 +205,9 @@ class Report(TimeStampedModel):
                 return self.output_types.get(instance_type, '')
 
         report_tags_badge = ManyToManyColumn(
-            field='report_tags__name', html='<span class="badge badge-primary"> %1% </span>', title='Tags'
+            field='report_tags__name',
+            html='<span class="badge badge-primary"> %1% </span>',
+            title='Tags',
         )
 
 
@@ -250,7 +252,15 @@ class TableReport(Report):
     order_by_field = models.CharField(max_length=200, blank=True, null=True)
     order_by_ascending = models.BooleanField(default=True)
     page_length = models.PositiveSmallIntegerField(
-        choices=((10, '10'), (25, '25'), (50, '50'), (100, '100'), (150, '150'), (200, '200')), default=100
+        choices=(
+            (10, '10'),
+            (25, '25'),
+            (50, '50'),
+            (100, '100'),
+            (150, '150'),
+            (200, '200'),
+        ),
+        default=100,
     )
 
 
@@ -289,7 +299,10 @@ class SingleValueReport(Report):
     average_end_period = models.PositiveSmallIntegerField(blank=True, null=True)
 
     def is_percentage(self):
-        return self.single_value_type in [self.SINGLE_VALUE_TYPE_PERCENT, self.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT]
+        return self.single_value_type in [
+            self.SINGLE_VALUE_TYPE_PERCENT,
+            self.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT,
+        ]
 
 
 class BarChartReport(Report):
@@ -314,7 +327,10 @@ class BarChartReport(Report):
     end_date_field = models.CharField(max_length=200, blank=True, null=True)
 
     axis_value_type = models.PositiveSmallIntegerField(
-        choices=ANNOTATIONS_CHOICES, default=ANNOTATION_CHOICE_COUNT, null=True, blank=True
+        choices=ANNOTATIONS_CHOICES,
+        default=ANNOTATION_CHOICE_COUNT,
+        null=True,
+        blank=True,
     )
     fields = models.JSONField(null=True, blank=True)
     x_label = models.CharField(max_length=200, blank=True, null=True)
@@ -341,7 +357,10 @@ class LineChartReport(Report):
     axis_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES)
     date_field = models.CharField(max_length=200)
     axis_value_type = models.PositiveSmallIntegerField(
-        choices=ANNOTATIONS_CHOICES, default=ANNOTATION_CHOICE_COUNT, null=True, blank=True
+        choices=ANNOTATIONS_CHOICES,
+        default=ANNOTATION_CHOICE_COUNT,
+        null=True,
+        blank=True,
     )
     fields = models.JSONField(null=True, blank=True)
     x_label = models.CharField(max_length=200, blank=True, null=True)
@@ -359,10 +378,16 @@ class PieChartReport(Report):
     PIE_CHART_STYLE_PIE = 1
     PIE_CHART_STYLE_DOUGHNUT = 2
 
-    PIE_CHART_STYLE_CHOICES = ((PIE_CHART_STYLE_PIE, 'Pie'), (PIE_CHART_STYLE_DOUGHNUT, 'Doughnut'))
+    PIE_CHART_STYLE_CHOICES = (
+        (PIE_CHART_STYLE_PIE, 'Pie'),
+        (PIE_CHART_STYLE_DOUGHNUT, 'Doughnut'),
+    )
 
     axis_value_type = models.PositiveSmallIntegerField(
-        choices=ANNOTATIONS_CHOICES, default=ANNOTATION_CHOICE_COUNT, null=True, blank=True
+        choices=ANNOTATIONS_CHOICES,
+        default=ANNOTATION_CHOICE_COUNT,
+        null=True,
+        blank=True,
     )
     fields = models.JSONField(null=True, blank=True)
     style = models.PositiveSmallIntegerField(choices=PIE_CHART_STYLE_CHOICES, default=PIE_CHART_STYLE_PIE)
@@ -373,7 +398,10 @@ class PieChartReport(Report):
 
 class FunnelChartReport(Report):
     axis_value_type = models.PositiveSmallIntegerField(
-        choices=ANNOTATIONS_CHOICES, default=ANNOTATION_CHOICE_COUNT, null=True, blank=True
+        choices=ANNOTATIONS_CHOICES,
+        default=ANNOTATION_CHOICE_COUNT,
+        null=True,
+        blank=True,
     )
     fields = models.JSONField(null=True, blank=True)
 

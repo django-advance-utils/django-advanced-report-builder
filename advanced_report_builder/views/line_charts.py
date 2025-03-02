@@ -25,9 +25,21 @@ from advanced_report_builder.globals import (
 )
 from advanced_report_builder.models import LineChartReport, ReportType
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_report_builder_class
-from advanced_report_builder.views.charts_base import ChartBaseView, ChartJSTable, ChartBaseFieldForm
-from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin, QueryBuilderModalBase
+from advanced_report_builder.utils import (
+    split_attr,
+    encode_attribute,
+    decode_attribute,
+    get_report_builder_class,
+)
+from advanced_report_builder.views.charts_base import (
+    ChartBaseView,
+    ChartJSTable,
+    ChartBaseFieldForm,
+)
+from advanced_report_builder.views.modals_base import (
+    QueryBuilderModalBaseMixin,
+    QueryBuilderModalBase,
+)
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 
 
@@ -162,7 +174,11 @@ class LineChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
             'has_targets',
             'onchange',
             [
-                {'selector': '#div_id_targets', 'values': {'checked': 'show'}, 'default': 'hide'},
+                {
+                    'selector': '#div_id_targets',
+                    'values': {'checked': 'show'},
+                    'default': 'hide',
+                },
             ],
         )
 
@@ -175,7 +191,11 @@ class LineChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
             report_type = form.instance.report_type
 
         self.setup_field(
-            field_type='date', form=form, field_name='date_field', selected_field_id=date_field, report_type=report_type
+            field_type='date',
+            form=form,
+            field_name='date_field',
+            selected_field_id=date_field,
+            report_type=report_type,
         )
 
         form.fields['notes'].widget.attrs['rows'] = 3
@@ -210,7 +230,9 @@ class LineChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
 
     def select2_date_field(self, **kwargs):
         return self.get_fields_for_select2(
-            field_type='date', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+            field_type='date',
+            report_type=kwargs['report_type'],
+            search_string=kwargs.get('search'),
         )
 
 
@@ -247,7 +269,9 @@ class LineChartFieldForm(ChartBaseFieldForm):
         )
         multiple_column_field = []
         self._get_query_builder_foreign_key_fields(
-            base_model=base_model, report_builder_class=report_builder_class, fields=multiple_column_field
+            base_model=base_model,
+            report_builder_class=report_builder_class,
+            fields=multiple_column_field,
         )
 
         self.fields['multiple_column_field'] = ChoiceField(choices=multiple_column_field, required=False)
@@ -302,9 +326,22 @@ class LineChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
         selector = self.slug['selector']
 
         _attr = form.get_additional_attributes()
-        self.add_command({'function': 'set_attr', 'selector': f'#{selector}', 'attr': 'data-attr', 'val': _attr})
+        self.add_command(
+            {
+                'function': 'set_attr',
+                'selector': f'#{selector}',
+                'attr': 'data-attr',
+                'val': _attr,
+            }
+        )
 
-        self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
+        self.add_command(
+            {
+                'function': 'html',
+                'selector': f'#{selector} span',
+                'html': form.cleaned_data['title'],
+            }
+        )
         self.add_command({'function': 'update_selection'})
         return self.command_response('close')
 
@@ -313,14 +350,24 @@ class LineChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
         form.add_trigger(
             'has_filter',
             'onchange',
-            [{'selector': '#filter_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'}],
+            [
+                {
+                    'selector': '#filter_fields_div',
+                    'values': {'checked': 'show'},
+                    'default': 'hide',
+                }
+            ],
         )
 
         form.add_trigger(
             'multiple_columns',
             'onchange',
             [
-                {'selector': '#multiple_columns_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'},
+                {
+                    'selector': '#multiple_columns_fields_div',
+                    'values': {'checked': 'show'},
+                    'default': 'hide',
+                },
             ],
         )
 
@@ -334,7 +381,10 @@ class LineChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
                     field_class='col-6 input-group-sm',
                 ),
                 Div(
-                    FieldEx('filter', template='advanced_report_builder/datatables/fields/single_query_builder.html'),
+                    FieldEx(
+                        'filter',
+                        template='advanced_report_builder/datatables/fields/single_query_builder.html',
+                    ),
                     FieldEx(
                         'multiple_columns',
                         template='django_modals/fields/label_checkbox.html',

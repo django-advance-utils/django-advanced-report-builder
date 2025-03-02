@@ -22,12 +22,12 @@ from django_modals.widgets.colour_picker import ColourPickerWidget
 from django_modals.widgets.select2 import Select2Multiple, Select2
 from django_modals.widgets.widgets import Toggle
 
+from advanced_report_builder.column_types import NUMBER_FIELDS
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.generate_series import GenerateSeries
 from advanced_report_builder.globals import (
     DEFAULT_DATE_FORMAT,
     DATE_FORMAT_TYPES_DJANGO_FORMAT,
-    NUMBER_FIELDS,
     ANNOTATION_VALUE_YEAR,
     ANNOTATION_VALUE_QUARTER,
     ANNOTATION_VALUE_MONTH,
@@ -38,11 +38,22 @@ from advanced_report_builder.globals import (
 )
 from advanced_report_builder.models import BarChartReport, ReportType
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_report_builder_class
+from advanced_report_builder.utils import (
+    split_attr,
+    encode_attribute,
+    decode_attribute,
+    get_report_builder_class,
+)
 from advanced_report_builder.views.charts_base import ChartBaseView, ChartBaseFieldForm
-from advanced_report_builder.views.datatables.modal import TableFieldModal, TableFieldForm
+from advanced_report_builder.views.datatables.modal import (
+    TableFieldModal,
+    TableFieldForm,
+)
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
-from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin, QueryBuilderModalBase
+from advanced_report_builder.views.modals_base import (
+    QueryBuilderModalBaseMixin,
+    QueryBuilderModalBase,
+)
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 
 
@@ -68,7 +79,10 @@ class BarChartView(ChartBaseView):
         if self.table.bar_chart_report.show_breakdown:
             enable_links = self.slug.get('enable_links') == 'True'
             slug = f'pk-{self.table.bar_chart_report.id}-data-99999-date-88888-enable_links-{enable_links}'
-            return reverse('advanced_report_builder:bar_chart_show_breakdown_modal', kwargs={'slug': slug})
+            return reverse(
+                'advanced_report_builder:bar_chart_show_breakdown_modal',
+                kwargs={'slug': slug},
+            )
         return None
 
     def get_date_format(self):
@@ -92,7 +106,14 @@ class BarChartView(ChartBaseView):
             positive_bar_colour = data_attr.get('positive_bar_colour') or '801C70'
             positive_bar_colour = self.add_colour_offset(positive_bar_colour, multiple_index=multiple_index)
 
-        options.update({'colours': {'negative': negative_bar_colour, 'positive': positive_bar_colour}})
+        options.update(
+            {
+                'colours': {
+                    'negative': negative_bar_colour,
+                    'positive': positive_bar_colour,
+                }
+            }
+        )
 
     def edit_report_menu(self, request, chart_report_id, slug_str):
         return [
@@ -118,13 +139,19 @@ class BarChartView(ChartBaseView):
         report_builder_class = get_report_builder_class(model=base_model, report_type=self.chart_report.report_type)
 
         start_django_field, start_col_type_override, _, _ = self.get_field_details(
-            base_model=base_model, field=start_field_name, report_builder_class=report_builder_class, table=table
+            base_model=base_model,
+            field=start_field_name,
+            report_builder_class=report_builder_class,
+            table=table,
         )
         if start_col_type_override:
             start_field_name = start_col_type_override.field
 
         end_django_field, end_col_type_override, _, _ = self.get_field_details(
-            base_model=base_model, field=end_field_name, report_builder_class=report_builder_class, table=table
+            base_model=base_model,
+            field=end_field_name,
+            report_builder_class=report_builder_class,
+            table=table,
         )
         if end_col_type_override:
             end_field_name = end_col_type_override.field
@@ -146,7 +173,13 @@ class BarChartView(ChartBaseView):
         }
         start_field_name = new_field_name
 
-        date_function_kwargs.update({'field': start_field_name, 'column_name': start_field_name, 'model_path': ''})
+        date_function_kwargs.update(
+            {
+                'field': start_field_name,
+                'column_name': start_field_name,
+                'model_path': '',
+            }
+        )
 
         field = self.date_field(**date_function_kwargs)
         fields.append(field)
@@ -203,7 +236,11 @@ class BarChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
             report_type = form.instance.report_type
 
         self.setup_field(
-            field_type='date', form=form, field_name='date_field', selected_field_id=date_field, report_type=report_type
+            field_type='date',
+            form=form,
+            field_name='date_field',
+            selected_field_id=date_field,
+            report_type=report_type,
         )
 
         self.setup_field(
@@ -230,7 +267,11 @@ class BarChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
             'show_breakdown',
             'onchange',
             [
-                {'selector': '#div_id_breakdown_fields', 'values': {'checked': 'show'}, 'default': 'hide'},
+                {
+                    'selector': '#div_id_breakdown_fields',
+                    'values': {'checked': 'show'},
+                    'default': 'hide',
+                },
             ],
         )
 
@@ -278,7 +319,10 @@ class BarChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
             FieldEx(
                 'breakdown_fields',
                 template='advanced_report_builder/select_column.html',
-                extra_context={'select_column_url': url_breakdown, 'command_prefix': 'breakdown_'},
+                extra_context={
+                    'select_column_url': url_breakdown,
+                    'command_prefix': 'breakdown_',
+                },
             ),
         ]
         if self.object.id:
@@ -287,7 +331,9 @@ class BarChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
 
     def select2_date_field(self, **kwargs):
         return self.get_fields_for_select2(
-            field_type='date', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+            field_type='date',
+            report_type=kwargs['report_type'],
+            search_string=kwargs.get('search'),
         )
 
     def select2_end_date_field(self, **kwargs):
@@ -299,10 +345,16 @@ class BarChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
         fields = []
         tables = []
         self._get_fields(
-            base_model=base_model, fields=fields, tables=tables, report_builder_class=report_builder_fields
+            base_model=base_model,
+            fields=fields,
+            tables=tables,
+            report_builder_class=report_builder_fields,
         )
 
-        self.add_command(f'{prefix}report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
+        self.add_command(
+            f'{prefix}report_fields',
+            data=json.dumps({'fields': fields, 'tables': tables}),
+        )
         return self.command_response()
 
     def ajax_get_fields(self, **kwargs):
@@ -362,7 +414,9 @@ class BarChartFieldForm(ChartBaseFieldForm):
 
         multiple_column_field = []
         self._get_query_builder_foreign_key_fields(
-            base_model=base_model, report_builder_class=report_builder_class, fields=multiple_column_field
+            base_model=base_model,
+            report_builder_class=report_builder_class,
+            fields=multiple_column_field,
         )
         self.fields['multiple_column_field'] = ChoiceField(
             choices=multiple_column_field, required=False, widget=Select2()
@@ -427,9 +481,22 @@ class BarChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
         selector = self.slug['selector']
 
         _attr = form.get_additional_attributes()
-        self.add_command({'function': 'set_attr', 'selector': f'#{selector}', 'attr': 'data-attr', 'val': _attr})
+        self.add_command(
+            {
+                'function': 'set_attr',
+                'selector': f'#{selector}',
+                'attr': 'data-attr',
+                'val': _attr,
+            }
+        )
 
-        self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
+        self.add_command(
+            {
+                'function': 'html',
+                'selector': f'#{selector} span',
+                'html': form.cleaned_data['title'],
+            }
+        )
         self.add_command({'function': 'update_selection'})
         return self.command_response('close')
 
@@ -438,14 +505,24 @@ class BarChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
         form.add_trigger(
             'has_filter',
             'onchange',
-            [{'selector': '#filter_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'}],
+            [
+                {
+                    'selector': '#filter_fields_div',
+                    'values': {'checked': 'show'},
+                    'default': 'hide',
+                }
+            ],
         )
 
         form.add_trigger(
             'multiple_columns',
             'onchange',
             [
-                {'selector': '#multiple_columns_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'},
+                {
+                    'selector': '#multiple_columns_fields_div',
+                    'values': {'checked': 'show'},
+                    'default': 'hide',
+                },
             ],
         )
 
@@ -460,7 +537,10 @@ class BarChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
                     field_class='col-6 input-group-sm',
                 ),
                 Div(
-                    FieldEx('filter', template='advanced_report_builder/datatables/fields/single_query_builder.html'),
+                    FieldEx(
+                        'filter',
+                        template='advanced_report_builder/datatables/fields/single_query_builder.html',
+                    ),
                     FieldEx(
                         'multiple_columns',
                         template='django_modals/fields/label_checkbox.html',
@@ -497,7 +577,12 @@ class BarChartBreakdownFieldForm(TableFieldForm):
 
     def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
         if isinstance(self.django_field, NUMBER_FIELDS):
-            return StrictButton(button_text, onclick=f'save_modal_{self.form_id}()', css_class=css_class, **kwargs)
+            return StrictButton(
+                button_text,
+                onclick=f'save_modal_{self.form_id}()',
+                css_class=css_class,
+                **kwargs,
+            )
         else:
             return super().submit_button(css_class, button_text, **kwargs)
 
@@ -560,7 +645,10 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
         table_field = chart_fields[data_index]
         field = table_field['field']
         django_field, col_type_override, _, _ = self.get_field_details(
-            base_model=base_model, field=field, report_builder_class=report_builder_class, table=table
+            base_model=base_model,
+            field=field,
+            report_builder_class=report_builder_class,
+            table=table,
         )
 
         self.field_filter = None
@@ -605,7 +693,10 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
 
         if bar_chart_report.axis_scale == ANNOTATION_VALUE_YEAR:
             return start_date.year
-        elif bar_chart_report.axis_scale in [ANNOTATION_VALUE_QUARTER, ANNOTATION_VALUE_MONTH]:
+        elif bar_chart_report.axis_scale in [
+            ANNOTATION_VALUE_QUARTER,
+            ANNOTATION_VALUE_MONTH,
+        ]:
             return start_date.strftime('%b %Y')
         elif bar_chart_report.axis_scale == ANNOTATION_VALUE_WEEK:
             end_date = start_date + timedelta(weeks=1)

@@ -94,5 +94,9 @@ def import_report_types():
     for report_type in report_types:
         content_type = ContentType.objects.get(app_label='report_builder_examples', model=report_type[0])
         ReportType.objects.get_or_create(
-            content_type=content_type, defaults={'name': report_type[1], 'report_builder_class_name': report_type[2]}
+            content_type=content_type,
+            defaults={
+                'name': report_type[1],
+                'report_builder_class_name': report_type[2],
+            },
         )

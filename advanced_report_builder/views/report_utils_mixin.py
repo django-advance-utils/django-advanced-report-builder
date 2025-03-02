@@ -14,7 +14,11 @@ from advanced_report_builder.columns import (
 )
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.filter_query import FilterQueryMixin
-from advanced_report_builder.globals import ANNOTATION_FUNCTIONS, ANNOTATION_CHOICE_COUNT, ALIGNMENT_CLASS
+from advanced_report_builder.globals import (
+    ANNOTATION_FUNCTIONS,
+    ANNOTATION_CHOICE_COUNT,
+    ALIGNMENT_CLASS,
+)
 from advanced_report_builder.utils import decode_attribute
 
 
@@ -89,7 +93,10 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
 
             elif annotations_type == ANNOTATION_CHOICE_COUNT:
                 new_field_name = self.get_new_annotation_field_name(
-                    annotations_type=annotations_type, field_name=field_name, index=index, data_attr=data_attr
+                    annotations_type=annotations_type,
+                    field_name=field_name,
+                    index=index,
+                    data_attr=data_attr,
                 )
                 number_function_kwargs = {}
                 if title:
@@ -135,7 +142,10 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                     field.title = title
                 if annotations_type != 0:
                     new_field_name = self.get_new_annotation_field_name(
-                        annotations_type=annotations_type, field_name=field_name, index=index, data_attr=data_attr
+                        annotations_type=annotations_type,
+                        field_name=field_name,
+                        index=index,
+                        data_attr=data_attr,
                     )
                     function_type = ANNOTATION_FUNCTIONS[annotations_type]
                     if annotation_filter:
@@ -174,7 +184,10 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                 )
 
                 new_field_name = self.get_new_annotation_field_name(
-                    annotations_type=annotations_type, field_name=field_name, index=index, data_attr=data_attr
+                    annotations_type=annotations_type,
+                    field_name=field_name,
+                    index=index,
+                    data_attr=data_attr,
                 )
                 function_type = ANNOTATION_FUNCTIONS[annotations_type]
                 if annotation_filter:
@@ -217,7 +230,11 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
 
     # noinspection PyUnusedLocal,PyMethodMayBeStatic
     def set_number_total(self, totals, field_name, col_type_override, decimal_places, css_class=''):
-        totals[field_name] = {'sum': 'to_fixed', 'decimal_places': decimal_places, 'css_class': css_class}
+        totals[field_name] = {
+            'sum': 'to_fixed',
+            'decimal_places': decimal_places,
+            'css_class': css_class,
+        }
 
     def set_annotation_total(self, totals, field_name, col_type_override, decimal_places, css_class=''):
         return self.set_number_total(totals, field_name, col_type_override, decimal_places, css_class)

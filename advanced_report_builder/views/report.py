@@ -8,7 +8,12 @@ class ReportBase(AjaxHelpers, MenuMixin):
     # noinspection PyUnusedLocal
     @staticmethod
     def duplicate_menu(request, report_id):
-        return [MenuItem(f'advanced_report_builder:duplicate_report_modal,pk-{report_id}', css_classes=['btn-success'])]
+        return [
+            MenuItem(
+                f'advanced_report_builder:duplicate_report_modal,pk-{report_id}',
+                css_classes=['btn-success'],
+            )
+        ]
 
     def get_dashboard_class(self, report):
         return None
@@ -26,7 +31,18 @@ class ReportBase(AjaxHelpers, MenuMixin):
             for report_query in report_queries:
                 slug_str = make_slug_str(self.slug, overrides={query_slug: report_query.id})
                 dropdown.append(
-                    (self.request.resolver_match.view_name, report_query.name, {'url_kwargs': {'slug': slug_str}})
+                    (
+                        self.request.resolver_match.view_name,
+                        report_query.name,
+                        {'url_kwargs': {'slug': slug_str}},
+                    )
                 )
-            return [MenuItem(menu_display='Version', no_hover=True, css_classes='btn-secondary', dropdown=dropdown)]
+            return [
+                MenuItem(
+                    menu_display='Version',
+                    no_hover=True,
+                    css_classes='btn-secondary',
+                    dropdown=dropdown,
+                )
+            ]
         return []

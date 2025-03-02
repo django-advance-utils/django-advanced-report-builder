@@ -48,7 +48,9 @@ class ViewDashboard(MainMenu, ViewDashboardBase):
         if not self.enable_edit:
             report_menu = [
                 MenuItem(
-                    'report_builder_examples:edit_dashboard', 'Enable Edit', url_kwargs={'slug': self.kwargs['slug']}
+                    'report_builder_examples:edit_dashboard',
+                    'Enable Edit',
+                    url_kwargs={'slug': self.kwargs['slug']},
                 )
             ]
         else:
@@ -59,7 +61,11 @@ class ViewDashboard(MainMenu, ViewDashboardBase):
                     url_kwargs={'slug': self.kwargs['slug']},
                     css_classes='btn-success',
                 ),
-                MenuItem('advanced_report_builder:dashboard_modal', 'Edit', url_kwargs={'slug': self.dashboard.id}),
+                MenuItem(
+                    'advanced_report_builder:dashboard_modal',
+                    'Edit',
+                    url_kwargs={'slug': self.dashboard.id},
+                ),
                 MenuItem(
                     'advanced_report_builder:add_dashboard_report',
                     'Add Report',

@@ -81,7 +81,12 @@ class DataMergeUtils(ReportBuilderFieldUtils):
             for field in variable[1].split(' '):
                 if field != '' and (field == 'as' or field[0] in ['=', '<', '>']):
                     break
-                if field not in ['', 'not', 'andor'] and field[0] not in ['(', ')', '"', "'"]:
+                if field not in ['', 'not', 'andor'] and field[0] not in [
+                    '(',
+                    ')',
+                    '"',
+                    "'",
+                ]:
                     all_fields.add(field)
         return all_fields
 
@@ -91,7 +96,10 @@ class DataMergeUtils(ReportBuilderFieldUtils):
         column_map = {}
         for field in all_fields:
             django_field, col_type_override, _, _ = self.get_field_details(
-                base_model=base_model, field=field, report_builder_class=report_builder_class, table=table
+                base_model=base_model,
+                field=field,
+                report_builder_class=report_builder_class,
+                table=table,
             )
             if django_field is not None or isinstance(col_type_override.field, (list, tuple)):
                 if field not in columns and f'.{field}' not in columns:

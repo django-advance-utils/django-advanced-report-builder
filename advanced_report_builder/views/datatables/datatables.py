@@ -79,7 +79,9 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
             table.table_classes.append('row_link')
             table.add_columns(ArrowColumn(column_name='arrow_icon'))
             _, col_type_override, _, _ = self.get_field_details(
-                base_model=base_model, field=self.table_report.link_field, report_builder_class=report_builder_class
+                base_model=base_model,
+                field=self.table_report.link_field,
+                report_builder_class=report_builder_class,
             )
             if isinstance(col_type_override.field, list):
                 field = col_type_override.field[0]
@@ -134,7 +136,11 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
         if query_id:
             slug_str = f'-query_id-{query_id}'
 
-        return self.edit_report_menu(request=self.request, chart_report_id=self.table_report.id, slug_str=slug_str)
+        return self.edit_report_menu(
+            request=self.request,
+            chart_report_id=self.table_report.id,
+            slug_str=slug_str,
+        )
 
     def edit_report_menu(self, request, chart_report_id, slug_str):
         return [

@@ -1,20 +1,32 @@
 import copy
+import json
 
 from django.db.models import Q, ExpressionWrapper, FloatField, F
 from django.db.models.functions import NullIf
 from django_datatables.helpers import render_replace
 from django_datatables.plugins.column_totals import ColumnTotals
 
-from advanced_report_builder.columns import ReportBuilderDateColumn
-from advanced_report_builder.globals import (
+from advanced_report_builder.column_types import (
     DATE_FIELDS,
     NUMBER_FIELDS,
-    CURRENCY_COLUMNS,
+    REVERSE_FOREIGN_KEY_STR_COLUMNS,
+    REVERSE_FOREIGN_KEY_BOOL_COLUMNS,
+    REVERSE_FOREIGN_KEY_CHOICE_COLUMNS,
+    REVERSE_FOREIGN_KEY_DATE_COLUMNS,
     LINK_COLUMNS,
-    ALIGNMENT_CLASS,
-    REVERSE_FOREIGN_KEY_COLUMNS,
+    CURRENCY_COLUMNS,
 )
-from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_FUNCTIONS
+from advanced_report_builder.columns import ReportBuilderDateColumn
+from advanced_report_builder.globals import (
+    ALIGNMENT_CLASS,
+    REVERSE_FOREIGN_KEY_DELIMITER_COMMA,
+    REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_XOR,
+    DATE_FORMAT_TYPE_DD_MM_YY_SLASH,
+)
+from advanced_report_builder.globals import (
+    DATE_FORMAT_TYPES_DJANGO_FORMAT,
+    ANNOTATION_VALUE_FUNCTIONS,
+)
 from advanced_report_builder.utils import split_attr, decode_attribute
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
 
@@ -98,7 +110,14 @@ class TableUtilsMixin(ReportUtilsMixin):
         return field_name
 
     def process_query_results(
-        self, report_builder_class, table, base_model, fields_used, fields_map, table_fields, pivot_fields=None
+        self,
+        report_builder_class,
+        table,
+        base_model,
+        fields_used,
+        fields_map,
+        table_fields,
+        pivot_fields=None,
     ):
         first_field_name = None
 
@@ -132,7 +151,10 @@ class TableUtilsMixin(ReportUtilsMixin):
 
             if isinstance(django_field, DATE_FIELDS):
                 field_name = self.get_date_field(
-                    index=index, col_type_override=col_type_override, table_field=table_field, fields=fields
+                    index=index,
+                    col_type_override=col_type_override,
+                    table_field=table_field,
+                    fields=fields,
                 )
             elif isinstance(django_field, NUMBER_FIELDS) and (django_field is None or django_field.choices is None):
                 annotations_type = int(data_attr.get('annotations_type', 0))
@@ -192,18 +214,49 @@ class TableUtilsMixin(ReportUtilsMixin):
                         decimal_places=decimal_places,
                     )
 
-            elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_COLUMNS):
+            elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_STR_COLUMNS):
                 field_name = table_field['field']
-                col_type_override.table = None
-                field = copy.deepcopy(col_type_override)
-                col_type_override.setup_annotations(delimiter=' | ')
-                if field_attr:
-                    field = (field, field_attr)
+                field = self.get_reverse_foreign_key_str_field(
+                    col_type_override=col_type_override,
+                    data_attr=data_attr,
+                    field_attr=field_attr,
+                    index=index,
+                )
+                fields.append(field)
+            elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_BOOL_COLUMNS):
+                field_name = table_field['field']
+                field = self.get_reverse_foreign_key_bool_field(
+                    col_type_override=col_type_override,
+                    data_attr=data_attr,
+                    field_attr=field_attr,
+                    index=index,
+                )
+                fields.append(field)
+            elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_CHOICE_COLUMNS):
+                field_name = table_field['field']
+                field = self.get_reverse_foreign_key_choice_field(
+                    col_type_override=col_type_override,
+                    data_attr=data_attr,
+                    field_attr=field_attr,
+                    index=index,
+                )
+                fields.append(field)
+
+            elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_DATE_COLUMNS):
+                field_name = table_field['field']
+                field = self.get_reverse_foreign_key_date_field(
+                    col_type_override=col_type_override,
+                    data_attr=data_attr,
+                    field_attr=field_attr,
+                    index=index,
+                )
                 fields.append(field)
 
             elif isinstance(col_type_override, LINK_COLUMNS):
                 field_name = self.get_link_field(
-                    table_field=table_field, col_type_override=col_type_override, fields=fields
+                    table_field=table_field,
+                    col_type_override=col_type_override,
+                    fields=fields,
                 )
 
             elif django_field is None and table_field['field'] in [
@@ -235,7 +288,11 @@ class TableUtilsMixin(ReportUtilsMixin):
                     css_class = col_type_override.column_defs.get('className')
                     show_total = data_attr.get('show_totals')
                     if show_total == '1':
-                        totals[field_name] = {'sum': 'to_fixed', 'decimal_places': 2, 'css_class': css_class}
+                        totals[field_name] = {
+                            'sum': 'to_fixed',
+                            'decimal_places': 2,
+                            'css_class': css_class,
+                        }
                 elif col_type_override.annotations is not None:
                     css_class = col_type_override.column_defs.get('className')
                     show_total = data_attr.get('show_totals')
@@ -262,7 +319,9 @@ class TableUtilsMixin(ReportUtilsMixin):
         if pivot_fields is not None:
             for pivot_field in pivot_fields:
                 pivot_field_data = self._get_pivot_details(
-                    base_model=base_model, pivot_str=pivot_field['field'], report_builder_class=report_builder_class
+                    base_model=base_model,
+                    pivot_str=pivot_field['field'],
+                    report_builder_class=report_builder_class,
                 )
                 if pivot_field_data is None:
                     continue
@@ -297,7 +356,16 @@ class TableUtilsMixin(ReportUtilsMixin):
             query = self.process_query_filters(query=query, search_filter_data=report_query.query)
         return query
 
-    def setup_mathematical_field(self, data_attr, fields, field_attr, table_field, col_type_override, index, totals):
+    def setup_mathematical_field(
+        self,
+        data_attr,
+        fields,
+        field_attr,
+        table_field,
+        col_type_override,
+        index,
+        totals,
+    ):
         field = table_field['field']
         if field == 'rb_percentage':
             self.get_mathematical_percentage_field(
@@ -375,7 +443,9 @@ class TableUtilsMixin(ReportUtilsMixin):
 
     @staticmethod
     def decode_mathematical_columns(
-        data_attr, first_value_column_name='first_value_column', second_value_column_name='second_value_column'
+        data_attr,
+        first_value_column_name='first_value_column',
+        second_value_column_name='second_value_column',
     ):
         first_value_column = data_attr.get(first_value_column_name)
         second_value_column = data_attr.get(second_value_column_name)
@@ -437,7 +507,15 @@ class TableUtilsMixin(ReportUtilsMixin):
         fields.append(field)
 
     def get_mathematical_field(
-        self, fields, field_attr, data_attr, table_field, col_type_override, index, totals, expression
+        self,
+        fields,
+        field_attr,
+        data_attr,
+        table_field,
+        col_type_override,
+        index,
+        totals,
+        expression,
     ):
         decimal_places = data_attr.get('decimal_places', 2)
         alignment_class = ALIGNMENT_CLASS.get(int(data_attr.get('alignment', 0)))
@@ -476,3 +554,78 @@ class TableUtilsMixin(ReportUtilsMixin):
                     css_class=alignment_class,
                 )
         fields.append(field)
+
+    def get_reverse_foreign_key_str_field(self, col_type_override, data_attr, field_attr, index):
+        col_type_override.table = None
+        field_name = f'{col_type_override.field_name}_{index}'
+        field = copy.deepcopy(col_type_override)
+        delimiter_type = int(data_attr.get('delimiter_type', REVERSE_FOREIGN_KEY_DELIMITER_COMMA))
+
+        sub_query = None
+        if int(data_attr.get('has_filter', 0)) == 1:
+            _filter = json.loads(decode_attribute(data_attr['filter']))
+            prefix_field_name = col_type_override.field_name.split('__')[0]
+            sub_query = self.process_filters(search_filter_data=_filter, prefix_field_name=prefix_field_name)
+        field.setup_annotations(delimiter_type=delimiter_type, sub_filter=sub_query, field_name=field_name)
+        if field_attr:
+            field = (field, field_attr)
+        return field
+
+    def get_reverse_foreign_key_bool_field(self, col_type_override, data_attr, field_attr, index):
+        col_type_override.table = None
+        field_name = f'{col_type_override.field_name}_{index}'
+        field = copy.deepcopy(col_type_override)
+        sub_query = None
+        if int(data_attr.get('has_filter', 0)) == 1:
+            _filter = json.loads(decode_attribute(data_attr['filter']))
+            prefix_field_name = col_type_override.field_name.split('__')[0]
+            sub_query = self.process_filters(search_filter_data=_filter, prefix_field_name=prefix_field_name)
+        annotations_type = int(data_attr.get('annotations_type', REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_XOR))
+        field.setup_annotations(
+            annotations_type=annotations_type,
+            sub_filter=sub_query,
+            field_name=field_name,
+        )
+        if field_attr:
+            field = (field, field_attr)
+        return field
+
+    def get_reverse_foreign_key_choice_field(self, col_type_override, data_attr, field_attr, index):
+        col_type_override.table = None
+        field_name = f'{col_type_override.field_name}_{index}'
+        field = copy.deepcopy(col_type_override)
+        sub_query = None
+        delimiter_type = int(data_attr.get('delimiter_type', REVERSE_FOREIGN_KEY_DELIMITER_COMMA))
+        if int(data_attr.get('has_filter', 0)) == 1:
+            _filter = json.loads(decode_attribute(data_attr['filter']))
+            prefix_field_name = col_type_override.field_name.split('__')[0]
+            sub_query = self.process_filters(search_filter_data=_filter, prefix_field_name=prefix_field_name)
+        field.setup_annotations(delimiter_type=delimiter_type, sub_filter=sub_query, field_name=field_name)
+        if field_attr:
+            field = (field, field_attr)
+        return field
+
+    def get_reverse_foreign_key_date_field(self, col_type_override, data_attr, field_attr, index):
+        col_type_override.table = None
+        field_name = f'{col_type_override.field_name}_{index}'
+        field = copy.deepcopy(col_type_override)
+        sub_query = None
+        delimiter_type = int(data_attr.get('delimiter_type', REVERSE_FOREIGN_KEY_DELIMITER_COMMA))
+        date_format_type = int(data_attr.get('date_format', DATE_FORMAT_TYPE_DD_MM_YY_SLASH))
+        annotations_type = int(data_attr.get('annotations_type', REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_XOR))
+
+        if int(data_attr.get('has_filter', 0)) == 1:
+            _filter = json.loads(decode_attribute(data_attr['filter']))
+            prefix_field_name = col_type_override.field_name.split('__')[0]
+            sub_query = self.process_filters(search_filter_data=_filter, prefix_field_name=prefix_field_name)
+
+        field.setup_annotations(
+            delimiter_type=delimiter_type,
+            date_format_type=date_format_type,
+            annotations_type=annotations_type,
+            sub_filter=sub_query,
+            field_name=field_name,
+        )
+        if field_attr:
+            field = (field, field_attr)
+        return field

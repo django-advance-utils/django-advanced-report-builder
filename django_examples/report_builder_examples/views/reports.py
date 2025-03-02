@@ -30,17 +30,35 @@ class ViewReports(MainIndices):
                 no_hover=True,
                 css_classes='btn-secondary',
                 dropdown=[
-                    MenuItem('advanced_report_builder:table_modal,-', 'Table', font_awesome='fas fa-table'),
                     MenuItem(
-                        'advanced_report_builder:single_value_modal,-', 'Single Value', font_awesome='fas fa-box-open'
+                        'advanced_report_builder:table_modal,-',
+                        'Table',
+                        font_awesome='fas fa-table',
                     ),
-                    MenuItem('advanced_report_builder:bar_chart_modal,-', 'Bar Chart', font_awesome='fas fa-chart-bar'),
                     MenuItem(
-                        'advanced_report_builder:line_chart_modal,-', 'Line Chart', font_awesome='fas fa-chart-line'
+                        'advanced_report_builder:single_value_modal,-',
+                        'Single Value',
+                        font_awesome='fas fa-box-open',
                     ),
-                    MenuItem('advanced_report_builder:pie_chart_modal,-', 'Pie Chart', font_awesome='fas fa-chart-pie'),
                     MenuItem(
-                        'advanced_report_builder:funnel_chart_modal,-', 'Funnel Chart', font_awesome='fas fa-filter'
+                        'advanced_report_builder:bar_chart_modal,-',
+                        'Bar Chart',
+                        font_awesome='fas fa-chart-bar',
+                    ),
+                    MenuItem(
+                        'advanced_report_builder:line_chart_modal,-',
+                        'Line Chart',
+                        font_awesome='fas fa-chart-line',
+                    ),
+                    MenuItem(
+                        'advanced_report_builder:pie_chart_modal,-',
+                        'Pie Chart',
+                        font_awesome='fas fa-chart-pie',
+                    ),
+                    MenuItem(
+                        'advanced_report_builder:funnel_chart_modal,-',
+                        'Funnel Chart',
+                        font_awesome='fas fa-filter',
                     ),
                     MenuItem(
                         'advanced_report_builder:kanban_modal,-',
@@ -72,12 +90,18 @@ class ViewReports(MainIndices):
 
 class ViewSingleValueReport(SingleValueView):
     def pod_report_menu(self):
-        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}), *super().pod_report_menu()]
+        return [
+            ('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
+            *super().pod_report_menu(),
+        ]
 
 
 class ViewTableReport(TableView):
     def pod_report_menu(self):
-        menu = [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}), *super().pod_report_menu()]
+        menu = [
+            ('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
+            *super().pod_report_menu(),
+        ]
         if hasattr(self.report, 'reportpermission'):
             menu.append(
                 (
@@ -99,27 +123,42 @@ class ViewTableReport(TableView):
 
 class ViewBarChartReport(BarChartView):
     def pod_report_menu(self):
-        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}), *super().pod_report_menu()]
+        return [
+            ('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
+            *super().pod_report_menu(),
+        ]
 
 
 class ViewLineChartReport(LineChartView):
     def pod_report_menu(self):
-        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}), *super().pod_report_menu()]
+        return [
+            ('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
+            *super().pod_report_menu(),
+        ]
 
 
 class ViewPieChartReport(PieChartView):
     def pod_report_menu(self):
-        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}), *super().pod_report_menu()]
+        return [
+            ('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
+            *super().pod_report_menu(),
+        ]
 
 
 class ViewFunnelChartReport(FunnelChartView):
     def pod_report_menu(self):
-        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}), *super().pod_report_menu()]
+        return [
+            ('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
+            *super().pod_report_menu(),
+        ]
 
 
 class ViewKanbanViewReport(KanbanView):
     def pod_report_menu(self):
-        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}), *super().pod_report_menu()]
+        return [
+            ('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
+            *super().pod_report_menu(),
+        ]
 
 
 class ViewReport(MainMenu, ViewReportBase):

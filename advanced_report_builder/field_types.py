@@ -1,8 +1,8 @@
 from django.db import models
 from django_datatables.columns import ManyToManyColumn
 
+from advanced_report_builder.column_types import DATE_FIELDS
 from advanced_report_builder.columns import FilterForeignKeyColumn
-from advanced_report_builder.globals import DATE_FIELDS
 from advanced_report_builder.variable_date import VariableDate
 
 
@@ -28,7 +28,14 @@ class FieldTypes:
                 'ends_with',
                 'not_ends_with',
             ],
-            self.FIELD_TYPE_NUMBER: ['equal', 'not_equal', 'less', 'less_or_equal', 'greater', 'greater_or_equal'],
+            self.FIELD_TYPE_NUMBER: [
+                'equal',
+                'not_equal',
+                'less',
+                'less_or_equal',
+                'greater',
+                'greater_or_equal',
+            ],
             self.FIELD_TYPE_DATE: [
                 'equal',
                 'not_equal',
@@ -81,7 +88,12 @@ class FieldTypes:
                     }
                 )
             elif isinstance(
-                django_field, (models.IntegerField, models.PositiveSmallIntegerField, models.PositiveIntegerField)
+                django_field,
+                (
+                    models.IntegerField,
+                    models.PositiveSmallIntegerField,
+                    models.PositiveIntegerField,
+                ),
             ):
                 if django_field.choices is None:
                     query_builder_filter = {
@@ -116,7 +128,10 @@ class FieldTypes:
                 )
             elif isinstance(django_field, DATE_FIELDS):
                 self.get_date_field(
-                    column_id=column_id, query_builder_filters=query_builder_filters, field=full_field_name, title=title
+                    column_id=column_id,
+                    query_builder_filters=query_builder_filters,
+                    field=full_field_name,
+                    title=title,
                 )
         elif isinstance(column, ManyToManyColumn):
             choices = dict(column.options['lookup'])

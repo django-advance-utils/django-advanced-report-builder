@@ -94,7 +94,10 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         return self.views.get(report.instance_type)
 
     def post(self, request, *args, **kwargs):
-        if is_ajax(request) and request.content_type in ['application/json', 'multipart/form-data']:
+        if is_ajax(request) and request.content_type in [
+            'application/json',
+            'multipart/form-data',
+        ]:
             if hasattr(super(), 'post'):
                 # noinspection PyUnresolvedReferences
                 return super().post(request, *args, **kwargs)
@@ -112,7 +115,10 @@ class DuplicateReportModal(Modal):
         return 'Are you sure you want to duplicate this report?'
 
     def get_modal_buttons(self):
-        return [modal_button_method('Confirm', 'duplicate'), modal_button('Cancel', 'close', 'btn-secondary')]
+        return [
+            modal_button_method('Confirm', 'duplicate'),
+            modal_button('Cancel', 'close', 'btn-secondary'),
+        ]
 
     def button_duplicate(self, **_kwargs):
         report = get_object_or_404(Report, id=self.slug['pk'])

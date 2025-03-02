@@ -13,23 +13,39 @@ from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.select2 import Select2Multiple
 from django_modals.widgets.widgets import Toggle
 
-from advanced_report_builder.globals import (
-    DATE_FIELDS,
+from advanced_report_builder.column_types import (
     NUMBER_FIELDS,
+    DATE_FIELDS,
+    CURRENCY_COLUMNS,
+    LINK_COLUMNS,
+    REVERSE_FOREIGN_KEY_STR_COLUMNS,
+    REVERSE_FOREIGN_KEY_BOOL_COLUMNS,
+    REVERSE_FOREIGN_KEY_CHOICE_COLUMNS,
+    REVERSE_FOREIGN_KEY_DATE_COLUMNS,
+)
+from advanced_report_builder.globals import (
     ANNOTATION_VALUE_CHOICES,
     ANNOTATIONS_CHOICES,
     DATE_FORMAT_TYPES,
-    CURRENCY_COLUMNS,
-    LINK_COLUMNS,
     ALIGNMENT_CHOICES,
-    REVERSE_FOREIGN_KEY_COLUMNS,
+    REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_CHOICES,
     REVERSE_FOREIGN_KEY_DELIMITER_CHOICES,
+    REVERSE_FOREIGN_KEY_ANNOTATION_DATE_CHOICES,
+    REVERSE_FOREIGN_KEY_ANNOTATION_DATE_ARRAY,
 )
 from advanced_report_builder.models import TableReport, ReportType
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_report_builder_class
+from advanced_report_builder.utils import (
+    split_attr,
+    encode_attribute,
+    decode_attribute,
+    get_report_builder_class,
+)
 from advanced_report_builder.views.charts_base import ChartBaseFieldForm
-from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin, QueryBuilderModalBase
+from advanced_report_builder.views.modals_base import (
+    QueryBuilderModalBaseMixin,
+    QueryBuilderModalBase,
+)
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 
 
@@ -48,13 +64,29 @@ class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
         'notes',
         (
             'has_clickable_rows',
-            {'widget': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'})},
+            {
+                'widget': Toggle(
+                    attrs={
+                        'data-onstyle': 'success',
+                        'data-on': 'YES',
+                        'data-off': 'NO',
+                    }
+                )
+            },
         ),
         'link_field',
         'order_by_field',
         (
             'order_by_ascending',
-            {'widget': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'})},
+            {
+                'widget': Toggle(
+                    attrs={
+                        'data-onstyle': 'success',
+                        'data-on': 'YES',
+                        'data-off': 'NO',
+                    }
+                )
+            },
         ),
         'page_length',
         'report_type',
@@ -78,7 +110,11 @@ class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
             'has_clickable_rows',
             'onchange',
             [
-                {'selector': '#div_id_link_field', 'values': {'checked': 'show'}, 'default': 'hide'},
+                {
+                    'selector': '#div_id_link_field',
+                    'values': {'checked': 'show'},
+                    'default': 'hide',
+                },
             ],
         )
 
@@ -95,7 +131,11 @@ class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
             report_type = form.instance.report_type
 
         self.setup_field(
-            field_type='link', form=form, field_name='link_field', selected_field_id=link_field, report_type=report_type
+            field_type='link',
+            form=form,
+            field_name='link_field',
+            selected_field_id=link_field,
+            report_type=report_type,
         )
 
         self.setup_field(
@@ -111,10 +151,16 @@ class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
             'notes',
             'report_type',
             'report_tags',
-            FieldEx('has_clickable_rows', template='django_modals/fields/label_checkbox.html'),
+            FieldEx(
+                'has_clickable_rows',
+                template='django_modals/fields/label_checkbox.html',
+            ),
             'link_field',
             'order_by_field',
-            FieldEx('order_by_ascending', template='django_modals/fields/label_checkbox.html'),
+            FieldEx(
+                'order_by_ascending',
+                template='django_modals/fields/label_checkbox.html',
+            ),
             FieldEx('page_length', template='django_modals/fields/label_checkbox.html'),
             FieldEx(
                 'table_fields',
@@ -165,12 +211,16 @@ class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
 
     def select2_link_field(self, **kwargs):
         return self.get_fields_for_select2(
-            field_type='link', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+            field_type='link',
+            report_type=kwargs['report_type'],
+            search_string=kwargs.get('search'),
         )
 
     def select2_order_by_field(self, **kwargs):
         return self.get_fields_for_select2(
-            field_type='order', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+            field_type='order',
+            report_type=kwargs['report_type'],
+            search_string=kwargs.get('search'),
         )
 
 
@@ -183,7 +233,12 @@ class TableFieldForm(ChartBaseFieldForm):
 
     def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
         if self.django_field is not None and isinstance(self.django_field, NUMBER_FIELDS):
-            return StrictButton(button_text, onclick=f'save_modal_{self.form_id}()', css_class=css_class, **kwargs)
+            return StrictButton(
+                button_text,
+                onclick=f'save_modal_{self.form_id}()',
+                css_class=css_class,
+                **kwargs,
+            )
         else:
             return super().submit_button(css_class, button_text, **kwargs)
 
@@ -214,8 +269,14 @@ class TableFieldForm(ChartBaseFieldForm):
             self.setup_currency_fields(data_attr=data_attr)
         elif isinstance(self.col_type_override, LINK_COLUMNS):
             self.setup_link_fields(data_attr=data_attr)
-        elif isinstance(self.col_type_override, REVERSE_FOREIGN_KEY_COLUMNS):
-            self.setup_reverse_foreign_key(data_attr=data_attr)
+        elif isinstance(self.col_type_override, REVERSE_FOREIGN_KEY_STR_COLUMNS):
+            self.setup_reverse_foreign_str_key(data_attr=data_attr)
+        elif isinstance(self.col_type_override, REVERSE_FOREIGN_KEY_BOOL_COLUMNS):
+            self.setup_reverse_foreign_bool_key(data_attr=data_attr)
+        elif isinstance(self.col_type_override, REVERSE_FOREIGN_KEY_CHOICE_COLUMNS):
+            self.setup_reverse_foreign_choice_key(data_attr=data_attr)
+        elif isinstance(self.col_type_override, REVERSE_FOREIGN_KEY_DATE_COLUMNS):
+            self.setup_reverse_foreign_date_key(data_attr=data_attr)
         elif self.col_type_override.annotations is not None:
             self.setup_annotation_fields(data_attr=data_attr)
         elif self.is_mathematical_field(data=data):
@@ -247,13 +308,59 @@ class TableFieldForm(ChartBaseFieldForm):
         if 'is_icon' in data_attr and data_attr['is_icon'] == '1':
             self.fields['is_icon'].initial = True
 
-    def setup_reverse_foreign_key(self, data_attr):
+    def setup_reverse_foreign_str_key(self, data_attr):
         self.fields['delimiter_type'] = ChoiceField(choices=REVERSE_FOREIGN_KEY_DELIMITER_CHOICES, required=False)
-
+        if 'delimiter_type' in data_attr:
+            self.fields['delimiter_type'].initial = data_attr['delimiter_type']
         self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
-
         self.fields['filter'] = CharField(required=False)
+        if data_attr.get('has_filter') == '1':
+            self.fields['has_filter'].initial = True
+            if 'filter' in data_attr:
+                self.fields['filter'].initial = decode_attribute(data_attr['filter'])
 
+    def setup_reverse_foreign_bool_key(self, data_attr):
+        self.fields['annotations_type'] = ChoiceField(
+            choices=REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_CHOICES,
+            required=False,
+            label='Type',
+        )
+        if 'annotations_type' in data_attr:
+            self.fields['annotations_type'].initial = data_attr['annotations_type']
+        self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
+        self.fields['filter'] = CharField(required=False)
+        if data_attr.get('has_filter') == '1':
+            self.fields['has_filter'].initial = True
+            if 'filter' in data_attr:
+                self.fields['filter'].initial = decode_attribute(data_attr['filter'])
+
+    def setup_reverse_foreign_choice_key(self, data_attr):
+        self.fields['delimiter_type'] = ChoiceField(choices=REVERSE_FOREIGN_KEY_DELIMITER_CHOICES, required=False)
+        if 'delimiter_type' in data_attr:
+            self.fields['delimiter_type'].initial = data_attr['delimiter_type']
+        self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
+        self.fields['filter'] = CharField(required=False)
+        if data_attr.get('has_filter') == '1':
+            self.fields['has_filter'].initial = True
+            if 'filter' in data_attr:
+                self.fields['filter'].initial = decode_attribute(data_attr['filter'])
+
+    def setup_reverse_foreign_date_key(self, data_attr):
+        self.fields['annotations_type'] = ChoiceField(
+            choices=REVERSE_FOREIGN_KEY_ANNOTATION_DATE_CHOICES,
+            required=False,
+            label='Type',
+        )
+        if 'annotations_type' in data_attr:
+            self.fields['annotations_type'].initial = data_attr['annotations_type']
+        self.fields['delimiter_type'] = ChoiceField(choices=REVERSE_FOREIGN_KEY_DELIMITER_CHOICES, required=False)
+        if 'delimiter_type' in data_attr:
+            self.fields['delimiter_type'].initial = data_attr['delimiter_type']
+        self.fields['date_format'] = ChoiceField(choices=[(0, '-----')] + DATE_FORMAT_TYPES, required=False)
+        if 'date_format' in data_attr:
+            self.fields['date_format'].initial = data_attr['date_format']
+        self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
+        self.fields['filter'] = CharField(required=False)
         if data_attr.get('has_filter') == '1':
             self.fields['has_filter'].initial = True
             if 'filter' in data_attr:
@@ -303,7 +410,9 @@ class TableFieldForm(ChartBaseFieldForm):
         report_builder_class = get_report_builder_class(model=base_model, report_type=report_type)
         fields = []
         self._get_query_builder_foreign_key_fields(
-            base_model=base_model, report_builder_class=report_builder_class, fields=fields
+            base_model=base_model,
+            report_builder_class=report_builder_class,
+            fields=fields,
         )
 
         self.fields['multiple_column_field'] = ChoiceField(choices=fields, required=False)
@@ -431,9 +540,40 @@ class TableFieldForm(ChartBaseFieldForm):
         if self.cleaned_data['is_icon'] and self.cleaned_data['is_icon']:
             attributes.append('is_icon-1')
 
-    def save_reverse_foreign_key_fields(self, attributes):
+    def save_reverse_foreign_key_str_fields(self, attributes):
         if int(self.cleaned_data['delimiter_type']) != 0:
             attributes.append(f'delimiter_type-{self.cleaned_data["delimiter_type"]}')
+        if self.cleaned_data['has_filter']:
+            attributes.append(f'has_filter-1')
+            if self.cleaned_data['filter']:
+                b64_filter = encode_attribute(self.cleaned_data['filter'])
+                attributes.append(f'filter-{b64_filter}')
+
+    def save_reverse_foreign_key_bool_fields(self, attributes):
+        if int(self.cleaned_data['annotations_type']) != 0:
+            attributes.append(f'annotations_type-{self.cleaned_data["annotations_type"]}')
+        if self.cleaned_data['has_filter']:
+            attributes.append(f'has_filter-1')
+            if self.cleaned_data['filter']:
+                b64_filter = encode_attribute(self.cleaned_data['filter'])
+                attributes.append(f'filter-{b64_filter}')
+
+    def save_reverse_foreign_key_choice_fields(self, attributes):
+        if int(self.cleaned_data['delimiter_type']) != 0:
+            attributes.append(f'delimiter_type-{self.cleaned_data["delimiter_type"]}')
+        if self.cleaned_data['has_filter']:
+            attributes.append(f'has_filter-1')
+            if self.cleaned_data['filter']:
+                b64_filter = encode_attribute(self.cleaned_data['filter'])
+                attributes.append(f'filter-{b64_filter}')
+
+    def save_reverse_foreign_key_date_fields(self, attributes):
+        if int(self.cleaned_data['annotations_type']) != 0:
+            attributes.append(f'annotations_type-{self.cleaned_data["annotations_type"]}')
+        if int(self.cleaned_data['delimiter_type']) != 0:
+            attributes.append(f'delimiter_type-{self.cleaned_data["delimiter_type"]}')
+        if self.cleaned_data['date_format']:
+            attributes.append(f'date_format-{self.cleaned_data["date_format"]}')
         if self.cleaned_data['has_filter']:
             attributes.append(f'has_filter-1')
             if self.cleaned_data['filter']:
@@ -462,8 +602,14 @@ class TableFieldForm(ChartBaseFieldForm):
             self.save_currency_fields(attributes=attributes)
         elif isinstance(self.col_type_override, LINK_COLUMNS):
             self.save_link_fields(attributes=attributes)
-        elif isinstance(self.col_type_override, REVERSE_FOREIGN_KEY_COLUMNS):
-            self.save_reverse_foreign_key_fields(attributes=attributes)
+        elif isinstance(self.col_type_override, REVERSE_FOREIGN_KEY_STR_COLUMNS):
+            self.save_reverse_foreign_key_str_fields(attributes=attributes)
+        elif isinstance(self.col_type_override, REVERSE_FOREIGN_KEY_BOOL_COLUMNS):
+            self.save_reverse_foreign_key_bool_fields(attributes=attributes)
+        elif isinstance(self.col_type_override, REVERSE_FOREIGN_KEY_CHOICE_COLUMNS):
+            self.save_reverse_foreign_key_choice_fields(attributes=attributes)
+        elif isinstance(self.col_type_override, REVERSE_FOREIGN_KEY_DATE_COLUMNS):
+            self.save_reverse_foreign_key_date_fields(attributes=attributes)
         elif self.col_type_override.annotations is not None:
             self.save_annotations_fields(attributes=attributes)
         elif self.is_mathematical_field(data=data):
@@ -494,9 +640,22 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
         selector = self.slug['selector']
 
         _attr = form.get_additional_attributes()
-        self.add_command({'function': 'set_attr', 'selector': f'#{selector}', 'attr': 'data-attr', 'val': _attr})
+        self.add_command(
+            {
+                'function': 'set_attr',
+                'selector': f'#{selector}',
+                'attr': 'data-attr',
+                'val': _attr,
+            }
+        )
 
-        self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
+        self.add_command(
+            {
+                'function': 'html',
+                'selector': f'#{selector} span',
+                'html': form.cleaned_data['title'],
+            }
+        )
         self.add_command({'function': self.update_selection_command})
         return self.command_response('close')
 
@@ -504,26 +663,44 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
         data = json.loads(base64.b64decode(self.slug['data']))
         report_builder_class, base_model = self.get_report_builder_class(report_type_id=self.slug['report_type_id'])
         django_field, col_type_override, _, _ = self.get_field_details(
-            base_model=base_model, field=data['field'], report_builder_class=report_builder_class
+            base_model=base_model,
+            field=data['field'],
+            report_builder_class=report_builder_class,
         )
         if django_field is not None and isinstance(django_field, NUMBER_FIELDS):
             form.add_trigger(
                 'annotations_type',
                 'onchange',
-                [{'selector': '#annotations_fields_div', 'values': {'0': 'hide'}, 'default': 'show'}],
+                [
+                    {
+                        'selector': '#annotations_fields_div',
+                        'values': {'0': 'hide'},
+                        'default': 'show',
+                    }
+                ],
             )
 
             form.add_trigger(
                 'has_filter',
                 'onchange',
-                [{'selector': '#filter_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'}],
+                [
+                    {
+                        'selector': '#filter_fields_div',
+                        'values': {'checked': 'show'},
+                        'default': 'hide',
+                    }
+                ],
             )
 
             form.add_trigger(
                 'multiple_columns',
                 'onchange',
                 [
-                    {'selector': '#multiple_columns_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'},
+                    {
+                        'selector': '#multiple_columns_fields_div',
+                        'values': {'checked': 'show'},
+                        'default': 'hide',
+                    },
                 ],
             )
 
@@ -543,14 +720,18 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
                     ),
                     Div(
                         FieldEx(
-                            'filter', template='advanced_report_builder/datatables/fields/single_query_builder.html'
+                            'filter',
+                            template='advanced_report_builder/datatables/fields/single_query_builder.html',
                         ),
                         FieldEx(
                             'multiple_columns',
                             template='django_modals/fields/label_checkbox.html',
                             field_class='col-6 input-group-sm',
                         ),
-                        Div(FieldEx('multiple_column_field'), css_id='multiple_columns_fields_div'),
+                        Div(
+                            FieldEx('multiple_column_field'),
+                            css_id='multiple_columns_fields_div',
+                        ),
                         css_id='filter_fields_div',
                     ),
                     css_id='annotations_fields_div',
@@ -560,16 +741,129 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
             return ['title', 'display_heading', 'show_table_totals']
         elif isinstance(col_type_override, LINK_COLUMNS):
             return ['title', 'display_heading', 'link_css', 'link_html', 'is_icon']
-        elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_COLUMNS):
+        elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_STR_COLUMNS):
             form.add_trigger(
                 'has_filter',
                 'onchange',
-                [{'selector': '#filter_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'}],
+                [
+                    {
+                        'selector': '#filter_fields_div',
+                        'values': {'checked': 'show'},
+                        'default': 'hide',
+                    }
+                ],
             )
 
             return [
                 'title',
                 'display_heading',
+                'delimiter_type',
+                FieldEx(
+                    'has_filter',
+                    template='django_modals/fields/label_checkbox.html',
+                    field_class='col-6 input-group-sm',
+                ),
+                Div(
+                    FieldEx(
+                        'filter',
+                        template='advanced_report_builder/datatables/fields/single_query_builder.html',
+                        extra_context={'report_builder_class_name': col_type_override.report_builder_class_name},
+                    ),
+                    css_id='filter_fields_div',
+                ),
+            ]
+        elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_BOOL_COLUMNS):
+            form.add_trigger(
+                'has_filter',
+                'onchange',
+                [
+                    {
+                        'selector': '#filter_fields_div',
+                        'values': {'checked': 'show'},
+                        'default': 'hide',
+                    }
+                ],
+            )
+
+            return [
+                'title',
+                'display_heading',
+                'annotations_type',
+                FieldEx(
+                    'has_filter',
+                    template='django_modals/fields/label_checkbox.html',
+                    field_class='col-6 input-group-sm',
+                ),
+                Div(
+                    FieldEx(
+                        'filter',
+                        template='advanced_report_builder/datatables/fields/single_query_builder.html',
+                        extra_context={'report_builder_class_name': col_type_override.report_builder_class_name},
+                    ),
+                    css_id='filter_fields_div',
+                ),
+            ]
+        elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_CHOICE_COLUMNS):
+            form.add_trigger(
+                'has_filter',
+                'onchange',
+                [
+                    {
+                        'selector': '#filter_fields_div',
+                        'values': {'checked': 'show'},
+                        'default': 'hide',
+                    }
+                ],
+            )
+
+            return [
+                'title',
+                'display_heading',
+                'delimiter_type',
+                FieldEx(
+                    'has_filter',
+                    template='django_modals/fields/label_checkbox.html',
+                    field_class='col-6 input-group-sm',
+                ),
+                Div(
+                    FieldEx(
+                        'filter',
+                        template='advanced_report_builder/datatables/fields/single_query_builder.html',
+                        extra_context={'report_builder_class_name': col_type_override.report_builder_class_name},
+                    ),
+                    css_id='filter_fields_div',
+                ),
+            ]
+        elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_DATE_COLUMNS):
+            form.add_trigger(
+                'has_filter',
+                'onchange',
+                [
+                    {
+                        'selector': '#filter_fields_div',
+                        'values': {'checked': 'show'},
+                        'default': 'hide',
+                    }
+                ],
+            )
+
+            form.add_trigger(
+                'annotations_type',
+                'onchange',
+                [
+                    {
+                        'selector': '#div_id_delimiter_type',
+                        'values': {f'{REVERSE_FOREIGN_KEY_ANNOTATION_DATE_ARRAY}': 'show'},
+                        'default': 'hide',
+                    },
+                ],
+            )
+
+            return [
+                'title',
+                'display_heading',
+                'date_format',
+                'annotations_type',
                 'delimiter_type',
                 FieldEx(
                     'has_filter',
@@ -632,7 +926,13 @@ class TablePivotModal(QueryBuilderModalBaseMixin, FormModal):
     def form_valid(self, form):
         selector = self.slug['selector']
 
-        self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
+        self.add_command(
+            {
+                'function': 'html',
+                'selector': f'#{selector} span',
+                'html': form.cleaned_data['title'],
+            }
+        )
 
         self.add_command({'function': 'update_pivot_selection'})
         return self.command_response('close')

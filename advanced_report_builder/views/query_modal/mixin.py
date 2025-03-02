@@ -46,7 +46,8 @@ class MultiQueryModalMixin:
 
         report_type = self.get_report_type(**_kwargs)
         url = reverse(
-            'advanced_report_builder:query_modal', kwargs={'slug': f'pk-{report_query.id}-report_type-{report_type}'}
+            'advanced_report_builder:query_modal',
+            kwargs={'slug': f'pk-{report_query.id}-report_type-{report_type}'},
         )
         return self.command_response('show_modal', modal=url)
 
@@ -127,9 +128,10 @@ class MultiQueryModalMixin:
                         column_name='menu',
                         field='id',
                         column_defs={'orderable': False, 'className': 'dt-right'},
-                        menu=HtmlMenu(self.request, 'advanced_report_builder/datatables/onclick_menu.html').add_items(
-                            *description_edit_menu_items
-                        ),
+                        menu=HtmlMenu(
+                            self.request,
+                            'advanced_report_builder/datatables/onclick_menu.html',
+                        ).add_items(*description_edit_menu_items),
                     ),
                 ],
                 attrs={'filter': {'report__id': self.object.id}},
@@ -139,7 +141,10 @@ class MultiQueryModalMixin:
 
     def post_save(self, created, form):
         if created:
-            self.modal_redirect(self.request.resolver_match.view_name, slug=f'pk-{self.object.id}-new-True')
+            self.modal_redirect(
+                self.request.resolver_match.view_name,
+                slug=f'pk-{self.object.id}-new-True',
+            )
         else:
             url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME', '')
             if url_name and self.slug.get('new'):
