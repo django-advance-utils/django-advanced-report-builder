@@ -45,27 +45,29 @@ class MultiQueryModalMixin:
             report_query_order.save()
 
         report_type = self.get_report_type(**_kwargs)
-        url = reverse('advanced_report_builder:query_modal',
-                      kwargs={'slug': f'pk-{report_query.id}-report_type-{report_type}'})
+        url = reverse(
+            'advanced_report_builder:query_modal',
+            kwargs={'slug': f'pk-{report_query.id}-report_type-{report_type}'},
+        )
         return self.command_response('show_modal', modal=url)
 
     def button_add_query(self, **_kwargs):
         report_type = self.get_report_type(**_kwargs)
         show_order_by = 1 if self.show_order_by else 0
-        url = reverse('advanced_report_builder:query_modal',
-                      kwargs={'slug': f'report_id-{self.object.id}-'
-                                      f'report_type-{report_type}-'
-                                      f'show_order_by-{show_order_by}'})
+        url = reverse(
+            'advanced_report_builder:query_modal',
+            kwargs={'slug': f'report_id-{self.object.id}-report_type-{report_type}-show_order_by-{show_order_by}'},
+        )
         return self.command_response('show_modal', modal=url)
 
     def button_edit_query(self, **_kwargs):
         query_id = _kwargs['query_id'][1:]
         report_type = self.get_report_type(**_kwargs)
         show_order_by = 1 if self.show_order_by else 0
-        url = reverse('advanced_report_builder:query_modal',
-                      kwargs={'slug': f'pk-{query_id}-'
-                                      f'report_type-{report_type}-'
-                                      f'show_order_by-{show_order_by}'})
+        url = reverse(
+            'advanced_report_builder:query_modal',
+            kwargs={'slug': f'pk-{query_id}-report_type-{report_type}-show_order_by-{show_order_by}'},
+        )
         return self.command_response('show_modal', modal=url)
 
     def query_menu(self):
@@ -73,39 +75,44 @@ class MultiQueryModalMixin:
         duplicate_query_js = get_query_js('duplicate_query', 'query_id')
 
         description_edit_menu_items = [
-            MenuItem(duplicate_query_js.replace('"', "&quot;"),
-                     menu_display='Duplicate',
-                     css_classes='btn btn-sm btn-outline-dark',
-                     font_awesome='fas fa-clone',
-                     link_type=MenuItem.HREF),
-
-            MenuItem(edit_query_js.replace('"', "&quot;"),
-                     menu_display='Edit',
-                     css_classes='btn btn-sm btn-outline-dark',
-                     font_awesome='fas fa-pencil',
-                     link_type=MenuItem.HREF)]
+            MenuItem(
+                duplicate_query_js.replace('"', '&quot;'),
+                menu_display='Duplicate',
+                css_classes='btn btn-sm btn-outline-dark',
+                font_awesome='fas fa-clone',
+                link_type=MenuItem.HREF,
+            ),
+            MenuItem(
+                edit_query_js.replace('"', '&quot;'),
+                menu_display='Edit',
+                css_classes='btn btn-sm btn-outline-dark',
+                font_awesome='fas fa-pencil',
+                link_type=MenuItem.HREF,
+            ),
+        ]
         return description_edit_menu_items
 
-
     def add_extra_queries(self, form, fields):
-        add_query_js = 'django_modal.process_commands_lock([{"function": "post_modal", ' \
-                       '"button": {"button": "add_query"}}])'
+        add_query_js = (
+            'django_modal.process_commands_lock([{"function": "post_modal", "button": {"button": "add_query"}}])'
+        )
 
         description_add_menu_items = [
+            MenuItem(
+                add_query_js.replace('"', '&quot;'),
+                menu_display='Add Query Version',
+                css_classes='btn btn-primary',
+                font_awesome='fas fa-pencil',
+                link_type=MenuItem.HREF,
+            )
+        ]
 
-            MenuItem(add_query_js.replace('"', "&quot;"),
-                     menu_display='Add Query Version',
-                     css_classes='btn btn-primary',
-                     font_awesome='fas fa-pencil',
-                     link_type=MenuItem.HREF)]
-
-        menu = HtmlMenu(self.request,
-                        'advanced_report_builder/datatables/onclick_menu.html').add_items(
-            *description_add_menu_items)
+        menu = HtmlMenu(self.request, 'advanced_report_builder/datatables/onclick_menu.html').add_items(
+            *description_add_menu_items
+        )
 
         fields.append(Div(HTML(menu.render()), css_class='form-buttons'))
         description_edit_menu_items = self.query_menu()
-
 
         form.fields['queries'] = CharField(
             required=False,
@@ -113,22 +120,31 @@ class MultiQueryModalMixin:
             widget=DataTableReorderWidget(
                 model=ReportQuery,
                 order_field='order',
-                fields=['_.index',
-                        '.id',
-                        'name',
-                        MenuColumn(column_name='menu', field='id',
-                                   column_defs={'orderable': False, 'className': 'dt-right'},
-                                   menu=HtmlMenu(self.request,
-                                                 'advanced_report_builder/datatables/onclick_menu.html').add_items(
-                                       *description_edit_menu_items
-                                   )),
-                        ],
-                attrs={'filter': {'report__id': self.object.id}}))
+                fields=[
+                    '_.index',
+                    '.id',
+                    'name',
+                    MenuColumn(
+                        column_name='menu',
+                        field='id',
+                        column_defs={'orderable': False, 'className': 'dt-right'},
+                        menu=HtmlMenu(
+                            self.request,
+                            'advanced_report_builder/datatables/onclick_menu.html',
+                        ).add_items(*description_edit_menu_items),
+                    ),
+                ],
+                attrs={'filter': {'report__id': self.object.id}},
+            ),
+        )
         fields.append('queries')
 
     def post_save(self, created, form):
         if created:
-            self.modal_redirect(self.request.resolver_match.view_name, slug=f'pk-{self.object.id}-new-True')
+            self.modal_redirect(
+                self.request.resolver_match.view_name,
+                slug=f'pk-{self.object.id}-new-True',
+            )
         else:
             url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME', '')
             if url_name and self.slug.get('new'):

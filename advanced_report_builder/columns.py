@@ -2,21 +2,35 @@ from django.contrib.humanize.templatetags.humanize import intcomma
 from django.contrib.postgres.aggregates import StringAgg, BoolOr, BoolAnd, ArrayAgg
 from django.db.models import Count, BooleanField, Min, Max
 from django.db.models.functions import Cast
-from django_datatables.columns import ColumnBase, CurrencyPenceColumn, CurrencyColumn, NoHeadingColumn, ColumnLink, \
-    ManyToManyColumn
+from django_datatables.columns import (
+    ColumnBase,
+    CurrencyPenceColumn,
+    CurrencyColumn,
+    NoHeadingColumn,
+    ColumnLink,
+    ManyToManyColumn,
+)
 from django_datatables.helpers import get_url, DUMMY_ID, render_replace
 from django_datatables.model_def import DatatableModel
 
-from advanced_report_builder.globals import REVERSE_FOREIGN_KEY_DELIMITER_COMMA, REVERSE_FOREIGN_KEY_DELIMITER_VALUES, \
-    DATE_FORMAT_TYPE_DD_MM_YY_SLASH, DATE_FORMAT_TYPES_DJANGO_FORMAT, REVERSE_FOREIGN_KEY_ANNOTATION_DATE_ARRAY, \
-    REVERSE_FOREIGN_KEY_ANNOTATION_DATE_MAX, REVERSE_FOREIGN_KEY_ANNOTATION_DATE_MIN
-from advanced_report_builder.globals import REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_XOR, REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_AND, \
-    REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_ARRAY
+from advanced_report_builder.globals import (
+    REVERSE_FOREIGN_KEY_DELIMITER_COMMA,
+    REVERSE_FOREIGN_KEY_DELIMITER_VALUES,
+    DATE_FORMAT_TYPE_DD_MM_YY_SLASH,
+    DATE_FORMAT_TYPES_DJANGO_FORMAT,
+    REVERSE_FOREIGN_KEY_ANNOTATION_DATE_ARRAY,
+    REVERSE_FOREIGN_KEY_ANNOTATION_DATE_MAX,
+    REVERSE_FOREIGN_KEY_ANNOTATION_DATE_MIN,
+)
+from advanced_report_builder.globals import (
+    REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_XOR,
+    REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_AND,
+    REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_ARRAY,
+)
 
 
 class ReportBuilderDateColumn(ColumnBase):
-
-    def __init__(self, *,  date_format=None, **kwargs):
+    def __init__(self, *, date_format=None, **kwargs):
         if not self.initialise(locals()):
             return
         super().__init__(**kwargs)
@@ -30,12 +44,11 @@ class ReportBuilderDateColumn(ColumnBase):
             date = data[self.field].strftime(self.date_format)
             return date
         except AttributeError:
-            return ""
+            return ''
 
 
 class ReportBuilderNumberColumn(ColumnBase):
-
-    def __init__(self, *,  decimal_places=0, trim_zeros=True, **kwargs):
+    def __init__(self, *, decimal_places=0, trim_zeros=True, **kwargs):
         if not self.initialise(locals()):
             return
         super().__init__(**kwargs)
@@ -55,7 +68,6 @@ class ReportBuilderNumberColumn(ColumnBase):
 
 
 class ReportBuilderCurrencyPenceColumn(CurrencyPenceColumn):
-
     def row_result(self, data, _page_data):
         try:
             return intcomma('{:.2f}'.format(data[self.field] / 100.0))
@@ -64,7 +76,6 @@ class ReportBuilderCurrencyPenceColumn(CurrencyPenceColumn):
 
 
 class ReportBuilderCurrencyColumn(CurrencyColumn):
-
     def row_result(self, data, _page_data):
         try:
             return intcomma('{:.2f}'.format(data[self.field]))
@@ -86,9 +97,12 @@ class ColourColumn(ColumnBase):
         if not self.initialise(locals()):
             return
         kwargs['render'] = [
-            render_replace(html='<span style="display: inline-block; width: 60px; height: 15px;'
-                                ' background-color: #%1%; vertical-align: middle;"></span>',
-                           column=kwargs['column_name'])]
+            render_replace(
+                html='<span style="display: inline-block; width: 60px; height: 15px;'
+                ' background-color: #%1%; vertical-align: middle;"></span>',
+                column=kwargs['column_name'],
+            )
+        ]
         super().__init__(**kwargs)
 
 
@@ -111,10 +125,9 @@ class ReverseForeignKeyStrColumn(ColumnBase):
             field_name = self.field_name
         delimiter = REVERSE_FOREIGN_KEY_DELIMITER_VALUES[delimiter_type]
 
-        self.annotations = {field_name: StringAgg(self.field_name,
-                                                  delimiter=delimiter,
-                                                  distinct=True,
-                                                  filter=sub_filter)}
+        self.annotations = {
+            field_name: StringAgg(self.field_name, delimiter=delimiter, distinct=True, filter=sub_filter)
+        }
 
 
 class ReverseForeignKeyBoolColumn(ColumnBase):
@@ -126,20 +139,15 @@ class ReverseForeignKeyBoolColumn(ColumnBase):
         self.report_builder_class_name = report_builder_class_name
 
     def setup_annotations(self, annotations_type, sub_filter=None, field_name=None):
-
         if field_name is None:
             field_name = self.field_name
 
         if annotations_type == REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_XOR:
-            self.annotations = {field_name: BoolOr(Cast(self.field_name, BooleanField()),
-                                                   filter=sub_filter)}
+            self.annotations = {field_name: BoolOr(Cast(self.field_name, BooleanField()), filter=sub_filter)}
         elif annotations_type == REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_AND:
-            self.annotations = {field_name: BoolAnd(Cast(self.field_name, BooleanField()),
-                                                    filter=sub_filter)}
+            self.annotations = {field_name: BoolAnd(Cast(self.field_name, BooleanField()), filter=sub_filter)}
         elif annotations_type == REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_ARRAY:
-            self.annotations = {field_name: ArrayAgg(self.field_name,
-                                                     distinct=True,
-                                                     filter=sub_filter)}
+            self.annotations = {field_name: ArrayAgg(self.field_name, distinct=True, filter=sub_filter)}
 
 
 class ReverseForeignKeyChoiceColumn(ColumnBase):
@@ -150,7 +158,7 @@ class ReverseForeignKeyChoiceColumn(ColumnBase):
         self.choices = None
         self.report_builder_class_name = report_builder_class_name
         self.delimiter_type = REVERSE_FOREIGN_KEY_DELIMITER_COMMA
-        super().__init__( **kwargs)
+        super().__init__(**kwargs)
 
     def setup_results(self, request, all_results):
         _, django_field, _ = DatatableModel.get_setup_data(self.model, self.field_name)
@@ -167,9 +175,7 @@ class ReverseForeignKeyChoiceColumn(ColumnBase):
         if field_name is None:
             field_name = self.field_name
         self.delimiter_type = delimiter_type
-        self.annotations = {field_name: ArrayAgg(self.field_name,
-                                                 distinct=True,
-                                                 filter=sub_filter)}
+        self.annotations = {field_name: ArrayAgg(self.field_name, distinct=True, filter=sub_filter)}
 
 
 class ReverseForeignKeyDateColumn(ColumnBase):
@@ -183,8 +189,14 @@ class ReverseForeignKeyDateColumn(ColumnBase):
         self.date_format_type = DATE_FORMAT_TYPE_DD_MM_YY_SLASH
         self.annotations_type = REVERSE_FOREIGN_KEY_ANNOTATION_DATE_ARRAY
 
-    def setup_annotations(self, delimiter_type=None, date_format_type=None,  annotations_type=None,
-                          sub_filter=None, field_name=None):
+    def setup_annotations(
+        self,
+        delimiter_type=None,
+        date_format_type=None,
+        annotations_type=None,
+        sub_filter=None,
+        field_name=None,
+    ):
         if field_name is None:
             field_name = self.field_name
         self.delimiter_type = delimiter_type
@@ -192,16 +204,12 @@ class ReverseForeignKeyDateColumn(ColumnBase):
         self.annotations_type = annotations_type
 
         if annotations_type == REVERSE_FOREIGN_KEY_ANNOTATION_DATE_ARRAY:
-            self.annotations = {field_name: ArrayAgg(self.field_name,
-                                                     distinct=True,
-                                                     filter=sub_filter)}
+            self.annotations = {field_name: ArrayAgg(self.field_name, distinct=True, filter=sub_filter)}
         elif annotations_type == REVERSE_FOREIGN_KEY_ANNOTATION_DATE_MIN:
-            self.annotations = {field_name: Min(self.field_name,
-                                                sub_filter=sub_filter) }
+            self.annotations = {field_name: Min(self.field_name, sub_filter=sub_filter)}
 
         elif annotations_type == REVERSE_FOREIGN_KEY_ANNOTATION_DATE_MAX:
-            self.annotations = {field_name: Max(self.field_name,
-                                                sub_filter=sub_filter)}
+            self.annotations = {field_name: Max(self.field_name, sub_filter=sub_filter)}
 
     def row_result(self, data, _page_data):
         field = self.field
@@ -221,11 +229,11 @@ class ReverseForeignKeyDateColumn(ColumnBase):
             else:
                 return date_values.strftime(date_formate_type_str)
         except AttributeError:
-            return ""
+            return ''
 
 
 class ReportBuilderColumnLink(ColumnLink):
-    """ Sometimes you may want to have a report where the links don't work.
+    """Sometimes you may want to have a report where the links don't work.
     This is used for when you have a wall board"""
 
     @property
@@ -234,10 +242,12 @@ class ReportBuilderColumnLink(ColumnLink):
 
     @url.setter
     def url(self, url_name):
-        if (not self.table or
-                self.table.view is None or
-                self.table.view.kwargs.get('enable_links') or
-                getattr(self.table.view, 'enable_links', False)):
+        if (
+            not self.table
+            or self.table.view is None
+            or self.table.view.kwargs.get('enable_links')
+            or getattr(self.table.view, 'enable_links', False)
+        ):
             self._url = get_url(url_name)
         else:
             self._url = f'#?{DUMMY_ID}'
@@ -253,7 +263,6 @@ class RecordCountColumn(ColumnBase):
 
 
 class ReportBuilderManyToManyColumn(ManyToManyColumn):
-
     def __init__(self, *arg, **kwargs):
         if not self.initialise(locals()):
             return

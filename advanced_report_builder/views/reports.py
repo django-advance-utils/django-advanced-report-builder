@@ -24,14 +24,15 @@ from advanced_report_builder.views.single_values import SingleValueView
 
 class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
     model = Report
-    views = {'tablereport': TableView,
-             'singlevaluereport': SingleValueView,
-             'barchartreport': BarChartView,
-             'linechartreport': LineChartView,
-             'piechartreport': PieChartView,
-             'funnelchartreport': FunnelChartView,
-             'kanbanreport': KanbanView,
-             }
+    views = {
+        'tablereport': TableView,
+        'singlevaluereport': SingleValueView,
+        'barchartreport': BarChartView,
+        'linechartreport': LineChartView,
+        'piechartreport': PieChartView,
+        'funnelchartreport': FunnelChartView,
+        'kanbanreport': KanbanView,
+    }
     enable_links = True
 
     custom_views = {}
@@ -43,7 +44,7 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         super().__init__(*args, **kwargs)
 
     def redirect_url(self):
-        """ used if the slug changes"""
+        """used if the slug changes"""
         return None
 
     def dispatch(self, request, *args, **kwargs):
@@ -66,7 +67,7 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
 
     def has_permission(self):
         """You can over override this to check if the user has permission to view the report.
-          If return false 'report_no_permission' will be called"""
+        If return false 'report_no_permission' will be called"""
         return True
 
     def report_no_permission(self):
@@ -93,7 +94,10 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         return self.views.get(report.instance_type)
 
     def post(self, request, *args, **kwargs):
-        if is_ajax(request) and request.content_type in ['application/json', 'multipart/form-data']:
+        if is_ajax(request) and request.content_type in [
+            'application/json',
+            'multipart/form-data',
+        ]:
             if hasattr(super(), 'post'):
                 # noinspection PyUnresolvedReferences
                 return super().post(request, *args, **kwargs)
@@ -111,7 +115,10 @@ class DuplicateReportModal(Modal):
         return 'Are you sure you want to duplicate this report?'
 
     def get_modal_buttons(self):
-        return [modal_button_method('Confirm', 'duplicate'), modal_button('Cancel', 'close', 'btn-secondary')]
+        return [
+            modal_button_method('Confirm', 'duplicate'),
+            modal_button('Cancel', 'close', 'btn-secondary'),
+        ]
 
     def button_duplicate(self, **_kwargs):
         report = get_object_or_404(Report, id=self.slug['pk'])

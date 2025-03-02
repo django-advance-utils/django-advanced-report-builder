@@ -14,8 +14,9 @@ class ViewDashboards(MainIndices):
 
     def setup_menu(self):
         super().setup_menu()
-        self.add_menu('table_menu', 'button_group').add_items(('advanced_report_builder:dashboard_modal,-',
-                                                               'Add Dashboard'))
+        self.add_menu('table_menu', 'button_group').add_items(
+            ('advanced_report_builder:dashboard_modal,-', 'Add Dashboard')
+        )
 
     @staticmethod
     def setup_table(table):
@@ -25,10 +26,12 @@ class ViewDashboards(MainIndices):
             'name',
             # 'instance_type',
             # 'OutputType',
-            ColumnLink(column_name='view_dashboard',
-                       field='name',
-                       link_ref_column='slug',
-                       url_name='report_builder_examples:view_dashboard'),
+            ColumnLink(
+                column_name='view_dashboard',
+                field='name',
+                link_ref_column='slug',
+                url_name='report_builder_examples:view_dashboard',
+            ),
         )
 
 
@@ -43,17 +46,33 @@ class ViewDashboard(MainMenu, ViewDashboardBase):
         super().setup_menu()
 
         if not self.enable_edit:
-            report_menu = [MenuItem('report_builder_examples:edit_dashboard', 'Enable Edit',
-                                    url_kwargs={'slug': self.kwargs['slug']})]
+            report_menu = [
+                MenuItem(
+                    'report_builder_examples:edit_dashboard',
+                    'Enable Edit',
+                    url_kwargs={'slug': self.kwargs['slug']},
+                )
+            ]
         else:
-            report_menu = [MenuItem('report_builder_examples:view_dashboard', 'View Only',
-                                    url_kwargs={'slug': self.kwargs['slug']}, css_classes='btn-success'),
-                           MenuItem('advanced_report_builder:dashboard_modal', 'Edit',
-                                    url_kwargs={'slug': self.dashboard.id}),
-                           MenuItem('advanced_report_builder:add_dashboard_report', 'Add Report',
-                                    url_kwargs={'slug': self.dashboard.id}, css_classes='btn-secondary'),
-
-                           ]
+            report_menu = [
+                MenuItem(
+                    'report_builder_examples:view_dashboard',
+                    'View Only',
+                    url_kwargs={'slug': self.kwargs['slug']},
+                    css_classes='btn-success',
+                ),
+                MenuItem(
+                    'advanced_report_builder:dashboard_modal',
+                    'Edit',
+                    url_kwargs={'slug': self.dashboard.id},
+                ),
+                MenuItem(
+                    'advanced_report_builder:add_dashboard_report',
+                    'Add Report',
+                    url_kwargs={'slug': self.dashboard.id},
+                    css_classes='btn-secondary',
+                ),
+            ]
 
         if report_menu:
             self.add_menu('dashboard_buttons', 'button_group').add_items(
@@ -73,7 +92,11 @@ class ViewDashboard(MainMenu, ViewDashboardBase):
         return True
 
     def report_no_permission(self, dashboard_report, reports):
-        reports.append({'render': 'No permission to view',
-                        'name': dashboard_report.report.name,
-                        'id': dashboard_report.id,
-                        'class': ''})
+        reports.append(
+            {
+                'render': 'No permission to view',
+                'name': dashboard_report.report.name,
+                'id': dashboard_report.id,
+                'class': '',
+            }
+        )

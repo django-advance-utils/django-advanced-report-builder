@@ -1,13 +1,20 @@
 from django.db import models
 from django_datatables.columns import CurrencyColumn, CurrencyPenceColumn, ColumnLink
 
-from advanced_report_builder.columns import ColourColumn, ReverseForeignKeyStrColumn, \
-    ReverseForeignKeyBoolColumn, ReverseForeignKeyChoiceColumn, ReverseForeignKeyDateColumn
+from advanced_report_builder.columns import (
+    ColourColumn,
+    ReverseForeignKeyStrColumn,
+    ReverseForeignKeyBoolColumn,
+    ReverseForeignKeyChoiceColumn,
+    ReverseForeignKeyDateColumn,
+)
 
-NUMBER_FIELDS = (models.IntegerField,
-                 models.PositiveSmallIntegerField,
-                 models.PositiveIntegerField,
-                 models.FloatField)
+NUMBER_FIELDS = (
+    models.IntegerField,
+    models.PositiveSmallIntegerField,
+    models.PositiveIntegerField,
+    models.FloatField,
+)
 DATE_FIELDS = (models.DateTimeField, models.DateField)
 BOOLEAN_FIELD = models.BooleanField
 CURRENCY_COLUMNS = (CurrencyColumn, CurrencyPenceColumn)

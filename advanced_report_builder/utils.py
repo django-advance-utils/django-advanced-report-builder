@@ -44,13 +44,33 @@ def make_slug_str(slug, overrides=None):
 
 
 def get_custom_report_builder():
-    return import_string(getattr(settings,
-                                 'REPORT_BUILDER_CUSTOMISATION',
-                                 'report_builder.customise.CustomiseReportBuilder'))
+    return import_string(
+        getattr(
+            settings,
+            'REPORT_BUILDER_CUSTOMISATION',
+            'report_builder.customise.CustomiseReportBuilder',
+        )
+    )
 
 
-def crispy_modal_link_args(modal_name, text, *args, div=False, div_classes='', button_classes='', font_awesome=None):
-    link = HTML(show_modal(modal_name, *args, button=text, button_classes=button_classes, font_awesome=font_awesome))
+def crispy_modal_link_args(
+    modal_name,
+    text,
+    *args,
+    div=False,
+    div_classes='',
+    button_classes='',
+    font_awesome=None,
+):
+    link = HTML(
+        show_modal(
+            modal_name,
+            *args,
+            button=text,
+            button_classes=button_classes,
+            font_awesome=font_awesome,
+        )
+    )
     if div:
         link = Div(link, css_class=div_classes)
     return link
@@ -79,5 +99,10 @@ def get_report_builder_class(model, report_type=None, class_name=None):
 
 
 def get_query_js(button_name, field_id):
-    return ('django_modal.process_commands_lock([{"function": "post_modal", "button": {"button": "' +
-            button_name + '", "' + field_id + '": $(this).closest(\'tr\').attr(\'id\')}}])')
+    return (
+        'django_modal.process_commands_lock([{"function": "post_modal", "button": {"button": "'
+        + button_name
+        + '", "'
+        + field_id
+        + "\": $(this).closest('tr').attr('id')}}])"
+    )

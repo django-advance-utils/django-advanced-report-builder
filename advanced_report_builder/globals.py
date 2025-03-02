@@ -1,5 +1,11 @@
 from django.db.models import Sum, Max, Min, Count, Avg
-from django.db.models.functions import TruncMonth, TruncQuarter, TruncYear, TruncWeek, TruncDay
+from django.db.models.functions import (
+    TruncMonth,
+    TruncQuarter,
+    TruncYear,
+    TruncWeek,
+    TruncDay,
+)
 
 
 REVERSE_FOREIGN_KEY_DELIMITER_COMMA = 1
@@ -8,17 +14,21 @@ REVERSE_FOREIGN_KEY_DELIMITER_PIPE = 3
 REVERSE_FOREIGN_KEY_DELIMITER_DASH = 4
 REVERSE_FOREIGN_KEY_DELIMITER_SPACE = 5
 
-REVERSE_FOREIGN_KEY_DELIMITER_CHOICES = [(REVERSE_FOREIGN_KEY_DELIMITER_COMMA, ', '),
-                                         (REVERSE_FOREIGN_KEY_DELIMITER_SEMICOLON, ';'),
-                                         (REVERSE_FOREIGN_KEY_DELIMITER_PIPE, ' | '),
-                                         (REVERSE_FOREIGN_KEY_DELIMITER_DASH, ' - '),
-                                         (REVERSE_FOREIGN_KEY_DELIMITER_SPACE, 'Space')]
+REVERSE_FOREIGN_KEY_DELIMITER_CHOICES = [
+    (REVERSE_FOREIGN_KEY_DELIMITER_COMMA, ', '),
+    (REVERSE_FOREIGN_KEY_DELIMITER_SEMICOLON, ';'),
+    (REVERSE_FOREIGN_KEY_DELIMITER_PIPE, ' | '),
+    (REVERSE_FOREIGN_KEY_DELIMITER_DASH, ' - '),
+    (REVERSE_FOREIGN_KEY_DELIMITER_SPACE, 'Space'),
+]
 
-REVERSE_FOREIGN_KEY_DELIMITER_VALUES = {REVERSE_FOREIGN_KEY_DELIMITER_COMMA: ', ',
-                                        REVERSE_FOREIGN_KEY_DELIMITER_SEMICOLON: ';',
-                                        REVERSE_FOREIGN_KEY_DELIMITER_PIPE: ' | ',
-                                        REVERSE_FOREIGN_KEY_DELIMITER_DASH: ' - ',
-                                        REVERSE_FOREIGN_KEY_DELIMITER_SPACE: ' '}
+REVERSE_FOREIGN_KEY_DELIMITER_VALUES = {
+    REVERSE_FOREIGN_KEY_DELIMITER_COMMA: ', ',
+    REVERSE_FOREIGN_KEY_DELIMITER_SEMICOLON: ';',
+    REVERSE_FOREIGN_KEY_DELIMITER_PIPE: ' | ',
+    REVERSE_FOREIGN_KEY_DELIMITER_DASH: ' - ',
+    REVERSE_FOREIGN_KEY_DELIMITER_SPACE: ' ',
+}
 
 ANNOTATION_VALUE_YEAR = 1
 ANNOTATION_VALUE_QUARTER = 2
@@ -26,45 +36,57 @@ ANNOTATION_VALUE_MONTH = 3
 ANNOTATION_VALUE_WEEK = 4
 ANNOTATION_VALUE_DAY = 5
 
-ANNOTATION_VALUE_CHOICES = [(ANNOTATION_VALUE_YEAR, 'Year'),
-                            (ANNOTATION_VALUE_QUARTER, 'Quarter'),
-                            (ANNOTATION_VALUE_MONTH, 'Month'),
-                            (ANNOTATION_VALUE_WEEK, 'Week'),
-                            (ANNOTATION_VALUE_DAY, 'Day')]
+ANNOTATION_VALUE_CHOICES = [
+    (ANNOTATION_VALUE_YEAR, 'Year'),
+    (ANNOTATION_VALUE_QUARTER, 'Quarter'),
+    (ANNOTATION_VALUE_MONTH, 'Month'),
+    (ANNOTATION_VALUE_WEEK, 'Week'),
+    (ANNOTATION_VALUE_DAY, 'Day'),
+]
 
-ANNOTATION_VALUE_FUNCTIONS = {ANNOTATION_VALUE_YEAR: TruncYear,
-                              ANNOTATION_VALUE_QUARTER: TruncQuarter,
-                              ANNOTATION_VALUE_MONTH: TruncMonth,
-                              ANNOTATION_VALUE_WEEK: TruncWeek,
-                              ANNOTATION_VALUE_DAY: TruncDay}
+ANNOTATION_VALUE_FUNCTIONS = {
+    ANNOTATION_VALUE_YEAR: TruncYear,
+    ANNOTATION_VALUE_QUARTER: TruncQuarter,
+    ANNOTATION_VALUE_MONTH: TruncMonth,
+    ANNOTATION_VALUE_WEEK: TruncWeek,
+    ANNOTATION_VALUE_DAY: TruncDay,
+}
 
 REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_XOR = 1
 REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_AND = 2
 REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_ARRAY = 3
 
-REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_CHOICES = [(REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_XOR, 'XOR'),
-                                                  (REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_AND, 'And'),
-                                                  (REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_ARRAY, 'Array')]
+REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_CHOICES = [
+    (REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_XOR, 'XOR'),
+    (REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_AND, 'And'),
+    (REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_ARRAY, 'Array'),
+]
 
 REVERSE_FOREIGN_KEY_ANNOTATION_DATE_ARRAY = 1
 REVERSE_FOREIGN_KEY_ANNOTATION_DATE_MIN = 2
 REVERSE_FOREIGN_KEY_ANNOTATION_DATE_MAX = 3
 
-REVERSE_FOREIGN_KEY_ANNOTATION_DATE_CHOICES = [(REVERSE_FOREIGN_KEY_ANNOTATION_DATE_ARRAY, 'Array'),
-                                               (REVERSE_FOREIGN_KEY_ANNOTATION_DATE_MIN, 'Min'),
-                                               (REVERSE_FOREIGN_KEY_ANNOTATION_DATE_MAX, 'Max')]
+REVERSE_FOREIGN_KEY_ANNOTATION_DATE_CHOICES = [
+    (REVERSE_FOREIGN_KEY_ANNOTATION_DATE_ARRAY, 'Array'),
+    (REVERSE_FOREIGN_KEY_ANNOTATION_DATE_MIN, 'Min'),
+    (REVERSE_FOREIGN_KEY_ANNOTATION_DATE_MAX, 'Max'),
+]
 
-ANNOTATION_CHART_SCALE = {ANNOTATION_VALUE_YEAR: 'year',
-                          ANNOTATION_VALUE_QUARTER: 'quarter',
-                          ANNOTATION_VALUE_MONTH: 'month',
-                          ANNOTATION_VALUE_WEEK: 'week',
-                          ANNOTATION_VALUE_DAY: 'day'}
+ANNOTATION_CHART_SCALE = {
+    ANNOTATION_VALUE_YEAR: 'year',
+    ANNOTATION_VALUE_QUARTER: 'quarter',
+    ANNOTATION_VALUE_MONTH: 'month',
+    ANNOTATION_VALUE_WEEK: 'week',
+    ANNOTATION_VALUE_DAY: 'day',
+}
 
-GENERATE_SERIES_INTERVALS = {ANNOTATION_VALUE_YEAR: '1 year',
-                             ANNOTATION_VALUE_QUARTER: '3 month',
-                             ANNOTATION_VALUE_MONTH: '1 month',
-                             ANNOTATION_VALUE_WEEK: '1 week',
-                             ANNOTATION_VALUE_DAY: '1 day'}
+GENERATE_SERIES_INTERVALS = {
+    ANNOTATION_VALUE_YEAR: '1 year',
+    ANNOTATION_VALUE_QUARTER: '3 month',
+    ANNOTATION_VALUE_MONTH: '1 month',
+    ANNOTATION_VALUE_WEEK: '1 week',
+    ANNOTATION_VALUE_DAY: '1 day',
+}
 
 ANNOTATION_CHOICE_SUM = 1
 ANNOTATION_CHOICE_MAXIMUM = 2
@@ -72,29 +94,37 @@ ANNOTATION_CHOICE_MINIMUM = 3
 ANNOTATION_CHOICE_COUNT = 4
 ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT = 5
 
-ANNOTATIONS_CHOICES = [(ANNOTATION_CHOICE_SUM, 'Sum'),
-                       (ANNOTATION_CHOICE_MAXIMUM, 'Maximum'),
-                       (ANNOTATION_CHOICE_MINIMUM, 'Minimum'),
-                       (ANNOTATION_CHOICE_COUNT, 'Count'),
-                       (ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT, 'Average Sum from Count')]
+ANNOTATIONS_CHOICES = [
+    (ANNOTATION_CHOICE_SUM, 'Sum'),
+    (ANNOTATION_CHOICE_MAXIMUM, 'Maximum'),
+    (ANNOTATION_CHOICE_MINIMUM, 'Minimum'),
+    (ANNOTATION_CHOICE_COUNT, 'Count'),
+    (ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT, 'Average Sum from Count'),
+]
 
-ANNOTATION_FUNCTIONS = {ANNOTATION_CHOICE_SUM: Sum,
-                        ANNOTATION_CHOICE_MAXIMUM: Max,
-                        ANNOTATION_CHOICE_MINIMUM: Min,
-                        ANNOTATION_CHOICE_COUNT: Count,
-                        ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT: Avg}
+ANNOTATION_FUNCTIONS = {
+    ANNOTATION_CHOICE_SUM: Sum,
+    ANNOTATION_CHOICE_MAXIMUM: Max,
+    ANNOTATION_CHOICE_MINIMUM: Min,
+    ANNOTATION_CHOICE_COUNT: Count,
+    ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT: Avg,
+}
 
 ALIGNMENT_CHOICE_LEFT = 0
 ALIGNMENT_CHOICE_CENTRE = 1
 ALIGNMENT_CHOICE_RIGHT = 2
 
-ALIGNMENT_CHOICES = [(ALIGNMENT_CHOICE_LEFT, 'Left'),
-                     (ALIGNMENT_CHOICE_CENTRE, 'Centre'),
-                     (ALIGNMENT_CHOICE_RIGHT, 'Right')]
+ALIGNMENT_CHOICES = [
+    (ALIGNMENT_CHOICE_LEFT, 'Left'),
+    (ALIGNMENT_CHOICE_CENTRE, 'Centre'),
+    (ALIGNMENT_CHOICE_RIGHT, 'Right'),
+]
 
-ALIGNMENT_CLASS = {ALIGNMENT_CHOICE_LEFT: '',
-                   ALIGNMENT_CHOICE_CENTRE: 'dt-center',
-                   ALIGNMENT_CHOICE_RIGHT: 'dt-right'}
+ALIGNMENT_CLASS = {
+    ALIGNMENT_CHOICE_LEFT: '',
+    ALIGNMENT_CHOICE_CENTRE: 'dt-center',
+    ALIGNMENT_CHOICE_RIGHT: 'dt-right',
+}
 
 DATE_FORMAT_TYPE_DD_MM_YY_SLASH = 1
 DATE_FORMAT_TYPE_DD_MM_YYYY_SLASH = 2
@@ -125,35 +155,35 @@ DATE_FORMAT_TYPE_WW_YY_DASH = 26
 DATE_FORMAT_TYPE_YYYY_MM = 27
 
 
-DATE_FORMAT_TYPES_DJANGO_FORMAT = {DATE_FORMAT_TYPE_DD_MM_YY_SLASH: '%d/%m/%y',
-                                   DATE_FORMAT_TYPE_DD_MM_YYYY_SLASH: '%d/%m/%Y',
-                                   DATE_FORMAT_TYPE_MM_DD_YY_SLASH: '%m/%d/%y',
-                                   DATE_FORMAT_TYPE_MM_DD_YYYY_SLASH: '%m/%d/%Y',
-                                   DATE_FORMAT_TYPE_DD_MM_YY_DASH: '%d-%m-%y',
-                                   DATE_FORMAT_TYPE_DD_MM_YYYY_DASH: '%d-%m-%Y',
-                                   DATE_FORMAT_TYPE_MM_DD_YY_DASH: '%m-%d-%y',
-                                   DATE_FORMAT_TYPE_MM_DD_YYYY_DASH: '%m-%d-%Y',
-                                   DATE_FORMAT_TYPE_WORDS_MM_DD_YYYY: '%B %d %Y',
-                                   DATE_FORMAT_TYPE_WORDS_DD_MM_YYYY: '%d %B %Y',
-                                   DATE_FORMAT_TYPE_SHORT_WORDS_MM_DD_YYYY: '%b %d %Y',
-                                   DATE_FORMAT_TYPE_SHORT_WORDS_DD_MM_YYYY: '%d %b %Y',
-                                   DATE_FORMAT_TYPE_YYYY: '%Y',
-                                   DATE_FORMAT_TYPE_YY: '%y',
-                                   DATE_FORMAT_TYPE_MM_YY: '%m %y',
-                                   DATE_FORMAT_TYPE_YYYY_MM: '%Y %m',
-                                   DATE_FORMAT_TYPE_MM_YYYY: '%m %Y',
-                                   DATE_FORMAT_TYPE_WORDS_MM_YY: '%B %y',
-                                   DATE_FORMAT_TYPE_WORDS_MM_YYYY: '%B %Y',
-                                   DATE_FORMAT_TYPE_SHORT_WORDS_MM_YY: '%b %y',
-                                   DATE_FORMAT_TYPE_SHORT_WORDS_MM_YYYY: '%b %Y',
-                                   DATE_FORMAT_TYPE_MM: '%m',
-                                   DATE_FORMAT_TYPE_WORDS_MM: '%B',
-                                   DATE_FORMAT_TYPE_SHORT_WORDS_MM: '%b',
-                                   DATE_FORMAT_TYPE_WW: '%W',
-                                   DATE_FORMAT_TYPE_WW_YYYY_DASH: '%W-%Y',
-                                   DATE_FORMAT_TYPE_WW_YY_DASH: '%W-%y',
-
-                                   }
+DATE_FORMAT_TYPES_DJANGO_FORMAT = {
+    DATE_FORMAT_TYPE_DD_MM_YY_SLASH: '%d/%m/%y',
+    DATE_FORMAT_TYPE_DD_MM_YYYY_SLASH: '%d/%m/%Y',
+    DATE_FORMAT_TYPE_MM_DD_YY_SLASH: '%m/%d/%y',
+    DATE_FORMAT_TYPE_MM_DD_YYYY_SLASH: '%m/%d/%Y',
+    DATE_FORMAT_TYPE_DD_MM_YY_DASH: '%d-%m-%y',
+    DATE_FORMAT_TYPE_DD_MM_YYYY_DASH: '%d-%m-%Y',
+    DATE_FORMAT_TYPE_MM_DD_YY_DASH: '%m-%d-%y',
+    DATE_FORMAT_TYPE_MM_DD_YYYY_DASH: '%m-%d-%Y',
+    DATE_FORMAT_TYPE_WORDS_MM_DD_YYYY: '%B %d %Y',
+    DATE_FORMAT_TYPE_WORDS_DD_MM_YYYY: '%d %B %Y',
+    DATE_FORMAT_TYPE_SHORT_WORDS_MM_DD_YYYY: '%b %d %Y',
+    DATE_FORMAT_TYPE_SHORT_WORDS_DD_MM_YYYY: '%d %b %Y',
+    DATE_FORMAT_TYPE_YYYY: '%Y',
+    DATE_FORMAT_TYPE_YY: '%y',
+    DATE_FORMAT_TYPE_MM_YY: '%m %y',
+    DATE_FORMAT_TYPE_YYYY_MM: '%Y %m',
+    DATE_FORMAT_TYPE_MM_YYYY: '%m %Y',
+    DATE_FORMAT_TYPE_WORDS_MM_YY: '%B %y',
+    DATE_FORMAT_TYPE_WORDS_MM_YYYY: '%B %Y',
+    DATE_FORMAT_TYPE_SHORT_WORDS_MM_YY: '%b %y',
+    DATE_FORMAT_TYPE_SHORT_WORDS_MM_YYYY: '%b %Y',
+    DATE_FORMAT_TYPE_MM: '%m',
+    DATE_FORMAT_TYPE_WORDS_MM: '%B',
+    DATE_FORMAT_TYPE_SHORT_WORDS_MM: '%b',
+    DATE_FORMAT_TYPE_WW: '%W',
+    DATE_FORMAT_TYPE_WW_YYYY_DASH: '%W-%Y',
+    DATE_FORMAT_TYPE_WW_YY_DASH: '%W-%y',
+}
 
 DATE_FORMAT_TYPES = [
     (DATE_FORMAT_TYPE_DD_MM_YY_SLASH, 'dd/mm/yy'),
@@ -199,14 +229,17 @@ DISPLAY_OPTION_CHOICES = [
     (DISPLAY_OPTION_4_PER_ROW, '4 Reports per Row'),
 ]
 
-DISPLAY_OPTION_CLASSES = {DISPLAY_OPTION_1_PER_ROW: ' col-12',
-                          DISPLAY_OPTION_2_PER_ROW: ' col-12 col-md-12 col-lg-6',
-                          DISPLAY_OPTION_3_PER_ROW: ' col-12 col-md-12 col-lg-4',
-                          DISPLAY_OPTION_4_PER_ROW: ' col-12 col-md-12 col-lg-3',
-                          }
+DISPLAY_OPTION_CLASSES = {
+    DISPLAY_OPTION_1_PER_ROW: ' col-12',
+    DISPLAY_OPTION_2_PER_ROW: ' col-12 col-md-12 col-lg-6',
+    DISPLAY_OPTION_3_PER_ROW: ' col-12 col-md-12 col-lg-4',
+    DISPLAY_OPTION_4_PER_ROW: ' col-12 col-md-12 col-lg-3',
+}
 
-DEFAULT_DATE_FORMAT = {ANNOTATION_VALUE_YEAR: DATE_FORMAT_TYPE_YYYY,
-                       ANNOTATION_VALUE_QUARTER: DATE_FORMAT_TYPE_WORDS_MM_YY,
-                       ANNOTATION_VALUE_MONTH: DATE_FORMAT_TYPE_WORDS_MM_YY,
-                       ANNOTATION_VALUE_WEEK: DATE_FORMAT_TYPE_WW_YY_DASH,
-                       ANNOTATION_VALUE_DAY: DATE_FORMAT_TYPE_DD_MM_YY_SLASH}
+DEFAULT_DATE_FORMAT = {
+    ANNOTATION_VALUE_YEAR: DATE_FORMAT_TYPE_YYYY,
+    ANNOTATION_VALUE_QUARTER: DATE_FORMAT_TYPE_WORDS_MM_YY,
+    ANNOTATION_VALUE_MONTH: DATE_FORMAT_TYPE_WORDS_MM_YY,
+    ANNOTATION_VALUE_WEEK: DATE_FORMAT_TYPE_WW_YY_DASH,
+    ANNOTATION_VALUE_DAY: DATE_FORMAT_TYPE_DD_MM_YY_SLASH,
+}

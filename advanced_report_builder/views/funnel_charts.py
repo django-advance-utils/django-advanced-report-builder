@@ -14,9 +14,17 @@ from django_modals.widgets.select2 import Select2Multiple
 
 from advanced_report_builder.models import FunnelChartReport
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_report_builder_class
+from advanced_report_builder.utils import (
+    split_attr,
+    encode_attribute,
+    decode_attribute,
+    get_report_builder_class,
+)
 from advanced_report_builder.views.charts_base import ChartBaseView, ChartBaseFieldForm
-from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin, QueryBuilderModalBase
+from advanced_report_builder.views.modals_base import (
+    QueryBuilderModalBaseMixin,
+    QueryBuilderModalBase,
+)
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 
 
@@ -47,10 +55,15 @@ class FunnelChartView(ChartBaseView):
         options.update({'colour': funnel_colour})
 
     def edit_report_menu(self, request, chart_report_id, slug_str):
-        return [MenuItem(f'advanced_report_builder:funnel_chart_modal,pk-{chart_report_id}{slug_str}',
-                         menu_display='Edit',
-                         font_awesome='fas fa-pencil-alt', css_classes=['btn-primary']),
-                *self.duplicate_menu(request=self.request, report_id=chart_report_id)]
+        return [
+            MenuItem(
+                f'advanced_report_builder:funnel_chart_modal,pk-{chart_report_id}{slug_str}',
+                menu_display='Edit',
+                font_awesome='fas fa-pencil-alt',
+                css_classes=['btn-primary'],
+            ),
+            *self.duplicate_menu(request=self.request, report_id=chart_report_id),
+        ]
 
     def get_date_field(self, index, fields, base_model, table):
         return None
@@ -64,36 +77,40 @@ class FunnelChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
     widgets = {'report_tags': Select2Multiple}
     show_order_by = False
 
-    form_fields = ['name',
-                   'notes',
-                   'report_type',
-                   'report_tags',
-                   'axis_value_type',
-                   'fields',
-                   ]
+    form_fields = [
+        'name',
+        'notes',
+        'report_type',
+        'report_tags',
+        'axis_value_type',
+        'fields',
+    ]
 
     def form_setup(self, form, *_args, **_kwargs):
-        url = reverse('advanced_report_builder:funnel_chart_field_modal',
-                      kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
+        url = reverse(
+            'advanced_report_builder:funnel_chart_field_modal',
+            kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'},
+        )
 
-        fields = ['name',
-                  'notes',
-                  'report_type',
-                  'report_tags',
-                  'axis_value_type',
-                  FieldEx('fields',
-                          template='advanced_report_builder/select_column.html',
-                          extra_context={'select_column_url': url,
-                                         'command_prefix': ''}),
-                  FieldEx('query_data',
-                          template='advanced_report_builder/query_builder.html')]
+        fields = [
+            'name',
+            'notes',
+            'report_type',
+            'report_tags',
+            'axis_value_type',
+            FieldEx(
+                'fields',
+                template='advanced_report_builder/select_column.html',
+                extra_context={'select_column_url': url, 'command_prefix': ''},
+            ),
+            FieldEx('query_data', template='advanced_report_builder/query_builder.html'),
+        ]
         if self.object.id:
             self.add_extra_queries(form=form, fields=fields)
         return fields
 
 
 class FunnelChartFieldForm(ChartBaseFieldForm):
-
     def setup_modal(self, *args, **kwargs):
         data = json.loads(base64.b64decode(self.slug['data']))
         report_type, base_model = self.get_report_type_details()
@@ -116,20 +133,22 @@ class FunnelChartFieldForm(ChartBaseFieldForm):
         self.fields['multiple_columns'] = BooleanField(required=False, widget=RBToggle())
         self.fields['append_column_title'] = BooleanField(required=False, widget=RBToggle())
 
-        report_builder_class = get_report_builder_class(model=base_model,
-                                                        report_type=report_type)
-        self.setup_colour_field(form_fields=self.fields,
-                                base_model=base_model,
-                                report_builder_class=report_builder_class,
-                                name='positive_colour_field',
-                                data_attr=data_attr,
-                                label='Funnel colour field')
+        report_builder_class = get_report_builder_class(model=base_model, report_type=report_type)
+        self.setup_colour_field(
+            form_fields=self.fields,
+            base_model=base_model,
+            report_builder_class=report_builder_class,
+            name='positive_colour_field',
+            data_attr=data_attr,
+            label='Funnel colour field',
+        )
 
         multiple_column_field = []
-        self._get_query_builder_foreign_key_fields(base_model=base_model,
-                                                   report_builder_class=report_builder_class,
-                                                   fields=multiple_column_field)
-
+        self._get_query_builder_foreign_key_fields(
+            base_model=base_model,
+            report_builder_class=report_builder_class,
+            fields=multiple_column_field,
+        )
 
         self.fields['multiple_column_field'] = ChoiceField(choices=multiple_column_field, required=False)
         if data_attr.get('multiple_columns') == '1':
@@ -154,7 +173,7 @@ class FunnelChartFieldForm(ChartBaseFieldForm):
                 attributes.append(f'filter-{b64_filter}')
             if self.cleaned_data['multiple_columns']:
                 attributes.append('multiple_columns-1')
-                if self.cleaned_data["positive_colour_field"]:
+                if self.cleaned_data['positive_colour_field']:
                     attributes.append(f'positive_colour_field-{self.cleaned_data["positive_colour_field"]}')
                 attributes.append(f'multiple_column_field-{self.cleaned_data["multiple_column_field"]}')
                 if self.cleaned_data['append_column_title']:
@@ -181,45 +200,85 @@ class FunnelChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
         selector = self.slug['selector']
 
         _attr = form.get_additional_attributes()
-        self.add_command({'function': 'set_attr',
-                          'selector': f'#{selector}',
-                          'attr': 'data-attr',
-                          'val': _attr})
+        self.add_command(
+            {
+                'function': 'set_attr',
+                'selector': f'#{selector}',
+                'attr': 'data-attr',
+                'val': _attr,
+            }
+        )
 
-        self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
+        self.add_command(
+            {
+                'function': 'html',
+                'selector': f'#{selector} span',
+                'html': form.cleaned_data['title'],
+            }
+        )
         self.add_command({'function': 'update_selection'})
         return self.command_response('close')
 
     # noinspection PyMethodMayBeStatic
     def form_setup(self, form, *_args, **_kwargs):
-        form.add_trigger('has_filter', 'onchange', [
-            {'selector': '#filter_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'}])
+        form.add_trigger(
+            'has_filter',
+            'onchange',
+            [
+                {
+                    'selector': '#filter_fields_div',
+                    'values': {'checked': 'show'},
+                    'default': 'hide',
+                }
+            ],
+        )
 
-        form.add_trigger('multiple_columns', 'onchange', [
-            {'selector': '#multiple_columns_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'},
-        ])
+        form.add_trigger(
+            'multiple_columns',
+            'onchange',
+            [
+                {
+                    'selector': '#multiple_columns_fields_div',
+                    'values': {'checked': 'show'},
+                    'default': 'hide',
+                },
+            ],
+        )
 
-        return ['title',
-                'funnel_colour',
-                Div(FieldEx('has_filter',
-                            template='django_modals/fields/label_checkbox.html',
-                            field_class='col-6 input-group-sm'),
+        return [
+            'title',
+            'funnel_colour',
+            Div(
+                FieldEx(
+                    'has_filter',
+                    template='django_modals/fields/label_checkbox.html',
+                    field_class='col-6 input-group-sm',
+                ),
+                Div(
+                    FieldEx(
+                        'filter',
+                        template='advanced_report_builder/datatables/fields/single_query_builder.html',
+                    ),
+                    FieldEx(
+                        'multiple_columns',
+                        template='django_modals/fields/label_checkbox.html',
+                        field_class='col-6 input-group-sm',
+                    ),
                     Div(
-                        FieldEx('filter',
-                                template='advanced_report_builder/datatables/fields/single_query_builder.html'),
-                        FieldEx('multiple_columns',
-                                template='django_modals/fields/label_checkbox.html',
-                                field_class='col-6 input-group-sm'),
-                        Div(
-                            FieldEx('append_column_title',
-                                    template='django_modals/fields/label_checkbox.html',
-                                    field_class='col-6 input-group-sm'),
-                            FieldEx('multiple_column_field'),
-                            FieldEx('positive_colour_field'),
-                            css_id='multiple_columns_fields_div'),
-                        css_id='filter_fields_div'),
-                    css_id='annotations_fields_div')
-                ]
+                        FieldEx(
+                            'append_column_title',
+                            template='django_modals/fields/label_checkbox.html',
+                            field_class='col-6 input-group-sm',
+                        ),
+                        FieldEx('multiple_column_field'),
+                        FieldEx('positive_colour_field'),
+                        css_id='multiple_columns_fields_div',
+                    ),
+                    css_id='filter_fields_div',
+                ),
+                css_id='annotations_fields_div',
+            ),
+        ]
 
     def ajax_get_query_builder_fields(self, **kwargs):
         field_auto_id = kwargs['field_auto_id']

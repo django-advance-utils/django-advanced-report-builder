@@ -19,16 +19,24 @@ from django_modals.widgets.widgets import Toggle
 from advanced_report_builder.column_types import NUMBER_FIELDS
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.exceptions import ReportError
-from advanced_report_builder.globals import ANNOTATION_CHOICE_SUM, \
-    ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT
+from advanced_report_builder.globals import (
+    ANNOTATION_CHOICE_SUM,
+    ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT,
+)
 from advanced_report_builder.models import SingleValueReport, ReportType, ReportQuery
 from advanced_report_builder.utils import get_report_builder_class, get_query_js
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartBaseView
-from advanced_report_builder.views.datatables.modal import TableFieldModal, TableFieldForm
+from advanced_report_builder.views.datatables.modal import (
+    TableFieldModal,
+    TableFieldForm,
+)
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
 from advanced_report_builder.views.helpers import QueryBuilderModelForm
-from advanced_report_builder.views.modals_base import QueryBuilderModalBase, QueryBuilderModalBaseMixin
+from advanced_report_builder.views.modals_base import (
+    QueryBuilderModalBase,
+    QueryBuilderModalBaseMixin,
+)
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 
 
@@ -45,43 +53,51 @@ class SingleValueView(ChartBaseView):
     def _process_aggregations(self, fields, aggregations_type=ANNOTATION_CHOICE_SUM, divider=None):
         field = self.chart_report.field
         base_model = self.chart_report.get_base_model()
-        report_builder_class = get_report_builder_class(model=base_model,
-                                                        report_type=self.chart_report.report_type)
+        report_builder_class = get_report_builder_class(model=base_model, report_type=self.chart_report.report_type)
 
-        django_field, col_type_override, _, _ = self.get_field_details(base_model=base_model,
-                                                                       field=field,
-                                                                       report_builder_class=report_builder_class)
+        django_field, col_type_override, _, _ = self.get_field_details(
+            base_model=base_model,
+            field=field,
+            report_builder_class=report_builder_class,
+        )
 
-        if (isinstance(django_field, NUMBER_FIELDS) or
-                col_type_override is not None and col_type_override.annotations):
-
-            self.get_number_field(annotations_type=aggregations_type,
-                                  index=0,
-                                  data_attr={},
-                                  table_field={'field': field, 'title': field},
-                                  fields=fields,
-                                  col_type_override=col_type_override,
-                                  decimal_places=self.chart_report.decimal_places,
-                                  convert_currency_fields=True,
-                                  divider=divider)
+        if isinstance(django_field, NUMBER_FIELDS) or col_type_override is not None and col_type_override.annotations:
+            self.get_number_field(
+                annotations_type=aggregations_type,
+                index=0,
+                data_attr={},
+                table_field={'field': field, 'title': field},
+                fields=fields,
+                col_type_override=col_type_override,
+                decimal_places=self.chart_report.decimal_places,
+                convert_currency_fields=True,
+                divider=divider,
+            )
         else:
             raise ReportError('not a number field')
 
     def _get_count(self, fields):
-
-        number_function_kwargs = {'aggregations': {'count': Count(1)},
-                                  'field': 'count',
-                                  'column_name': 'count',
-                                  'options': {'calculated': True},
-                                  'model_path': ''}
+        number_function_kwargs = {
+            'aggregations': {'count': Count(1)},
+            'field': 'count',
+            'column_name': 'count',
+            'options': {'calculated': True},
+            'model_path': '',
+        }
 
         field = self.number_field(**number_function_kwargs)
         fields.append(field)
 
-    def get_percentage_field(self, fields,
-                             numerator_field_name, numerator_col_type_override,
-                             denominator_field_name, denominator_col_type_override,
-                             numerator_filter, decimal_places=0):
+    def get_percentage_field(
+        self,
+        fields,
+        numerator_field_name,
+        numerator_col_type_override,
+        denominator_field_name,
+        denominator_col_type_override,
+        numerator_filter,
+        decimal_places=0,
+    ):
         if numerator_col_type_override:
             actual_numerator_field_name = numerator_col_type_override.field
         else:
@@ -99,7 +115,6 @@ class SingleValueView(ChartBaseView):
         new_field_name = f'{actual_numerator_field_name}_{actual_denominator_field_name}'
 
         if numerator_col_type_override is not None and numerator_col_type_override.annotations:
-
             if not isinstance(numerator_col_type_override.annotations, dict):
                 raise ReportError('Unknown annotation type')
 
@@ -111,7 +126,10 @@ class SingleValueView(ChartBaseView):
                 numerator = Coalesce(annotations + 0.0, 0.0)
         else:
             if numerator_filter:
-                numerator = Coalesce((Sum(actual_numerator_field_name, filter=numerator_filter)+0.0), 0.0)
+                numerator = Coalesce(
+                    (Sum(actual_numerator_field_name, filter=numerator_filter) + 0.0),
+                    0.0,
+                )
             else:
                 numerator = Coalesce((Sum(actual_numerator_field_name) + 0.0), 0.0)
 
@@ -126,13 +144,18 @@ class SingleValueView(ChartBaseView):
             denominator = Coalesce(Sum(actual_denominator_field_name) + 0.0, 0.0)
 
         number_function_kwargs['aggregations'] = {
-            new_field_name: ExpressionWrapper((numerator / NullIf(denominator, 0)) * 100.0, output_field=FloatField())}
+            new_field_name: ExpressionWrapper((numerator / NullIf(denominator, 0)) * 100.0, output_field=FloatField())
+        }
         field_name = new_field_name
 
-        number_function_kwargs.update({'field': field_name,
-                                       'column_name': field_name,
-                                       'options': {'calculated': True},
-                                       'model_path': ''})
+        number_function_kwargs.update(
+            {
+                'field': field_name,
+                'column_name': field_name,
+                'options': {'calculated': True},
+                'model_path': '',
+            }
+        )
 
         field = self.number_field(**number_function_kwargs)
 
@@ -144,24 +167,27 @@ class SingleValueView(ChartBaseView):
         denominator_field = self.chart_report.field
         numerator_field = self.chart_report.numerator
         base_model = self.chart_report.get_base_model()
-        report_builder_class = get_report_builder_class(model=base_model,
-                                                        report_type=self.chart_report.report_type)
+        report_builder_class = get_report_builder_class(model=base_model, report_type=self.chart_report.report_type)
 
         deno_django_field, denominator_col_type_override, _, _ = self.get_field_details(
             base_model=base_model,
             field=denominator_field,
-            report_builder_class=report_builder_class)
-        if (not isinstance(deno_django_field, NUMBER_FIELDS) and
-                (denominator_col_type_override is not None and not denominator_col_type_override.annotations)):
+            report_builder_class=report_builder_class,
+        )
+        if not isinstance(deno_django_field, NUMBER_FIELDS) and (
+            denominator_col_type_override is not None and not denominator_col_type_override.annotations
+        ):
             raise ReportError('denominator is not a number field')
 
         num_django_field, numerator_col_type_override, _, _ = self.get_field_details(
             base_model=base_model,
             field=denominator_field,
-            report_builder_class=report_builder_class)
+            report_builder_class=report_builder_class,
+        )
 
-        if (not isinstance(num_django_field, NUMBER_FIELDS) and
-                (numerator_col_type_override is not None and not numerator_col_type_override.annotations)):
+        if not isinstance(num_django_field, NUMBER_FIELDS) and (
+            numerator_col_type_override is not None and not numerator_col_type_override.annotations
+        ):
             raise ReportError('numerator is not a number field')
 
         numerator_filter = None
@@ -169,13 +195,15 @@ class SingleValueView(ChartBaseView):
         if report_query:
             numerator_filter = self.process_filters(search_filter_data=report_query.extra_query)
 
-        self.get_percentage_field(fields=fields,
-                                  numerator_field_name=numerator_field,
-                                  numerator_col_type_override=numerator_col_type_override,
-                                  denominator_field_name=denominator_field,
-                                  denominator_col_type_override=denominator_col_type_override,
-                                  numerator_filter=numerator_filter,
-                                  decimal_places=self.chart_report.decimal_places)
+        self.get_percentage_field(
+            fields=fields,
+            numerator_field_name=numerator_field,
+            numerator_col_type_override=numerator_col_type_override,
+            denominator_field_name=denominator_field,
+            denominator_col_type_override=denominator_col_type_override,
+            numerator_filter=numerator_filter,
+            decimal_places=self.chart_report.decimal_places,
+        )
 
     def _process_percentage_from_count(self, fields):
         report_query = self.get_report_query(report=self.chart_report)
@@ -191,11 +219,13 @@ class SingleValueView(ChartBaseView):
         denominator = Coalesce(Count(1) + 0.0, 0.0)
         a = (numerator / denominator) * 100.0
 
-        number_function_kwargs = {'aggregations': {'count': a},
-                                  'field': 'count',
-                                  'column_name': 'count',
-                                  'options': {'calculated': True},
-                                  'model_path': ''}
+        number_function_kwargs = {
+            'aggregations': {'count': a},
+            'field': 'count',
+            'column_name': 'count',
+            'options': {'calculated': True},
+            'model_path': '',
+        }
         decimal_places = self.chart_report.decimal_places
         if decimal_places:
             number_function_kwargs['decimal_places'] = int(decimal_places)
@@ -214,11 +244,16 @@ class SingleValueView(ChartBaseView):
             self._get_count(fields=fields)
             self._process_aggregations(fields=fields, aggregations_type=ANNOTATION_CHOICE_SUM)
         elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE_SUM_FROM_COUNT:
-            self._process_aggregations(fields=fields, aggregations_type=ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT)
+            self._process_aggregations(
+                fields=fields,
+                aggregations_type=ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT,
+            )
         elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME:
-            divider = self.get_period_divider(annotation_value_choice=self.chart_report.average_scale,
-                                              start_date_type=self.chart_report.average_start_period,
-                                              end_date_type=self.chart_report.average_end_period)
+            divider = self.get_period_divider(
+                annotation_value_choice=self.chart_report.average_scale,
+                start_date_type=self.chart_report.average_start_period,
+                end_date_type=self.chart_report.average_end_period,
+            )
             self._process_aggregations(fields=fields, aggregations_type=ANNOTATION_CHOICE_SUM, divider=divider)
         elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_PERCENT:
             self._process_percentage(fields=fields)
@@ -253,18 +288,26 @@ class SingleValueView(ChartBaseView):
     def get_breakdown_url(self):
         if self.table.single_value.show_breakdown:
             slug = self.get_breakdown_slug()
-            return show_modal('advanced_report_builder:single_value_show_breakdown_modal',
-                              slug, href=True)
+            return show_modal(
+                'advanced_report_builder:single_value_show_breakdown_modal',
+                slug,
+                href=True,
+            )
         return None
 
     def pod_dashboard_view_menu(self):
         return []
 
     def edit_report_menu(self, request, chart_report_id, slug_str):
-        return [MenuItem(f'advanced_report_builder:single_value_modal,pk-{chart_report_id}{slug_str}',
-                         menu_display='Edit',
-                         font_awesome='fas fa-pencil-alt', css_classes=['btn-primary']),
-                *self.duplicate_menu(request=self.request, report_id=chart_report_id)]
+        return [
+            MenuItem(
+                f'advanced_report_builder:single_value_modal,pk-{chart_report_id}{slug_str}',
+                menu_display='Edit',
+                font_awesome='fas fa-pencil-alt',
+                css_classes=['btn-primary'],
+            ),
+            *self.duplicate_menu(request=self.request, report_id=chart_report_id),
+        ]
 
 
 class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
@@ -273,64 +316,110 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
     permission_delete = PERMISSION_OFF
     model = SingleValueReport
     show_order_by = False
-    widgets = {'report_tags': Select2Multiple,
-               'show_breakdown': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'})}
+    widgets = {
+        'report_tags': Select2Multiple,
+        'show_breakdown': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
+    }
 
-    form_fields = ['name',
-                   'notes',
-                   'report_type',
-                   'report_tags',
-                   ('single_value_type', {'label': 'Value type'}),
-                   ('numerator', {'label': 'Numerator field'}),
-                   'average_scale',
-                   'average_start_period',
-                   'average_end_period',
-                   'field',
-                   'prefix',
-                   'tile_colour',
-                   ('decimal_places', {'field_class': 'col-md-5 col-lg-3 input-group-sm'}),
-                   'show_breakdown',
-                   'breakdown_fields'
-                   ]
+    form_fields = [
+        'name',
+        'notes',
+        'report_type',
+        'report_tags',
+        ('single_value_type', {'label': 'Value type'}),
+        ('numerator', {'label': 'Numerator field'}),
+        'average_scale',
+        'average_start_period',
+        'average_end_period',
+        'field',
+        'prefix',
+        'tile_colour',
+        ('decimal_places', {'field_class': 'col-md-5 col-lg-3 input-group-sm'}),
+        'show_breakdown',
+        'breakdown_fields',
+    ]
 
     def form_setup(self, form, *_args, **_kwargs):
-        form.add_trigger('single_value_type', 'onchange', [
-            {'selector': '#div_id_field',
-             'values': {SingleValueReport.SINGLE_VALUE_TYPE_COUNT: 'hide',
-                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'hide'},
-             'default': 'show'},
-            {'selector': '#div_id_prefix',
-             'values': {SingleValueReport.SINGLE_VALUE_TYPE_COUNT: 'hide',
-                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'hide'},
-             'default': 'show'},
-            {'selector': '#div_id_numerator',
-             'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: 'show'},
-             'default': 'hide'},
-            {'selector': '.btn-query-edit',
-             'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: 'hide',
-                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'hide'},
-             'default': 'show'},
-            {'selector': '.btn-query-numerator-edit',
-             'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: 'show',
-                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'show'},
-             'default': 'hide'},
-            {'selector': 'label[for=id_field]',
-             'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: ('html', 'Denominator field')},
-             'default': ('html', 'Field')},
-            {'selector': '#div_id_average_scale',
-             'values': {SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME: 'show'},
-             'default': 'hide'},
-            {'selector': '#div_id_average_start_period',
-             'values': {SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME: 'show'},
-             'default': 'hide'},
-            {'selector': '#div_id_average_end_period',
-             'values': {SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME: 'show'},
-             'default': 'hide'},
-        ])
+        form.add_trigger(
+            'single_value_type',
+            'onchange',
+            [
+                {
+                    'selector': '#div_id_field',
+                    'values': {
+                        SingleValueReport.SINGLE_VALUE_TYPE_COUNT: 'hide',
+                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'hide',
+                    },
+                    'default': 'show',
+                },
+                {
+                    'selector': '#div_id_prefix',
+                    'values': {
+                        SingleValueReport.SINGLE_VALUE_TYPE_COUNT: 'hide',
+                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'hide',
+                    },
+                    'default': 'show',
+                },
+                {
+                    'selector': '#div_id_numerator',
+                    'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: 'show'},
+                    'default': 'hide',
+                },
+                {
+                    'selector': '.btn-query-edit',
+                    'values': {
+                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: 'hide',
+                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'hide',
+                    },
+                    'default': 'show',
+                },
+                {
+                    'selector': '.btn-query-numerator-edit',
+                    'values': {
+                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: 'show',
+                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'show',
+                    },
+                    'default': 'hide',
+                },
+                {
+                    'selector': 'label[for=id_field]',
+                    'values': {
+                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: (
+                            'html',
+                            'Denominator field',
+                        )
+                    },
+                    'default': ('html', 'Field'),
+                },
+                {
+                    'selector': '#div_id_average_scale',
+                    'values': {SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME: 'show'},
+                    'default': 'hide',
+                },
+                {
+                    'selector': '#div_id_average_start_period',
+                    'values': {SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME: 'show'},
+                    'default': 'hide',
+                },
+                {
+                    'selector': '#div_id_average_end_period',
+                    'values': {SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME: 'show'},
+                    'default': 'hide',
+                },
+            ],
+        )
 
-        form.add_trigger('show_breakdown', 'onchange', [
-            {'selector': '#div_id_breakdown_fields', 'values': {'checked': 'show'}, 'default': 'hide'},
-        ])
+        form.add_trigger(
+            'show_breakdown',
+            'onchange',
+            [
+                {
+                    'selector': '#div_id_breakdown_fields',
+                    'values': {'checked': 'show'},
+                    'default': 'hide',
+                },
+            ],
+        )
 
         if 'data' in _kwargs and len(_kwargs['data']) > 0:
             field = _kwargs['data'].get('field')
@@ -342,107 +431,138 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
             report_type = form.instance.report_type
             numerator = form.instance.numerator
 
-        self.setup_field(field_type='number',
-                         form=form,
-                         field_name='field',
-                         selected_field_id=field,
-                         report_type=report_type)
+        self.setup_field(
+            field_type='number',
+            form=form,
+            field_name='field',
+            selected_field_id=field,
+            report_type=report_type,
+        )
 
-        self.setup_field(field_type='number',
-                         form=form,
-                         field_name='numerator',
-                         selected_field_id=numerator,
-                         report_type=report_type)
+        self.setup_field(
+            field_type='number',
+            form=form,
+            field_name='numerator',
+            selected_field_id=numerator,
+            report_type=report_type,
+        )
 
         form.fields['notes'].widget.attrs['rows'] = 3
-        url = reverse('advanced_report_builder:single_value_field_modal',
-                      kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
+        url = reverse(
+            'advanced_report_builder:single_value_field_modal',
+            kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'},
+        )
 
         range_type_choices = VariableDate.RANGE_TYPE_CHOICES
         form.fields['average_start_period'] = ChoiceField(required=False, choices=range_type_choices)
         form.fields['average_end_period'] = ChoiceField(required=False, choices=range_type_choices)
-        fields = ['name',
-                  'notes',
-                  'report_type',
-                  'report_tags',
-                  'single_value_type',
-                  'numerator',
-                  'field',
-                  'average_scale',
-                  'average_start_period',
-                  'average_end_period',
-                  'prefix',
-                  'tile_colour',
-                  'decimal_places',
-                  'show_breakdown',
-                  FieldEx('breakdown_fields',
-                          template='advanced_report_builder/select_column.html',
-                          extra_context={'select_column_url': url,
-                                         'command_prefix': ''})]
+        fields = [
+            'name',
+            'notes',
+            'report_type',
+            'report_tags',
+            'single_value_type',
+            'numerator',
+            'field',
+            'average_scale',
+            'average_start_period',
+            'average_end_period',
+            'prefix',
+            'tile_colour',
+            'decimal_places',
+            'show_breakdown',
+            FieldEx(
+                'breakdown_fields',
+                template='advanced_report_builder/select_column.html',
+                extra_context={'select_column_url': url, 'command_prefix': ''},
+            ),
+        ]
         if self.object.id:
             self.add_extra_queries(form=form, fields=fields)
-            if self.object.single_value_type in [SingleValueReport.SINGLE_VALUE_TYPE_PERCENT,
-                                                 SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT]:
+            if self.object.single_value_type in [
+                SingleValueReport.SINGLE_VALUE_TYPE_PERCENT,
+                SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT,
+            ]:
                 self.add_page_command('set_css', selector='.btn-query-edit', prop='display', val='none')
             else:
-                self.add_page_command('set_css', selector='.btn-query-numerator-edit',
-                                      prop='display', val='none')
+                self.add_page_command(
+                    'set_css',
+                    selector='.btn-query-numerator-edit',
+                    prop='display',
+                    val='none',
+                )
         return fields
 
     def select2_field(self, **kwargs):
-        return self.get_fields_for_select2(field_type='number',
-                                           report_type=kwargs['report_type'],
-                                           search_string=kwargs.get('search'))
+        return self.get_fields_for_select2(
+            field_type='number',
+            report_type=kwargs['report_type'],
+            search_string=kwargs.get('search'),
+        )
 
     def select2_numerator(self, **kwargs):
-        return self.get_fields_for_select2(field_type='number',
-                                           report_type=kwargs['report_type'],
-                                           search_string=kwargs.get('search'))
+        return self.get_fields_for_select2(
+            field_type='number',
+            report_type=kwargs['report_type'],
+            search_string=kwargs.get('search'),
+        )
 
     # noinspection PyUnusedLocal
     def clean(self, form, cleaned_data):
         single_value_type = cleaned_data['single_value_type']
-        if (single_value_type not in [SingleValueReport.SINGLE_VALUE_TYPE_COUNT,
-                                      SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT] and
-                not cleaned_data['field']):
-            raise ValidationError("Please select a field")
+        if (
+            single_value_type
+            not in [
+                SingleValueReport.SINGLE_VALUE_TYPE_COUNT,
+                SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT,
+            ]
+            and not cleaned_data['field']
+        ):
+            raise ValidationError('Please select a field')
 
         if single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME:
             if cleaned_data['average_scale'] is None:
-                form.add_error('average_scale', "Please select a time scale")
+                form.add_error('average_scale', 'Please select a time scale')
             if cleaned_data['average_start_period'] is None:
-                form.add_error('average_start_period', "Please select a start period")
+                form.add_error('average_start_period', 'Please select a start period')
             if cleaned_data['average_end_period'] is None:
-                form.add_error('average_end_period', "Please select a end period")
+                form.add_error('average_end_period', 'Please select a end period')
 
     def ajax_get_fields(self, **kwargs):
         report_type_id = kwargs['report_type']
         report_builder_fields, base_model = self.get_report_builder_class(report_type_id=report_type_id)
         fields = []
         tables = []
-        self._get_fields(base_model=base_model,
-                         fields=fields,
-                         tables=tables,
-                         report_builder_class=report_builder_fields)
+        self._get_fields(
+            base_model=base_model,
+            fields=fields,
+            tables=tables,
+            report_builder_class=report_builder_fields,
+        )
         return self.command_response('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
 
     def query_menu(self):
         edit_numerator_query_js = get_query_js('edit_numerator_query', 'query_id')
         description_edit_menu_items = super().query_menu()
-        description_edit_menu_items.append(MenuItem(edit_numerator_query_js.replace('"', "&quot;"),
-                                                    menu_display='Edit',
-                                                    css_classes='btn btn-sm btn-outline-dark btn-query-numerator-edit',
-                                                    font_awesome='fas fa-pencil',
-                                                    link_type=MenuItem.HREF,
-                                                    hide=True))
+        description_edit_menu_items.append(
+            MenuItem(
+                edit_numerator_query_js.replace('"', '&quot;'),
+                menu_display='Edit',
+                css_classes='btn btn-sm btn-outline-dark btn-query-numerator-edit',
+                font_awesome='fas fa-pencil',
+                link_type=MenuItem.HREF,
+                hide=True,
+            )
+        )
         return description_edit_menu_items
 
     def button_edit_numerator_query(self, **_kwargs):
         query_id = _kwargs['query_id'][1:]
         report_type = self.get_report_type(**_kwargs)
-        url = reverse('advanced_report_builder:single_value_numerator_modal',
-                      kwargs={'slug': f'pk-{query_id}-'
-                                      f'report_type-{report_type}'})
+        url = reverse(
+            'advanced_report_builder:single_value_numerator_modal',
+            kwargs={'slug': f'pk-{query_id}-report_type-{report_type}'},
+        )
         return self.command_response('show_modal', modal=url)
 
 
@@ -464,16 +584,17 @@ class SingleValueShowBreakdownModal(TableUtilsMixin, Modal):
         table = self.add_table(base_model=base_model)
         table.extra_filters = self.extra_filters
         table_fields = single_value_report.breakdown_fields
-        report_builder_class = get_report_builder_class(model=base_model,
-                                                        report_type=self.table_report.report_type)
+        report_builder_class = get_report_builder_class(model=base_model, report_type=self.table_report.report_type)
         fields_used = set()
         fields_map = {}
-        self.process_query_results(report_builder_class=report_builder_class,
-                                   table=table,
-                                   base_model=base_model,
-                                   fields_used=fields_used,
-                                   fields_map=fields_map,
-                                   table_fields=table_fields)
+        self.process_query_results(
+            report_builder_class=report_builder_class,
+            table=table,
+            base_model=base_model,
+            fields_used=fields_used,
+            fields_map=fields_map,
+            table_fields=table_fields,
+        )
 
         table.ajax_data = False
         table.table_options['pageLength'] = 25
@@ -498,9 +619,7 @@ class QueryNumeratorForm(QueryBuilderModelForm):
 
     class Meta:
         model = ReportQuery
-        fields = ['name',
-                  'query',
-                  'extra_query']
+        fields = ['name', 'query', 'extra_query']
 
     def setup_modal(self, *args, **kwargs):
         self.fields['extra_query'].label = 'Numerator'
@@ -527,9 +646,11 @@ class QueryNumeratorModal(QueryBuilderModalBaseMixin, ModelFormModal):
         return self.command_response('close')
 
     def form_setup(self, form, *_args, **_kwargs):
-        fields = ['name',
-                  FieldEx('query', template='advanced_report_builder/query_builder.html'),
-                  FieldEx('extra_query', template='advanced_report_builder/query_builder.html')]
+        fields = [
+            'name',
+            FieldEx('query', template='advanced_report_builder/query_builder.html'),
+            FieldEx('extra_query', template='advanced_report_builder/query_builder.html'),
+        ]
 
         return fields
 

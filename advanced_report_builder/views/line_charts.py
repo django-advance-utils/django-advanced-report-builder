@@ -16,13 +16,30 @@ from django_modals.widgets.colour_picker import ColourPickerWidget
 from django_modals.widgets.select2 import Select2Multiple
 
 from advanced_report_builder.exceptions import ReportError
-from advanced_report_builder.globals import ANNOTATION_VALUE_YEAR, \
-    ANNOTATION_VALUE_QUARTER, ANNOTATION_VALUE_MONTH, ANNOTATION_VALUE_WEEK, ANNOTATION_VALUE_DAY
+from advanced_report_builder.globals import (
+    ANNOTATION_VALUE_YEAR,
+    ANNOTATION_VALUE_QUARTER,
+    ANNOTATION_VALUE_MONTH,
+    ANNOTATION_VALUE_WEEK,
+    ANNOTATION_VALUE_DAY,
+)
 from advanced_report_builder.models import LineChartReport, ReportType
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_report_builder_class
-from advanced_report_builder.views.charts_base import ChartBaseView, ChartJSTable, ChartBaseFieldForm
-from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin, QueryBuilderModalBase
+from advanced_report_builder.utils import (
+    split_attr,
+    encode_attribute,
+    decode_attribute,
+    get_report_builder_class,
+)
+from advanced_report_builder.views.charts_base import (
+    ChartBaseView,
+    ChartJSTable,
+    ChartBaseFieldForm,
+)
+from advanced_report_builder.views.modals_base import (
+    QueryBuilderModalBaseMixin,
+    QueryBuilderModalBase,
+)
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 
 
@@ -101,12 +118,16 @@ class LineChartView(ChartBaseView):
             line_colour = self.add_colour_offset(line_colour, multiple_index=multiple_index)
         options.update({'colour': line_colour})
 
-    def edit_report_menu(self, request,  chart_report_id, slug_str):
-        return [MenuItem(f'advanced_report_builder:line_chart_modal,pk-{chart_report_id}{slug_str}',
-                         menu_display='Edit',
-                         font_awesome='fas fa-pencil-alt', css_classes=['btn-primary']),
-                *self.duplicate_menu(request=self.request, report_id=chart_report_id)
-                ]
+    def edit_report_menu(self, request, chart_report_id, slug_str):
+        return [
+            MenuItem(
+                f'advanced_report_builder:line_chart_modal,pk-{chart_report_id}{slug_str}',
+                menu_display='Edit',
+                font_awesome='fas fa-pencil-alt',
+                css_classes=['btn-primary'],
+            ),
+            *self.duplicate_menu(request=self.request, report_id=chart_report_id),
+        ]
 
     def setup_table(self, base_model):
         axis_scale = getattr(self.chart_report, 'axis_scale')
@@ -114,9 +135,7 @@ class LineChartView(ChartBaseView):
 
         if getattr(self.chart_report, 'has_targets', False):
             targets = getattr(self.chart_report, 'targets')
-        self.table = self.chart_js_table(model=base_model,
-                                         axis_scale=axis_scale,
-                                         targets=targets)
+        self.table = self.chart_js_table(model=base_model, axis_scale=axis_scale, targets=targets)
 
 
 class LineChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
@@ -126,31 +145,42 @@ class LineChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
     model = LineChartReport
     show_order_by = False
 
-    widgets = {'line_colour': ColourPickerWidget,
-               'show_totals': RBToggle,
-               'has_targets': RBToggle,
-               'report_tags': Select2Multiple,
-               'targets': Select2Multiple}
+    widgets = {
+        'line_colour': ColourPickerWidget,
+        'show_totals': RBToggle,
+        'has_targets': RBToggle,
+        'report_tags': Select2Multiple,
+        'targets': Select2Multiple,
+    }
 
-    form_fields = ['name',
-                   'notes',
-                   'report_type',
-                   'report_tags',
-                   'axis_value_type',
-                   'axis_scale',
-                   'date_field',
-                   'fields',
-                   'x_label',
-                   'y_label',
-                   'show_totals',
-                   'has_targets',
-                   'targets']
+    form_fields = [
+        'name',
+        'notes',
+        'report_type',
+        'report_tags',
+        'axis_value_type',
+        'axis_scale',
+        'date_field',
+        'fields',
+        'x_label',
+        'y_label',
+        'show_totals',
+        'has_targets',
+        'targets',
+    ]
 
     def form_setup(self, form, *_args, **_kwargs):
-
-        form.add_trigger('has_targets', 'onchange', [
-            {'selector': '#div_id_targets', 'values': {'checked': 'show'}, 'default': 'hide'},
-        ])
+        form.add_trigger(
+            'has_targets',
+            'onchange',
+            [
+                {
+                    'selector': '#div_id_targets',
+                    'values': {'checked': 'show'},
+                    'default': 'hide',
+                },
+            ],
+        )
 
         if 'data' in _kwargs and len(_kwargs['data']) > 0:
             date_field = _kwargs['data'].get('date_field')
@@ -160,45 +190,53 @@ class LineChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
             date_field = form.instance.date_field
             report_type = form.instance.report_type
 
-        self.setup_field(field_type='date',
-                         form=form,
-                         field_name='date_field',
-                         selected_field_id=date_field,
-                         report_type=report_type)
+        self.setup_field(
+            field_type='date',
+            form=form,
+            field_name='date_field',
+            selected_field_id=date_field,
+            report_type=report_type,
+        )
 
         form.fields['notes'].widget.attrs['rows'] = 3
 
-        url = reverse('advanced_report_builder:line_chart_field_modal',
-                      kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
+        url = reverse(
+            'advanced_report_builder:line_chart_field_modal',
+            kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'},
+        )
 
-        fields = ['name',
-                  'notes',
-                  'report_type',
-                  'report_tags',
-                  'axis_scale',
-                  'axis_value_type',
-                  'date_field',
-                  FieldEx('fields',
-                          template='advanced_report_builder/select_column.html',
-                          extra_context={'select_column_url': url,
-                                         'command_prefix': ''}),
-                  'x_label',
-                  'y_label',
-                  'show_totals',
-                  'has_targets',
-                  'targets']
+        fields = [
+            'name',
+            'notes',
+            'report_type',
+            'report_tags',
+            'axis_scale',
+            'axis_value_type',
+            'date_field',
+            FieldEx(
+                'fields',
+                template='advanced_report_builder/select_column.html',
+                extra_context={'select_column_url': url, 'command_prefix': ''},
+            ),
+            'x_label',
+            'y_label',
+            'show_totals',
+            'has_targets',
+            'targets',
+        ]
         if self.object.id:
             self.add_extra_queries(form=form, fields=fields)
         return fields
 
     def select2_date_field(self, **kwargs):
-        return self.get_fields_for_select2(field_type='date',
-                                           report_type=kwargs['report_type'],
-                                           search_string=kwargs.get('search'))
+        return self.get_fields_for_select2(
+            field_type='date',
+            report_type=kwargs['report_type'],
+            search_string=kwargs.get('search'),
+        )
 
 
 class LineChartFieldForm(ChartBaseFieldForm):
-
     def setup_modal(self, *args, **kwargs):
         data = json.loads(base64.b64decode(self.slug['data']))
         report_type, base_model = self.get_report_type_details()
@@ -219,19 +257,22 @@ class LineChartFieldForm(ChartBaseFieldForm):
 
         self.fields['multiple_columns'] = BooleanField(required=False, widget=RBToggle())
         self.fields['append_column_title'] = BooleanField(required=False, widget=RBToggle())
-        report_builder_class = get_report_builder_class(model=base_model,
-                                                        report_type=report_type)
+        report_builder_class = get_report_builder_class(model=base_model, report_type=report_type)
 
-        self.setup_colour_field(form_fields=self.fields,
-                                base_model=base_model,
-                                report_builder_class=report_builder_class,
-                                name='positive_colour_field',
-                                data_attr=data_attr,
-                                label='Line colour field')
+        self.setup_colour_field(
+            form_fields=self.fields,
+            base_model=base_model,
+            report_builder_class=report_builder_class,
+            name='positive_colour_field',
+            data_attr=data_attr,
+            label='Line colour field',
+        )
         multiple_column_field = []
-        self._get_query_builder_foreign_key_fields(base_model=base_model,
-                                                   report_builder_class=report_builder_class,
-                                                   fields=multiple_column_field)
+        self._get_query_builder_foreign_key_fields(
+            base_model=base_model,
+            report_builder_class=report_builder_class,
+            fields=multiple_column_field,
+        )
 
         self.fields['multiple_column_field'] = ChoiceField(choices=multiple_column_field, required=False)
 
@@ -258,7 +299,7 @@ class LineChartFieldForm(ChartBaseFieldForm):
                 attributes.append(f'filter-{b64_filter}')
             if self.cleaned_data['multiple_columns']:
                 attributes.append('multiple_columns-1')
-                if self.cleaned_data["positive_colour_field"]:
+                if self.cleaned_data['positive_colour_field']:
                     attributes.append(f'positive_colour_field-{self.cleaned_data["positive_colour_field"]}')
                 attributes.append(f'multiple_column_field-{self.cleaned_data["multiple_column_field"]}')
                 if self.cleaned_data['append_column_title']:
@@ -285,45 +326,85 @@ class LineChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
         selector = self.slug['selector']
 
         _attr = form.get_additional_attributes()
-        self.add_command({'function': 'set_attr',
-                          'selector': f'#{selector}',
-                          'attr': 'data-attr',
-                          'val': _attr})
+        self.add_command(
+            {
+                'function': 'set_attr',
+                'selector': f'#{selector}',
+                'attr': 'data-attr',
+                'val': _attr,
+            }
+        )
 
-        self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
+        self.add_command(
+            {
+                'function': 'html',
+                'selector': f'#{selector} span',
+                'html': form.cleaned_data['title'],
+            }
+        )
         self.add_command({'function': 'update_selection'})
         return self.command_response('close')
 
     # noinspection PyMethodMayBeStatic
     def form_setup(self, form, *_args, **_kwargs):
-        form.add_trigger('has_filter', 'onchange', [
-            {'selector': '#filter_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'}])
+        form.add_trigger(
+            'has_filter',
+            'onchange',
+            [
+                {
+                    'selector': '#filter_fields_div',
+                    'values': {'checked': 'show'},
+                    'default': 'hide',
+                }
+            ],
+        )
 
-        form.add_trigger('multiple_columns', 'onchange', [
-            {'selector': '#multiple_columns_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'},
-        ])
+        form.add_trigger(
+            'multiple_columns',
+            'onchange',
+            [
+                {
+                    'selector': '#multiple_columns_fields_div',
+                    'values': {'checked': 'show'},
+                    'default': 'hide',
+                },
+            ],
+        )
 
-        return ['title',
-                'line_colour',
-                Div(FieldEx('has_filter',
-                            template='django_modals/fields/label_checkbox.html',
-                            field_class='col-6 input-group-sm'),
+        return [
+            'title',
+            'line_colour',
+            Div(
+                FieldEx(
+                    'has_filter',
+                    template='django_modals/fields/label_checkbox.html',
+                    field_class='col-6 input-group-sm',
+                ),
+                Div(
+                    FieldEx(
+                        'filter',
+                        template='advanced_report_builder/datatables/fields/single_query_builder.html',
+                    ),
+                    FieldEx(
+                        'multiple_columns',
+                        template='django_modals/fields/label_checkbox.html',
+                        field_class='col-6 input-group-sm',
+                    ),
                     Div(
-                        FieldEx('filter',
-                                template='advanced_report_builder/datatables/fields/single_query_builder.html'),
-                        FieldEx('multiple_columns',
-                                template='django_modals/fields/label_checkbox.html',
-                                field_class='col-6 input-group-sm'),
-                        Div(
-                            FieldEx('append_column_title',
-                                    template='django_modals/fields/label_checkbox.html',
-                                    field_class='col-6 input-group-sm'),
-                            FieldEx('multiple_column_field'),
-                            FieldEx('positive_colour_field'),
-                            css_id='multiple_columns_fields_div'),
-                        css_id='filter_fields_div'),
-                    css_id='annotations_fields_div')
-                ]
+                        FieldEx(
+                            'append_column_title',
+                            template='django_modals/fields/label_checkbox.html',
+                            field_class='col-6 input-group-sm',
+                        ),
+                        FieldEx('multiple_column_field'),
+                        FieldEx('positive_colour_field'),
+                        css_id='multiple_columns_fields_div',
+                    ),
+                    css_id='filter_fields_div',
+                ),
+                css_id='annotations_fields_div',
+            ),
+        ]
 
     def ajax_get_query_builder_fields(self, **kwargs):
         field_auto_id = kwargs['field_auto_id']

@@ -4,18 +4,17 @@ from django_menus.menu import MenuMixin, MenuItem
 
 
 class MainMenu(AjaxHelpers, MenuMixin):
-
     def setup_menu(self):
-
         # noinspection PyUnresolvedReferences
         self.add_menu('main_menu').add_items(
             ('report_builder_examples:index', 'Reports'),
             ('report_builder_examples:dashboards_index', 'Dashboard'),
             ('report_builder_examples:targets_index', 'Targets'),
-            MenuItem(url='admin:index',
-                     menu_display='Admin',
-                     visible=self.request.user.is_superuser),
-
+            MenuItem(
+                url='admin:index',
+                menu_display='Admin',
+                visible=self.request.user.is_superuser,
+            ),
         )
 
 
