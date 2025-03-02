@@ -25,29 +25,30 @@ class ViewReports(MainIndices):
     def setup_menu(self):
         super().setup_menu()
         self.add_menu('table_menu', 'button_group').add_items(
-            MenuItem(menu_display='Add Report', no_hover=True, css_classes='btn-secondary',
-                     dropdown=[MenuItem('advanced_report_builder:table_modal,-',
-                                        'Table',
-                                        font_awesome='fas fa-table'),
-                               MenuItem('advanced_report_builder:single_value_modal,-',
-                                        'Single Value',
-                                        font_awesome='fas fa-box-open'),
-                               MenuItem('advanced_report_builder:bar_chart_modal,-',
-                                        'Bar Chart',
-                                        font_awesome='fas fa-chart-bar'),
-                               MenuItem('advanced_report_builder:line_chart_modal,-',
-                                        'Line Chart',
-                                        font_awesome='fas fa-chart-line'),
-                               MenuItem('advanced_report_builder:pie_chart_modal,-',
-                                        'Pie Chart',
-                                        font_awesome='fas fa-chart-pie'),
-                               MenuItem('advanced_report_builder:funnel_chart_modal,-',
-                                        'Funnel Chart',
-                                        font_awesome='fas fa-filter'),
-                               MenuItem('advanced_report_builder:kanban_modal,-',
-                                        'Kanban',
-                                        font_awesome='fas fa-chart-bar fa-flip-vertical'),
-                               ]),
+            MenuItem(
+                menu_display='Add Report',
+                no_hover=True,
+                css_classes='btn-secondary',
+                dropdown=[
+                    MenuItem('advanced_report_builder:table_modal,-', 'Table', font_awesome='fas fa-table'),
+                    MenuItem(
+                        'advanced_report_builder:single_value_modal,-', 'Single Value', font_awesome='fas fa-box-open'
+                    ),
+                    MenuItem('advanced_report_builder:bar_chart_modal,-', 'Bar Chart', font_awesome='fas fa-chart-bar'),
+                    MenuItem(
+                        'advanced_report_builder:line_chart_modal,-', 'Line Chart', font_awesome='fas fa-chart-line'
+                    ),
+                    MenuItem('advanced_report_builder:pie_chart_modal,-', 'Pie Chart', font_awesome='fas fa-chart-pie'),
+                    MenuItem(
+                        'advanced_report_builder:funnel_chart_modal,-', 'Funnel Chart', font_awesome='fas fa-filter'
+                    ),
+                    MenuItem(
+                        'advanced_report_builder:kanban_modal,-',
+                        'Kanban',
+                        font_awesome='fas fa-chart-bar fa-flip-vertical',
+                    ),
+                ],
+            ),
         )
 
     @staticmethod
@@ -60,75 +61,80 @@ class ViewReports(MainIndices):
             'OutputTypeIcon',
             'OutputType',
             'version',
-            ColumnLink(column_name='view_report',
-                       field='name',
-                       link_ref_column='slug',
-                       url_name='report_builder_examples:view_report'),
+            ColumnLink(
+                column_name='view_report',
+                field='name',
+                link_ref_column='slug',
+                url_name='report_builder_examples:view_report',
+            ),
         )
 
 
 class ViewSingleValueReport(SingleValueView):
     def pod_report_menu(self):
-        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
-                *super().pod_report_menu()]
+        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}), *super().pod_report_menu()]
 
 
 class ViewTableReport(TableView):
     def pod_report_menu(self):
-        menu = [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
-                *super().pod_report_menu()]
+        menu = [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}), *super().pod_report_menu()]
         if hasattr(self.report, 'reportpermission'):
-            menu.append((f'report_builder_examples:permission_modal,pk-{self.report.id}',
-                         'Permission', {'css_classes': 'btn-danger', 'font_awesome': 'fas fa-key'}))
+            menu.append(
+                (
+                    f'report_builder_examples:permission_modal,pk-{self.report.id}',
+                    'Permission',
+                    {'css_classes': 'btn-danger', 'font_awesome': 'fas fa-key'},
+                )
+            )
         else:
-            menu.append((f'report_builder_examples:permission_modal,report_id-{self.report.id}',
-                         'Permission', {'css_classes': 'btn-danger', 'font_awesome': 'fas fa-key'}))
+            menu.append(
+                (
+                    f'report_builder_examples:permission_modal,report_id-{self.report.id}',
+                    'Permission',
+                    {'css_classes': 'btn-danger', 'font_awesome': 'fas fa-key'},
+                )
+            )
         return menu
 
 
 class ViewBarChartReport(BarChartView):
     def pod_report_menu(self):
-        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
-                *super().pod_report_menu()]
+        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}), *super().pod_report_menu()]
 
 
 class ViewLineChartReport(LineChartView):
     def pod_report_menu(self):
-        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
-                *super().pod_report_menu()]
+        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}), *super().pod_report_menu()]
 
 
 class ViewPieChartReport(PieChartView):
     def pod_report_menu(self):
-        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
-                *super().pod_report_menu()]
+        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}), *super().pod_report_menu()]
 
 
 class ViewFunnelChartReport(FunnelChartView):
     def pod_report_menu(self):
-        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
-                *super().pod_report_menu()]
+        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}), *super().pod_report_menu()]
 
 
 class ViewKanbanViewReport(KanbanView):
     def pod_report_menu(self):
-        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}),
-                *super().pod_report_menu()]
+        return [('report_builder_examples:index', 'Back', {'css_classes': 'btn-secondary'}), *super().pod_report_menu()]
 
 
 class ViewReport(MainMenu, ViewReportBase):
     template_name = 'report_builder_examples/report.html'
-    views_overrides = {'tablereport': ViewTableReport,
-                       'singlevaluereport': ViewSingleValueReport,
-                       'barchartreport': ViewBarChartReport,
-                       'linechartreport': ViewLineChartReport,
-                       'piechartreport': ViewPieChartReport,
-                       'funnelchartreport': ViewFunnelChartReport,
-                       'kanbanreport': ViewKanbanViewReport,
-                       }
+    views_overrides = {
+        'tablereport': ViewTableReport,
+        'singlevaluereport': ViewSingleValueReport,
+        'barchartreport': ViewBarChartReport,
+        'linechartreport': ViewLineChartReport,
+        'piechartreport': ViewPieChartReport,
+        'funnelchartreport': ViewFunnelChartReport,
+        'kanbanreport': ViewKanbanViewReport,
+    }
 
-    custom_views = {'custom1': Custom1,
-                    'custom_with_query': CustomWithQuery}
+    custom_views = {'custom1': Custom1, 'custom_with_query': CustomWithQuery}
 
     def report_not_found(self):
         return redirect('report_builder_examples:index')

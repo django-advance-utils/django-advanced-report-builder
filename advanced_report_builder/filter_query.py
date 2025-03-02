@@ -12,7 +12,6 @@ from advanced_report_builder.variable_date import VariableDate
 
 
 class FilterQueryMixin:
-
     def __init__(self, *args, **kwargs):
         self.report = None
         self.dashboard_report = None
@@ -28,7 +27,6 @@ class FilterQueryMixin:
         # query.order_by('name')
 
         return query
-
 
     def process_filters(self, search_filter_data, extra_filter=None):
         if not search_filter_data:
@@ -110,39 +108,49 @@ class FilterQueryMixin:
             elif display_operator == 'is_not_null':
                 value = False
 
-            if data_type == "string" and _id.endswith('__variable_date'):
-                self.get_variable_date(value=value,
-                                       query_list=query_list,
-                                       display_operator=display_operator,
-                                       field=field,
-                                       query_string=query_string)
-            elif data_type == "string" and _id.endswith('__variable_year'):
-                self.get_variable_year(value=value,
-                                       query_list=query_list,
-                                       display_operator=display_operator,
-                                       field=field,
-                                       query_string=query_string)
-            elif data_type == "string" and _id.endswith('__variable_month'):
-                self.get_variable_month(value=value,
-                                        query_list=query_list,
-                                        display_operator=display_operator,
-                                        field=field,
-                                        query_string=query_string)
-            elif data_type == "string" and _id.endswith('__variable_quarter'):
-                self.get_variable_quarter(value=value,
-                                          query_list=query_list,
-                                          display_operator=display_operator,
-                                          field=field,
-                                          query_string=query_string)
-            elif data_type == "string" and _id.endswith('__logged_in_user'):
-                self.get_logged_in_user(value=value,
-                                        query_list=query_list,
-                                        display_operator=display_operator,
-                                        field=field,
-                                        query_string=query_string)
+            if data_type == 'string' and _id.endswith('__variable_date'):
+                self.get_variable_date(
+                    value=value,
+                    query_list=query_list,
+                    display_operator=display_operator,
+                    field=field,
+                    query_string=query_string,
+                )
+            elif data_type == 'string' and _id.endswith('__variable_year'):
+                self.get_variable_year(
+                    value=value,
+                    query_list=query_list,
+                    display_operator=display_operator,
+                    field=field,
+                    query_string=query_string,
+                )
+            elif data_type == 'string' and _id.endswith('__variable_month'):
+                self.get_variable_month(
+                    value=value,
+                    query_list=query_list,
+                    display_operator=display_operator,
+                    field=field,
+                    query_string=query_string,
+                )
+            elif data_type == 'string' and _id.endswith('__variable_quarter'):
+                self.get_variable_quarter(
+                    value=value,
+                    query_list=query_list,
+                    display_operator=display_operator,
+                    field=field,
+                    query_string=query_string,
+                )
+            elif data_type == 'string' and _id.endswith('__logged_in_user'):
+                self.get_logged_in_user(
+                    value=value,
+                    query_list=query_list,
+                    display_operator=display_operator,
+                    field=field,
+                    query_string=query_string,
+                )
             else:
                 # 'Normal' Query.
-                if display_operator in ["not_equal", "not_in", "not_contains", 'not_begins_with', "not_ends_with"]:
+                if display_operator in ['not_equal', 'not_in', 'not_contains', 'not_begins_with', 'not_ends_with']:
                     query_list.append(~Q((query_string, value)))
                 else:
                     query_list.append(Q((query_string, value)))
@@ -153,77 +161,86 @@ class FilterQueryMixin:
         if display_operator in ['is_null', 'is_not_null']:
             query_list.append(Q((query_string, value)))
         else:
-            _, range_type = value.split(":")
+            _, range_type = value.split(':')
             variable_date = VariableDate()
             value = variable_date.get_variable_dates(range_type=int(range_type))
             if display_operator in ['less', 'greater_or_equal']:
                 query_list.append(Q((query_string, value[0])))
             elif display_operator in ['greater', 'less_or_equal']:
                 query_list.append(Q((query_string, value[1])))
-            elif display_operator in ["not_equal", "not_in"]:
-                query_list.append(~((Q((field + "__gte", value[0]))) & (Q((field + "__lte", value[1])))))
+            elif display_operator in ['not_equal', 'not_in']:
+                query_list.append(~((Q((field + '__gte', value[0]))) & (Q((field + '__lte', value[1])))))
             else:
-                query_list.append(((Q((field + "__gte", value[0]))) & (Q((field + "__lte", value[1])))))
+                query_list.append(((Q((field + '__gte', value[0]))) & (Q((field + '__lte', value[1])))))
 
     @staticmethod
     def get_variable_year(value, query_list, display_operator, field, query_string):
         if display_operator in ['is_null', 'is_not_null']:
             query_list.append(Q((query_string, value)))
         else:
-            _, year = value.split(":")
+            _, year = value.split(':')
             year = int(year)
             if display_operator in ['less', 'less_or_equal', 'greater', 'greater_or_equal']:
                 query_string_parts = query_string.split('__')
-                query_list.append(Q((f"{field}__year__{query_string_parts[-1]}", year)))
-            elif display_operator in ["not_equal", "not_in"]:
-                query_list.append(~Q((query_string + "__year", year)))
+                query_list.append(Q((f'{field}__year__{query_string_parts[-1]}', year)))
+            elif display_operator in ['not_equal', 'not_in']:
+                query_list.append(~Q((query_string + '__year', year)))
             else:
-                query_list.append(Q((query_string + "__year", year)))
+                query_list.append(Q((query_string + '__year', year)))
 
     @staticmethod
     def get_variable_month(value, query_list, display_operator, field, query_string):
         if display_operator in ['is_null', 'is_not_null']:
             query_list.append(Q((query_string, value)))
         else:
-            _, month = value.split(":")
+            _, month = value.split(':')
             month = int(month)
-            if display_operator in ["not_equal", "not_in"]:
-                query_list.append(~Q((field + "__month", month)))
+            if display_operator in ['not_equal', 'not_in']:
+                query_list.append(~Q((field + '__month', month)))
             else:
-                query_list.append(Q((field + "__month", month)))
+                query_list.append(Q((field + '__month', month)))
 
     def get_variable_quarter(self, value, query_list, display_operator, field, query_string):
         if display_operator in ['is_null', 'is_not_null']:
             query_list.append(Q((query_string, value)))
         else:
-            quarter_type, quarter = value.split(":")
+            quarter_type, quarter = value.split(':')
             quarter = int(quarter)
 
             if quarter_type == '#quarter':
-                start_month = (quarter-1) * 3
+                start_month = (quarter - 1) * 3
                 end_month = start_month + 3
-                if display_operator == "not_equal":
-                    query_list.append(~((Q((field + "__month__gt", start_month))) &
-                                        (Q((field + "__month__lte", end_month)))))
+                if display_operator == 'not_equal':
+                    query_list.append(
+                        ~((Q((field + '__month__gt', start_month))) & (Q((field + '__month__lte', end_month))))
+                    )
                 else:
-                    query_list.append(((Q((field + "__month__gt", start_month))) &
-                                       (Q((field + "__month__lte", end_month)))))
+                    query_list.append(
+                        ((Q((field + '__month__gt', start_month))) & (Q((field + '__month__lte', end_month))))
+                    )
             else:
                 start_month = self.get_financial_month() - 1
                 end_month = start_month + 3
                 months = [divmod(x, 12)[1] + 1 for x in range(start_month, end_month)]
 
-                if display_operator == "not_equal":
-                    query_list.append(~((Q((field + "__month", months[0]))) |
-                                        (Q((field + "__month", months[1]))) |
-                                        (Q((field + "__month", months[2])))))
+                if display_operator == 'not_equal':
+                    query_list.append(
+                        ~(
+                            (Q((field + '__month', months[0])))
+                            | (Q((field + '__month', months[1])))
+                            | (Q((field + '__month', months[2])))
+                        )
+                    )
                 else:
-                    query_list.append(((Q((field + "__month", months[0]))) |
-                                       (Q((field + "__month", months[1]))) |
-                                       (Q((field + "__month", months[2])))))
+                    query_list.append(
+                        (
+                            (Q((field + '__month', months[0])))
+                            | (Q((field + '__month', months[1])))
+                            | (Q((field + '__month', months[2])))
+                        )
+                    )
 
     def get_logged_in_user(self, value, query_list, display_operator, field, query_string):
-
         # noinspection PyUnresolvedReferences
         current_user = self.request.user
         value = value == '1'
@@ -253,13 +270,12 @@ class FilterQueryMixin:
     def apply_order_by(query, report_query, base_model, report_type):
         order_by = []
         utils = ReportBuilderFieldUtils()
-        report_builder_class = get_report_builder_class(model=base_model,
-                                                        report_type=report_type)
+        report_builder_class = get_report_builder_class(model=base_model, report_type=report_type)
         for report_query_order in report_query.reportqueryorder_set.all():
             field_name = report_query_order.order_by_field
-            field_name = utils.get_field_details(base_model=base_model,
-                                                 field=field_name,
-                                                 report_builder_class=report_builder_class)[3]
+            field_name = utils.get_field_details(
+                base_model=base_model, field=field_name, report_builder_class=report_builder_class
+            )[3]
             if report_query_order.order_by_ascending:
                 order_by.append(field_name)
             else:
@@ -286,14 +302,17 @@ class FilterQueryMixin:
                 app_label, model, report_builder_fields_str = include['model'].split('.')
                 new_model = apps.get_model(app_label, model)
 
-                new_report_builder_class = get_report_builder_class(model=new_model,
-                                                                    class_name=report_builder_fields_str)
+                new_report_builder_class = get_report_builder_class(
+                    model=new_model, class_name=report_builder_fields_str
+                )
 
                 if new_model != previous_base_model:
-                    result = self._get_report_builder_class(base_model=new_model,
-                                                            field_str=new_field_str,
-                                                            report_builder_class=new_report_builder_class,
-                                                            previous_base_model=base_model)
+                    result = self._get_report_builder_class(
+                        base_model=new_model,
+                        field_str=new_field_str,
+                        report_builder_class=new_report_builder_class,
+                        previous_base_model=base_model,
+                    )
                     if result:
                         return result
         else:
@@ -301,14 +320,14 @@ class FilterQueryMixin:
             if include is not None:
                 app_label, model, report_builder_fields_str = include['model'].split('.')
                 new_model = apps.get_model(app_label, model)
-                new_report_builder_class = get_report_builder_class(model=new_model,
-                                                                    class_name=report_builder_fields_str)
+                new_report_builder_class = get_report_builder_class(
+                    model=new_model, class_name=report_builder_fields_str
+                )
 
                 return new_report_builder_class
         return None
 
     def _get_pivot_details(self, base_model, pivot_str, report_builder_class, previous_base_model=None, include_str=''):
-
         if pivot_str in report_builder_class.pivot_fields:
             pivot_data = report_builder_class.pivot_fields[pivot_str]
             if include_str == '':
@@ -316,8 +335,7 @@ class FilterQueryMixin:
             else:
                 full_field_id = '__'.join((include_str, pivot_data['field']))
 
-            return {'id': full_field_id,
-                    'details': pivot_data}
+            return {'id': full_field_id, 'details': pivot_data}
 
         if '__' in pivot_str:
             pivot_parts = pivot_str.split('__')
@@ -328,14 +346,17 @@ class FilterQueryMixin:
             if include is not None:
                 app_label, model, report_builder_fields_str = include['model'].split('.')
                 new_model = apps.get_model(app_label, model)
-                new_report_builder_class = get_report_builder_class(model=new_model,
-                                                                    class_name=report_builder_fields_str)
+                new_report_builder_class = get_report_builder_class(
+                    model=new_model, class_name=report_builder_fields_str
+                )
                 if new_model != previous_base_model:
-                    result = self._get_pivot_details(base_model=new_model,
-                                                     pivot_str=new_pivot_str,
-                                                     report_builder_class=new_report_builder_class,
-                                                     previous_base_model=base_model,
-                                                     include_str=include_str)
+                    result = self._get_pivot_details(
+                        base_model=new_model,
+                        pivot_str=new_pivot_str,
+                        report_builder_class=new_report_builder_class,
+                        previous_base_model=base_model,
+                        include_str=include_str,
+                    )
                     if result:
                         return result
         return None

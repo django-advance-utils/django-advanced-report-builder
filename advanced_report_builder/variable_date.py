@@ -140,8 +140,7 @@ class VariableDate:
             end_date = start_date + timedelta(days=number_of_days - 1)
         elif range_type == self.RANGE_TYPE_NEXT_MONTH:  # Next Month
             number_of_days_in_this_month = monthrange(today.year, today.month)[1]
-            start_date = (date(today.year, today.month, 1) +
-                          timedelta(days=number_of_days_in_this_month))
+            start_date = date(today.year, today.month, 1) + timedelta(days=number_of_days_in_this_month)
             number_of_days = monthrange(start_date.year, start_date.month)[1]
             end_date = start_date + timedelta(days=number_of_days)
         elif range_type == self.RANGE_TYPE_LAST_MONTH:  # Last Month

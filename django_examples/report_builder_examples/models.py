@@ -7,9 +7,14 @@ from django_datatables.model_def import DatatableModel
 from report_builder_examples.report_overrides import CustomDateColumn
 from time_stamped_model.models import TimeStampedModel
 
-from advanced_report_builder.columns import (ColourColumn, ArrowColumn,
-                                             FilterForeignKeyColumn, ReportBuilderColumnLink,
-                                             ReportBuilderManyToManyColumn, ReverseForeignKeyFieldColumn)
+from advanced_report_builder.columns import (
+    ColourColumn,
+    ArrowColumn,
+    FilterForeignKeyColumn,
+    ReportBuilderColumnLink,
+    ReportBuilderManyToManyColumn,
+    ReverseForeignKeyFieldColumn,
+)
 from advanced_report_builder.models import Report
 from advanced_report_builder.report_builder import ReportBuilderFields
 
@@ -24,20 +29,18 @@ class UserProfile(AbstractUser):
 
     class Datatable(DatatableModel):
         class FullNameColumn(DatatableColumn):
-
             def col_setup(self):
-                self.field = ['first_name',
-                              'last_name',
-                              'username']
+                self.field = ['first_name', 'last_name', 'username']
 
             # noinspection PyMethodMayBeStatic
             def row_result(self, data, _page_data):
-                first_name = data[self.model_path + 'first_name'] \
-                    if data[self.model_path + 'first_name'] is not None else ''
-                last_name = data[self.model_path + 'last_name'] \
-                    if data[self.model_path + 'last_name'] is not None else ''
-                username = data[self.model_path + 'username'] \
-                    if data[self.model_path + 'username'] is not None else ''
+                first_name = (
+                    data[self.model_path + 'first_name'] if data[self.model_path + 'first_name'] is not None else ''
+                )
+                last_name = (
+                    data[self.model_path + 'last_name'] if data[self.model_path + 'last_name'] is not None else ''
+                )
+                username = data[self.model_path + 'username'] if data[self.model_path + 'username'] is not None else ''
 
                 return get_merged_name(default=username, first_name=first_name, last_name=last_name)
 
@@ -47,15 +50,9 @@ class UserProfile(AbstractUser):
     class ReportBuilder(ReportBuilderFields):
         colour = '#606440'
         title = 'Users'
-        fields = ['first_name',
-                  'last_name',
-                  'username',
-                  'full_name',
-                  'colour_column']
+        fields = ['first_name', 'last_name', 'username', 'full_name', 'colour_column']
         default_multiple_column_text = '{username} - {first_name} {last_name}'
-        default_multiple_column_fields = ['username',
-                                          'first_name',
-                                          'last_name']
+        default_multiple_column_fields = ['username', 'first_name', 'last_name']
 
 
 class Sector(TimeStampedModel):
@@ -68,8 +65,7 @@ class Sector(TimeStampedModel):
     class ReportBuilder(ReportBuilderFields):
         colour = '#00008b'
         title = 'Sector'
-        fields = ['name',
-                  'type']
+        fields = ['name', 'type']
         default_columns = ['.id']
         default_multiple_column_text = '{name}'
         default_multiple_column_fields = ['name']
@@ -103,16 +99,17 @@ class Company(TimeStampedModel):
         payments = CurrencyPenceColumn(annotations={'payments': Sum('payment__amount', distinct=True)})
 
         # people = {'annotations': {'people': Count('person__id')}}
-        collink_1 = ReportBuilderColumnLink(title='Col link 1',
-                                            field='name',
-                                            url_name='report_builder_examples:example_link')
+        collink_1 = ReportBuilderColumnLink(
+            title='Col link 1', field='name', url_name='report_builder_examples:example_link'
+        )
 
-        collink_2 = ReportBuilderColumnLink(title='Col link 2',
-                                            field=['id', 'name'],
-                                            url_name='report_builder_examples:example_link', width='10px',
-                                            link_html='<button class="btn btn-sm btn-outline-dark">'
-                                                      '<i class="fas fa-building"></i></button>'
-                                            )
+        collink_2 = ReportBuilderColumnLink(
+            title='Col link 2',
+            field=['id', 'name'],
+            url_name='report_builder_examples:example_link',
+            width='10px',
+            link_html='<button class="btn btn-sm btn-outline-dark"><i class="fas fa-building"></i></button>',
+        )
 
         background_colour_column = ColourColumn(title='Background Colour', field='background_colour')
         text_colour_column = ColourColumn(title='Text Colour', field='text_colour')
@@ -124,8 +121,8 @@ class Company(TimeStampedModel):
 
         total_contract_amount = CurrencyPenceColumn(annotations={'total_contract_amount': Sum('contract__amount')})
         contract_notes = ReverseForeignKeyFieldColumn(
-            field_name='contract__notes',
-            report_builder_class_name='report_builder_examples.Contract.ReportBuilder')
+            field_name='contract__notes', report_builder_class_name='report_builder_examples.Contract.ReportBuilder'
+        )
 
         class Tags(DatatableColumn):
             def setup_results(self, request, all_results):
@@ -149,13 +146,14 @@ class Company(TimeStampedModel):
 
         date_created = DateColumn(field='created', title='Date Created')
         date_modified = DateColumn(field='modified', title='Date Modified')
-        company_category_column = FilterForeignKeyColumn(field='company_category__name',
-                                                         title='Company Category')
+        company_category_column = FilterForeignKeyColumn(field='company_category__name', title='Company Category')
 
-        importance_choice = ColumnBase(column_name='importance_choice',
-                                       field='importance',
-                                       title='Importance Choice',
-                                       choices={1: 'High', 2: 'Medium', 3: 'Low'})
+        importance_choice = ColumnBase(
+            column_name='importance_choice',
+            field='importance',
+            title='Importance Choice',
+            choices={1: 'High', 2: 'Medium', 3: 'Low'},
+        )
 
     class ReportBuilder(ReportBuilderFields):
         colour = '#00008b'
@@ -163,60 +161,64 @@ class Company(TimeStampedModel):
 
         @property
         def fields(self):
-            return ['company_category_column',
-                    'arrow_icon_column',
-                    'name',
-                    'active',
-                    'company_number',
-                    'importance',
-                    'importance_choice',
-                    'people',
-                    'collink_1',
-                    'collink_2',
-                    'payments',
-                    'sector_names',
-                    'date_created',
-                    'date_modified',
-                    'background_colour_column',
-                    'text_colour_column',
-                    'Tags',
-                    'total_contract_amount',
-                    'contract_notes',
-                    ]
+            return [
+                'company_category_column',
+                'arrow_icon_column',
+                'name',
+                'active',
+                'company_number',
+                'importance',
+                'importance_choice',
+                'people',
+                'collink_1',
+                'collink_2',
+                'payments',
+                'sector_names',
+                'date_created',
+                'date_modified',
+                'background_colour_column',
+                'text_colour_column',
+                'Tags',
+                'total_contract_amount',
+                'contract_notes',
+            ]
 
         default_columns = ['.id']
         default_multiple_column_text = '{name}'
         default_multiple_column_fields = ['name']
 
-
         @property
         def includes(self):
-            return {'companyinformation': {'title': 'Company Information',
-                                           'model': 'report_builder_examples.CompanyInformation.ReportBuilder',
-                                           'reversed': True,
-                                           'allow_pivots': False},
-                    'user_profile': {'title': 'User',
-                                     'model': 'report_builder_examples.UserProfile.ReportBuilder'}}
+            return {
+                'companyinformation': {
+                    'title': 'Company Information',
+                    'model': 'report_builder_examples.CompanyInformation.ReportBuilder',
+                    'reversed': True,
+                    'allow_pivots': False,
+                },
+                'user_profile': {'title': 'User', 'model': 'report_builder_examples.UserProfile.ReportBuilder'},
+            }
 
         @property
         def pivot_fields(self):
-            return {'tags': {'title': 'Tags',
-                             'type': 'tag',
-                             'field': 'Tags',
-                             'kwargs': {'collapsed': False}},
-                    'importance_choice': {'title': 'Importance choice',
-                                          'type': 'pivot',
-                                          'field': 'importance_choice',
-                                          'kwargs': {'collapsed': False}}
-                    }
+            return {
+                'tags': {'title': 'Tags', 'type': 'tag', 'field': 'Tags', 'kwargs': {'collapsed': False}},
+                'importance_choice': {
+                    'title': 'Importance choice',
+                    'type': 'pivot',
+                    'field': 'importance_choice',
+                    'kwargs': {'collapsed': False},
+                },
+            }
 
     def __str__(self):
         return self.name
 
 
 class CompanyInformation(models.Model):
-    company = models.OneToOneField(Company, primary_key=True,
-                                   related_name='companyinformation', on_delete=models.CASCADE)
+    company = models.OneToOneField(
+        Company, primary_key=True, related_name='companyinformation', on_delete=models.CASCADE
+    )
     value = models.IntegerField()
     incorporated_date = models.DateField()
 
@@ -227,27 +229,27 @@ class CompanyInformation(models.Model):
     class ReportBuilder(ReportBuilderFields):
         colour = '#F0008b'
         title = 'Company Information'
-        fields = ['company_value',
-                  'incorporated_date']
+        fields = ['company_value', 'incorporated_date']
 
         default_columns = ['.id']
-        includes = {'company': {'title': 'Company',
-                                'model': 'report_builder_examples.Company.ReportBuilder'}}
+        includes = {'company': {'title': 'Company', 'model': 'report_builder_examples.Company.ReportBuilder'}}
 
         @property
         def pivot_fields(self):
-            return {'incorporated_date': {'title': 'Importance Date',
-                                          'type': 'pivot',
-                                          'field': 'incorporated_date',
-                                          'kwargs': {'collapsed': False}}
-                    }
+            return {
+                'incorporated_date': {
+                    'title': 'Importance Date',
+                    'type': 'pivot',
+                    'field': 'incorporated_date',
+                    'kwargs': {'collapsed': False},
+                }
+            }
 
 
 class Person(models.Model):
-
     title_choices = ((0, 'Mr'), (1, 'Mrs'), (2, 'Miss'))
     title = models.IntegerField(choices=title_choices, null=True)
-    company = models.ForeignKey(Company,  on_delete=models.CASCADE, null=True, blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
     first_name = models.CharField(max_length=80)
     surname = models.CharField(max_length=80)
     date_entered = models.DateField(auto_now_add=True)
@@ -255,13 +257,8 @@ class Person(models.Model):
     class ReportBuilder(ReportBuilderFields):
         colour = '#FF0000'
         title = 'Person'
-        fields = ['id',
-                  'title',
-                  'first_name',
-                  'surname',
-                  'date_entered']
-        includes = {'company': {'title': 'Company',
-                                'model': 'report_builder_examples.Company.ReportBuilder'}}
+        fields = ['id', 'title', 'first_name', 'surname', 'date_entered']
+        includes = {'company': {'title': 'Company', 'model': 'report_builder_examples.Company.ReportBuilder'}}
 
 
 class Tags(models.Model):
@@ -297,18 +294,9 @@ class Tally(models.Model):
         default_columns = ['.id']
         colour = '#006400'
         title = 'Tally'
-        fields = ['id',
-                  'date',
-                  'cars',
-                  'vans',
-                  'buses',
-                  'lorries',
-                  'push_bikes',
-                  'tractors',
-                  'verified']
+        fields = ['id', 'date', 'cars', 'vans', 'buses', 'lorries', 'push_bikes', 'tractors', 'verified']
 
-        includes = {'user_profile': {'title': 'User',
-                                     'model': 'report_builder_examples.UserProfile.ReportBuilder'}}
+        includes = {'user_profile': {'title': 'User', 'model': 'report_builder_examples.UserProfile.ReportBuilder'}}
 
 
 class Payment(TimeStampedModel):
@@ -327,17 +315,18 @@ class Payment(TimeStampedModel):
     class ReportBuilder(ReportBuilderFields):
         colour = '#006440'
         title = 'Payment'
-        fields = ['date',
-                  'currency_amount',
-                  'quantity',
-                  'received',
-                  'created_field',
-                  CustomDateColumn(column_name='modified', field='modified', title='Modified'),
-                  ]
-        includes = {'company': {'title': 'Company',
-                                'model': 'report_builder_examples.Company.ReportBuilder'},
-                    'user_profile': {'title': 'User',
-                                     'model': 'report_builder_examples.UserProfile.ReportBuilder'}}
+        fields = [
+            'date',
+            'currency_amount',
+            'quantity',
+            'received',
+            'created_field',
+            CustomDateColumn(column_name='modified', field='modified', title='Modified'),
+        ]
+        includes = {
+            'company': {'title': 'Company', 'model': 'report_builder_examples.Company.ReportBuilder'},
+            'user_profile': {'title': 'User', 'model': 'report_builder_examples.UserProfile.ReportBuilder'},
+        }
 
 
 class Contract(TimeStampedModel):
@@ -353,13 +342,9 @@ class Contract(TimeStampedModel):
     class ReportBuilder(ReportBuilderFields):
         colour = '#406440'
         title = 'Payment'
-        fields = ['notes',
-                  'start_date',
-                  'end_date',
-                  'currency_amount']
+        fields = ['notes', 'start_date', 'end_date', 'currency_amount']
 
-        includes = {'company': {'title': 'Company',
-                                'model': 'report_builder_examples.Company.ReportBuilder'}}
+        includes = {'company': {'title': 'Company', 'model': 'report_builder_examples.Company.ReportBuilder'}}
 
 
 class ReportPermission(TimeStampedModel):

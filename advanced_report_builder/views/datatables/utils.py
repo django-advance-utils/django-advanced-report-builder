@@ -6,8 +6,14 @@ from django_datatables.helpers import render_replace
 from django_datatables.plugins.column_totals import ColumnTotals
 
 from advanced_report_builder.columns import ReportBuilderDateColumn
-from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, CURRENCY_COLUMNS, LINK_COLUMNS, ALIGNMENT_CLASS, \
-    REVERSE_FOREIGN_KEY_COLUMNS
+from advanced_report_builder.globals import (
+    DATE_FIELDS,
+    NUMBER_FIELDS,
+    CURRENCY_COLUMNS,
+    LINK_COLUMNS,
+    ALIGNMENT_CLASS,
+    REVERSE_FOREIGN_KEY_COLUMNS,
+)
 from advanced_report_builder.globals import DATE_FORMAT_TYPES_DJANGO_FORMAT, ANNOTATION_VALUE_FUNCTIONS
 from advanced_report_builder.utils import split_attr, decode_attribute
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
@@ -46,8 +52,7 @@ class TableUtilsMixin(ReportUtilsMixin):
         else:
             if col_type_override:
                 field_name = col_type_override.field
-            date_function_kwargs = {'title': title,
-                                    'date_format': date_format}
+            date_function_kwargs = {'title': title, 'date_format': date_format}
 
             if annotations_value != 0:
                 new_field_name = f'{annotations_value}_{field_name}_{index}'
@@ -55,8 +60,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                 date_function_kwargs['annotations_value'] = {new_field_name: function(field_name)}
                 field_name = new_field_name
 
-            date_function_kwargs.update({'field': field_name,
-                                         'column_name': field_name})
+            date_function_kwargs.update({'field': field_name, 'column_name': field_name})
 
             field = self.date_field(**date_function_kwargs)
             fields.append(field)
@@ -93,8 +97,9 @@ class TableUtilsMixin(ReportUtilsMixin):
 
         return field_name
 
-    def process_query_results(self, report_builder_class, table, base_model,
-                              fields_used, fields_map, table_fields, pivot_fields=None):
+    def process_query_results(
+        self, report_builder_class, table, base_model, fields_used, fields_map, table_fields, pivot_fields=None
+    ):
         first_field_name = None
 
         field_name = None
@@ -113,21 +118,22 @@ class TableUtilsMixin(ReportUtilsMixin):
 
             original_field_name = field
             fields_used.add(field)
-            django_field, col_type_override, _, _ = self.get_field_details(base_model=base_model,
-                                                                           field=field,
-                                                                           table=table,
-                                                                           report_builder_class=report_builder_class,
-                                                                           field_attr=field_attr)
+            django_field, col_type_override, _, _ = self.get_field_details(
+                base_model=base_model,
+                field=field,
+                table=table,
+                report_builder_class=report_builder_class,
+                field_attr=field_attr,
+            )
 
             data_attr = split_attr(table_field)
             if int(data_attr.get('display_heading', 1)) == 0:
                 field_attr['title'] = ''
 
             if isinstance(django_field, DATE_FIELDS):
-                field_name = self.get_date_field(index=index,
-                                                 col_type_override=col_type_override,
-                                                 table_field=table_field,
-                                                 fields=fields)
+                field_name = self.get_date_field(
+                    index=index, col_type_override=col_type_override, table_field=table_field, fields=fields
+                )
             elif isinstance(django_field, NUMBER_FIELDS) and (django_field is None or django_field.choices is None):
                 annotations_type = int(data_attr.get('annotations_type', 0))
                 if annotations_type != 0:
@@ -141,40 +147,50 @@ class TableUtilsMixin(ReportUtilsMixin):
                     field_report_builder_class = self._get_report_builder_class(
                         base_model=base_model,
                         field_str=multiple_column_field,
-                        report_builder_class=report_builder_class)
+                        report_builder_class=report_builder_class,
+                    )
                     _fields = field_report_builder_class.default_multiple_column_fields
                     default_multiple_column_fields = [multiple_column_field + '__' + x for x in _fields]
                     order_by = f'{multiple_column_field}__{field_report_builder_class.default_multiple_pk}'
 
-                    results = query.order_by(order_by).\
-                        distinct(multiple_column_field).values(multiple_column_field, *default_multiple_column_fields)
+                    results = (
+                        query.order_by(order_by)
+                        .distinct(multiple_column_field)
+                        .values(multiple_column_field, *default_multiple_column_fields)
+                    )
 
                     for multiple_index, result in enumerate(results):
-                        suffix = self._set_multiple_title(database_values=result,
-                                                          value_prefix=multiple_column_field,
-                                                          fields=_fields,
-                                                          text=field_report_builder_class.default_multiple_column_text)
+                        suffix = self._set_multiple_title(
+                            database_values=result,
+                            value_prefix=multiple_column_field,
+                            fields=_fields,
+                            text=field_report_builder_class.default_multiple_column_text,
+                        )
                         extra_filter = Q((multiple_column_field, result[multiple_column_field]))
 
-                        field_name = self.get_number_field(annotations_type=annotations_type,
-                                                           index=f'{index}_{multiple_index}',
-                                                           data_attr=data_attr,
-                                                           table_field=table_field,
-                                                           fields=fields,
-                                                           totals=totals,
-                                                           col_type_override=col_type_override,
-                                                           extra_filter=extra_filter,
-                                                           title_suffix=suffix,
-                                                           decimal_places=decimal_places)
+                        field_name = self.get_number_field(
+                            annotations_type=annotations_type,
+                            index=f'{index}_{multiple_index}',
+                            data_attr=data_attr,
+                            table_field=table_field,
+                            fields=fields,
+                            totals=totals,
+                            col_type_override=col_type_override,
+                            extra_filter=extra_filter,
+                            title_suffix=suffix,
+                            decimal_places=decimal_places,
+                        )
                 else:
-                    field_name = self.get_number_field(annotations_type=annotations_type,
-                                                       index=index,
-                                                       data_attr=data_attr,
-                                                       table_field=table_field,
-                                                       fields=fields,
-                                                       totals=totals,
-                                                       col_type_override=col_type_override,
-                                                       decimal_places=decimal_places)
+                    field_name = self.get_number_field(
+                        annotations_type=annotations_type,
+                        index=index,
+                        data_attr=data_attr,
+                        table_field=table_field,
+                        fields=fields,
+                        totals=totals,
+                        col_type_override=col_type_override,
+                        decimal_places=decimal_places,
+                    )
 
             elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_COLUMNS):
                 field_name = table_field['field']
@@ -186,22 +202,26 @@ class TableUtilsMixin(ReportUtilsMixin):
                 fields.append(field)
 
             elif isinstance(col_type_override, LINK_COLUMNS):
-                field_name = self.get_link_field(table_field=table_field,
-                                                 col_type_override=col_type_override,
-                                                 fields=fields)
+                field_name = self.get_link_field(
+                    table_field=table_field, col_type_override=col_type_override, fields=fields
+                )
 
-            elif django_field is None and table_field['field'] in ['rb_addition',
-                                                                   'rb_subtraction',
-                                                                   'rb_times',
-                                                                   'rb_division',
-                                                                   'rb_percentage']:
-                self.setup_mathematical_field(data_attr=data_attr,
-                                              fields=fields,
-                                              field_attr=field_attr,
-                                              table_field=table_field,
-                                              col_type_override=col_type_override,
-                                              index=index,
-                                              totals=totals)
+            elif django_field is None and table_field['field'] in [
+                'rb_addition',
+                'rb_subtraction',
+                'rb_times',
+                'rb_division',
+                'rb_percentage',
+            ]:
+                self.setup_mathematical_field(
+                    data_attr=data_attr,
+                    fields=fields,
+                    field_attr=field_attr,
+                    table_field=table_field,
+                    col_type_override=col_type_override,
+                    index=index,
+                    totals=totals,
+                )
             else:
                 if col_type_override is not None:
                     if data_attr.get('annotation_label') == '1':
@@ -212,21 +232,21 @@ class TableUtilsMixin(ReportUtilsMixin):
 
                 field_name = field
                 if isinstance(col_type_override, CURRENCY_COLUMNS) and totals is not None:
-
                     css_class = col_type_override.column_defs.get('className')
                     show_total = data_attr.get('show_totals')
                     if show_total == '1':
-                        totals[field_name] = {'sum': 'to_fixed', 'decimal_places': 2,
-                                              'css_class': css_class}
+                        totals[field_name] = {'sum': 'to_fixed', 'decimal_places': 2, 'css_class': css_class}
                 elif col_type_override.annotations is not None:
                     css_class = col_type_override.column_defs.get('className')
                     show_total = data_attr.get('show_totals')
                     if show_total == '1':
-                        self.set_annotation_total(totals=totals,
-                                                  field_name=field_name,
-                                                  col_type_override=col_type_override,
-                                                  decimal_places=2,
-                                                  css_class=css_class)
+                        self.set_annotation_total(
+                            totals=totals,
+                            field_name=field_name,
+                            col_type_override=col_type_override,
+                            decimal_places=2,
+                            css_class=css_class,
+                        )
                 if field_attr:
                     field = (field, field_attr)
                 fields.append(field)
@@ -241,9 +261,9 @@ class TableUtilsMixin(ReportUtilsMixin):
         table.show_pivot_table = False
         if pivot_fields is not None:
             for pivot_field in pivot_fields:
-                pivot_field_data = self._get_pivot_details(base_model=base_model,
-                                                           pivot_str=pivot_field['field'],
-                                                           report_builder_class=report_builder_class)
+                pivot_field_data = self._get_pivot_details(
+                    base_model=base_model, pivot_str=pivot_field['field'], report_builder_class=report_builder_class
+                )
                 if pivot_field_data is None:
                     continue
 
@@ -252,10 +272,12 @@ class TableUtilsMixin(ReportUtilsMixin):
                     fields_used.add(pivot_field_data['id'])
 
                 pivot_field_details = pivot_field_data['details']
-                table.add_js_filters(pivot_field_details['type'],
-                                     pivot_field_data['id'],
-                                     filter_title=pivot_field_details['title'],
-                                     **pivot_field_details['kwargs'])
+                table.add_js_filters(
+                    pivot_field_details['type'],
+                    pivot_field_data['id'],
+                    filter_title=pivot_field_details['title'],
+                    **pivot_field_details['kwargs'],
+                )
                 table.show_pivot_table = True
         if totals:
             totals[first_field_name] = {'text': 'Totals'}
@@ -272,80 +294,89 @@ class TableUtilsMixin(ReportUtilsMixin):
     def extra_filters(self, query):
         report_query = self.get_report_query(report=self.table_report)
         if report_query:
-            query = self.process_query_filters(query=query,
-                                               search_filter_data=report_query.query)
+            query = self.process_query_filters(query=query, search_filter_data=report_query.query)
         return query
 
     def setup_mathematical_field(self, data_attr, fields, field_attr, table_field, col_type_override, index, totals):
         field = table_field['field']
         if field == 'rb_percentage':
-            self.get_mathematical_percentage_field(fields=fields,
-                                                   field_attr=field_attr,
-                                                   data_attr=data_attr,
-                                                   table_field=table_field,
-                                                   index=index,
-                                                   totals=totals)
+            self.get_mathematical_percentage_field(
+                fields=fields,
+                field_attr=field_attr,
+                data_attr=data_attr,
+                table_field=table_field,
+                index=index,
+                totals=totals,
+            )
         elif field == 'rb_division':
-            values = self.decode_mathematical_columns(data_attr=data_attr,
-                                                      first_value_column_name='numerator_column',
-                                                      second_value_column_name='denominator_column')
+            values = self.decode_mathematical_columns(
+                data_attr=data_attr,
+                first_value_column_name='numerator_column',
+                second_value_column_name='denominator_column',
+            )
             if values is not None:
-                expression = ExpressionWrapper(NullIf(F(values[0]), 0) / F(values[1]),
-                                               output_field=FloatField())
-                self.get_mathematical_field(fields=fields,
-                                            field_attr=field_attr,
-                                            data_attr=data_attr,
-                                            table_field=table_field,
-                                            col_type_override=col_type_override,
-                                            index=index,
-                                            totals=totals,
-                                            expression=expression)
+                expression = ExpressionWrapper(NullIf(F(values[0]), 0) / F(values[1]), output_field=FloatField())
+                self.get_mathematical_field(
+                    fields=fields,
+                    field_attr=field_attr,
+                    data_attr=data_attr,
+                    table_field=table_field,
+                    col_type_override=col_type_override,
+                    index=index,
+                    totals=totals,
+                    expression=expression,
+                )
         elif field == 'rb_times':
-            values = self.decode_mathematical_columns(data_attr=data_attr,
-                                                      first_value_column_name='multiplicand_column',
-                                                      second_value_column_name='multiplier_column')
+            values = self.decode_mathematical_columns(
+                data_attr=data_attr,
+                first_value_column_name='multiplicand_column',
+                second_value_column_name='multiplier_column',
+            )
             if values is not None:
-                expression = ExpressionWrapper(NullIf(F(values[0]), 0) * F(values[1]),
-                                               output_field=FloatField())
-                self.get_mathematical_field(fields=fields,
-                                            field_attr=field_attr,
-                                            data_attr=data_attr,
-                                            table_field=table_field,
-                                            col_type_override=col_type_override,
-                                            index=index,
-                                            totals=totals,
-                                            expression=expression)
+                expression = ExpressionWrapper(NullIf(F(values[0]), 0) * F(values[1]), output_field=FloatField())
+                self.get_mathematical_field(
+                    fields=fields,
+                    field_attr=field_attr,
+                    data_attr=data_attr,
+                    table_field=table_field,
+                    col_type_override=col_type_override,
+                    index=index,
+                    totals=totals,
+                    expression=expression,
+                )
         elif field == 'rb_addition':
             values = self.decode_mathematical_columns(data_attr=data_attr)
             if values is not None:
-                expression = ExpressionWrapper(NullIf(F(values[0]), 0) + F(values[1]),
-                                               output_field=FloatField())
-                self.get_mathematical_field(fields=fields,
-                                            field_attr=field_attr,
-                                            data_attr=data_attr,
-                                            table_field=table_field,
-                                            col_type_override=col_type_override,
-                                            index=index,
-                                            totals=totals,
-                                            expression=expression)
+                expression = ExpressionWrapper(NullIf(F(values[0]), 0) + F(values[1]), output_field=FloatField())
+                self.get_mathematical_field(
+                    fields=fields,
+                    field_attr=field_attr,
+                    data_attr=data_attr,
+                    table_field=table_field,
+                    col_type_override=col_type_override,
+                    index=index,
+                    totals=totals,
+                    expression=expression,
+                )
         elif field == 'rb_subtraction':
             values = self.decode_mathematical_columns(data_attr=data_attr)
             if values is not None:
-                expression = ExpressionWrapper(NullIf(F(values[0]), 0) - F(values[1]),
-                                               output_field=FloatField())
-                self.get_mathematical_field(fields=fields,
-                                            field_attr=field_attr,
-                                            data_attr=data_attr,
-                                            table_field=table_field,
-                                            col_type_override=col_type_override,
-                                            index=index,
-                                            totals=totals,
-                                            expression=expression)
+                expression = ExpressionWrapper(NullIf(F(values[0]), 0) - F(values[1]), output_field=FloatField())
+                self.get_mathematical_field(
+                    fields=fields,
+                    field_attr=field_attr,
+                    data_attr=data_attr,
+                    table_field=table_field,
+                    col_type_override=col_type_override,
+                    index=index,
+                    totals=totals,
+                    expression=expression,
+                )
 
     @staticmethod
-    def decode_mathematical_columns(data_attr,
-                                    first_value_column_name='first_value_column',
-                                    second_value_column_name='second_value_column'):
+    def decode_mathematical_columns(
+        data_attr, first_value_column_name='first_value_column', second_value_column_name='second_value_column'
+    ):
         first_value_column = data_attr.get(first_value_column_name)
         second_value_column = data_attr.get(second_value_column_name)
         if not first_value_column or not second_value_column:
@@ -356,17 +387,16 @@ class TableUtilsMixin(ReportUtilsMixin):
 
         return first_value_column, second_value_column
 
-    def get_mathematical_percentage_field(self, fields, field_attr, data_attr,
-                                          table_field, index, totals):
-
-        values = self.decode_mathematical_columns(data_attr=data_attr,
-                                                  first_value_column_name='numerator_column',
-                                                  second_value_column_name='denominator_column')
+    def get_mathematical_percentage_field(self, fields, field_attr, data_attr, table_field, index, totals):
+        values = self.decode_mathematical_columns(
+            data_attr=data_attr,
+            first_value_column_name='numerator_column',
+            second_value_column_name='denominator_column',
+        )
         if values is None:
             return False
 
-        expression = ExpressionWrapper(NullIf(F(values[0]) * 100.00, 0) / F(values[1]),
-                                       output_field=FloatField())
+        expression = ExpressionWrapper(NullIf(F(values[0]) * 100.00, 0) / F(values[1]), output_field=FloatField())
         decimal_places = data_attr.get('decimal_places', 2)
         field_attr['decimal_places'] = int(decimal_places)
         alignment_class = ALIGNMENT_CLASS.get(int(data_attr.get('alignment', 0)))
@@ -380,11 +410,15 @@ class TableUtilsMixin(ReportUtilsMixin):
             field_name = f'{field}_{index}'
         field_attr['annotations'] = {field_name: expression}
 
-        field_attr.update({'field': field_name,
-                           'column_name': field_name,
-                           'model_path': '',
-                           'render': [render_replace(html='%1%&thinsp;%', column=field_name)],
-                           'hidden': data_attr.get('hidden', 0) == '1'})
+        field_attr.update(
+            {
+                'field': field_name,
+                'column_name': field_name,
+                'model_path': '',
+                'render': [render_replace(html='%1%&thinsp;%', column=field_name)],
+                'hidden': data_attr.get('hidden', 0) == '1',
+            }
+        )
         if alignment_class != '':
             field_attr['column_defs'] = {'className': alignment_class}
         field = self.number_field(**field_attr)
@@ -392,16 +426,19 @@ class TableUtilsMixin(ReportUtilsMixin):
         if totals is not None:
             show_total = data_attr.get('show_totals')
             if show_total == '1':
-                self.set_percentage_total(totals=totals,
-                                          field_name=field_name,
-                                          denominator=values[1],
-                                          numerator=values[0],
-                                          decimal_places=decimal_places,
-                                          css_class=alignment_class)
+                self.set_percentage_total(
+                    totals=totals,
+                    field_name=field_name,
+                    denominator=values[1],
+                    numerator=values[0],
+                    decimal_places=decimal_places,
+                    css_class=alignment_class,
+                )
         fields.append(field)
 
-    def get_mathematical_field(self, fields, field_attr, data_attr, table_field,
-                               col_type_override, index, totals, expression):
+    def get_mathematical_field(
+        self, fields, field_attr, data_attr, table_field, col_type_override, index, totals, expression
+    ):
         decimal_places = data_attr.get('decimal_places', 2)
         alignment_class = ALIGNMENT_CLASS.get(int(data_attr.get('alignment', 0)))
         field_attr['decimal_places'] = int(decimal_places)
@@ -414,12 +451,16 @@ class TableUtilsMixin(ReportUtilsMixin):
             field_name = f'{field}_{index}'
         field_attr['annotations'] = {field_name: expression}
 
-        field_attr.update({'field': field_name,
-                           'column_name': field_name,
-                           'model_path': '',
-                           'trim_zeros': False,
-                           'hidden': data_attr.get('hidden', 0) == '1',
-                           'css_class': alignment_class})
+        field_attr.update(
+            {
+                'field': field_name,
+                'column_name': field_name,
+                'model_path': '',
+                'trim_zeros': False,
+                'hidden': data_attr.get('hidden', 0) == '1',
+                'css_class': alignment_class,
+            }
+        )
         if alignment_class != '':
             field_attr['column_defs'] = {'className': alignment_class}
         field = self.number_field(**field_attr)
@@ -427,9 +468,11 @@ class TableUtilsMixin(ReportUtilsMixin):
         if totals is not None:
             show_total = data_attr.get('show_totals')
             if show_total == '1':
-                self.set_number_total(totals=totals,
-                                      field_name=field_name,
-                                      col_type_override=col_type_override,
-                                      decimal_places=decimal_places,
-                                      css_class=alignment_class)
+                self.set_number_total(
+                    totals=totals,
+                    field_name=field_name,
+                    col_type_override=col_type_override,
+                    decimal_places=decimal_places,
+                    css_class=alignment_class,
+                )
         fields.append(field)

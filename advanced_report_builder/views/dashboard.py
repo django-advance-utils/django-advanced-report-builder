@@ -29,14 +29,15 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
     model = Dashboard
     enable_edit = True
     enable_links = True
-    views = {'tablereport': TableView,
-             'singlevaluereport': SingleValueView,
-             'barchartreport': BarChartView,
-             'linechartreport': LineChartView,
-             'piechartreport': PieChartView,
-             'funnelchartreport': FunnelChartView,
-             'kanbanreport': KanbanView,
-             }
+    views = {
+        'tablereport': TableView,
+        'singlevaluereport': SingleValueView,
+        'barchartreport': BarChartView,
+        'linechartreport': LineChartView,
+        'piechartreport': PieChartView,
+        'funnelchartreport': FunnelChartView,
+        'kanbanreport': KanbanView,
+    }
 
     custom_views = {}
     views_overrides = {}
@@ -47,7 +48,7 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         super().__init__(*args, **kwargs)
 
     def redirect_url(self):
-        """ used if the slug changes"""
+        """used if the slug changes"""
         return None
 
     def dashboard_not_found(self):
@@ -71,17 +72,19 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
     @staticmethod
     def get_top_report_class(reports):
         reports_len = len(reports)
-        spans = {1: ' col-12',
-                 2: ' col-12 col-sm-12 col-md-6',
-                 3: ' col-12 col-sm-12 col-md-4',
-                 4: ' col-12 col-sm-12 col-md-6 col-lg-3',
-                 6: ' col-12 col-sm-12 col-md-4',
-                 9: ' col-12 col-sm-12 col-md-4'}
+        spans = {
+            1: ' col-12',
+            2: ' col-12 col-sm-12 col-md-6',
+            3: ' col-12 col-sm-12 col-md-4',
+            4: ' col-12 col-sm-12 col-md-6 col-lg-3',
+            6: ' col-12 col-sm-12 col-md-4',
+            9: ' col-12 col-sm-12 col-md-4',
+        }
         return spans.get(reports_len, ' col-12 col-sm-12 col-md-3')
 
     def has_dashboard_permission(self):
         """You can over override this to check if the user has permission to view the dashboard.
-          If return false 'dashboard_no_permission' will be called"""
+        If return false 'dashboard_no_permission' will be called"""
         return True
 
     def dashboard_no_permission(self):
@@ -89,7 +92,7 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
 
     def has_report_got_permission(self, report):
         """You can over override this to check if the user has permission to view the report.
-          If return false 'report_no_permission' will be called"""
+        If return false 'report_no_permission' will be called"""
         return True
 
     def report_no_permission(self, dashboard_report, reports):
@@ -108,11 +111,15 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
             if self.has_report_got_permission(report=dashboard_report.report):
                 report_view = self.get_view(report=dashboard_report.report)
                 extra_class_name = report_view().get_dashboard_class(report=dashboard_report.report)
-                report_data = self.call_view(dashboard_report=dashboard_report, report_view=report_view).rendered_content
-                report = {'render': report_data,
-                          'name': dashboard_report.report.name,
-                          'id': dashboard_report.id,
-                          'class': dashboard_report.get_class(extra_class_name=extra_class_name)}
+                report_data = self.call_view(
+                    dashboard_report=dashboard_report, report_view=report_view
+                ).rendered_content
+                report = {
+                    'render': report_data,
+                    'name': dashboard_report.report.name,
+                    'id': dashboard_report.id,
+                    'class': dashboard_report.get_class(extra_class_name=extra_class_name),
+                }
                 if dashboard_report.top:
                     top_reports.append(report)
                 else:
@@ -146,7 +153,7 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
 
     def post(self, request, *args, **kwargs):
         table_id = request.POST.get('table_id')
-        if table_id:   # must be a datatable:
+        if table_id:  # must be a datatable:
             dashboard_report_id = table_id.split('_')[1]
             if dashboard_report_id:
                 dashboard_report = self.dashboard.dashboardreport_set.filter(id=dashboard_report_id).first()
@@ -155,7 +162,6 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         return super().post(request, *args, **kwargs)
 
     def ajax_change_placement(self, **kwargs):
-
         ids = kwargs['ids']
         dashboard_reports = DashboardReport.objects.filter(id__in=ids)
         obj_dict = dict([(obj.id, obj) for obj in dashboard_reports])
@@ -171,8 +177,7 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
 
 class DashboardModal(ModelFormModal):
     model = Dashboard
-    form_fields = ['name',
-                   'display_option']
+    form_fields = ['name', 'display_option']
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
 
@@ -190,19 +195,21 @@ class DashboardReportModal(ModelFormModal):
     permission_delete = PERMISSION_OFF
     permission_create = PERMISSION_DISABLE
 
-    form_fields = ['name_override',
-                   'top',
-                   'display_option',
-                   'show_versions',
-                   'report_query']
-    widgets = {'top': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
-               'show_versions': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'})}
+    form_fields = ['name_override', 'top', 'display_option', 'show_versions', 'report_query']
+    widgets = {
+        'top': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
+        'show_versions': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
+    }
 
     @staticmethod
     def form_setup(form, *_args, **_kwargs):
-        form.add_trigger('top', 'onchange', [
-            {'selector': '#div_id_display_option', 'values': {'checked': 'hide'}, 'default': 'show'},
-        ])
+        form.add_trigger(
+            'top',
+            'onchange',
+            [
+                {'selector': '#div_id_display_option', 'values': {'checked': 'hide'}, 'default': 'show'},
+            ],
+        )
         report_queries = ReportQuery.objects.filter(report=form.instance.report)
         form.fields['report_query'] = ModelChoiceField(queryset=report_queries, widget=Select2, required=False)
 

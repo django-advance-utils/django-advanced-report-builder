@@ -6,9 +6,16 @@ from django_datatables.model_def import DatatableModel
 from time_stamped_model.models import TimeStampedModel
 from django_modals.model_fields.colour import ColourField
 
-from advanced_report_builder.globals import DISPLAY_OPTION_CHOICES, DISPLAY_OPTION_2_PER_ROW, DISPLAY_OPTION_NONE, \
-    DISPLAY_OPTION_CLASSES, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, ANNOTATION_CHOICE_COUNT, \
-    ANNOTATION_CHART_SCALE
+from advanced_report_builder.globals import (
+    DISPLAY_OPTION_CHOICES,
+    DISPLAY_OPTION_2_PER_ROW,
+    DISPLAY_OPTION_NONE,
+    DISPLAY_OPTION_CLASSES,
+    ANNOTATION_VALUE_CHOICES,
+    ANNOTATIONS_CHOICES,
+    ANNOTATION_CHOICE_COUNT,
+    ANNOTATION_CHART_SCALE,
+)
 
 
 class Target(TimeStampedModel):
@@ -25,8 +32,7 @@ class Target(TimeStampedModel):
     slug = models.SlugField(unique=True)
     name = models.CharField(max_length=64)
     target_type = models.PositiveSmallIntegerField(choices=TARGET_TYPE_CHOICES)
-    colour = ColourField(null=True, blank=True,
-                         help_text='The colour when it gets displayed on a report')
+    colour = ColourField(null=True, blank=True, help_text='The colour when it gets displayed on a report')
     default_value = models.IntegerField(blank=True, null=True)
     default_percentage = models.FloatField(blank=True, null=True)
     overridden = models.BooleanField(default=False)
@@ -154,16 +160,17 @@ class Report(TimeStampedModel):
         return self.report_type.content_type.model_class()
 
     class Datatable(DatatableModel):
-
         class OutputType(DatatableColumn):
-            output_types = {'tablereport': 'Table',
-                            'singlevaluereport': 'Single Value',
-                            'barchartreport': 'Bar Chart',
-                            'linechartreport': 'Line Chart',
-                            'piechartreport': 'Pie Chart',
-                            'funnelchartreport': 'Funnel Chart',
-                            'kanbanreport': 'Kanban',
-                            'customreport': 'Custom'}
+            output_types = {
+                'tablereport': 'Table',
+                'singlevaluereport': 'Single Value',
+                'barchartreport': 'Bar Chart',
+                'linechartreport': 'Line Chart',
+                'piechartreport': 'Pie Chart',
+                'funnelchartreport': 'Funnel Chart',
+                'kanbanreport': 'Kanban',
+                'customreport': 'Custom',
+            }
 
             def col_setup(self):
                 self.field = ['instance_type', 'customreport__output_type']
@@ -178,14 +185,16 @@ class Report(TimeStampedModel):
                 return self.output_types.get(instance_type, '')
 
         class OutputTypeIcon(NoHeadingColumn):
-            output_types = {'tablereport': '<i class="fas fa-table"></i>',
-                            'singlevaluereport': '<i class="fas fa-box-open"></i>',
-                            'barchartreport': '<i class="fas fa-chart-bar"></i>',
-                            'linechartreport': '<i class="fas fa-chart-line"></i>',
-                            'piechartreport': '<i class="fas fa-chart-pie"></i>',
-                            'funnelchartreport': '<i class="fas fa-filter"></i>',
-                            'kanbanreport': '<i class="fas fa-chart-bar fa-flip-vertical"></i>',
-                            'customreport': '<i class="fas fa-file"></i>'}
+            output_types = {
+                'tablereport': '<i class="fas fa-table"></i>',
+                'singlevaluereport': '<i class="fas fa-box-open"></i>',
+                'barchartreport': '<i class="fas fa-chart-bar"></i>',
+                'linechartreport': '<i class="fas fa-chart-line"></i>',
+                'piechartreport': '<i class="fas fa-chart-pie"></i>',
+                'funnelchartreport': '<i class="fas fa-filter"></i>',
+                'kanbanreport': '<i class="fas fa-chart-bar fa-flip-vertical"></i>',
+                'customreport': '<i class="fas fa-file"></i>',
+            }
 
             def col_setup(self):
                 self.field = ['instance_type']
@@ -195,9 +204,9 @@ class Report(TimeStampedModel):
                 instance_type = data[self.model_path + 'instance_type']
                 return self.output_types.get(instance_type, '')
 
-        report_tags_badge = ManyToManyColumn(field='report_tags__name',
-                                             html='<span class="badge badge-primary"> %1% </span>',
-                                             title='Tags')
+        report_tags_badge = ManyToManyColumn(
+            field='report_tags__name', html='<span class="badge badge-primary"> %1% </span>', title='Tags'
+        )
 
 
 class ReportQuery(TimeStampedModel):
@@ -232,6 +241,7 @@ class ReportQueryOrder(TimeStampedModel):
         self.set_order_field(extra_filters={'report_query': self.report_query})
         return super().save(*args, **kwargs)
 
+
 class TableReport(Report):
     table_fields = models.JSONField(null=True, blank=True)
     has_clickable_rows = models.BooleanField(default=False)
@@ -239,12 +249,9 @@ class TableReport(Report):
     pivot_fields = models.JSONField(null=True, blank=True)
     order_by_field = models.CharField(max_length=200, blank=True, null=True)
     order_by_ascending = models.BooleanField(default=True)
-    page_length = models.PositiveSmallIntegerField(choices=((10, '10'),
-                                                            (25, '25'),
-                                                            (50, '50'),
-                                                            (100, '100'),
-                                                            (150, '150'),
-                                                            (200, '200')), default=100)
+    page_length = models.PositiveSmallIntegerField(
+        choices=((10, '10'), (25, '25'), (50, '50'), (100, '100'), (150, '150'), (200, '200')), default=100
+    )
 
 
 class SingleValueReport(Report):
@@ -263,14 +270,15 @@ class SingleValueReport(Report):
         (SINGLE_VALUE_TYPE_PERCENT, 'Percent'),
         (SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT, 'Percent from Count'),
         (SINGLE_VALUE_TYPE_AVERAGE_SUM_FROM_COUNT, 'Average Sum from Count'),
-        (SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME, 'Average Sum over Time')
+        (SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME, 'Average Sum over Time'),
     )
 
     tile_colour = ColourField(blank=True, null=True)
     field = models.CharField(max_length=200, blank=True, null=True)  # denominator
     numerator = models.CharField(max_length=200, blank=True, null=True)
-    single_value_type = models.PositiveSmallIntegerField(choices=SINGLE_VALUE_TYPE_CHOICES,
-                                                         default=SINGLE_VALUE_TYPE_COUNT)
+    single_value_type = models.PositiveSmallIntegerField(
+        choices=SINGLE_VALUE_TYPE_CHOICES, default=SINGLE_VALUE_TYPE_COUNT
+    )
     prefix = models.CharField(max_length=64, blank=True, null=True)
     decimal_places = models.IntegerField(default=0)
     show_breakdown = models.BooleanField(default=False)
@@ -281,44 +289,40 @@ class SingleValueReport(Report):
     average_end_period = models.PositiveSmallIntegerField(blank=True, null=True)
 
     def is_percentage(self):
-        return self.single_value_type in [self.SINGLE_VALUE_TYPE_PERCENT,
-                                          self.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT]
+        return self.single_value_type in [self.SINGLE_VALUE_TYPE_PERCENT, self.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT]
 
 
 class BarChartReport(Report):
-
     BAR_CHART_ORIENTATION_VERTICAL = 1
     BAR_CHART_ORIENTATION_HORIZONTAL = 2
 
     BAR_CHART_ORIENTATION_CHOICES = (
         (BAR_CHART_ORIENTATION_VERTICAL, 'Vertical'),
-        (BAR_CHART_ORIENTATION_HORIZONTAL, 'Horizontal')
+        (BAR_CHART_ORIENTATION_HORIZONTAL, 'Horizontal'),
     )
 
     DATE_FIELD_SINGLE = 1
     DATE_FIELD_RANGE = 2
 
-    DATE_FIELD_CHOICES = (
-        (DATE_FIELD_SINGLE, 'Single'),
-        (DATE_FIELD_RANGE, 'Range')
-    )
+    DATE_FIELD_CHOICES = ((DATE_FIELD_SINGLE, 'Single'), (DATE_FIELD_RANGE, 'Range'))
 
     axis_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES)
 
-    date_field_type = models.PositiveSmallIntegerField(choices=DATE_FIELD_CHOICES,
-                                                       default=DATE_FIELD_SINGLE)
+    date_field_type = models.PositiveSmallIntegerField(choices=DATE_FIELD_CHOICES, default=DATE_FIELD_SINGLE)
 
     date_field = models.CharField(max_length=200)
     end_date_field = models.CharField(max_length=200, blank=True, null=True)
 
-    axis_value_type = models.PositiveSmallIntegerField(choices=ANNOTATIONS_CHOICES,
-                                                       default=ANNOTATION_CHOICE_COUNT, null=True, blank=True)
+    axis_value_type = models.PositiveSmallIntegerField(
+        choices=ANNOTATIONS_CHOICES, default=ANNOTATION_CHOICE_COUNT, null=True, blank=True
+    )
     fields = models.JSONField(null=True, blank=True)
     x_label = models.CharField(max_length=200, blank=True, null=True)
     y_label = models.CharField(max_length=200, blank=True, null=True)
 
-    bar_chart_orientation = models.PositiveSmallIntegerField(choices=BAR_CHART_ORIENTATION_CHOICES,
-                                                             default=BAR_CHART_ORIENTATION_VERTICAL)
+    bar_chart_orientation = models.PositiveSmallIntegerField(
+        choices=BAR_CHART_ORIENTATION_CHOICES, default=BAR_CHART_ORIENTATION_VERTICAL
+    )
     stacked = models.BooleanField(default=False)
     show_totals = models.BooleanField(default=False)
     show_blank_dates = models.BooleanField(default=True)
@@ -334,11 +338,11 @@ class BarChartReport(Report):
 
 
 class LineChartReport(Report):
-
     axis_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES)
     date_field = models.CharField(max_length=200)
-    axis_value_type = models.PositiveSmallIntegerField(choices=ANNOTATIONS_CHOICES,
-                                                       default=ANNOTATION_CHOICE_COUNT, null=True, blank=True)
+    axis_value_type = models.PositiveSmallIntegerField(
+        choices=ANNOTATIONS_CHOICES, default=ANNOTATION_CHOICE_COUNT, null=True, blank=True
+    )
     fields = models.JSONField(null=True, blank=True)
     x_label = models.CharField(max_length=200, blank=True, null=True)
     y_label = models.CharField(max_length=200, blank=True, null=True)
@@ -355,13 +359,11 @@ class PieChartReport(Report):
     PIE_CHART_STYLE_PIE = 1
     PIE_CHART_STYLE_DOUGHNUT = 2
 
-    PIE_CHART_STYLE_CHOICES = (
-        (PIE_CHART_STYLE_PIE, 'Pie'),
-        (PIE_CHART_STYLE_DOUGHNUT, 'Doughnut')
-    )
+    PIE_CHART_STYLE_CHOICES = ((PIE_CHART_STYLE_PIE, 'Pie'), (PIE_CHART_STYLE_DOUGHNUT, 'Doughnut'))
 
-    axis_value_type = models.PositiveSmallIntegerField(choices=ANNOTATIONS_CHOICES,
-                                                       default=ANNOTATION_CHOICE_COUNT, null=True, blank=True)
+    axis_value_type = models.PositiveSmallIntegerField(
+        choices=ANNOTATIONS_CHOICES, default=ANNOTATION_CHOICE_COUNT, null=True, blank=True
+    )
     fields = models.JSONField(null=True, blank=True)
     style = models.PositiveSmallIntegerField(choices=PIE_CHART_STYLE_CHOICES, default=PIE_CHART_STYLE_PIE)
 
@@ -370,8 +372,9 @@ class PieChartReport(Report):
 
 
 class FunnelChartReport(Report):
-    axis_value_type = models.PositiveSmallIntegerField(choices=ANNOTATIONS_CHOICES,
-                                                       default=ANNOTATION_CHOICE_COUNT, null=True, blank=True)
+    axis_value_type = models.PositiveSmallIntegerField(
+        choices=ANNOTATIONS_CHOICES, default=ANNOTATION_CHOICE_COUNT, null=True, blank=True
+    )
     fields = models.JSONField(null=True, blank=True)
 
 
@@ -427,8 +430,9 @@ class KanbanReportLane(TimeStampedModel):
     link_field = models.CharField(max_length=200, blank=True, null=True)
     order_by_field = models.CharField(max_length=200, blank=True, null=True)
     order_by_ascending = models.BooleanField(default=True)
-    kanban_report_description = models.ForeignKey(KanbanReportDescription,
-                                                  null=True, blank=False, on_delete=models.CASCADE)
+    kanban_report_description = models.ForeignKey(
+        KanbanReportDescription, null=True, blank=False, on_delete=models.CASCADE
+    )
 
     multiple_type = models.PositiveIntegerField(choices=MULTIPLE_TYPE_CHOICES, default=MULTIPLE_TYPE_NA)
     multiple_type_label = models.CharField(max_length=200, blank=True, null=True)
@@ -461,7 +465,6 @@ class CustomReport(Report):
 
 
 class Dashboard(TimeStampedModel):
-
     slug = models.SlugField(unique=True)
     slug_alias = models.SlugField(blank=True, null=True)  # used if the slug changes
     name = models.CharField(max_length=200)
@@ -500,8 +503,7 @@ class DashboardReport(TimeStampedModel):
         return class_names
 
     def save(self, *args, **kwargs):
-        self.set_order_field(extra_filters={'dashboard': self.dashboard,
-                                            'top': self.top})
+        self.set_order_field(extra_filters={'dashboard': self.dashboard, 'top': self.top})
         return super().save(*args, **kwargs)
 
     class Meta:

@@ -13,9 +13,18 @@ from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
 from django_modals.widgets.select2 import Select2Multiple
 from django_modals.widgets.widgets import Toggle
 
-from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, ANNOTATION_VALUE_CHOICES, ANNOTATIONS_CHOICES, \
-    DATE_FORMAT_TYPES, CURRENCY_COLUMNS, LINK_COLUMNS, ALIGNMENT_CHOICES, REVERSE_FOREIGN_KEY_COLUMNS, \
-    REVERSE_FOREIGN_KEY_DELIMITER_CHOICES
+from advanced_report_builder.globals import (
+    DATE_FIELDS,
+    NUMBER_FIELDS,
+    ANNOTATION_VALUE_CHOICES,
+    ANNOTATIONS_CHOICES,
+    DATE_FORMAT_TYPES,
+    CURRENCY_COLUMNS,
+    LINK_COLUMNS,
+    ALIGNMENT_CHOICES,
+    REVERSE_FOREIGN_KEY_COLUMNS,
+    REVERSE_FOREIGN_KEY_DELIMITER_CHOICES,
+)
 from advanced_report_builder.models import TableReport, ReportType
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_report_builder_class
@@ -34,34 +43,44 @@ class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
 
     widgets = {'report_tags': Select2Multiple}
 
-    form_fields = ['name',
-                   'notes',
-                   ('has_clickable_rows', {'widget': Toggle(attrs={'data-onstyle': 'success',
-                                                                   'data-on': 'YES',
-                                                                   'data-off': 'NO'})}),
-                   'link_field',
-                   'order_by_field',
-                   ('order_by_ascending', {'widget': Toggle(attrs={'data-onstyle': 'success',
-                                                                   'data-on': 'YES',
-                                                                   'data-off': 'NO'})}),
-
-                   'page_length',
-                   'report_type',
-                   'report_tags',
-                   'table_fields',
-                   'pivot_fields',
-                   ]
+    form_fields = [
+        'name',
+        'notes',
+        (
+            'has_clickable_rows',
+            {'widget': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'})},
+        ),
+        'link_field',
+        'order_by_field',
+        (
+            'order_by_ascending',
+            {'widget': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'})},
+        ),
+        'page_length',
+        'report_type',
+        'report_tags',
+        'table_fields',
+        'pivot_fields',
+    ]
 
     def form_setup(self, form, *_args, **_kwargs):
-        url = reverse('advanced_report_builder:table_field_modal',
-                      kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
+        url = reverse(
+            'advanced_report_builder:table_field_modal',
+            kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'},
+        )
 
-        pivot_url = reverse('advanced_report_builder:table_pivot_modal',
-                            kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'})
+        pivot_url = reverse(
+            'advanced_report_builder:table_pivot_modal',
+            kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'},
+        )
 
-        form.add_trigger('has_clickable_rows', 'onchange', [
-            {'selector': '#div_id_link_field', 'values': {'checked': 'show'}, 'default': 'hide'},
-        ])
+        form.add_trigger(
+            'has_clickable_rows',
+            'onchange',
+            [
+                {'selector': '#div_id_link_field', 'values': {'checked': 'show'}, 'default': 'hide'},
+            ],
+        )
 
         form.fields['notes'].widget.attrs['rows'] = 3
 
@@ -75,35 +94,39 @@ class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
             order_by_field = form.instance.order_by_field
             report_type = form.instance.report_type
 
-        self.setup_field(field_type='link',
-                         form=form,
-                         field_name='link_field',
-                         selected_field_id=link_field,
-                         report_type=report_type)
+        self.setup_field(
+            field_type='link', form=form, field_name='link_field', selected_field_id=link_field, report_type=report_type
+        )
 
-        self.setup_field(field_type='order',
-                         form=form,
-                         field_name='order_by_field',
-                         selected_field_id=order_by_field,
-                         report_type=report_type)
+        self.setup_field(
+            field_type='order',
+            form=form,
+            field_name='order_by_field',
+            selected_field_id=order_by_field,
+            report_type=report_type,
+        )
 
-        fields = ['name',
-                  'notes',
-                  'report_type',
-                  'report_tags',
-                  FieldEx('has_clickable_rows', template='django_modals/fields/label_checkbox.html'),
-                  'link_field',
-                  'order_by_field',
-                  FieldEx('order_by_ascending', template='django_modals/fields/label_checkbox.html'),
-                  FieldEx('page_length', template='django_modals/fields/label_checkbox.html'),
-                  FieldEx('table_fields',
-                          template='advanced_report_builder/select_column.html',
-                          extra_context={'select_column_url': url,
-                                         'command_prefix': ''}),
-                  FieldEx('pivot_fields',
-                          template='advanced_report_builder/datatables/select_pivot.html',
-                          extra_context={'select_column_url': pivot_url}),
-                  ]
+        fields = [
+            'name',
+            'notes',
+            'report_type',
+            'report_tags',
+            FieldEx('has_clickable_rows', template='django_modals/fields/label_checkbox.html'),
+            'link_field',
+            'order_by_field',
+            FieldEx('order_by_ascending', template='django_modals/fields/label_checkbox.html'),
+            FieldEx('page_length', template='django_modals/fields/label_checkbox.html'),
+            FieldEx(
+                'table_fields',
+                template='advanced_report_builder/select_column.html',
+                extra_context={'select_column_url': url, 'command_prefix': ''},
+            ),
+            FieldEx(
+                'pivot_fields',
+                template='advanced_report_builder/datatables/select_pivot.html',
+                extra_context={'select_column_url': pivot_url},
+            ),
+        ]
 
         if self.object.id:
             self.add_extra_queries(form=form, fields=fields)
@@ -126,12 +149,14 @@ class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
         fields = []
         tables = []
         pivot_fields = []
-        self._get_fields(base_model=base_model,
-                         fields=fields,
-                         tables=tables,
-                         report_builder_class=report_builder_class,
-                         pivot_fields=pivot_fields,
-                         include_mathematical_columns=True)
+        self._get_fields(
+            base_model=base_model,
+            fields=fields,
+            tables=tables,
+            report_builder_class=report_builder_class,
+            pivot_fields=pivot_fields,
+            include_mathematical_columns=True,
+        )
 
         self.add_command('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
         self.add_command('report_pivots', data=json.dumps({'pivot_fields': pivot_fields}))
@@ -139,14 +164,14 @@ class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
         return self.command_response()
 
     def select2_link_field(self, **kwargs):
-        return self.get_fields_for_select2(field_type='link',
-                                           report_type=kwargs['report_type'],
-                                           search_string=kwargs.get('search'))
+        return self.get_fields_for_select2(
+            field_type='link', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+        )
 
     def select2_order_by_field(self, **kwargs):
-        return self.get_fields_for_select2(field_type='order',
-                                           report_type=kwargs['report_type'],
-                                           search_string=kwargs.get('search'))
+        return self.get_fields_for_select2(
+            field_type='order', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+        )
 
 
 class TableFieldForm(ChartBaseFieldForm):
@@ -163,11 +188,13 @@ class TableFieldForm(ChartBaseFieldForm):
             return super().submit_button(css_class, button_text, **kwargs)
 
     def is_mathematical_field(self, data):
-        return self.django_field is None and data['field'] in ['rb_addition',
-                                                               'rb_subtraction',
-                                                               'rb_times',
-                                                               'rb_division',
-                                                               'rb_percentage']
+        return self.django_field is None and data['field'] in [
+            'rb_addition',
+            'rb_subtraction',
+            'rb_times',
+            'rb_division',
+            'rb_percentage',
+        ]
 
     def setup_modal(self, *args, **kwargs):
         data = json.loads(base64.b64decode(self.slug['data']))
@@ -175,18 +202,14 @@ class TableFieldForm(ChartBaseFieldForm):
 
         self.fields['title'] = CharField(initial=data['title'])
         data_attr = split_attr(data)
-        self.fields['display_heading'] = BooleanField(required=False,
-                                                      widget=RBToggle(),
-                                                      label='Display heading')
+        self.fields['display_heading'] = BooleanField(required=False, widget=RBToggle(), label='Display heading')
         if int(data_attr.get('display_heading', 1)) == 1:
             self.fields['display_heading'].initial = True
 
         if self.django_field is not None and isinstance(self.django_field, DATE_FIELDS):
             self.setup_date_fields(data_attr)
         elif self.django_field is not None and isinstance(self.django_field, NUMBER_FIELDS):
-            self.setup_number_fields(data_attr=data_attr,
-                                     base_model=base_model,
-                                     report_type=report_type)
+            self.setup_number_fields(data_attr=data_attr, base_model=base_model, report_type=report_type)
         elif isinstance(self.col_type_override, CURRENCY_COLUMNS):
             self.setup_currency_fields(data_attr=data_attr)
         elif isinstance(self.col_type_override, LINK_COLUMNS):
@@ -196,8 +219,7 @@ class TableFieldForm(ChartBaseFieldForm):
         elif self.col_type_override.annotations is not None:
             self.setup_annotation_fields(data_attr=data_attr)
         elif self.is_mathematical_field(data=data):
-            self.setup_standard_mathematical_fields(data=data,
-                                                    data_attr=data_attr)
+            self.setup_standard_mathematical_fields(data=data, data_attr=data_attr)
         else:
             self.fields['annotation_label'] = BooleanField(required=False, widget=RBToggle())
             if 'annotation_label' in data_attr and data_attr['annotation_label'] == '1':
@@ -205,16 +227,12 @@ class TableFieldForm(ChartBaseFieldForm):
         super().setup_modal(*args, **kwargs)
 
     def setup_annotation_fields(self, data_attr):
-        self.fields['show_table_totals'] = BooleanField(required=False,
-                                                        widget=RBToggle(),
-                                                        label='Show totals')
+        self.fields['show_table_totals'] = BooleanField(required=False, widget=RBToggle(), label='Show totals')
         if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
             self.fields['show_table_totals'].initial = True
 
     def setup_currency_fields(self, data_attr):
-        self.fields['show_table_totals'] = BooleanField(required=False,
-                                                        widget=RBToggle(),
-                                                        label='Show totals')
+        self.fields['show_table_totals'] = BooleanField(required=False, widget=RBToggle(), label='Show totals')
         if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
             self.fields['show_table_totals'].initial = True
 
@@ -242,8 +260,9 @@ class TableFieldForm(ChartBaseFieldForm):
                 self.fields['filter'].initial = decode_attribute(data_attr['filter'])
 
     def setup_date_fields(self, data_attr):
-        self.fields['annotations_value'] = ChoiceField(choices=[(0, '-----')] + ANNOTATION_VALUE_CHOICES,
-                                                       required=False)
+        self.fields['annotations_value'] = ChoiceField(
+            choices=[(0, '-----')] + ANNOTATION_VALUE_CHOICES, required=False
+        )
         if 'annotations_value' in data_attr:
             self.fields['annotations_value'].initial = data_attr['annotations_value']
         self.fields['date_format'] = ChoiceField(choices=[(0, '-----')] + DATE_FORMAT_TYPES, required=False)
@@ -251,20 +270,16 @@ class TableFieldForm(ChartBaseFieldForm):
             self.fields['date_format'].initial = data_attr['date_format']
 
     def setup_number_fields(self, data_attr, base_model, report_type):
-        self.fields['annotations_type'] = ChoiceField(choices=[(0, '-----')] + ANNOTATIONS_CHOICES,
-                                                      required=False)
+        self.fields['annotations_type'] = ChoiceField(choices=[(0, '-----')] + ANNOTATIONS_CHOICES, required=False)
         if 'annotations_type' in data_attr:
             self.fields['annotations_type'].initial = data_attr['annotations_type']
 
         annotation_column_help_text = 'Not required however useful for mathematical columns.'
-        self.fields['annotation_column_id'] = CharField(required=False,
-                                                        help_text=annotation_column_help_text)
+        self.fields['annotation_column_id'] = CharField(required=False, help_text=annotation_column_help_text)
         if 'annotation_column_id' in data_attr:
             self.fields['annotation_column_id'].initial = decode_attribute(data_attr['annotation_column_id'])
 
-        self.fields['show_table_totals'] = BooleanField(required=False,
-                                                        widget=RBToggle(),
-                                                        label='Show totals')
+        self.fields['show_table_totals'] = BooleanField(required=False, widget=RBToggle(), label='Show totals')
         if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
             self.fields['show_table_totals'].initial = True
 
@@ -285,12 +300,11 @@ class TableFieldForm(ChartBaseFieldForm):
 
         self.fields['multiple_columns'] = BooleanField(required=False, widget=RBToggle())
 
-        report_builder_class = get_report_builder_class(model=base_model,
-                                                        report_type=report_type)
+        report_builder_class = get_report_builder_class(model=base_model, report_type=report_type)
         fields = []
-        self._get_query_builder_foreign_key_fields(base_model=base_model,
-                                                   report_builder_class=report_builder_class,
-                                                   fields=fields)
+        self._get_query_builder_foreign_key_fields(
+            base_model=base_model, report_builder_class=report_builder_class, fields=fields
+        )
 
         self.fields['multiple_column_field'] = ChoiceField(choices=fields, required=False)
 
@@ -331,9 +345,7 @@ class TableFieldForm(ChartBaseFieldForm):
                 self.fields['second_value_column'].initial = decode_attribute(data_attr['second_value_column'])
         self.fields['decimal_places'] = IntegerField()
         self.fields['decimal_places'].initial = int(data_attr.get('decimal_places', 0))
-        self.fields['show_table_totals'] = BooleanField(required=False,
-                                                        widget=RBToggle(),
-                                                        label='Show totals')
+        self.fields['show_table_totals'] = BooleanField(required=False, widget=RBToggle(), label='Show totals')
         if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
             self.fields['show_table_totals'].initial = True
 
@@ -416,7 +428,7 @@ class TableFieldForm(ChartBaseFieldForm):
         if self.cleaned_data['link_html']:
             b64_link_html = encode_attribute(self.cleaned_data['link_html'])
             attributes.append(f'link_html-{b64_link_html}')
-        if self.cleaned_data['is_icon'] and self.cleaned_data["is_icon"]:
+        if self.cleaned_data['is_icon'] and self.cleaned_data['is_icon']:
             attributes.append('is_icon-1')
 
     def save_reverse_foreign_key_fields(self, attributes):
@@ -457,7 +469,7 @@ class TableFieldForm(ChartBaseFieldForm):
         elif self.is_mathematical_field(data=data):
             self.save_mathematical_fields(data=data, attributes=attributes)
         else:
-            if self.cleaned_data['annotation_label'] and self.cleaned_data["annotation_label"]:
+            if self.cleaned_data['annotation_label'] and self.cleaned_data['annotation_label']:
                 attributes.append('annotation_label-1')
 
         if attributes:
@@ -482,83 +494,97 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
         selector = self.slug['selector']
 
         _attr = form.get_additional_attributes()
-        self.add_command({'function': 'set_attr',
-                          'selector': f'#{selector}',
-                          'attr': 'data-attr',
-                          'val': _attr})
+        self.add_command({'function': 'set_attr', 'selector': f'#{selector}', 'attr': 'data-attr', 'val': _attr})
 
         self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
         self.add_command({'function': self.update_selection_command})
         return self.command_response('close')
 
     def form_setup(self, form, *_args, **_kwargs):
-
         data = json.loads(base64.b64decode(self.slug['data']))
         report_builder_class, base_model = self.get_report_builder_class(report_type_id=self.slug['report_type_id'])
-        django_field, col_type_override, _, _ = self.get_field_details(base_model=base_model,
-                                                                       field=data['field'],
-                                                                       report_builder_class=report_builder_class)
+        django_field, col_type_override, _, _ = self.get_field_details(
+            base_model=base_model, field=data['field'], report_builder_class=report_builder_class
+        )
         if django_field is not None and isinstance(django_field, NUMBER_FIELDS):
-            form.add_trigger('annotations_type', 'onchange', [
-                {'selector': '#annotations_fields_div', 'values': {'0': 'hide'}, 'default': 'show'}])
+            form.add_trigger(
+                'annotations_type',
+                'onchange',
+                [{'selector': '#annotations_fields_div', 'values': {'0': 'hide'}, 'default': 'show'}],
+            )
 
-            form.add_trigger('has_filter', 'onchange', [
-                {'selector': '#filter_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'}])
+            form.add_trigger(
+                'has_filter',
+                'onchange',
+                [{'selector': '#filter_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'}],
+            )
 
-            form.add_trigger('multiple_columns', 'onchange', [
-                {'selector': '#multiple_columns_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'},
-            ])
+            form.add_trigger(
+                'multiple_columns',
+                'onchange',
+                [
+                    {'selector': '#multiple_columns_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'},
+                ],
+            )
 
-            return ['title',
-                    'display_heading',
-                    'show_table_totals',
-                    'decimal_places',
-                    'alignment',
-                    'annotations_type',
-                    Div('annotation_column_id',
-                        FieldEx('has_filter',
-                                template='django_modals/fields/label_checkbox.html',
-                                field_class='col-6 input-group-sm'),
-                        Div(
-                            FieldEx('filter',
-                                    template='advanced_report_builder/datatables/fields/single_query_builder.html'),
-                            FieldEx('multiple_columns',
-                                    template='django_modals/fields/label_checkbox.html',
-                                    field_class='col-6 input-group-sm'),
-                            Div(
-                                FieldEx('multiple_column_field'),
-                                css_id='multiple_columns_fields_div'),
-                            css_id='filter_fields_div'),
-                        css_id='annotations_fields_div')
-                    ]
-        elif isinstance(col_type_override, CURRENCY_COLUMNS):
-            return ['title',
-                    'display_heading',
-                    'show_table_totals']
-        elif isinstance(col_type_override, LINK_COLUMNS):
-            return ['title',
-                    'display_heading',
-                    'link_css',
-                    'link_html',
-                    'is_icon']
-        elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_COLUMNS):
-            form.add_trigger('has_filter', 'onchange', [
-                {'selector': '#filter_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'}])
-
-            return ['title',
-                    'display_heading',
-                    'delimiter_type',
-
-                    FieldEx('has_filter',
-                            template='django_modals/fields/label_checkbox.html',
-                            field_class='col-6 input-group-sm'),
+            return [
+                'title',
+                'display_heading',
+                'show_table_totals',
+                'decimal_places',
+                'alignment',
+                'annotations_type',
+                Div(
+                    'annotation_column_id',
+                    FieldEx(
+                        'has_filter',
+                        template='django_modals/fields/label_checkbox.html',
+                        field_class='col-6 input-group-sm',
+                    ),
                     Div(
-                        FieldEx('filter',
-                                template='advanced_report_builder/datatables/fields/single_query_builder.html',
-                                extra_context={
-                                    'report_builder_class_name': col_type_override.report_builder_class_name
-                                }),
-                        css_id='filter_fields_div')]
+                        FieldEx(
+                            'filter', template='advanced_report_builder/datatables/fields/single_query_builder.html'
+                        ),
+                        FieldEx(
+                            'multiple_columns',
+                            template='django_modals/fields/label_checkbox.html',
+                            field_class='col-6 input-group-sm',
+                        ),
+                        Div(FieldEx('multiple_column_field'), css_id='multiple_columns_fields_div'),
+                        css_id='filter_fields_div',
+                    ),
+                    css_id='annotations_fields_div',
+                ),
+            ]
+        elif isinstance(col_type_override, CURRENCY_COLUMNS):
+            return ['title', 'display_heading', 'show_table_totals']
+        elif isinstance(col_type_override, LINK_COLUMNS):
+            return ['title', 'display_heading', 'link_css', 'link_html', 'is_icon']
+        elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_COLUMNS):
+            form.add_trigger(
+                'has_filter',
+                'onchange',
+                [{'selector': '#filter_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'}],
+            )
+
+            return [
+                'title',
+                'display_heading',
+                'delimiter_type',
+                FieldEx(
+                    'has_filter',
+                    template='django_modals/fields/label_checkbox.html',
+                    field_class='col-6 input-group-sm',
+                ),
+                Div(
+                    FieldEx(
+                        'filter',
+                        template='advanced_report_builder/datatables/fields/single_query_builder.html',
+                        extra_context={'report_builder_class_name': col_type_override.report_builder_class_name},
+                    ),
+                    css_id='filter_fields_div',
+                ),
+            ]
 
     def ajax_get_query_builder_fields(self, **kwargs):
         field_auto_id = kwargs['field_auto_id']
@@ -567,12 +593,13 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
         if report_builder_class_name != '' and report_builder_class_name is not None:
             app_label, model, report_builder_fields_str = report_builder_class_name.split('.')
             new_model = apps.get_model(app_label, model)
-            report_builder_class = get_report_builder_class(model=new_model,
-                                                  class_name=report_builder_fields_str)
+            report_builder_class = get_report_builder_class(model=new_model, class_name=report_builder_fields_str)
             query_builder_filters = []
-            self._get_query_builder_fields(base_model=new_model,
-                                           query_builder_filters=query_builder_filters,
-                                           report_builder_class=report_builder_class)
+            self._get_query_builder_fields(
+                base_model=new_model,
+                query_builder_filters=query_builder_filters,
+                report_builder_class=report_builder_class,
+            )
         else:
             report_type_id = self.slug['report_type_id']
             query_builder_filters = self.get_query_builder_report_type_field(report_type_id=report_type_id)
