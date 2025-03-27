@@ -324,9 +324,25 @@ class Note(models.Model):
     date = models.DateField()
     notes = models.TextField()
 
+class TallyGroup(models.Model):
+    name = models.CharField(max_length=200)
+    date = models.DateField()
+
+    def __str__(self):
+        return self.name
+
+    class ReportBuilder(ReportBuilderFields):
+        default_columns = ['.id']
+        colour = '#0064FF'
+        title = 'Tally Group'
+        fields = [
+            'id',
+            'date',
+            'name',]
 
 class Tally(models.Model):
     date = models.DateField()
+    tally_group = models.ForeignKey(TallyGroup, on_delete=models.CASCADE, null=True, blank=True)
     cars = models.IntegerField()
     vans = models.IntegerField()
     buses = models.IntegerField()
@@ -360,6 +376,10 @@ class Tally(models.Model):
             'user_profile': {
                 'title': 'User',
                 'model': 'report_builder_examples.UserProfile.ReportBuilder',
+            },
+            'tally_group': {
+                'title': 'Tally Group',
+                'model': 'report_builder_examples.TallyGroup.ReportBuilder',
             }
         }
 
