@@ -6,7 +6,7 @@ from django_datatables.columns import (
     DatatableColumn,
     CurrencyPenceColumn,
     ColumnBase,
-    DateColumn,
+    DateColumn, ManyToManyColumn,
 )
 from django_datatables.model_def import DatatableModel
 from time_stamped_model.models import TimeStampedModel
@@ -324,6 +324,13 @@ class Note(models.Model):
     date = models.DateField()
     notes = models.TextField()
 
+
+class TallyTag(models.Model):
+    name = models.CharField(max_length=200)
+
+    def __str__(self):
+        return self.name
+
 class TallyGroup(models.Model):
     name = models.CharField(max_length=200)
     date = models.DateField()
@@ -343,6 +350,7 @@ class TallyGroup(models.Model):
 class Tally(models.Model):
     date = models.DateField()
     tally_group = models.ForeignKey(TallyGroup, on_delete=models.CASCADE, null=True, blank=True)
+    tally_tags = models.ManyToManyField(TallyTag, blank=True)
     cars = models.IntegerField()
     vans = models.IntegerField()
     buses = models.IntegerField()
@@ -355,6 +363,10 @@ class Tally(models.Model):
 
     class Meta:
         verbose_name_plural = 'Tallies'
+
+
+    class Datatable(DatatableModel):
+        tag = ManyToManyColumn(field='tally_tags__name')
 
     class ReportBuilder(ReportBuilderFields):
         default_columns = ['.id']
@@ -370,6 +382,7 @@ class Tally(models.Model):
             'push_bikes',
             'tractors',
             'verified',
+            'tag',
         ]
 
         includes = {
