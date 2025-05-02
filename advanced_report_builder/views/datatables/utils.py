@@ -150,6 +150,12 @@ class TableUtilsMixin(ReportUtilsMixin):
             if int(data_attr.get('display_heading', 1)) == 0:
                 field_attr['title'] = ''
 
+            annotations_type = int(data_attr.get('annotations_type', 0))
+            append_annotation_query = int(data_attr.get('append_annotation_query', 0))
+
+            if annotations_type != 0 or append_annotation_query != 0:
+                has_annotations = True
+
             if isinstance(django_field, DATE_FIELDS):
                 field_name = self.get_date_field(
                     index=index,
@@ -158,16 +164,16 @@ class TableUtilsMixin(ReportUtilsMixin):
                     fields=fields,
                 )
             elif isinstance(django_field, NUMBER_FIELDS) and (django_field is None or django_field.choices is None):
-                annotations_type = int(data_attr.get('annotations_type', 0))
-                if annotations_type != 0:
-                    has_annotations = True
+
                 decimal_places = data_attr.get('decimal_places')
+                append_annotation_query = int(data_attr.get('append_annotation_query', 0)) == 1
 
                 field_name = self.get_number_fields(field_name=field_name,
                                                     table=table,
                                                     base_model=base_model,
                                                     report_builder_class=report_builder_class,
                                                     annotations_type=annotations_type,
+                                                    append_annotation_query=append_annotation_query,
                                                     index=index,
                                                     data_attr=data_attr,
                                                     table_field=table_field,
@@ -248,11 +254,13 @@ class TableUtilsMixin(ReportUtilsMixin):
                 field_name = field
                 if isinstance(col_type_override, CURRENCY_COLUMNS) and totals is not None:
                     annotations_type = int(data_attr.get('annotations_type', 0))
+                    append_annotation_query = int(data_attr.get('append_annotation_query', 0)) == 1
                     field_name = self.get_number_fields(field_name=field_name,
                                                         table=table,
                                                         base_model=base_model,
                                                         report_builder_class=report_builder_class,
                                                         annotations_type=annotations_type,
+                                                        append_annotation_query=append_annotation_query,
                                                         index=index,
                                                         data_attr=data_attr,
                                                         table_field=table_field,
@@ -314,11 +322,12 @@ class TableUtilsMixin(ReportUtilsMixin):
             totals[first_field_name] = {'text': 'Totals'}
             table.add_plugin(self.column_totals_class, totals)
 
-
     def get_number_fields(self,  field_name, table, base_model, report_builder_class, annotations_type,
-                          index, data_attr, table_field, fields,
+                          append_annotation_query, index, data_attr, table_field, fields,
                           totals, col_type_override,  decimal_places):
-        if annotations_type != ANNOTATION_CHOICE_NA and data_attr.get('multiple_columns') == '1':
+
+        if ((annotations_type != ANNOTATION_CHOICE_NA or append_annotation_query) and
+                data_attr.get('multiple_columns') == '1'):
             query = self.extra_filters(query=table.model.objects)
             multiple_column_field = data_attr.get('multiple_column_field')
 
@@ -348,6 +357,7 @@ class TableUtilsMixin(ReportUtilsMixin):
 
                 field_name = self.get_number_field(
                     annotations_type=annotations_type,
+                    append_annotation_query=append_annotation_query,
                     index=f'{index}_{multiple_index}',
                     data_attr=data_attr,
                     table_field=table_field,
@@ -361,6 +371,7 @@ class TableUtilsMixin(ReportUtilsMixin):
         else:
             field_name = self.get_number_field(
                 annotations_type=annotations_type,
+                append_annotation_query=append_annotation_query,
                 index=index,
                 data_attr=data_attr,
                 table_field=table_field,

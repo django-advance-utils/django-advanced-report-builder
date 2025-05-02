@@ -64,6 +64,7 @@ class SingleValueView(ChartBaseView):
         if isinstance(django_field, NUMBER_FIELDS) or col_type_override is not None and col_type_override.annotations:
             self.get_number_field(
                 annotations_type=aggregations_type,
+                append_annotation_query=False,
                 index=0,
                 data_attr={},
                 table_field={'field': field, 'title': field},

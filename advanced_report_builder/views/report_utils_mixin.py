@@ -29,6 +29,7 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
     def get_number_field(
         self,
         annotations_type,
+        append_annotation_query,
         index,
         table_field,
         data_attr,
@@ -49,7 +50,7 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
         new_field_name = field_name
         css_class = None
         annotation_filter = None
-        if annotations_type != 0:
+        if annotations_type != 0 or append_annotation_query:
             b64_filter = data_attr.get('filter')
             if b64_filter:
                 _filter = decode_attribute(b64_filter)
@@ -66,10 +67,7 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
             title = title_suffix + ' ' + table_field.get('title')
         if col_type_override:
             col_type_override.table = None
-            print('-------')
-            print('- yeesss')
             field = copy.deepcopy(col_type_override)
-            print(field.field)
             if field.model_path and isinstance(field.field, str) and field.field.startswith(field.model_path):
                 raw_field_name = field.field[len(field.model_path) :]
             else:
@@ -81,9 +79,27 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                 elif isinstance(field, CurrencyColumn):
                     field.__class__ = ReportBuilderCurrencyColumn
 
+            if append_annotation_query and field.annotations:
+                css_class = field.column_defs.get('className')
+                if css_class is None:
+                    css_class = alignment_class
+                else:
+                    css_class += ' ' + alignment_class
+                field.column_defs['className'] = css_class
+                if title:
+                    field.title = title
 
-            if field.annotations and annotations_type == ANNOTATION_CHOICE_NA:
+                field = copy.deepcopy(field)
+                current_annotations = field.annotations[field_name].filter
+                if annotation_filter is not None and len(annotation_filter) > 0:
+                    new_annotations = current_annotations & annotation_filter
+                    field.annotations[field_name].filter = new_annotations
+                new_field_name = f'{field_name}_{index}'
+                field.annotations[new_field_name] = field.annotations.pop(field_name)
+                field.field = new_field_name
+                field_name = new_field_name
 
+            elif field.annotations and annotations_type == ANNOTATION_CHOICE_NA:
                 if not self.use_annotations:
                     field.options['calculated'] = True
                     field.aggregations = col_type_override.annotations
@@ -107,13 +123,10 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                 number_function_kwargs = {}
                 if title:
                     number_function_kwargs['title'] = title
-
                 if alignment_class != '':
                     css_class = alignment_class
                     number_function_kwargs['column_defs'] = {'className': css_class}
-
                 function_type = ANNOTATION_FUNCTIONS[annotations_type]
-
                 number_function_kwargs['options'] = {}
                 self.set_extra_number_field_kwargs(
                     data_attr=data_attr,
@@ -147,64 +160,40 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
 
                 if title:
                     field.title = title
-                print('--annotations_type', annotations_type)
-
-                print(field.field)
                 if annotations_type != 0:
-                    print('here')
-                    if field.annotations:
-                        print('+++++++++')
-                        print(field.annotations)
-                        #  existing annotations is on that field.
-                        field = copy.deepcopy(field)
-                        print(field_name)
-                        print(annotation_filter)
-                        current_annotations = field.annotations[field_name].filter
-                        if annotation_filter is not None and  len(annotation_filter) > 0:
-                            new_annotations = current_annotations & annotation_filter
-                            field.annotations[field_name].filter = new_annotations
-                        new_field_name = f'{field_name}_{index}'
-                        field.annotations[new_field_name] = field.annotations.pop(field_name)
-                        field.field = new_field_name
-                        field_name = new_field_name
-                        print(field.annotations)
-                        print(field.column_name)
+                    new_field_name = self.get_new_annotation_field_name(
+                        annotations_type=annotations_type,
+                        field_name=field_name,
+                        index=index,
+                        data_attr=data_attr,
+                    )
+                    function_type = ANNOTATION_FUNCTIONS[annotations_type]
+                    if annotation_filter:
+                        function = function_type(raw_field_name, filter=annotation_filter)
                     else:
-                        new_field_name = self.get_new_annotation_field_name(
-                            annotations_type=annotations_type,
-                            field_name=field_name,
-                            index=index,
-                            data_attr=data_attr,
-                        )
-                        function_type = ANNOTATION_FUNCTIONS[annotations_type]
-                        if annotation_filter:
-                            function = function_type(raw_field_name, filter=annotation_filter)
-                        else:
-                            function = function_type(raw_field_name)
-                        if divider:
-                            function = ExpressionWrapper(function / NullIf(divider, 0), output_field=FloatField())
-                        if self.use_annotations:
-                            field.annotations = {new_field_name: function}
-                        else:
-                            field.options['calculated'] = True
-                            field.aggregations = {new_field_name: function}
-                            field.annotations = []
+                        function = function_type(raw_field_name)
+                    if divider:
+                        function = ExpressionWrapper(function / NullIf(divider, 0), output_field=FloatField())
+                    if self.use_annotations:
+                        field.annotations = {new_field_name: function}
+                    else:
+                        field.options['calculated'] = True
+                        field.aggregations = {new_field_name: function}
+                        field.annotations = []
 
-                        field.field = new_field_name
-                        self.set_extra_number_field_kwargs(
-                            data_attr=data_attr,
-                            options=field.options,
-                            multiple_index=multiple_index,
-                            additional_options=additional_options,
-                        )
-            print(field.field)
+                    field.field = new_field_name
+                    self.set_extra_number_field_kwargs(
+                        data_attr=data_attr,
+                        options=field.options,
+                        multiple_index=multiple_index,
+                        additional_options=additional_options,
+                    )
             fields.append(field)
         else:
             number_function_kwargs = {'title': title}
             decimal_places = data_attr.get('decimal_places', decimal_places)
             if decimal_places:
                 number_function_kwargs['decimal_places'] = int(decimal_places)
-            print('number_function_kwargs:', number_function_kwargs)
             if annotations_type:
                 number_function_kwargs['options'] = {}
                 self.set_extra_number_field_kwargs(
