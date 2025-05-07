@@ -11,6 +11,8 @@ from report_builder_examples.models import (
     CompanyCategory,
     Contract,
     TallyGroup,
+    TallyTag,
+
 )
 from django.contrib.auth.admin import UserAdmin
 
@@ -45,6 +47,11 @@ class PersonAdmin(admin.ModelAdmin):
 @admin.register(Tags)
 class TagsAdmin(admin.ModelAdmin):
     list_display = ('tag',)
+
+
+@admin.register(TallyTag)
+class TallTagAdmin(admin.ModelAdmin):
+    list_display = ('name', )
 
 
 @admin.register(TallyGroup)
