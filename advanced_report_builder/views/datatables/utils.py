@@ -21,7 +21,7 @@ from advanced_report_builder.globals import (
     ALIGNMENT_CLASS,
     REVERSE_FOREIGN_KEY_DELIMITER_COMMA,
     REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_XOR,
-    DATE_FORMAT_TYPE_DD_MM_YY_SLASH,
+    DATE_FORMAT_TYPE_DD_MM_YY_SLASH, ANNOTATION_CHOICE_NA,
 )
 from advanced_report_builder.globals import (
     DATE_FORMAT_TYPES_DJANGO_FORMAT,
@@ -68,6 +68,7 @@ class TableUtilsMixin(ReportUtilsMixin):
 
             if annotations_value != 0:
                 new_field_name = f'{annotations_value}_{field_name}_{index}'
+                new_field_name = new_field_name.replace('__', '_')
                 function = ANNOTATION_VALUE_FUNCTIONS[annotations_value]
                 date_function_kwargs['annotations_value'] = {new_field_name: function(field_name)}
                 field_name = new_field_name
@@ -149,6 +150,12 @@ class TableUtilsMixin(ReportUtilsMixin):
             if int(data_attr.get('display_heading', 1)) == 0:
                 field_attr['title'] = ''
 
+            annotations_type = int(data_attr.get('annotations_type', 0))
+            append_annotation_query = int(data_attr.get('append_annotation_query', 0))
+
+            if annotations_type != 0 or append_annotation_query != 0:
+                has_annotations = True
+
             if isinstance(django_field, DATE_FIELDS):
                 field_name = self.get_date_field(
                     index=index,
@@ -157,62 +164,23 @@ class TableUtilsMixin(ReportUtilsMixin):
                     fields=fields,
                 )
             elif isinstance(django_field, NUMBER_FIELDS) and (django_field is None or django_field.choices is None):
-                annotations_type = int(data_attr.get('annotations_type', 0))
-                if annotations_type != 0:
-                    has_annotations = True
+
                 decimal_places = data_attr.get('decimal_places')
+                append_annotation_query = int(data_attr.get('append_annotation_query', 0)) == 1
 
-                if annotations_type != 0 and data_attr.get('multiple_columns') == '1':
-                    query = self.extra_filters(query=table.model.objects)
-                    multiple_column_field = data_attr.get('multiple_column_field')
-
-                    field_report_builder_class = self._get_report_builder_class(
-                        base_model=base_model,
-                        field_str=multiple_column_field,
-                        report_builder_class=report_builder_class,
-                    )
-                    _fields = field_report_builder_class.default_multiple_column_fields
-                    default_multiple_column_fields = [multiple_column_field + '__' + x for x in _fields]
-                    order_by = f'{multiple_column_field}__{field_report_builder_class.default_multiple_pk}'
-
-                    results = (
-                        query.order_by(order_by)
-                        .distinct(multiple_column_field)
-                        .values(multiple_column_field, *default_multiple_column_fields)
-                    )
-
-                    for multiple_index, result in enumerate(results):
-                        suffix = self._set_multiple_title(
-                            database_values=result,
-                            value_prefix=multiple_column_field,
-                            fields=_fields,
-                            text=field_report_builder_class.default_multiple_column_text,
-                        )
-                        extra_filter = Q((multiple_column_field, result[multiple_column_field]))
-
-                        field_name = self.get_number_field(
-                            annotations_type=annotations_type,
-                            index=f'{index}_{multiple_index}',
-                            data_attr=data_attr,
-                            table_field=table_field,
-                            fields=fields,
-                            totals=totals,
-                            col_type_override=col_type_override,
-                            extra_filter=extra_filter,
-                            title_suffix=suffix,
-                            decimal_places=decimal_places,
-                        )
-                else:
-                    field_name = self.get_number_field(
-                        annotations_type=annotations_type,
-                        index=index,
-                        data_attr=data_attr,
-                        table_field=table_field,
-                        fields=fields,
-                        totals=totals,
-                        col_type_override=col_type_override,
-                        decimal_places=decimal_places,
-                    )
+                field_name = self.get_number_fields(field_name=field_name,
+                                                    table=table,
+                                                    base_model=base_model,
+                                                    report_builder_class=report_builder_class,
+                                                    annotations_type=annotations_type,
+                                                    append_annotation_query=append_annotation_query,
+                                                    index=index,
+                                                    data_attr=data_attr,
+                                                    table_field=table_field,
+                                                    fields=fields,
+                                                    totals=totals,
+                                                    col_type_override=col_type_override,
+                                                    decimal_places=decimal_places)
 
             elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_STR_COLUMNS):
                 field_name = table_field['field']
@@ -285,14 +253,22 @@ class TableUtilsMixin(ReportUtilsMixin):
 
                 field_name = field
                 if isinstance(col_type_override, CURRENCY_COLUMNS) and totals is not None:
-                    css_class = col_type_override.column_defs.get('className')
-                    show_total = data_attr.get('show_totals')
-                    if show_total == '1':
-                        totals[field_name] = {
-                            'sum': 'to_fixed',
-                            'decimal_places': 2,
-                            'css_class': css_class,
-                        }
+                    annotations_type = int(data_attr.get('annotations_type', 0))
+                    append_annotation_query = int(data_attr.get('append_annotation_query', 0)) == 1
+                    field_name = self.get_number_fields(field_name=field_name,
+                                                        table=table,
+                                                        base_model=base_model,
+                                                        report_builder_class=report_builder_class,
+                                                        annotations_type=annotations_type,
+                                                        append_annotation_query=append_annotation_query,
+                                                        index=index,
+                                                        data_attr=data_attr,
+                                                        table_field=table_field,
+                                                        fields=fields,
+                                                        totals=totals,
+                                                        col_type_override=col_type_override,
+                                                        decimal_places=2)
+
                 elif col_type_override.annotations is not None:
                     css_class = col_type_override.column_defs.get('className')
                     show_total = data_attr.get('show_totals')
@@ -304,9 +280,13 @@ class TableUtilsMixin(ReportUtilsMixin):
                             decimal_places=2,
                             css_class=css_class,
                         )
-                if field_attr:
-                    field = (field, field_attr)
-                fields.append(field)
+                    if field_attr:
+                        field = (field, field_attr)
+                        fields.append(field)
+                else:
+                    if field_attr:
+                        field = (field, field_attr)
+                    fields.append(field)
 
             if not first_field_name:
                 first_field_name = field_name
@@ -341,6 +321,66 @@ class TableUtilsMixin(ReportUtilsMixin):
         if totals:
             totals[first_field_name] = {'text': 'Totals'}
             table.add_plugin(self.column_totals_class, totals)
+
+    def get_number_fields(self,  field_name, table, base_model, report_builder_class, annotations_type,
+                          append_annotation_query, index, data_attr, table_field, fields,
+                          totals, col_type_override,  decimal_places):
+
+        if ((annotations_type != ANNOTATION_CHOICE_NA or append_annotation_query) and
+                data_attr.get('multiple_columns') == '1'):
+            query = self.extra_filters(query=table.model.objects)
+            multiple_column_field = data_attr.get('multiple_column_field')
+
+            field_report_builder_class = self._get_report_builder_class(
+                base_model=base_model,
+                field_str=multiple_column_field,
+                report_builder_class=report_builder_class,
+            )
+            _fields = field_report_builder_class.default_multiple_column_fields
+            default_multiple_column_fields = [multiple_column_field + '__' + x for x in _fields]
+            order_by = f'{multiple_column_field}__{field_report_builder_class.default_multiple_pk}'
+
+            results = (
+                query.order_by(order_by)
+                .distinct(multiple_column_field)
+                .values(multiple_column_field, *default_multiple_column_fields)
+            )
+
+            for multiple_index, result in enumerate(results):
+                suffix = self._set_multiple_title(
+                    database_values=result,
+                    value_prefix=multiple_column_field,
+                    fields=_fields,
+                    text=field_report_builder_class.default_multiple_column_text,
+                )
+                extra_filter = Q((multiple_column_field, result[multiple_column_field]))
+
+                field_name = self.get_number_field(
+                    annotations_type=annotations_type,
+                    append_annotation_query=append_annotation_query,
+                    index=f'{index}_{multiple_index}',
+                    data_attr=data_attr,
+                    table_field=table_field,
+                    fields=fields,
+                    totals=totals,
+                    col_type_override=col_type_override,
+                    extra_filter=extra_filter,
+                    title_suffix=suffix,
+                    decimal_places=decimal_places,
+                )
+        else:
+            field_name = self.get_number_field(
+                annotations_type=annotations_type,
+                append_annotation_query=append_annotation_query,
+                index=index,
+                data_attr=data_attr,
+                table_field=table_field,
+                fields=fields,
+                totals=totals,
+                col_type_override=col_type_override,
+                decimal_places=decimal_places,
+            )
+        return field_name
 
     @staticmethod
     def _set_multiple_title(database_values, value_prefix, fields, text):

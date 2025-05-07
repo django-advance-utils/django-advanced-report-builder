@@ -12,6 +12,7 @@ from report_builder_examples.models import (
     Contract,
     TallyGroup,
     TallyTag,
+
 )
 from django.contrib.auth.admin import UserAdmin
 

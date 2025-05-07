@@ -324,13 +324,6 @@ class Note(models.Model):
     date = models.DateField()
     notes = models.TextField()
 
-
-class TallyTag(models.Model):
-    name = models.CharField(max_length=200)
-
-    def __str__(self):
-        return self.name
-
 class TallyGroup(models.Model):
     name = models.CharField(max_length=200)
     date = models.DateField()
@@ -346,6 +339,12 @@ class TallyGroup(models.Model):
             'id',
             'date',
             'name',]
+
+class TallyTag(models.Model):
+    name = models.CharField(max_length=200)
+
+    def __str__(self):
+        return self.name
 
 class Tally(models.Model):
     date = models.DateField()
@@ -389,6 +388,10 @@ class Tally(models.Model):
             'user_profile': {
                 'title': 'User',
                 'model': 'report_builder_examples.UserProfile.ReportBuilder',
+            },
+            'tally_group': {
+                'title': 'Tally Group',
+                'model': 'report_builder_examples.TallyGroup.ReportBuilder',
             }
         }
 

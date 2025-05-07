@@ -17,7 +17,7 @@ from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import (
     ANNOTATION_FUNCTIONS,
     ANNOTATION_CHOICE_COUNT,
-    ALIGNMENT_CLASS,
+    ALIGNMENT_CLASS, ANNOTATION_CHOICE_NA,
 )
 from advanced_report_builder.utils import decode_attribute
 
@@ -29,6 +29,7 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
     def get_number_field(
         self,
         annotations_type,
+        append_annotation_query,
         index,
         table_field,
         data_attr,
@@ -43,12 +44,13 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
         divider=None,
         additional_options=None,
     ):
+
         field_name = table_field['field']
         alignment_class = ALIGNMENT_CLASS.get(int(data_attr.get('alignment', 0)))
         new_field_name = field_name
         css_class = None
         annotation_filter = None
-        if annotations_type != 0:
+        if annotations_type != 0 or append_annotation_query:
             b64_filter = data_attr.get('filter')
             if b64_filter:
                 _filter = decode_attribute(b64_filter)
@@ -77,7 +79,27 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                 elif isinstance(field, CurrencyColumn):
                     field.__class__ = ReportBuilderCurrencyColumn
 
-            if field.annotations:
+            if append_annotation_query and field.annotations:
+                css_class = field.column_defs.get('className')
+                if css_class is None:
+                    css_class = alignment_class
+                else:
+                    css_class += ' ' + alignment_class
+                field.column_defs['className'] = css_class
+                if title:
+                    field.title = title
+
+                field = copy.deepcopy(field)
+                current_annotations = field.annotations[field_name].filter
+                if annotation_filter is not None and len(annotation_filter) > 0:
+                    new_annotations = current_annotations & annotation_filter
+                    field.annotations[field_name].filter = new_annotations
+                new_field_name = f'{field_name}_{index}'
+                field.annotations[new_field_name] = field.annotations.pop(field_name)
+                field.field = new_field_name
+                field_name = new_field_name
+
+            elif field.annotations and annotations_type == ANNOTATION_CHOICE_NA:
                 if not self.use_annotations:
                     field.options['calculated'] = True
                     field.aggregations = col_type_override.annotations
@@ -101,13 +123,10 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                 number_function_kwargs = {}
                 if title:
                     number_function_kwargs['title'] = title
-
                 if alignment_class != '':
                     css_class = alignment_class
                     number_function_kwargs['column_defs'] = {'className': css_class}
-
                 function_type = ANNOTATION_FUNCTIONS[annotations_type]
-
                 number_function_kwargs['options'] = {}
                 self.set_extra_number_field_kwargs(
                     data_attr=data_attr,
@@ -131,6 +150,7 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                 number_function_kwargs.update({'field': new_field_name, 'column_name': new_field_name})
                 field = self.number_field(**number_function_kwargs)
             else:
+
                 css_class = field.column_defs.get('className')
                 if css_class is None:
                     css_class = alignment_class

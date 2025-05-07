@@ -16,6 +16,7 @@ from advanced_report_builder.globals import (
     ANNOTATION_CHOICE_COUNT,
     ANNOTATION_CHART_SCALE,
 )
+from advanced_report_builder.signals import model_report_save
 
 
 class Target(TimeStampedModel):
@@ -144,17 +145,18 @@ class Report(TimeStampedModel):
         return self.name
 
     def save(self, *args, **kwargs):
+        is_new = self.pk is None
         if self.version is not None:
             self.version += 1
-
         slug_alias = self.slug
         self.make_new_slug(obj=Report, allow_dashes=False, on_edit=True)
         if slug_alias != self.slug:
             self.slug_alias = slug_alias
-
         if self.instance_type is None:
             self.instance_type = self._meta.label_lower.split('.')[1]
-        return super().save(*args, **kwargs)
+        result = super().save(*args, **kwargs)
+        model_report_save.send(sender=self.__class__, instance=self, created=is_new)
+        return result
 
     def get_base_model(self):
         return self.report_type.content_type.model_class()
@@ -219,8 +221,11 @@ class ReportQuery(TimeStampedModel):
     order = models.PositiveSmallIntegerField()
 
     def save(self, *args, **kwargs):
+        is_new = self.pk is None
         self.set_order_field(extra_filters={'report': self.report})
-        return super().save(*args, **kwargs)
+        result = super().save(*args, **kwargs)
+        model_report_save.send(sender=self.__class__, instance=self, created=is_new)
+        return result
 
     class Meta:
         ordering = ['order']
@@ -418,8 +423,11 @@ class KanbanReportDescription(TimeStampedModel):
     order = models.PositiveSmallIntegerField()
 
     def save(self, *args, **kwargs):
+        is_new = self.pk is None
         self.set_order_field(extra_filters={'kanban_report': self.kanban_report})
-        return super().save(*args, **kwargs)
+        result = super().save(*args, **kwargs)
+        model_report_save.send(sender=self.__class__, instance=self, created=is_new)
+        return result
 
     def get_base_model(self):
         return self.report_type.content_type.model_class()
@@ -476,8 +484,11 @@ class KanbanReportLane(TimeStampedModel):
     query_data = models.JSONField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
+        is_new = self.pk is None
         self.set_order_field(extra_filters={'kanban_report': self.kanban_report})
-        return super().save(*args, **kwargs)
+        result = super().save(*args, **kwargs)
+        model_report_save.send(sender=self.__class__, instance=self, created=is_new)
+        return result
 
     def get_base_model(self):
         return self.report_type.content_type.model_class()

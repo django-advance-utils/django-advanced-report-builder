@@ -79,6 +79,8 @@ class ViewReports(MainIndices):
             'OutputTypeIcon',
             'OutputType',
             'version',
+            'report_type__name',
+            'created',
             ColumnLink(
                 column_name='view_report',
                 field='name',

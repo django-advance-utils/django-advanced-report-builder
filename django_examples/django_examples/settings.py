@@ -24,7 +24,7 @@ SECRET_KEY = '$j30f^wzfr!4_f)d8fv=5rdk*b1_lzekppye*7o6(ru2j53l-2'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-SHOW_DEBUG_TOOLBAR = False
+SHOW_DEBUG_TOOLBAR = True
 
 
 ALLOWED_HOSTS = []

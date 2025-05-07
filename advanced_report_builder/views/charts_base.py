@@ -278,6 +278,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
 
                         self.get_number_field(
                             annotations_type=self.chart_report.axis_value_type,
+                            append_annotation_query=False,
                             index=f'{index}_{multiple_index}',
                             data_attr=data_attr,
                             table_field=table_field,
@@ -292,6 +293,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
                 else:
                     self.get_number_field(
                         annotations_type=self.chart_report.axis_value_type,
+                        append_annotation_query=False,
                         index=index,
                         data_attr=data_attr,
                         table_field=table_field,
