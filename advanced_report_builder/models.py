@@ -1,11 +1,12 @@
-from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.dates import MONTHS
 from django_datatables.columns import DatatableColumn, NoHeadingColumn, ManyToManyColumn
 from django_datatables.model_def import DatatableModel
-from time_stamped_model.models import TimeStampedModel
 from django_modals.model_fields.colour import ColourField
+from time_stamped_model.models import TimeStampedModel
+
+from django.conf import settings
 
 from advanced_report_builder.globals import (
     DISPLAY_OPTION_CHOICES,
@@ -133,14 +134,14 @@ class Report(TimeStampedModel):
     notes = models.TextField(null=True, blank=True)
     version = models.PositiveSmallIntegerField(default=0)
     user_created = models.ForeignKey(
-        get_user_model(),
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='report_user_created_set'
     )
     user_updated = models.ForeignKey(
-        get_user_model(),
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
