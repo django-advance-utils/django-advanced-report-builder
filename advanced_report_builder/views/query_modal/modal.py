@@ -207,9 +207,6 @@ class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
         return self.command_response()
 
 
-
-
-
 class OrderByFieldForm(ModelCrispyForm):
     class Meta:
         model = ReportQueryOrder
