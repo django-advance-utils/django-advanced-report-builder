@@ -22,7 +22,6 @@ from advanced_report_builder.columns import (
     ReverseForeignKeyChoiceColumn,
     ReverseForeignKeyDateColumn,
 )
-from advanced_report_builder.models import Report
 from advanced_report_builder.report_builder import ReportBuilderFields
 from report_builder_examples.report_overrides import CustomDateColumn
 
@@ -467,5 +466,5 @@ class Contract(TimeStampedModel):
 
 
 class ReportPermission(TimeStampedModel):
-    report = models.OneToOneField(Report, primary_key=True, on_delete=models.CASCADE)
+    report = models.OneToOneField('advanced_report_builder.Report', primary_key=True, on_delete=models.CASCADE)
     requires_superuser = models.BooleanField(default=False)

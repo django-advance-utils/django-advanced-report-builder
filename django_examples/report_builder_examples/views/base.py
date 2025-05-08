@@ -21,8 +21,10 @@ class MainMenu(AjaxHelpers, MenuMixin):
 class MainIndices(MainMenu, DatatableView):
     template_name = 'report_builder_examples/indices.html'
     table_title = None
+    show_pivot_table = False
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['table_title'] = self.table_title
+        context['show_pivot_table'] = self.show_pivot_table
         return context

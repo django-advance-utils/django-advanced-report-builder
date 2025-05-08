@@ -181,9 +181,9 @@ class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
 
     def form_valid(self, form):
         org_id = self.object.pk if hasattr(self, 'object') else None
-        save_function = getattr(form, 'save', None)
-        if save_function:
-            save_function()
+        instance = form.save(commit=False)
+        instance._current_user = self.request.user
+        instance.save()
         self.post_save(created=org_id is None, form=form)
         if not self.response_commands:
             self.add_command('reload')
@@ -260,10 +260,6 @@ class TableFieldForm(ChartBaseFieldForm):
         self.fields['display_heading'] = BooleanField(required=False, widget=RBToggle(), label='Display heading')
         if int(data_attr.get('display_heading', 1)) == 1:
             self.fields['display_heading'].initial = True
-
-        print('-------==========-')
-        print(self.django_field)
-        print(self.col_type_override)
 
         has_existing_annotations = self.col_type_override is not None and self.col_type_override.annotations is not None
 

@@ -566,6 +566,12 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
         )
         return self.command_response('show_modal', modal=url)
 
+    def form_valid(self, form):
+        instance = form.save(commit=False)
+        instance._current_user = self.request.user
+        instance.save()
+        return self.command_response('reload')
+
 
 class SingleValueShowBreakdownModal(TableUtilsMixin, Modal):
     button_container_class = 'text-center'
@@ -668,3 +674,14 @@ class QueryNumeratorModal(QueryBuilderModalBaseMixin, ModelFormModal):
 
     def get_report_type(self):
         return self.slug['report_type']
+
+    def form_valid(self, form):
+        org_id = self.object.pk if hasattr(self, 'object') else None
+        instance = form.save(commit=False)
+        instance._current_user = self.request.user
+        instance.save()
+        self.post_save(created=org_id is None, form=form)
+        if not self.response_commands:
+            self.add_command('reload')
+        return self.command_response()
+
