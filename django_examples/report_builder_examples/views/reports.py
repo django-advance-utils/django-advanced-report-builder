@@ -21,6 +21,7 @@ from report_builder_examples.models import ReportPermission
 class ViewReports(MainIndices):
     model = Report
     table_title = 'Reports'
+    show_pivot_table = True
 
     def setup_menu(self):
         super().setup_menu()
@@ -88,6 +89,8 @@ class ViewReports(MainIndices):
                 url_name='report_builder_examples:view_report',
             ),
         )
+
+        table.add_js_filters('pivot', 'OutputType', filter_title='Output Type', collapsed=False)
 
 
 class ViewSingleValueReport(SingleValueView):

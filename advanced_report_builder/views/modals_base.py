@@ -195,6 +195,7 @@ class QueryBuilderModalBaseMixin(ReportBuilderFieldUtils):
         form.fields[field_name].widget.select_data = _fields
 
 
+
 class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
     size = 'xl'
 
@@ -227,7 +228,10 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
 
     def form_valid(self, form):
         org_id = self.object.id if hasattr(self, 'object') else None
-        chart_report = form.save()
+        chart_report = form.save(commit=False)
+        chart_report._current_user = self.request.user
+        chart_report.save()
+
         self.post_save(created=org_id is None, form=form)
         if not self.response_commands:
             url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME', '')

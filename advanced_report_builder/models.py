@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.dates import MONTHS
@@ -131,6 +132,20 @@ class Report(TimeStampedModel):
     report_tags = models.ManyToManyField(ReportTag, blank=True)
     notes = models.TextField(null=True, blank=True)
     version = models.PositiveSmallIntegerField(default=0)
+    user_created = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='report_user_created_set'
+    )
+    user_updated = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='report_user_updated_set'
+    )
 
     def __str__(self):
         return self.name
@@ -145,6 +160,12 @@ class Report(TimeStampedModel):
         return self.name
 
     def save(self, *args, **kwargs):
+
+        current_user = getattr(self, '_current_user', None)
+        if current_user is not None and current_user.is_authenticated:
+            self.user_updated = current_user
+            if self.user_created is None:
+                self.user_created = current_user
         is_new = self.pk is None
         if self.version is not None:
             self.version += 1
@@ -155,7 +176,7 @@ class Report(TimeStampedModel):
         if self.instance_type is None:
             self.instance_type = self._meta.label_lower.split('.')[1]
         result = super().save(*args, **kwargs)
-        model_report_save.send(sender=self.__class__, instance=self, created=is_new)
+        model_report_save.send(sender=self.__class__, instance=self, created=is_new, user=current_user)
         return result
 
     def get_base_model(self):
@@ -221,10 +242,10 @@ class ReportQuery(TimeStampedModel):
     order = models.PositiveSmallIntegerField()
 
     def save(self, *args, **kwargs):
-        is_new = self.pk is None
         self.set_order_field(extra_filters={'report': self.report})
         result = super().save(*args, **kwargs)
-        model_report_save.send(sender=self.__class__, instance=self, created=is_new)
+        self.report._current_user = getattr(self, '_current_user', None)  # this is to update the users
+        self.report.save()
         return result
 
     class Meta:
@@ -423,10 +444,10 @@ class KanbanReportDescription(TimeStampedModel):
     order = models.PositiveSmallIntegerField()
 
     def save(self, *args, **kwargs):
-        is_new = self.pk is None
         self.set_order_field(extra_filters={'kanban_report': self.kanban_report})
         result = super().save(*args, **kwargs)
-        model_report_save.send(sender=self.__class__, instance=self, created=is_new)
+        self.kanban_report._current_user = getattr(self, '_current_user', None)  # this is to update the users
+        self.kanban_report.save()
         return result
 
     def get_base_model(self):
@@ -484,10 +505,10 @@ class KanbanReportLane(TimeStampedModel):
     query_data = models.JSONField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
-        is_new = self.pk is None
         self.set_order_field(extra_filters={'kanban_report': self.kanban_report})
         result = super().save(*args, **kwargs)
-        model_report_save.send(sender=self.__class__, instance=self, created=is_new)
+        self.kanban_report._current_user = getattr(self, '_current_user', None)  # this is to update the users
+        self.kanban_report.save()
         return result
 
     def get_base_model(self):

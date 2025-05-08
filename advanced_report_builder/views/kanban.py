@@ -514,7 +514,12 @@ class KanbanModal(ModelFormModal):
                 o.save()
         return self.command_response('')
 
-    def post_save(self, created, form):
+    def form_valid(self, form):
+        org_id = self.object.pk if hasattr(self, 'object') else None
+        created=org_id is None
+        instance = form.save(commit=False)
+        instance._current_user = self.request.user
+        instance.save()
         if created:
             self.modal_redirect(
                 self.request.resolver_match.view_name,
@@ -524,7 +529,10 @@ class KanbanModal(ModelFormModal):
             url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME', '')
             if url_name and self.slug.get('new'):
                 url = reverse(url_name, kwargs={'slug': self.object.slug})
-                self.command_response('redirect', url=url)
+                self.add_command('redirect', url=url)
+        if not self.response_commands:
+            self.add_command('reload')
+        return self.command_response()
 
 
 class KanbanLaneModal(QueryBuilderModalBase):
@@ -762,7 +770,9 @@ class KanbanLaneModal(QueryBuilderModalBase):
         return JsonResponse({'results': descriptions})
 
     def form_valid(self, form):
-        form.save()
+        instance = form.save(commit=False)
+        instance._current_user = self.request.user
+        instance.save()
         return self.command_response('reload')
 
 
@@ -781,6 +791,7 @@ class KanbanLaneDuplicateModal(Modal):
         kanban_report_lane.pk = None
         kanban_report_lane.name = f'Copy of {kanban_report_lane.name}'
         kanban_report_lane.order = None
+        kanban_report_lane._current_user = self.request.user
         kanban_report_lane.save()
         return self.command_response('reload')
 
@@ -818,7 +829,9 @@ class KanbanDescriptionModal(DataMergeUtils, QueryBuilderModalBase):
         return self.command_response(f'build_data_merge_menu_{field_auto_id}', data=json.dumps(menus))
 
     def form_valid(self, form):
-        form.save()
+        instance = form.save(commit=False)
+        instance._current_user = self.request.user
+        instance.save()
         return self.command_response('reload')
 
 
@@ -836,5 +849,6 @@ class KanbanDescriptionDuplicateModal(Modal):
         kanban_report_description = get_object_or_404(KanbanReportDescription, id=self.slug['pk'])
         kanban_report_description.pk = None
         kanban_report_description.name = f'Copy of {kanban_report_description.name}'
+        kanban_report_description._current_user = self.request.user
         kanban_report_description.save()
         return self.command_response('reload')
