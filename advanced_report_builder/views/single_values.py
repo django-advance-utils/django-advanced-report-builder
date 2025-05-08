@@ -367,22 +367,6 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     'default': 'hide',
                 },
                 {
-                    'selector': '.btn-query-edit',
-                    'values': {
-                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: 'hide',
-                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'hide',
-                    },
-                    'default': 'show',
-                },
-                {
-                    'selector': '.btn-query-numerator-edit',
-                    'values': {
-                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: 'show',
-                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'show',
-                    },
-                    'default': 'hide',
-                },
-                {
                     'selector': 'label[for=id_field]',
                     'values': {
                         SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: (
@@ -542,29 +526,37 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
         )
         return self.command_response('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
 
-    def query_menu(self):
-        edit_numerator_query_js = get_query_js('edit_numerator_query', 'query_id')
-        description_edit_menu_items = super().query_menu()
-        description_edit_menu_items.append(
-            MenuItem(
-                edit_numerator_query_js.replace('"', '&quot;'),
-                menu_display='Edit',
-                css_classes='btn btn-sm btn-outline-dark btn-query-numerator-edit',
-                font_awesome='fas fa-pencil',
-                link_type=MenuItem.HREF,
-                hide=True,
+    def button_add_query(self, **_kwargs):
+        single_value_type = _kwargs['single_value_type']
+        if (single_value_type == '' or
+                int(single_value_type) not in [SingleValueReport.SINGLE_VALUE_TYPE_COUNT,
+                                               SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT, ]):
+            return super().button_add_query(**_kwargs)
+        else:
+            report_type = self.get_report_type(**_kwargs)
+            show_order_by = 1 if self.show_order_by else 0
+            url = reverse(
+                'advanced_report_builder:single_value_numerator_modal',
+                kwargs={'slug': f'report_id-{self.object.id}-report_type-{report_type}-show_order_by-{show_order_by}'},
             )
-        )
-        return description_edit_menu_items
+            return self.command_response('show_modal', modal=url)
 
-    def button_edit_numerator_query(self, **_kwargs):
-        query_id = _kwargs['query_id'][1:]
-        report_type = self.get_report_type(**_kwargs)
-        url = reverse(
-            'advanced_report_builder:single_value_numerator_modal',
-            kwargs={'slug': f'pk-{query_id}-report_type-{report_type}'},
-        )
-        return self.command_response('show_modal', modal=url)
+
+    def button_edit_query(self, **_kwargs):
+        single_value_type = _kwargs['single_value_type']
+        if (single_value_type == '' or
+                int(single_value_type) not in [SingleValueReport.SINGLE_VALUE_TYPE_COUNT,
+                                                SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT,]):
+            return super().button_edit_query(**_kwargs)
+        else:
+            query_id = _kwargs['query_id'][1:]
+            report_type = self.get_report_type(**_kwargs)
+            url = reverse(
+                'advanced_report_builder:single_value_numerator_modal',
+                kwargs={'slug': f'pk-{query_id}-report_type-{report_type}'},
+            )
+            return self.command_response('show_modal', modal=url)
+
 
     def form_valid(self, form):
         instance = form.save(commit=False)
