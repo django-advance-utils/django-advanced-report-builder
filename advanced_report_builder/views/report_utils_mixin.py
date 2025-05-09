@@ -3,7 +3,7 @@ import json
 import operator
 from functools import reduce
 
-from django.db.models import FloatField, ExpressionWrapper
+from django.db.models import FloatField, ExpressionWrapper, Q, IntegerField
 from django.db.models.functions import NullIf
 from django_datatables.columns import CurrencyPenceColumn, CurrencyColumn
 
@@ -12,12 +12,13 @@ from advanced_report_builder.columns import (
     ReportBuilderCurrencyColumn,
     ReportBuilderNumberColumn,
 )
+from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import (
     ANNOTATION_FUNCTIONS,
     ANNOTATION_CHOICE_COUNT,
-    ALIGNMENT_CLASS, ANNOTATION_CHOICE_NA,
+    ALIGNMENT_CLASS, ANNOTATION_CHOICE_NA, ALIGNMENT_CHOICE_RIGHT,
 )
 from advanced_report_builder.utils import decode_attribute
 
@@ -46,7 +47,7 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
     ):
 
         field_name = table_field['field']
-        alignment_class = ALIGNMENT_CLASS.get(int(data_attr.get('alignment', 0)))
+        alignment_class = ALIGNMENT_CLASS.get(int(data_attr.get('alignment', ALIGNMENT_CHOICE_RIGHT)))
         new_field_name = field_name
         css_class = None
         annotation_filter = None
@@ -90,8 +91,13 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                     field.title = title
 
                 field = copy.deepcopy(field)
-                current_annotations = field.annotations[field_name].filter
-                if annotation_filter is not None and len(annotation_filter) > 0:
+
+                current_annotations = getattr(field.annotations[field_name], 'filter', None)
+                # assert False, field.annotations[field_name]
+                if current_annotations is None:
+                    raise ReportError(f'Sorry unable to annotate {field_name}. The query is to complex to modify.')
+                    # field.annotations[field_name].expression is where the query is!
+                elif annotation_filter is not None and len(annotation_filter) > 0:
                     new_annotations = current_annotations & annotation_filter
                     field.annotations[field_name].filter = new_annotations
                 new_field_name = f'{field_name}_{index}'
@@ -99,21 +105,7 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                 field.field = new_field_name
                 field_name = new_field_name
 
-            elif field.annotations and annotations_type == ANNOTATION_CHOICE_NA:
-                if not self.use_annotations:
-                    field.options['calculated'] = True
-                    field.aggregations = col_type_override.annotations
-                    field.annotations = []
-                if title:
-                    field.title = title
-                self.set_extra_number_field_kwargs(
-                    data_attr=data_attr,
-                    options=field.options,
-                    multiple_index=multiple_index,
-                    additional_options=additional_options,
-                )
-
-            elif annotations_type == ANNOTATION_CHOICE_COUNT:
+            if annotations_type == ANNOTATION_CHOICE_COUNT:
                 new_field_name = self.get_new_annotation_field_name(
                     annotations_type=annotations_type,
                     field_name=field_name,
@@ -150,17 +142,30 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                 number_function_kwargs.update({'field': new_field_name, 'column_name': new_field_name})
                 field = self.number_field(**number_function_kwargs)
             else:
-
                 css_class = field.column_defs.get('className')
                 if css_class is None:
                     css_class = alignment_class
                 else:
                     css_class += ' ' + alignment_class
                 field.column_defs['className'] = css_class
-
                 if title:
                     field.title = title
-                if annotations_type != 0:
+                if field.annotations and annotations_type == ANNOTATION_CHOICE_NA:
+
+                    if not self.use_annotations:
+                        field.options['calculated'] = True
+                        field.aggregations = col_type_override.annotations
+                        field.annotations = []
+                    if title:
+                        field.title = title
+
+                    self.set_extra_number_field_kwargs(
+                        data_attr=data_attr,
+                        options=field.options,
+                        multiple_index=multiple_index,
+                        additional_options=additional_options,
+                    )
+                elif annotations_type != ANNOTATION_CHOICE_NA:
                     new_field_name = self.get_new_annotation_field_name(
                         annotations_type=annotations_type,
                         field_name=field_name,

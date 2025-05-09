@@ -21,7 +21,7 @@ from advanced_report_builder.globals import (
     ALIGNMENT_CLASS,
     REVERSE_FOREIGN_KEY_DELIMITER_COMMA,
     REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_XOR,
-    DATE_FORMAT_TYPE_DD_MM_YY_SLASH, ANNOTATION_CHOICE_NA,
+    DATE_FORMAT_TYPE_DD_MM_YY_SLASH, ANNOTATION_CHOICE_NA, ALIGNMENT_CHOICE_RIGHT,
 )
 from advanced_report_builder.globals import (
     DATE_FORMAT_TYPES_DJANGO_FORMAT,
@@ -509,7 +509,7 @@ class TableUtilsMixin(ReportUtilsMixin):
         expression = ExpressionWrapper(NullIf(F(values[0]) * 100.00, 0) / F(values[1]), output_field=FloatField())
         decimal_places = data_attr.get('decimal_places', 2)
         field_attr['decimal_places'] = int(decimal_places)
-        alignment_class = ALIGNMENT_CLASS.get(int(data_attr.get('alignment', 0)))
+        alignment_class = ALIGNMENT_CLASS.get(int(data_attr.get('alignment', ALIGNMENT_CHOICE_RIGHT)))
         field_attr['options'] = {}
         field = table_field['field']
 
@@ -558,7 +558,7 @@ class TableUtilsMixin(ReportUtilsMixin):
         expression,
     ):
         decimal_places = data_attr.get('decimal_places', 2)
-        alignment_class = ALIGNMENT_CLASS.get(int(data_attr.get('alignment', 0)))
+        alignment_class = ALIGNMENT_CLASS.get(int(data_attr.get('alignment', ALIGNMENT_CHOICE_RIGHT)))
         field_attr['decimal_places'] = int(decimal_places)
         field_attr['options'] = {}
         field = table_field['field']

@@ -31,7 +31,7 @@ from advanced_report_builder.globals import (
     REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_CHOICES,
     REVERSE_FOREIGN_KEY_DELIMITER_CHOICES,
     REVERSE_FOREIGN_KEY_ANNOTATION_DATE_CHOICES,
-    REVERSE_FOREIGN_KEY_ANNOTATION_DATE_ARRAY,
+    REVERSE_FOREIGN_KEY_ANNOTATION_DATE_ARRAY, ALIGNMENT_CHOICE_RIGHT,
 )
 from advanced_report_builder.models import TableReport, ReportType
 from advanced_report_builder.toggle import RBToggle
@@ -311,6 +311,8 @@ class TableFieldForm(ChartBaseFieldForm):
             self.fields['annotations_type'] = ChoiceField(choices=[(0, '-----')] + ANNOTATIONS_CHOICES, required=False)
             if 'annotations_type' in data_attr:
                 self.fields['annotations_type'].initial = data_attr['annotations_type']
+            else:
+                self.fields['alignment'].initial = ALIGNMENT_CHOICE_RIGHT
 
         annotation_column_help_text = 'Not required however useful for mathematical columns.'
         self.fields['annotation_column_id'] = CharField(required=False, help_text=annotation_column_help_text)
@@ -324,6 +326,8 @@ class TableFieldForm(ChartBaseFieldForm):
         self.fields['alignment'] = ChoiceField(choices=ALIGNMENT_CHOICES, required=False)
         if 'alignment' in data_attr:
             self.fields['alignment'].initial = data_attr['alignment']
+        else:
+            self.fields['alignment'].initial = ALIGNMENT_CHOICE_RIGHT
         self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
 
         self.fields['filter'] = CharField(required=False)
@@ -454,6 +458,8 @@ class TableFieldForm(ChartBaseFieldForm):
         self.fields['alignment'] = ChoiceField(choices=ALIGNMENT_CHOICES, required=False)
         if 'alignment' in data_attr:
             self.fields['alignment'].initial = data_attr['alignment']
+        else:
+            self.fields['alignment'].initial = ALIGNMENT_CHOICE_RIGHT
 
         self.fields['decimal_places'] = IntegerField()
         self.fields['decimal_places'].initial = int(data_attr.get('decimal_places', 0))
@@ -522,14 +528,15 @@ class TableFieldForm(ChartBaseFieldForm):
         self.fields['alignment'] = ChoiceField(choices=ALIGNMENT_CHOICES, required=False)
         if 'alignment' in data_attr:
             self.fields['alignment'].initial = data_attr['alignment']
+        else:
+            self.fields['alignment'].initial = ALIGNMENT_CHOICE_RIGHT
 
     def save_mathematical_fields(self, data, attributes):
         if self.cleaned_data['hidden']:
             attributes.append('hidden-1')
 
         alignment = self.cleaned_data.get('alignment')
-        if alignment:
-            attributes.append(f'alignment-{alignment}')
+        attributes.append(f'alignment-{alignment}')
         if self.cleaned_data['column_id']:
             b64_column_id = encode_attribute(self.cleaned_data['column_id'])
             attributes.append(f'column_id-{b64_column_id}')
@@ -561,8 +568,7 @@ class TableFieldForm(ChartBaseFieldForm):
 
     def save_number_fields(self, attributes):
         alignment = self.cleaned_data.get('alignment')
-        if alignment:
-            attributes.append(f'alignment-{alignment}')
+        attributes.append(f'alignment-{alignment}')
         if 'annotations_type' in self.cleaned_data and int(self.cleaned_data['annotations_type']) != 0:
             attributes.append(f'annotations_type-{self.cleaned_data["annotations_type"]}')
         elif 'append_annotation_query' in self.cleaned_data and self.cleaned_data['append_annotation_query']:
@@ -584,8 +590,7 @@ class TableFieldForm(ChartBaseFieldForm):
 
     def save_currency_fields(self, attributes):
         alignment = self.cleaned_data.get('alignment')
-        if alignment:
-            attributes.append(f'alignment-{alignment}')
+        attributes.append(f'alignment-{alignment}')
         if 'annotations_type' in self.cleaned_data and int(self.cleaned_data['annotations_type']) != 0:
             attributes.append(f'annotations_type-{self.cleaned_data["annotations_type"]}')
         elif 'append_annotation_query' in self.cleaned_data and self.cleaned_data['append_annotation_query']:
