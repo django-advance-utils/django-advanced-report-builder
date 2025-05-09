@@ -10,11 +10,20 @@ from django.views.generic import TemplateView
 from django_menus.menu import MenuMixin
 from django_modals.forms import CrispyForm
 from django_modals.modals import FormModal, ModelFormModal
-from django_modals.processes import PERMISSION_DISABLE, PERMISSION_OFF, PROCESS_EDIT_DELETE
+from django_modals.processes import (
+    PERMISSION_DISABLE,
+    PERMISSION_OFF,
+    PROCESS_EDIT_DELETE,
+)
 from django_modals.widgets.select2 import Select2
 from django_modals.widgets.widgets import Toggle
 
-from advanced_report_builder.models import Dashboard, DashboardReport, Report, ReportQuery
+from advanced_report_builder.models import (
+    Dashboard,
+    DashboardReport,
+    Report,
+    ReportQuery,
+)
 from advanced_report_builder.utils import split_slug
 from advanced_report_builder.views.bar_charts import BarChartView
 from advanced_report_builder.views.datatables.datatables import TableView
@@ -195,7 +204,13 @@ class DashboardReportModal(ModelFormModal):
     permission_delete = PERMISSION_OFF
     permission_create = PERMISSION_DISABLE
 
-    form_fields = ['name_override', 'top', 'display_option', 'show_versions', 'report_query']
+    form_fields = [
+        'name_override',
+        'top',
+        'display_option',
+        'show_versions',
+        'report_query',
+    ]
     widgets = {
         'top': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
         'show_versions': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
@@ -207,7 +222,11 @@ class DashboardReportModal(ModelFormModal):
             'top',
             'onchange',
             [
-                {'selector': '#div_id_display_option', 'values': {'checked': 'hide'}, 'default': 'show'},
+                {
+                    'selector': '#div_id_display_option',
+                    'values': {'checked': 'hide'},
+                    'default': 'show',
+                },
             ],
         )
         report_queries = ReportQuery.objects.filter(report=form.instance.report)

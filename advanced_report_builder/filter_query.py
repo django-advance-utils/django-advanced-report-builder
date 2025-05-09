@@ -28,15 +28,15 @@ class FilterQueryMixin:
 
         return query
 
-    def process_filters(self, search_filter_data, extra_filter=None):
+    def process_filters(self, search_filter_data, extra_filter=None, prefix_field_name=None):
         if not search_filter_data:
             return []
 
-        query_list = self._process_group(query_data=search_filter_data)
+        query_list = self._process_group(query_data=search_filter_data, prefix_field_name=prefix_field_name)
         if extra_filter:
             query_list.append(extra_filter)
 
-        reduce_by = self._format_group_conditions(search_filter_data['condition'])
+        reduce_by = self._format_group_conditions(display_condition=search_filter_data['condition'])
 
         if query_list:
             return reduce(reduce_by, query_list)
@@ -83,18 +83,20 @@ class FilterQueryMixin:
 
         return reduce_by
 
-    def _process_group(self, query_data):
+    def _process_group(self, query_data, prefix_field_name):
         query_list = []
 
         for rule in query_data['rules']:
             if condition := rule.get('condition'):
-                reduce_by = self._format_group_conditions(condition)
-                sub_query_list = self._process_group(query_data=rule)
+                reduce_by = self._format_group_conditions(display_condition=condition)
+                sub_query_list = self._process_group(query_data=rule, prefix_field_name=prefix_field_name)
                 if sub_query_list:
                     query_list.append(reduce(reduce_by, sub_query_list))
                 continue
 
             field = rule['field']
+            if prefix_field_name is not None:
+                field = prefix_field_name + '__' + field
             _id = rule['id']
             display_operator = rule['operator']
             query_string = field + self._get_operator(display_operator)
@@ -147,7 +149,13 @@ class FilterQueryMixin:
                 )
             else:
                 # 'Normal' Query.
-                if display_operator in ['not_equal', 'not_in', 'not_contains', 'not_begins_with', 'not_ends_with']:
+                if display_operator in [
+                    'not_equal',
+                    'not_in',
+                    'not_contains',
+                    'not_begins_with',
+                    'not_ends_with',
+                ]:
                     query_list.append(~Q((query_string, value)))
                 else:
                     query_list.append(Q((query_string, value)))
@@ -177,7 +185,12 @@ class FilterQueryMixin:
         else:
             _, year = value.split(':')
             year = int(year)
-            if display_operator in ['less', 'less_or_equal', 'greater', 'greater_or_equal']:
+            if display_operator in [
+                'less',
+                'less_or_equal',
+                'greater',
+                'greater_or_equal',
+            ]:
                 query_string_parts = query_string.split('__')
                 query_list.append(Q((f'{field}__year__{query_string_parts[-1]}', year)))
             elif display_operator in ['not_equal', 'not_in']:
@@ -271,7 +284,9 @@ class FilterQueryMixin:
         for report_query_order in report_query.reportqueryorder_set.all():
             field_name = report_query_order.order_by_field
             field_name = utils.get_field_details(
-                base_model=base_model, field=field_name, report_builder_class=report_builder_class
+                base_model=base_model,
+                field=field_name,
+                report_builder_class=report_builder_class,
             )[3]
             if report_query_order.order_by_ascending:
                 order_by.append(field_name)
@@ -324,7 +339,14 @@ class FilterQueryMixin:
                 return new_report_builder_class
         return None
 
-    def _get_pivot_details(self, base_model, pivot_str, report_builder_class, previous_base_model=None, include_str=''):
+    def _get_pivot_details(
+        self,
+        base_model,
+        pivot_str,
+        report_builder_class,
+        previous_base_model=None,
+        include_str='',
+    ):
         if pivot_str in report_builder_class.pivot_fields:
             pivot_data = report_builder_class.pivot_fields[pivot_str]
             full_field_id = pivot_data['field'] if include_str == '' else '__'.join((include_str, pivot_data['field']))

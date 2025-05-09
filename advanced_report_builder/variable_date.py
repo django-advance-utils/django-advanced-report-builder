@@ -1,6 +1,6 @@
 import calendar
-from datetime import datetime, date, timedelta
 from calendar import monthrange
+from datetime import date, datetime, timedelta
 
 from date_offset.date_offset import DateOffset
 
@@ -46,6 +46,13 @@ class VariableDate:
     RANGE_TYPE_NEXT_24_MONTHS = 41
     RANGE_TYPE_LAST_36_MONTHS = 42
     RANGE_TYPE_NEXT_36_MONTHS = 43
+
+    RANGE_TYPE_2_WEEKS_AGO = 44
+    RANGE_TYPE_3_WEEKS_AGO = 45
+    RANGE_TYPE_4_WEEKS_AGO = 46
+    RANGE_TYPE_5_WEEKS_AGO = 47
+    RANGE_TYPE_6_WEEKS_AGO = 48
+
     RANGE_TYPE_CHOICES = (
         (RANGE_TYPE_LAST_36_MONTHS, 'Last 36 months'),
         (RANGE_TYPE_LAST_24_MONTHS, 'Last 24 months'),
@@ -60,6 +67,11 @@ class VariableDate:
         (RANGE_TYPE_LAST_28_DAYS, 'Last 28 days'),
         (RANGE_TYPE_LAST_14_DAYS, 'Last 14 days'),
         (RANGE_TYPE_LAST_7_DAYS, 'Last 7 days'),
+        (RANGE_TYPE_6_WEEKS_AGO, '6 weeks ago'),
+        (RANGE_TYPE_5_WEEKS_AGO, '5 weeks ago'),
+        (RANGE_TYPE_4_WEEKS_AGO, '4 weeks ago'),
+        (RANGE_TYPE_3_WEEKS_AGO, '3 weeks ago'),
+        (RANGE_TYPE_2_WEEKS_AGO, '2 weeks ago'),
         (RANGE_TYPE_LAST_WEEK, 'Last week'),
         (RANGE_TYPE_YESTERDAY, 'Yesterday'),
         (RANGE_TYPE_TODAY, 'Today'),
@@ -90,6 +102,7 @@ class VariableDate:
 
     def get_variable_dates(self, range_type):
         today = date.today()
+        start_of_this_week = today - timedelta(days=today.weekday())
         if range_type == self.RANGE_TYPE_TODAY:
             start_date = today
             end_date = today + timedelta(days=1)
@@ -103,35 +116,55 @@ class VariableDate:
             end_date = start_date + timedelta(days=1)
             number_of_days = 1
         elif range_type == self.RANGE_TYPE_THIS_WEEK:  # This Week
-            start_date = today - timedelta(days=today.weekday())
+            start_date = start_of_this_week
             end_date = start_date + timedelta(days=7)
             number_of_days = 7
         elif range_type == self.RANGE_TYPE_NEXT_WEEK:  # Next Week
-            start_date = today - timedelta(days=today.weekday()) + timedelta(days=7)
+            start_date = start_of_this_week + timedelta(days=7)
             end_date = start_date + timedelta(days=7)
             number_of_days = 7
         elif range_type == self.RANGE_TYPE_LAST_WEEK:  # Last Week
-            start_date = today - timedelta(days=today.weekday()) + timedelta(days=14)
+            start_date = start_of_this_week - timedelta(days=7)
             end_date = start_date + timedelta(days=7)
             number_of_days = 7
-        elif range_type == self.RANGE_TYPE_2_WEEKS_TIME:  # 2 Week Time
-            start_date = today - timedelta(days=today.weekday()) + timedelta(days=14)
+        elif range_type == self.RANGE_TYPE_2_WEEKS_TIME:  # 2 Weeks Time
+            start_date = start_of_this_week + timedelta(days=14)
             end_date = start_date + timedelta(days=7)
             number_of_days = 7
-        elif range_type == self.RANGE_TYPE_3_WEEKS_TIME:  # 3 Week Time
-            start_date = today - timedelta(days=today.weekday()) + timedelta(days=21)
+        elif range_type == self.RANGE_TYPE_2_WEEKS_AGO:  # 2 Weeks Ago
+            start_date = start_of_this_week - timedelta(days=14)
             end_date = start_date + timedelta(days=7)
             number_of_days = 7
-        elif range_type == self.RANGE_TYPE_4_WEEKS_TIME:  # 4 Week Time
-            start_date = today - timedelta(days=today.weekday()) + timedelta(days=28)
+        elif range_type == self.RANGE_TYPE_3_WEEKS_TIME:  # 3 Weeks Time
+            start_date = start_of_this_week + timedelta(days=21)
             end_date = start_date + timedelta(days=7)
             number_of_days = 7
-        elif range_type == self.RANGE_TYPE_5_WEEKS_TIME:  # 5 Week Time
-            start_date = today - timedelta(days=today.weekday()) + timedelta(days=35)
+        elif range_type == self.RANGE_TYPE_3_WEEKS_AGO:  # 3 Weeks Ago
+            start_date = start_of_this_week - timedelta(days=21)
             end_date = start_date + timedelta(days=7)
             number_of_days = 7
-        elif range_type == self.RANGE_TYPE_6_WEEKS_TIME:  # 6 Week Time
-            start_date = today - timedelta(days=today.weekday()) + timedelta(days=42)
+        elif range_type == self.RANGE_TYPE_4_WEEKS_TIME:  # 4 Weeks Time
+            start_date = start_of_this_week + timedelta(days=28)
+            end_date = start_date + timedelta(days=7)
+            number_of_days = 7
+        elif range_type == self.RANGE_TYPE_4_WEEKS_AGO:  # 4 Weeks Ago
+            start_date = start_of_this_week - timedelta(days=28)
+            end_date = start_date + timedelta(days=7)
+            number_of_days = 7
+        elif range_type == self.RANGE_TYPE_5_WEEKS_TIME:  # 5 Weeks Time
+            start_date = start_of_this_week + timedelta(days=35)
+            end_date = start_date + timedelta(days=7)
+            number_of_days = 7
+        elif range_type == self.RANGE_TYPE_5_WEEKS_AGO:  # 5 Weeks Ago
+            start_date = start_of_this_week - timedelta(days=35)
+            end_date = start_date + timedelta(days=7)
+            number_of_days = 7
+        elif range_type == self.RANGE_TYPE_6_WEEKS_TIME:  # 6 Weeks Time
+            start_date = start_of_this_week + timedelta(days=42)
+            end_date = start_date + timedelta(days=7)
+            number_of_days = 7
+        elif range_type == self.RANGE_TYPE_6_WEEKS_AGO:  # 6 Weeks Ago
+            start_date = start_of_this_week - timedelta(days=42)
             end_date = start_date + timedelta(days=7)
             number_of_days = 7
         elif range_type == self.RANGE_TYPE_THIS_MONTH:  # This Month
@@ -160,11 +193,7 @@ class VariableDate:
             start_date = today
             end_date = start_date + timedelta(days=14)
             number_of_days = 14
-        elif range_type == self.RANGE_TYPE_LAST_14_DAYS:  # Next 14 Days
-            start_date = today - timedelta(days=14)
-            end_date = today
-            number_of_days = 14
-        elif range_type == 13:  # Last 14 Days
+        elif range_type == self.RANGE_TYPE_LAST_14_DAYS:  # Last 14 Days
             start_date = today - timedelta(days=14)
             end_date = today
             number_of_days = 14
@@ -267,7 +296,7 @@ class VariableDate:
             end_date = date_offset.get_offset('36m', today)
             number_of_days = (end_date - start_date).days
         else:
-            assert False, 'unknown date value'
+            raise AssertionError('unknown date value')
 
         start_date_and_time = datetime.combine(start_date, datetime.min.time())
         end_date_and_time = datetime.combine(end_date, datetime.max.time())

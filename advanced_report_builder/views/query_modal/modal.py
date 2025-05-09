@@ -47,7 +47,10 @@ class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
         return self.command_response('close')
 
     def form_setup(self, form, *_args, **_kwargs):
-        fields = ['name', FieldEx('query', template='advanced_report_builder/query_builder.html')]
+        fields = [
+            'name',
+            FieldEx('query', template='advanced_report_builder/query_builder.html'),
+        ]
 
         if self.object.id and self.slug.get('show_order_by') == '1':
             self.add_query_orders(form=form, fields=fields)
@@ -131,7 +134,11 @@ class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
                 fields=[
                     '_.index',
                     '.id',
-                    ColumnBase(column_name='order_by', field='order_by_field', row_result=self.order_by_result),
+                    ColumnBase(
+                        column_name='order_by',
+                        field='order_by_field',
+                        row_result=self.order_by_result,
+                    ),
                     'order_by_ascending',
                     MenuColumn(
                         column_name='menu',
@@ -189,6 +196,16 @@ class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
                 o.save()
         return self.command_response('')
 
+    def form_valid(self, form):
+        org_id = self.object.pk if hasattr(self, 'object') else None
+        instance = form.save(commit=False)
+        instance._current_user = self.request.user
+        instance.save()
+        self.post_save(created=org_id is None, form=form)
+        if not self.response_commands:
+            self.add_command('reload')
+        return self.command_response()
+
 
 class OrderByFieldForm(ModelCrispyForm):
     class Meta:
@@ -227,7 +244,9 @@ class QueryOrderModal(QueryBuilderModalBaseMixin, ModelFormModal):
 
     def select2_order_by_field(self, **kwargs):
         return self.get_fields_for_select2(
-            field_type='django_order', report_type=self.slug['report_type'], search_string=kwargs.get('search')
+            field_type='django_order',
+            report_type=self.slug['report_type'],
+            search_string=kwargs.get('search'),
         )
 
     def post_save(self, created, form):

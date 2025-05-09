@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.dates import MONTHS
@@ -16,6 +17,7 @@ from advanced_report_builder.globals import (
     DISPLAY_OPTION_CLASSES,
     DISPLAY_OPTION_NONE,
 )
+from advanced_report_builder.signals import model_report_save
 
 
 class Target(TimeStampedModel):
@@ -130,6 +132,20 @@ class Report(TimeStampedModel):
     report_tags = models.ManyToManyField(ReportTag, blank=True)
     notes = models.TextField(null=True, blank=True)
     version = models.PositiveSmallIntegerField(default=0)
+    user_created = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='report_user_created_set',
+    )
+    user_updated = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='report_user_updated_set',
+    )
 
     def __str__(self):
         return self.name
@@ -144,17 +160,23 @@ class Report(TimeStampedModel):
         return self.name
 
     def save(self, *args, **kwargs):
+        current_user = getattr(self, '_current_user', None)
+        if current_user is not None and current_user.is_authenticated:
+            self.user_updated = current_user
+            if self.user_created is None:
+                self.user_created = current_user
+        is_new = self.pk is None
         if self.version is not None:
             self.version += 1
-
         slug_alias = self.slug
         self.make_new_slug(obj=Report, allow_dashes=False, on_edit=True)
         if slug_alias != self.slug:
             self.slug_alias = slug_alias
-
         if self.instance_type is None:
             self.instance_type = self._meta.label_lower.split('.')[1]
-        return super().save(*args, **kwargs)
+        result = super().save(*args, **kwargs)
+        model_report_save.send(sender=self.__class__, instance=self, created=is_new, user=current_user)
+        return result
 
     def get_base_model(self):
         return self.report_type.content_type.model_class()
@@ -170,7 +192,6 @@ class Report(TimeStampedModel):
                 'funnelchartreport': 'Funnel Chart',
                 'kanbanreport': 'Kanban',
                 'customreport': 'Custom',
-                'calendarreport': 'Calendar',
             }
 
             def col_setup(self):
@@ -195,7 +216,6 @@ class Report(TimeStampedModel):
                 'funnelchartreport': '<i class="fas fa-filter"></i>',
                 'kanbanreport': '<i class="fas fa-chart-bar fa-flip-vertical"></i>',
                 'customreport': '<i class="fas fa-file"></i>',
-                'calendarreport': '<i class="fas fa-calendar"></i>',
             }
 
             def col_setup(self):
@@ -207,7 +227,9 @@ class Report(TimeStampedModel):
                 return self.output_types.get(instance_type, '')
 
         report_tags_badge = ManyToManyColumn(
-            field='report_tags__name', html='<span class="badge badge-primary"> %1% </span>', title='Tags'
+            field='report_tags__name',
+            html='<span class="badge badge-primary"> %1% </span>',
+            title='Tags',
         )
 
 
@@ -220,7 +242,10 @@ class ReportQuery(TimeStampedModel):
 
     def save(self, *args, **kwargs):
         self.set_order_field(extra_filters={'report': self.report})
-        return super().save(*args, **kwargs)
+        result = super().save(*args, **kwargs)
+        self.report._current_user = getattr(self, '_current_user', None)  # this is to update the users
+        self.report.save()
+        return result
 
     class Meta:
         ordering = ['order']
@@ -252,7 +277,15 @@ class TableReport(Report):
     order_by_field = models.CharField(max_length=200, blank=True, null=True)
     order_by_ascending = models.BooleanField(default=True)
     page_length = models.PositiveSmallIntegerField(
-        choices=((10, '10'), (25, '25'), (50, '50'), (100, '100'), (150, '150'), (200, '200')), default=100
+        choices=(
+            (10, '10'),
+            (25, '25'),
+            (50, '50'),
+            (100, '100'),
+            (150, '150'),
+            (200, '200'),
+        ),
+        default=100,
     )
 
 
@@ -291,7 +324,10 @@ class SingleValueReport(Report):
     average_end_period = models.PositiveSmallIntegerField(blank=True, null=True)
 
     def is_percentage(self):
-        return self.single_value_type in [self.SINGLE_VALUE_TYPE_PERCENT, self.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT]
+        return self.single_value_type in [
+            self.SINGLE_VALUE_TYPE_PERCENT,
+            self.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT,
+        ]
 
 
 class BarChartReport(Report):
@@ -316,7 +352,10 @@ class BarChartReport(Report):
     end_date_field = models.CharField(max_length=200, blank=True, null=True)
 
     axis_value_type = models.PositiveSmallIntegerField(
-        choices=ANNOTATIONS_CHOICES, default=ANNOTATION_CHOICE_COUNT, null=True, blank=True
+        choices=ANNOTATIONS_CHOICES,
+        default=ANNOTATION_CHOICE_COUNT,
+        null=True,
+        blank=True,
     )
     fields = models.JSONField(null=True, blank=True)
     x_label = models.CharField(max_length=200, blank=True, null=True)
@@ -343,7 +382,10 @@ class LineChartReport(Report):
     axis_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES)
     date_field = models.CharField(max_length=200)
     axis_value_type = models.PositiveSmallIntegerField(
-        choices=ANNOTATIONS_CHOICES, default=ANNOTATION_CHOICE_COUNT, null=True, blank=True
+        choices=ANNOTATIONS_CHOICES,
+        default=ANNOTATION_CHOICE_COUNT,
+        null=True,
+        blank=True,
     )
     fields = models.JSONField(null=True, blank=True)
     x_label = models.CharField(max_length=200, blank=True, null=True)
@@ -361,10 +403,16 @@ class PieChartReport(Report):
     PIE_CHART_STYLE_PIE = 1
     PIE_CHART_STYLE_DOUGHNUT = 2
 
-    PIE_CHART_STYLE_CHOICES = ((PIE_CHART_STYLE_PIE, 'Pie'), (PIE_CHART_STYLE_DOUGHNUT, 'Doughnut'))
+    PIE_CHART_STYLE_CHOICES = (
+        (PIE_CHART_STYLE_PIE, 'Pie'),
+        (PIE_CHART_STYLE_DOUGHNUT, 'Doughnut'),
+    )
 
     axis_value_type = models.PositiveSmallIntegerField(
-        choices=ANNOTATIONS_CHOICES, default=ANNOTATION_CHOICE_COUNT, null=True, blank=True
+        choices=ANNOTATIONS_CHOICES,
+        default=ANNOTATION_CHOICE_COUNT,
+        null=True,
+        blank=True,
     )
     fields = models.JSONField(null=True, blank=True)
     style = models.PositiveSmallIntegerField(choices=PIE_CHART_STYLE_CHOICES, default=PIE_CHART_STYLE_PIE)
@@ -375,7 +423,10 @@ class PieChartReport(Report):
 
 class FunnelChartReport(Report):
     axis_value_type = models.PositiveSmallIntegerField(
-        choices=ANNOTATIONS_CHOICES, default=ANNOTATION_CHOICE_COUNT, null=True, blank=True
+        choices=ANNOTATIONS_CHOICES,
+        default=ANNOTATION_CHOICE_COUNT,
+        null=True,
+        blank=True,
     )
     fields = models.JSONField(null=True, blank=True)
 
@@ -393,7 +444,10 @@ class KanbanReportDescription(TimeStampedModel):
 
     def save(self, *args, **kwargs):
         self.set_order_field(extra_filters={'kanban_report': self.kanban_report})
-        return super().save(*args, **kwargs)
+        result = super().save(*args, **kwargs)
+        self.kanban_report._current_user = getattr(self, '_current_user', None)  # this is to update the users
+        self.kanban_report.save()
+        return result
 
     def get_base_model(self):
         return self.report_type.content_type.model_class()
@@ -451,58 +505,10 @@ class KanbanReportLane(TimeStampedModel):
 
     def save(self, *args, **kwargs):
         self.set_order_field(extra_filters={'kanban_report': self.kanban_report})
-        return super().save(*args, **kwargs)
-
-    def get_base_model(self):
-        return self.report_type.content_type.model_class()
-
-    class Meta:
-        ordering = ('order',)
-
-
-class CalendarReport(Report):
-    height = models.PositiveSmallIntegerField(default=600)
-
-
-class CalendarReportDescription(TimeStampedModel):
-    calendar_report = models.ForeignKey(CalendarReport, on_delete=models.CASCADE)
-    name = models.CharField(max_length=200)
-    report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
-    description = models.TextField(blank=True, null=True)
-    order = models.PositiveSmallIntegerField()
-
-    def save(self, *args, **kwargs):
-        self.set_order_field(extra_filters={'calendar_report': self.calendar_report})
-        return super().save(*args, **kwargs)
-
-    def get_base_model(self):
-        return self.report_type.content_type.model_class()
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        ordering = ('order',)
-
-
-class CalendarReportDataSet(TimeStampedModel):
-    calendar_report = models.ForeignKey(CalendarReport, on_delete=models.CASCADE)
-    order = models.PositiveSmallIntegerField()
-    report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
-    heading_field = models.CharField(max_length=200, blank=True, null=True)
-    name = models.CharField(max_length=200)
-    start_date_field = models.CharField(max_length=200, blank=True, null=True)
-    end_date_field = models.CharField(max_length=200, blank=True, null=True)
-    background_colour_field = models.CharField(max_length=200, blank=True, null=True)
-    link_field = models.CharField(max_length=200, blank=True, null=True)
-    calendar_report_description = models.ForeignKey(
-        CalendarReportDescription, null=True, blank=False, on_delete=models.CASCADE
-    )
-    query_data = models.JSONField(null=True, blank=True)
-
-    def save(self, *args, **kwargs):
-        self.set_order_field(extra_filters={'calendar_report': self.calendar_report})
-        return super().save(*args, **kwargs)
+        result = super().save(*args, **kwargs)
+        self.kanban_report._current_user = getattr(self, '_current_user', None)  # this is to update the users
+        self.kanban_report.save()
+        return result
 
     def get_base_model(self):
         return self.report_type.content_type.model_class()

@@ -16,6 +16,7 @@ from django_datatables.datatables import DatatableTable
 from django_menus.menu import MenuItem
 from django_modals.widgets.select2 import Select2
 
+from advanced_report_builder.column_types import NUMBER_FIELDS
 from advanced_report_builder.columns import ReportBuilderDateColumn
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
@@ -26,10 +27,13 @@ from advanced_report_builder.globals import (
     ANNOTATION_VALUE_QUARTER,
     ANNOTATION_VALUE_WEEK,
     ANNOTATION_VALUE_YEAR,
-    NUMBER_FIELDS,
 )
 from advanced_report_builder.models import ReportType
-from advanced_report_builder.utils import get_report_builder_class, split_attr, split_slug
+from advanced_report_builder.utils import (
+    get_report_builder_class,
+    split_attr,
+    split_slug,
+)
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.helpers import QueryBuilderForm
 from advanced_report_builder.views.report import ReportBase
@@ -107,7 +111,12 @@ class ChartJSTable(DatatableTable):
         first_day_month = start_date.replace(day=1)
         next_date = date_offset.get_offset('1m', first_day_month) - timedelta(days=1)
 
-        target_value = get_target_value(min_date=first_day_month, max_date=next_date, target=target, month_range=True)
+        target_value = get_target_value(
+            min_date=first_day_month,
+            max_date=next_date,
+            target=target,
+            month_range=True,
+        )
 
         return target_value
 
@@ -148,7 +157,10 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         report_builder_class = get_report_builder_class(model=base_model, report_type=self.chart_report.report_type)
 
         django_field, col_type_override, _, _ = self.get_field_details(
-            base_model=base_model, field=field_name, report_builder_class=report_builder_class, table=table
+            base_model=base_model,
+            field=field_name,
+            report_builder_class=report_builder_class,
+            table=table,
         )
 
         if col_type_override:
@@ -197,7 +209,10 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
             field = table_field['field']
 
             django_field, col_type_override, _, _ = self.get_field_details(
-                base_model=base_model, field=field, report_builder_class=report_builder_class, table=table
+                base_model=base_model,
+                field=field,
+                report_builder_class=report_builder_class,
+                table=table,
             )
 
             if isinstance(django_field, NUMBER_FIELDS) or (
@@ -263,6 +278,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
 
                         self.get_number_field(
                             annotations_type=self.chart_report.axis_value_type,
+                            append_annotation_query=False,
                             index=f'{index}_{multiple_index}',
                             data_attr=data_attr,
                             table_field=table_field,
@@ -277,6 +293,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
                 else:
                     self.get_number_field(
                         annotations_type=self.chart_report.axis_value_type,
+                        append_annotation_query=False,
                         index=index,
                         data_attr=data_attr,
                         table_field=table_field,
@@ -288,7 +305,10 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
     def get_field_path(self, field_name, base_model, report_builder_class, table):
         if field_name:
             _, _, _, field_path = self.get_field_details(
-                base_model=base_model, field=field_name, report_builder_class=report_builder_class, table=table
+                base_model=base_model,
+                field=field_name,
+                report_builder_class=report_builder_class,
+                table=table,
             )
             return field_path
         return None
@@ -361,7 +381,11 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         slug_str = ''
         if query_id:
             slug_str = f'-query_id-{query_id}'
-        return self.edit_report_menu(request=self.request, chart_report_id=self.chart_report.id, slug_str=slug_str)
+        return self.edit_report_menu(
+            request=self.request,
+            chart_report_id=self.chart_report.id,
+            slug_str=slug_str,
+        )
 
     @staticmethod
     def edit_report_menu(request, chart_report_id, slug_str):
@@ -418,13 +442,21 @@ class ChartBaseFieldForm(ReportBuilderFieldUtils, QueryBuilderForm):
         report_builder_class = get_report_builder_class(model=base_model, report_type=report_type)
 
         self.django_field, self.col_type_override, _, _ = self.get_field_details(
-            base_model=base_model, field=data['field'], report_builder_class=report_builder_class
+            base_model=base_model,
+            field=data['field'],
+            report_builder_class=report_builder_class,
         )
 
         return report_type, base_model
 
     def _get_query_builder_foreign_key_fields(
-        self, base_model, report_builder_class, fields, prefix='', title_prefix='', previous_base_model=None
+        self,
+        base_model,
+        report_builder_class,
+        fields,
+        prefix='',
+        title_prefix='',
+        previous_base_model=None,
     ):
         for include_field, include in report_builder_class.includes.items():
             app_label, model, report_builder_fields_str = include['model'].split('.')
@@ -446,11 +478,20 @@ class ChartBaseFieldForm(ReportBuilderFieldUtils, QueryBuilderForm):
 
     def setup_colour_field(self, form_fields, base_model, report_builder_class, name, data_attr, label=None):
         colour_fields = []
-        self._get_colour_fields(base_model=base_model, report_builder_class=report_builder_class, fields=colour_fields)
+        self._get_colour_fields(
+            base_model=base_model,
+            report_builder_class=report_builder_class,
+            fields=colour_fields,
+        )
         dropdown_colour_fields = [['', '----']]
         for colour_field in colour_fields:
             dropdown_colour_fields.append([colour_field['id'], colour_field['text']])
 
-        form_fields[name] = ChoiceField(choices=dropdown_colour_fields, required=False, widget=Select2(), label=label)
+        form_fields[name] = ChoiceField(
+            choices=dropdown_colour_fields,
+            required=False,
+            widget=Select2(),
+            label=label,
+        )
         if name in data_attr:
             form_fields[name].initial = data_attr.get(name)

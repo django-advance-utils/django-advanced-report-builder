@@ -45,12 +45,32 @@ def make_slug_str(slug, overrides=None):
 
 def get_custom_report_builder():
     return import_string(
-        getattr(settings, 'REPORT_BUILDER_CUSTOMISATION', 'report_builder.customise.CustomiseReportBuilder')
+        getattr(
+            settings,
+            'REPORT_BUILDER_CUSTOMISATION',
+            'report_builder.customise.CustomiseReportBuilder',
+        )
     )
 
 
-def crispy_modal_link_args(modal_name, text, *args, div=False, div_classes='', button_classes='', font_awesome=None):
-    link = HTML(show_modal(modal_name, *args, button=text, button_classes=button_classes, font_awesome=font_awesome))
+def crispy_modal_link_args(
+    modal_name,
+    text,
+    *args,
+    div=False,
+    div_classes='',
+    button_classes='',
+    font_awesome=None,
+):
+    link = HTML(
+        show_modal(
+            modal_name,
+            *args,
+            button=text,
+            button_classes=button_classes,
+            font_awesome=font_awesome,
+        )
+    )
     if div:
         link = Div(link, css_class=div_classes)
     return link

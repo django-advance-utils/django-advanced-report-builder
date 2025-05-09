@@ -14,7 +14,6 @@ from advanced_report_builder.duplicate import DuplicateReport
 from advanced_report_builder.models import Report
 from advanced_report_builder.utils import split_slug
 from advanced_report_builder.views.bar_charts import BarChartView
-from advanced_report_builder.views.calendar import CalendarView
 from advanced_report_builder.views.datatables.datatables import TableView
 from advanced_report_builder.views.funnel_charts import FunnelChartView
 from advanced_report_builder.views.kanban import KanbanView
@@ -33,7 +32,6 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         'piechartreport': PieChartView,
         'funnelchartreport': FunnelChartView,
         'kanbanreport': KanbanView,
-        'calendarreport': CalendarView,
     }
     enable_links = True
 
@@ -96,10 +94,12 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         return self.views.get(report.instance_type)
 
     def post(self, request, *args, **kwargs):
-        if is_ajax(request) and request.content_type in ['application/json', 'multipart/form-data']:
-            if hasattr(super(), 'post'):
-                # noinspection PyUnresolvedReferences
-                return super().post(request, *args, **kwargs)
+        if is_ajax(request) and request.content_type in [
+            'application/json',
+            'multipart/form-data',
+        ] and hasattr(super(), 'post'):
+            # noinspection PyUnresolvedReferences
+            return super().post(request, *args, **kwargs)
 
         view = self.get_view(report=self.report)
         self.kwargs['report'] = self.report
@@ -114,7 +114,10 @@ class DuplicateReportModal(Modal):
         return 'Are you sure you want to duplicate this report?'
 
     def get_modal_buttons(self):
-        return [modal_button_method('Confirm', 'duplicate'), modal_button('Cancel', 'close', 'btn-secondary')]
+        return [
+            modal_button_method('Confirm', 'duplicate'),
+            modal_button('Cancel', 'close', 'btn-secondary'),
+        ]
 
     def button_duplicate(self, **_kwargs):
         report = get_object_or_404(Report, id=self.slug['pk'])

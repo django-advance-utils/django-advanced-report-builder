@@ -14,9 +14,17 @@ from django_modals.widgets.select2 import Select2Multiple
 
 from advanced_report_builder.models import FunnelChartReport
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import decode_attribute, encode_attribute, get_report_builder_class, split_attr
+from advanced_report_builder.utils import (
+    decode_attribute,
+    encode_attribute,
+    get_report_builder_class,
+    split_attr,
+)
 from advanced_report_builder.views.charts_base import ChartBaseFieldForm, ChartBaseView
-from advanced_report_builder.views.modals_base import QueryBuilderModalBase, QueryBuilderModalBaseMixin
+from advanced_report_builder.views.modals_base import (
+    QueryBuilderModalBase,
+    QueryBuilderModalBaseMixin,
+)
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 
 
@@ -137,7 +145,9 @@ class FunnelChartFieldForm(ChartBaseFieldForm):
 
         multiple_column_field = []
         self._get_query_builder_foreign_key_fields(
-            base_model=base_model, report_builder_class=report_builder_class, fields=multiple_column_field
+            base_model=base_model,
+            report_builder_class=report_builder_class,
+            fields=multiple_column_field,
         )
 
         self.fields['multiple_column_field'] = ChoiceField(choices=multiple_column_field, required=False)
@@ -190,9 +200,22 @@ class FunnelChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
         selector = self.slug['selector']
 
         _attr = form.get_additional_attributes()
-        self.add_command({'function': 'set_attr', 'selector': f'#{selector}', 'attr': 'data-attr', 'val': _attr})
+        self.add_command(
+            {
+                'function': 'set_attr',
+                'selector': f'#{selector}',
+                'attr': 'data-attr',
+                'val': _attr,
+            }
+        )
 
-        self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
+        self.add_command(
+            {
+                'function': 'html',
+                'selector': f'#{selector} span',
+                'html': form.cleaned_data['title'],
+            }
+        )
         self.add_command({'function': 'update_selection'})
         return self.command_response('close')
 
@@ -201,14 +224,24 @@ class FunnelChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
         form.add_trigger(
             'has_filter',
             'onchange',
-            [{'selector': '#filter_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'}],
+            [
+                {
+                    'selector': '#filter_fields_div',
+                    'values': {'checked': 'show'},
+                    'default': 'hide',
+                }
+            ],
         )
 
         form.add_trigger(
             'multiple_columns',
             'onchange',
             [
-                {'selector': '#multiple_columns_fields_div', 'values': {'checked': 'show'}, 'default': 'hide'},
+                {
+                    'selector': '#multiple_columns_fields_div',
+                    'values': {'checked': 'show'},
+                    'default': 'hide',
+                },
             ],
         )
 
@@ -222,7 +255,10 @@ class FunnelChartFieldModal(QueryBuilderModalBaseMixin, FormModal):
                     field_class='col-6 input-group-sm',
                 ),
                 Div(
-                    FieldEx('filter', template='advanced_report_builder/datatables/fields/single_query_builder.html'),
+                    FieldEx(
+                        'filter',
+                        template='advanced_report_builder/datatables/fields/single_query_builder.html',
+                    ),
                     FieldEx(
                         'multiple_columns',
                         template='django_modals/fields/label_checkbox.html',

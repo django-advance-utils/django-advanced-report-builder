@@ -2,8 +2,13 @@ from django.apps import apps
 from django_datatables.columns import ColumnNameError
 from django_datatables.datatables import ColumnInitialisor
 
+from advanced_report_builder.column_types import (
+    COLOUR_COLUMNS,
+    DATE_FIELDS,
+    LINK_COLUMNS,
+    NUMBER_FIELDS,
+)
 from advanced_report_builder.exceptions import ReportError
-from advanced_report_builder.globals import COLOUR_COLUMNS, DATE_FIELDS, LINK_COLUMNS, NUMBER_FIELDS
 from advanced_report_builder.utils import get_report_builder_class
 
 
@@ -51,7 +56,10 @@ class ReportBuilderFieldUtils:
                     django_field = column_initialisor.django_field
                 else:
                     column_initialisor = self.column_initialisor_cls(
-                        start_model=base_model, path=col_type_override.field, table=table, **field_attr
+                        start_model=base_model,
+                        path=col_type_override.field,
+                        table=table,
+                        **field_attr,
                     )
                     column_initialisor.get_columns()
                     django_field = column_initialisor.django_field
@@ -59,7 +67,13 @@ class ReportBuilderFieldUtils:
         return django_field, col_type_override, columns, path
 
     def get_field_display_value(
-        self, field_type, fields_values, base_model, report_builder_class, selected_field_value, for_select2=False
+        self,
+        field_type,
+        fields_values,
+        base_model,
+        report_builder_class,
+        selected_field_value,
+        for_select2=False,
     ):
         if field_type == 'date':
             self._get_date_fields(
@@ -107,7 +121,14 @@ class ReportBuilderFieldUtils:
                 show_order_by_fields=True,
             )
 
-    def _get_date_fields(self, base_model, fields, report_builder_class, selected_field_id=None, search_string=None):
+    def _get_date_fields(
+        self,
+        base_model,
+        fields,
+        report_builder_class,
+        selected_field_id=None,
+        search_string=None,
+    ):
         return self._get_fields(
             base_model=base_model,
             fields=fields,
@@ -119,7 +140,14 @@ class ReportBuilderFieldUtils:
             search_string=search_string,
         )
 
-    def _get_number_fields(self, base_model, fields, report_builder_class, selected_field_id=None, search_string=None):
+    def _get_number_fields(
+        self,
+        base_model,
+        fields,
+        report_builder_class,
+        selected_field_id=None,
+        search_string=None,
+    ):
         return self._get_fields(
             base_model=base_model,
             fields=fields,
@@ -131,7 +159,12 @@ class ReportBuilderFieldUtils:
         )
 
     def _get_column_link_fields(
-        self, base_model, fields, report_builder_class, selected_field_id=None, search_string=None
+        self,
+        base_model,
+        fields,
+        report_builder_class,
+        selected_field_id=None,
+        search_string=None,
     ):
         return self._get_fields(
             base_model=base_model,
@@ -144,7 +177,14 @@ class ReportBuilderFieldUtils:
             allow_annotations_fields=False,
         )
 
-    def _get_colour_fields(self, base_model, fields, report_builder_class, selected_field_id=None, search_string=None):
+    def _get_colour_fields(
+        self,
+        base_model,
+        fields,
+        report_builder_class,
+        selected_field_id=None,
+        search_string=None,
+    ):
         return self._get_fields(
             base_model=base_model,
             fields=fields,
@@ -200,7 +240,9 @@ class ReportBuilderFieldUtils:
                 or (show_order_by_fields and report_builder_field in report_builder_class.order_by_fields)
             ):
                 django_field, col_type_override, columns, _ = self.get_field_details(
-                    base_model=base_model, field=report_builder_field, report_builder_class=report_builder_class
+                    base_model=base_model,
+                    field=report_builder_field,
+                    report_builder_class=report_builder_class,
                 )
                 if django_field is None and must_have_django_field:
                     continue
@@ -221,7 +263,13 @@ class ReportBuilderFieldUtils:
                                 if for_select2:
                                     fields.append({'id': full_id, 'text': full_title})
                                 else:
-                                    fields.append({'field': full_id, 'label': full_title, 'colour': colour})
+                                    fields.append(
+                                        {
+                                            'field': full_id,
+                                            'label': full_title,
+                                            'colour': colour,
+                                        }
+                                    )
 
         if allow_pivots and not for_select2 and pivot_fields is not None:
             for pivot_code, pivot_field in report_builder_class.pivot_fields.items():
@@ -229,7 +277,11 @@ class ReportBuilderFieldUtils:
                 full_title = title_prefix + pivot_field['title']
                 if self._is_search_match(search_string=search_string, title=full_title):
                     pivot_fields.append(
-                        {'field': full_id, 'label': title_prefix + pivot_field['title'], 'colour': colour}
+                        {
+                            'field': full_id,
+                            'label': title_prefix + pivot_field['title'],
+                            'colour': colour,
+                        }
                     )
 
         for include_field, include in report_builder_class.includes.items():
@@ -267,11 +319,31 @@ class ReportBuilderFieldUtils:
         if include_mathematical_columns:
             fields.extend(
                 [
-                    {'colour': '#D4AF37', 'field': 'rb_addition', 'label': 'Maths: Addition Field'},
-                    {'colour': '#D4AF37', 'field': 'rb_subtraction', 'label': 'Maths: Subtraction Field'},
-                    {'colour': '#D4AF37', 'field': 'rb_times', 'label': 'Maths: Times Field'},
-                    {'colour': '#D4AF37', 'field': 'rb_division', 'label': 'Maths: Division Field'},
-                    {'colour': '#D4AF37', 'field': 'rb_percentage', 'label': 'Maths: Percentage Field'},
+                    {
+                        'colour': '#D4AF37',
+                        'field': 'rb_addition',
+                        'label': 'Maths: Addition Field',
+                    },
+                    {
+                        'colour': '#D4AF37',
+                        'field': 'rb_subtraction',
+                        'label': 'Maths: Subtraction Field',
+                    },
+                    {
+                        'colour': '#D4AF37',
+                        'field': 'rb_times',
+                        'label': 'Maths: Times Field',
+                    },
+                    {
+                        'colour': '#D4AF37',
+                        'field': 'rb_division',
+                        'label': 'Maths: Division Field',
+                    },
+                    {
+                        'colour': '#D4AF37',
+                        'field': 'rb_percentage',
+                        'label': 'Maths: Percentage Field',
+                    },
                 ]
             )
 

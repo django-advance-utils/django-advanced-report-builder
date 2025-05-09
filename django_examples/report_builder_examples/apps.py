@@ -15,3 +15,7 @@ class ReportBuilderExamplesConfig(AppConfig):
     default_auto_field = 'django.db.models.AutoField'
     name = 'report_builder_examples'
     verbose_name = 'Report builder examples'
+
+    def ready(self):
+        # noinspection PyUnresolvedReferences
+        import report_builder_examples.handlers

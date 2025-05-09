@@ -41,28 +41,24 @@ def import_companies(path):
         titles = {c[1]: c[0] for c in models.Person.title_choices}
         csv_reader = csv.DictReader(f)
         for r in csv_reader:
-
             companies = models.Company.objects.filter(name=r['Company'])
             if len(companies) > 1:
                 for c in companies[1:]:
                     c.delete()
 
-            company = models.Company.objects.get_or_create(name=r['Company'],
-                                                           importance=random.randrange(0, 10))[0]
-            models.Person.objects.get_or_create(company=company,
-                                                first_name=r['First Name'],
-                                                surname=r['Surname'],
-                                                title=titles.get(r['Title'], None),
-                                                date_entered=datetime.datetime.strptime(r['date_entered'],
-                                                                                        '%d/%m/%Y'))
+            company = models.Company.objects.get_or_create(name=r['Company'], importance=random.randrange(0, 10))[0]
+            models.Person.objects.get_or_create(
+                company=company,
+                first_name=r['First Name'],
+                surname=r['Surname'],
+                title=titles.get(r['Title'], None),
+                date_entered=datetime.datetime.strptime(r['date_entered'], '%d/%m/%Y'),
+            )
             for _ in range(random.randrange(10)):
                 date = random_date(start_date, end_date)
                 amount = random.randrange(1000, 10000)
                 quantity = random.randrange(1, 15)
-                models.Payment(company=company,
-                               date=date,
-                               amount=amount,
-                               quantity=quantity).save()
+                models.Payment(company=company, date=date, amount=amount, quantity=quantity).save()
 
             for tag in r['tags'].split(','):
                 if tag != '':
@@ -74,29 +70,33 @@ def import_tallies(path):
     with open(path + '/data/test_tallies_data.csv', 'r') as f:
         csv_reader = csv.DictReader(f)
         for r in csv_reader:
-            models.Tally.objects.get_or_create(date=datetime.datetime.strptime(r['Date'], '%d/%m/%Y'),
-                                               cars=int(r['Cars']),
-                                               vans=int(r['Vans']),
-                                               buses=int(r['Buses']),
-                                               lorries=int(r['Lorries']),
-                                               motor_bikes=int(r['Motor Bikes']),
-                                               push_bikes=int(r['Push Bikes']),
-                                               tractors=int(r['Tractors']))
+            models.Tally.objects.get_or_create(
+                date=datetime.datetime.strptime(r['Date'], '%d/%m/%Y'),
+                cars=int(r['Cars']),
+                vans=int(r['Vans']),
+                buses=int(r['Buses']),
+                lorries=int(r['Lorries']),
+                motor_bikes=int(r['Motor Bikes']),
+                push_bikes=int(r['Push Bikes']),
+                tractors=int(r['Tractors']),
+            )
 
 
 def import_report_types():
-
-    report_types = [['payment', 'Payment', 'ReportBuilder'],
-                    ['tally', 'Tally', 'ReportBuilder'],
-                    ['company', 'Company', 'ReportBuilder'],
-                    ['sector', 'Sector', 'ReportBuilder'],
-                    ['person', 'Person', 'ReportBuilder'],
-                    ['event', 'Event', 'ReportBuilder'],
-                    ['contract', 'Contract', 'ReportBuilder'],
-                    ]
+    report_types = [
+        ['payment', 'Payment', 'ReportBuilder'],
+        ['tally', 'Tally', 'ReportBuilder'],
+        ['company', 'Company', 'ReportBuilder'],
+        ['sector', 'Sector', 'ReportBuilder'],
+        ['person', 'Person', 'ReportBuilder'],
+    ]
 
     for report_type in report_types:
         content_type = ContentType.objects.get(app_label='report_builder_examples', model=report_type[0])
-        ReportType.objects.get_or_create(content_type=content_type,
-                                         defaults={'name': report_type[1],
-                                                   'report_builder_class_name': report_type[2]})
+        ReportType.objects.get_or_create(
+            content_type=content_type,
+            defaults={
+                'name': report_type[1],
+                'report_builder_class_name': report_type[2],
+            },
+        )

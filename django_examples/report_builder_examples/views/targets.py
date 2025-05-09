@@ -10,8 +10,7 @@ class ViewTargets(MainIndices):
 
     def setup_menu(self):
         super().setup_menu()
-        self.add_menu('table_menu', 'button_group').add_items(('advanced_report_builder:target_modal,-',
-                                                               'Add Target'))
+        self.add_menu('table_menu', 'button_group').add_items(('advanced_report_builder:target_modal,-', 'Add Target'))
 
     @staticmethod
     def setup_table(table):
@@ -21,4 +20,3 @@ class ViewTargets(MainIndices):
             'name',
             EditColumn('advanced_report_builder:target_modal'),
         )
-

@@ -10,9 +10,9 @@ from django.urls import reverse
 from django_modals.modals import ModelFormModal
 from django_modals.widgets.select2 import Select2
 
+from advanced_report_builder.column_types import NUMBER_FIELDS
 from advanced_report_builder.field_types import FieldTypes
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
-from advanced_report_builder.globals import NUMBER_FIELDS
 from advanced_report_builder.models import ReportQuery, ReportType
 from advanced_report_builder.utils import get_report_builder_class
 
@@ -59,7 +59,9 @@ class QueryBuilderModalBaseMixin(ReportBuilderFieldUtils):
                 or report_builder_field not in report_builder_class.exclude_search_fields
             ):
                 django_field, _, columns, _ = self.get_field_details(
-                    base_model=base_model, field=report_builder_field, report_builder_class=report_builder_class
+                    base_model=base_model,
+                    field=report_builder_field,
+                    report_builder_class=report_builder_class,
                 )
                 for column in columns:
                     field_types.get_filter(
@@ -222,7 +224,10 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
 
     def form_valid(self, form):
         org_id = self.object.id if hasattr(self, 'object') else None
-        chart_report = form.save()
+        chart_report = form.save(commit=False)
+        chart_report._current_user = self.request.user
+        chart_report.save()
+
         self.post_save(created=org_id is None, form=form)
         if not self.response_commands:
             url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME', '')
