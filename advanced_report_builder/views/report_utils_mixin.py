@@ -3,7 +3,7 @@ import json
 import operator
 from functools import reduce
 
-from django.db.models import FloatField, ExpressionWrapper, Q, IntegerField
+from django.db.models import FloatField, ExpressionWrapper
 from django.db.models.functions import NullIf
 from django_datatables.columns import CurrencyPenceColumn, CurrencyColumn
 
@@ -51,7 +51,7 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
         new_field_name = field_name
         css_class = None
         annotation_filter = None
-        if annotations_type != 0 or append_annotation_query:
+        if annotations_type != ANNOTATION_CHOICE_NA or append_annotation_query:
             b64_filter = data_attr.get('filter')
             if b64_filter:
                 _filter = decode_attribute(b64_filter)
@@ -150,8 +150,7 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                 field.column_defs['className'] = css_class
                 if title:
                     field.title = title
-                if field.annotations and annotations_type == ANNOTATION_CHOICE_NA:
-
+                if field.annotations:
                     if not self.use_annotations:
                         field.options['calculated'] = True
                         field.aggregations = col_type_override.annotations
