@@ -195,7 +195,7 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = self.get_title()
-        calendar_report_date_sets = self.chart_report.calendarreportdataset_set.all()
+        self.chart_report.calendarreportdataset_set.all()
         lanes = []
         headings = []
 

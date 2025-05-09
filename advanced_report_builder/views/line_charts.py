@@ -78,7 +78,7 @@ class LineChartJSTable(ChartJSTable):
         elif self.axis_scale == ANNOTATION_VALUE_DAY:
             next_date = date_offset.get_offset('1d', start_date_time=date_in)
         else:
-            assert False
+            raise AssertionError()
         return next_date
 
 

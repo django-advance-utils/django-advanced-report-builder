@@ -79,10 +79,7 @@ class FilterQueryMixin:
         :param display_condition:
         :return:
         """
-        if display_condition == 'AND':
-            reduce_by = operator.and_
-        else:
-            reduce_by = operator.or_
+        reduce_by = operator.and_ if display_condition == 'AND' else operator.or_
 
         return reduce_by
 
@@ -330,10 +327,7 @@ class FilterQueryMixin:
     def _get_pivot_details(self, base_model, pivot_str, report_builder_class, previous_base_model=None, include_str=''):
         if pivot_str in report_builder_class.pivot_fields:
             pivot_data = report_builder_class.pivot_fields[pivot_str]
-            if include_str == '':
-                full_field_id = pivot_data['field']
-            else:
-                full_field_id = '__'.join((include_str, pivot_data['field']))
+            full_field_id = pivot_data['field'] if include_str == '' else '__'.join((include_str, pivot_data['field']))
 
             return {'id': full_field_id, 'details': pivot_data}
 

@@ -215,10 +215,7 @@ class QueryOrderModal(QueryBuilderModalBaseMixin, ModelFormModal):
         form.fields['order_by_ascending'].widget = RBToggle()
 
         report_type = ReportType.objects.get(id=self.slug['report_type'])
-        if 'data' in _kwargs:
-            order_by_field = _kwargs['data'].get('order_by_field')
-        else:
-            order_by_field = form.instance.order_by_field
+        order_by_field = _kwargs['data'].get('order_by_field') if 'data' in _kwargs else form.instance.order_by_field
 
         self.setup_field(
             field_type='order',

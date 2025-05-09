@@ -614,7 +614,7 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
         elif bar_chart_report.axis_scale == ANNOTATION_VALUE_DAY:
             return start_date.strftime('%d/%m/%Y')
         else:
-            assert False
+            raise AssertionError()
 
     def filter_date(self, query):
         bar_chart_report = self.chart_report
@@ -631,7 +631,7 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
         elif bar_chart_report.axis_scale == ANNOTATION_VALUE_DAY:
             end_date = start_date + timedelta(days=1)
         else:
-            assert False
+            raise AssertionError()
 
         if self.end_date_field_path is None:
             query_list = [

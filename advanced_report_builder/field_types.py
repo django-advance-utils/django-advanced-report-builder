@@ -69,7 +69,7 @@ class FieldTypes:
                         'operators': self.get_operator(self.FIELD_TYPE_MULTIPLE_CHOICE),
                     }
                 )
-            elif isinstance(django_field, (models.CharField, models.TextField, models.EmailField)):
+            elif isinstance(django_field, models.CharField | models.TextField | models.EmailField):
                 query_builder_filters.append(
                     {
                         'id': column_id,
@@ -81,7 +81,7 @@ class FieldTypes:
                     }
                 )
             elif isinstance(
-                django_field, (models.IntegerField, models.PositiveSmallIntegerField, models.PositiveIntegerField)
+                django_field, models.IntegerField | models.PositiveSmallIntegerField | models.PositiveIntegerField
             ):
                 if django_field.choices is None:
                     query_builder_filter = {

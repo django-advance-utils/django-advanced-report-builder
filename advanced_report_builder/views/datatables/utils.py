@@ -217,12 +217,11 @@ class TableUtilsMixin(ReportUtilsMixin):
                     totals=totals,
                 )
             else:
-                if col_type_override is not None:
-                    if data_attr.get('annotation_label') == '1':
-                        if isinstance(col_type_override.field, list):
-                            table.initial_values += col_type_override.field
-                        else:
-                            table.initial_values.append(col_type_override.field)
+                if col_type_override is not None and data_attr.get('annotation_label') == '1':
+                    if isinstance(col_type_override.field, list):
+                        table.initial_values += col_type_override.field
+                    else:
+                        table.initial_values.append(col_type_override.field)
 
                 field_name = field
                 if isinstance(col_type_override, CURRENCY_COLUMNS) and totals is not None:
@@ -398,10 +397,7 @@ class TableUtilsMixin(ReportUtilsMixin):
         field = table_field['field']
 
         column_id = data_attr.get('column_id')
-        if column_id:
-            field_name = decode_attribute(column_id)
-        else:
-            field_name = f'{field}_{index}'
+        field_name = decode_attribute(column_id) if column_id else f'{field}_{index}'
         field_attr['annotations'] = {field_name: expression}
 
         field_attr.update(
@@ -439,10 +435,7 @@ class TableUtilsMixin(ReportUtilsMixin):
         field_attr['options'] = {}
         field = table_field['field']
         column_id = data_attr.get('column_id')
-        if column_id:
-            field_name = decode_attribute(column_id)
-        else:
-            field_name = f'{field}_{index}'
+        field_name = decode_attribute(column_id) if column_id else f'{field}_{index}'
         field_attr['annotations'] = {field_name: expression}
 
         field_attr.update(
