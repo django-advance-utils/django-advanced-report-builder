@@ -528,9 +528,10 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
 
     def button_add_query(self, **_kwargs):
         single_value_type = _kwargs['single_value_type']
-        if (single_value_type == '' or
-                int(single_value_type) not in [SingleValueReport.SINGLE_VALUE_TYPE_COUNT,
-                                               SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT, ]):
+        if single_value_type == '' or int(single_value_type) not in [
+            SingleValueReport.SINGLE_VALUE_TYPE_COUNT,
+            SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT,
+        ]:
             return super().button_add_query(**_kwargs)
         else:
             report_type = self.get_report_type(**_kwargs)
@@ -541,12 +542,12 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
             )
             return self.command_response('show_modal', modal=url)
 
-
     def button_edit_query(self, **_kwargs):
         single_value_type = _kwargs['single_value_type']
-        if (single_value_type == '' or
-                int(single_value_type) not in [SingleValueReport.SINGLE_VALUE_TYPE_COUNT,
-                                                SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT,]):
+        if single_value_type == '' or int(single_value_type) not in [
+            SingleValueReport.SINGLE_VALUE_TYPE_COUNT,
+            SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT,
+        ]:
             return super().button_edit_query(**_kwargs)
         else:
             query_id = _kwargs['query_id'][1:]
@@ -556,7 +557,6 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
                 kwargs={'slug': f'pk-{query_id}-report_type-{report_type}'},
             )
             return self.command_response('show_modal', modal=url)
-
 
     def form_valid(self, form):
         instance = form.save(commit=False)
@@ -676,4 +676,3 @@ class QueryNumeratorModal(QueryBuilderModalBaseMixin, ModelFormModal):
         if not self.response_commands:
             self.add_command('reload')
         return self.command_response()
-

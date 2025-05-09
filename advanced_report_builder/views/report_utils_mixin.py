@@ -18,7 +18,9 @@ from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import (
     ANNOTATION_FUNCTIONS,
     ANNOTATION_CHOICE_COUNT,
-    ALIGNMENT_CLASS, ANNOTATION_CHOICE_NA, ALIGNMENT_CHOICE_RIGHT,
+    ALIGNMENT_CLASS,
+    ANNOTATION_CHOICE_NA,
+    ALIGNMENT_CHOICE_RIGHT,
 )
 from advanced_report_builder.utils import decode_attribute
 
@@ -45,7 +47,6 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
         divider=None,
         additional_options=None,
     ):
-
         field_name = table_field['field']
         alignment_class = ALIGNMENT_CLASS.get(int(data_attr.get('alignment', ALIGNMENT_CHOICE_RIGHT)))
         new_field_name = field_name

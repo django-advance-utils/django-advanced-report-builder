@@ -516,7 +516,7 @@ class KanbanModal(ModelFormModal):
 
     def form_valid(self, form):
         org_id = self.object.pk if hasattr(self, 'object') else None
-        created=org_id is None
+        created = org_id is None
         instance = form.save(commit=False)
         instance._current_user = self.request.user
         instance.save()

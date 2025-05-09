@@ -31,7 +31,8 @@ from advanced_report_builder.globals import (
     REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_CHOICES,
     REVERSE_FOREIGN_KEY_DELIMITER_CHOICES,
     REVERSE_FOREIGN_KEY_ANNOTATION_DATE_CHOICES,
-    REVERSE_FOREIGN_KEY_ANNOTATION_DATE_ARRAY, ALIGNMENT_CHOICE_RIGHT,
+    REVERSE_FOREIGN_KEY_ANNOTATION_DATE_ARRAY,
+    ALIGNMENT_CHOICE_RIGHT,
 )
 from advanced_report_builder.models import TableReport, ReportType
 from advanced_report_builder.toggle import RBToggle
@@ -266,15 +267,19 @@ class TableFieldForm(ChartBaseFieldForm):
         if self.django_field is not None and isinstance(self.django_field, DATE_FIELDS):
             self.setup_date_fields(data_attr)
         elif self.django_field is not None and isinstance(self.django_field, NUMBER_FIELDS):
-            self.setup_number_fields(data_attr=data_attr,
-                                     base_model=base_model,
-                                     report_type=report_type,
-                                     has_existing_annotations=has_existing_annotations)
+            self.setup_number_fields(
+                data_attr=data_attr,
+                base_model=base_model,
+                report_type=report_type,
+                has_existing_annotations=has_existing_annotations,
+            )
         elif isinstance(self.col_type_override, CURRENCY_COLUMNS):
-            self.setup_currency_fields(data_attr=data_attr,
-                                       base_model=base_model,
-                                       report_type=report_type,
-                                       has_existing_annotations=has_existing_annotations)
+            self.setup_currency_fields(
+                data_attr=data_attr,
+                base_model=base_model,
+                report_type=report_type,
+                has_existing_annotations=has_existing_annotations,
+            )
         elif isinstance(self.col_type_override, LINK_COLUMNS):
             self.setup_link_fields(data_attr=data_attr)
         elif isinstance(self.col_type_override, REVERSE_FOREIGN_KEY_STR_COLUMNS):
@@ -302,9 +307,9 @@ class TableFieldForm(ChartBaseFieldForm):
 
     def setup_currency_fields(self, data_attr, base_model, report_type, has_existing_annotations):
         if has_existing_annotations:
-            self.fields['append_annotation_query'] = BooleanField(required=False,
-                                                                  widget=RBToggle(),
-                                                                  label='Append annotation query')
+            self.fields['append_annotation_query'] = BooleanField(
+                required=False, widget=RBToggle(), label='Append annotation query'
+            )
             if 'append_annotation_query' in data_attr and data_attr['append_annotation_query'] == '1':
                 self.fields['append_annotation_query'].initial = True
         else:
@@ -436,9 +441,9 @@ class TableFieldForm(ChartBaseFieldForm):
 
     def setup_number_fields(self, data_attr, base_model, report_type, has_existing_annotations):
         if has_existing_annotations:
-            self.fields['append_annotation_query'] = BooleanField(required=False,
-                                                                  widget=RBToggle(),
-                                                                  label='Append annotation query')
+            self.fields['append_annotation_query'] = BooleanField(
+                required=False, widget=RBToggle(), label='Append annotation query'
+            )
             if 'append_annotation_query' in data_attr and data_attr['append_annotation_query'] == '1':
                 self.fields['append_annotation_query'].initial = True
         else:
@@ -752,29 +757,23 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
         has_existing_annotations = col_type_override is not None and col_type_override.annotations is not None
 
         if django_field is not None and isinstance(django_field, NUMBER_FIELDS):
-            return self.layout_number_field(form=form,
-                                            has_existing_annotations=has_existing_annotations)
+            return self.layout_number_field(form=form, has_existing_annotations=has_existing_annotations)
         elif isinstance(col_type_override, CURRENCY_COLUMNS):
-            return self.layout_currency_field(form=form,
-                                              has_existing_annotations=has_existing_annotations)
+            return self.layout_currency_field(form=form, has_existing_annotations=has_existing_annotations)
 
         elif isinstance(col_type_override, LINK_COLUMNS):
             return self.layout_link_field()
         elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_STR_COLUMNS):
-            return self.layout_reverse_foreign_key_str_field(form=form,
-                                                             col_type_override=col_type_override)
+            return self.layout_reverse_foreign_key_str_field(form=form, col_type_override=col_type_override)
 
         elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_BOOL_COLUMNS):
-            return self.layout_reverse_foreign_key_bool_field(form=form,
-                                                              col_type_override=col_type_override)
+            return self.layout_reverse_foreign_key_bool_field(form=form, col_type_override=col_type_override)
 
         elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_CHOICE_COLUMNS):
-            return self.layout_reverse_foreign_key_choice_field(form=form,
-                                                                col_type_override=col_type_override)
+            return self.layout_reverse_foreign_key_choice_field(form=form, col_type_override=col_type_override)
 
         elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_DATE_COLUMNS):
-            self.layout_reverse_foreign_key_date_field(form=form,
-                                                       col_type_override=col_type_override)
+            self.layout_reverse_foreign_key_date_field(form=form, col_type_override=col_type_override)
 
         return None
 
@@ -954,35 +953,35 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
 
     def layout_reverse_foreign_key_str_field(self, form, col_type_override):
         form.add_trigger(
-                'has_filter',
-                'onchange',
-                [
-                    {
-                        'selector': '#filter_fields_div',
-                        'values': {'checked': 'show'},
-                        'default': 'hide',
-                    }
-                ],
-            )
+            'has_filter',
+            'onchange',
+            [
+                {
+                    'selector': '#filter_fields_div',
+                    'values': {'checked': 'show'},
+                    'default': 'hide',
+                }
+            ],
+        )
 
         return [
-                'title',
-                'display_heading',
-                'delimiter_type',
+            'title',
+            'display_heading',
+            'delimiter_type',
+            FieldEx(
+                'has_filter',
+                template='django_modals/fields/label_checkbox.html',
+                field_class='col-6 input-group-sm',
+            ),
+            Div(
                 FieldEx(
-                    'has_filter',
-                    template='django_modals/fields/label_checkbox.html',
-                    field_class='col-6 input-group-sm',
+                    'filter',
+                    template='advanced_report_builder/datatables/fields/single_query_builder.html',
+                    extra_context={'report_builder_class_name': col_type_override.report_builder_class_name},
                 ),
-                Div(
-                    FieldEx(
-                        'filter',
-                        template='advanced_report_builder/datatables/fields/single_query_builder.html',
-                        extra_context={'report_builder_class_name': col_type_override.report_builder_class_name},
-                    ),
-                    css_id='filter_fields_div',
-                ),
-            ]
+                css_id='filter_fields_div',
+            ),
+        ]
 
     def layout_reverse_foreign_key_bool_field(self, form, col_type_override):
         form.add_trigger(
@@ -1093,7 +1092,6 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
                 css_id='filter_fields_div',
             ),
         ]
-
 
     def ajax_get_query_builder_fields(self, **kwargs):
         field_auto_id = kwargs['field_auto_id']

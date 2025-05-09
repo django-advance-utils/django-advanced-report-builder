@@ -195,7 +195,6 @@ class QueryBuilderModalBaseMixin(ReportBuilderFieldUtils):
         form.fields[field_name].widget.select_data = _fields
 
 
-
 class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
     size = 'xl'
 

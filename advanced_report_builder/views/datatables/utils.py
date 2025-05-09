@@ -21,7 +21,9 @@ from advanced_report_builder.globals import (
     ALIGNMENT_CLASS,
     REVERSE_FOREIGN_KEY_DELIMITER_COMMA,
     REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_XOR,
-    DATE_FORMAT_TYPE_DD_MM_YY_SLASH, ANNOTATION_CHOICE_NA, ALIGNMENT_CHOICE_RIGHT,
+    DATE_FORMAT_TYPE_DD_MM_YY_SLASH,
+    ANNOTATION_CHOICE_NA,
+    ALIGNMENT_CHOICE_RIGHT,
 )
 from advanced_report_builder.globals import (
     DATE_FORMAT_TYPES_DJANGO_FORMAT,
@@ -164,23 +166,24 @@ class TableUtilsMixin(ReportUtilsMixin):
                     fields=fields,
                 )
             elif isinstance(django_field, NUMBER_FIELDS) and (django_field is None or django_field.choices is None):
-
                 decimal_places = data_attr.get('decimal_places')
                 append_annotation_query = int(data_attr.get('append_annotation_query', 0)) == 1
 
-                field_name = self.get_number_fields(field_name=field_name,
-                                                    table=table,
-                                                    base_model=base_model,
-                                                    report_builder_class=report_builder_class,
-                                                    annotations_type=annotations_type,
-                                                    append_annotation_query=append_annotation_query,
-                                                    index=index,
-                                                    data_attr=data_attr,
-                                                    table_field=table_field,
-                                                    fields=fields,
-                                                    totals=totals,
-                                                    col_type_override=col_type_override,
-                                                    decimal_places=decimal_places)
+                field_name = self.get_number_fields(
+                    field_name=field_name,
+                    table=table,
+                    base_model=base_model,
+                    report_builder_class=report_builder_class,
+                    annotations_type=annotations_type,
+                    append_annotation_query=append_annotation_query,
+                    index=index,
+                    data_attr=data_attr,
+                    table_field=table_field,
+                    fields=fields,
+                    totals=totals,
+                    col_type_override=col_type_override,
+                    decimal_places=decimal_places,
+                )
 
             elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_STR_COLUMNS):
                 field_name = table_field['field']
@@ -255,19 +258,21 @@ class TableUtilsMixin(ReportUtilsMixin):
                 if isinstance(col_type_override, CURRENCY_COLUMNS) and totals is not None:
                     annotations_type = int(data_attr.get('annotations_type', 0))
                     append_annotation_query = int(data_attr.get('append_annotation_query', 0)) == 1
-                    field_name = self.get_number_fields(field_name=field_name,
-                                                        table=table,
-                                                        base_model=base_model,
-                                                        report_builder_class=report_builder_class,
-                                                        annotations_type=annotations_type,
-                                                        append_annotation_query=append_annotation_query,
-                                                        index=index,
-                                                        data_attr=data_attr,
-                                                        table_field=table_field,
-                                                        fields=fields,
-                                                        totals=totals,
-                                                        col_type_override=col_type_override,
-                                                        decimal_places=2)
+                    field_name = self.get_number_fields(
+                        field_name=field_name,
+                        table=table,
+                        base_model=base_model,
+                        report_builder_class=report_builder_class,
+                        annotations_type=annotations_type,
+                        append_annotation_query=append_annotation_query,
+                        index=index,
+                        data_attr=data_attr,
+                        table_field=table_field,
+                        fields=fields,
+                        totals=totals,
+                        col_type_override=col_type_override,
+                        decimal_places=2,
+                    )
 
                 elif col_type_override.annotations is not None:
                     css_class = col_type_override.column_defs.get('className')
@@ -322,12 +327,25 @@ class TableUtilsMixin(ReportUtilsMixin):
             totals[first_field_name] = {'text': 'Totals'}
             table.add_plugin(self.column_totals_class, totals)
 
-    def get_number_fields(self,  field_name, table, base_model, report_builder_class, annotations_type,
-                          append_annotation_query, index, data_attr, table_field, fields,
-                          totals, col_type_override,  decimal_places):
-
-        if ((annotations_type != ANNOTATION_CHOICE_NA or append_annotation_query) and
-                data_attr.get('multiple_columns') == '1'):
+    def get_number_fields(
+        self,
+        field_name,
+        table,
+        base_model,
+        report_builder_class,
+        annotations_type,
+        append_annotation_query,
+        index,
+        data_attr,
+        table_field,
+        fields,
+        totals,
+        col_type_override,
+        decimal_places,
+    ):
+        if (annotations_type != ANNOTATION_CHOICE_NA or append_annotation_query) and data_attr.get(
+            'multiple_columns'
+        ) == '1':
             query = self.extra_filters(query=table.model.objects)
             multiple_column_field = data_attr.get('multiple_column_field')
 

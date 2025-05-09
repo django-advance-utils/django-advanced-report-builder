@@ -138,14 +138,14 @@ class Report(TimeStampedModel):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='report_user_created_set'
+        related_name='report_user_created_set',
     )
     user_updated = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='report_user_updated_set'
+        related_name='report_user_updated_set',
     )
 
     def __str__(self):
@@ -161,7 +161,6 @@ class Report(TimeStampedModel):
         return self.name
 
     def save(self, *args, **kwargs):
-
         current_user = getattr(self, '_current_user', None)
         if current_user is not None and current_user.is_authenticated:
             self.user_updated = current_user

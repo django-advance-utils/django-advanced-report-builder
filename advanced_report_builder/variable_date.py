@@ -72,7 +72,6 @@ class VariableDate:
         (RANGE_TYPE_4_WEEKS_AGO, '4 weeks ago'),
         (RANGE_TYPE_3_WEEKS_AGO, '3 weeks ago'),
         (RANGE_TYPE_2_WEEKS_AGO, '2 weeks ago'),
-
         (RANGE_TYPE_LAST_WEEK, 'Last week'),
         (RANGE_TYPE_YESTERDAY, 'Yesterday'),
         (RANGE_TYPE_TODAY, 'Today'),
