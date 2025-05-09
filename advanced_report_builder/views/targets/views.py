@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.urls import reverse
 from django_modals.modals import ModelFormModal
-from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
+from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
 
 from advanced_report_builder.models import Target
 

@@ -1,7 +1,7 @@
 from django.db import models
-from django.db.models import Sum, Max, Min, Count, Avg
-from django.db.models.functions import TruncMonth, TruncQuarter, TruncYear, TruncWeek, TruncDay
-from django_datatables.columns import CurrencyColumn, CurrencyPenceColumn, ColumnLink
+from django.db.models import Avg, Count, Max, Min, Sum
+from django.db.models.functions import TruncDay, TruncMonth, TruncQuarter, TruncWeek, TruncYear
+from django_datatables.columns import ColumnLink, CurrencyColumn, CurrencyPenceColumn
 
 from advanced_report_builder.columns import ColourColumn
 

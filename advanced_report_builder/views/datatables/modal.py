@@ -3,30 +3,30 @@ import json
 
 from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Div
-from django.forms import CharField, ChoiceField, BooleanField, IntegerField
+from django.forms import BooleanField, CharField, ChoiceField, IntegerField
 from django.urls import reverse
 from django_modals.fields import FieldEx
 from django_modals.form_helpers import HorizontalNoEnterHelper
 from django_modals.modals import FormModal
-from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
+from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
 from django_modals.widgets.select2 import Select2Multiple
 from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.globals import (
-    DATE_FIELDS,
-    NUMBER_FIELDS,
+    ALIGNMENT_CHOICES,
     ANNOTATION_VALUE_CHOICES,
     ANNOTATIONS_CHOICES,
-    DATE_FORMAT_TYPES,
     CURRENCY_COLUMNS,
+    DATE_FIELDS,
+    DATE_FORMAT_TYPES,
     LINK_COLUMNS,
-    ALIGNMENT_CHOICES,
+    NUMBER_FIELDS,
 )
-from advanced_report_builder.models import TableReport, ReportType
+from advanced_report_builder.models import ReportType, TableReport
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import split_attr, encode_attribute, decode_attribute, get_report_builder_class
+from advanced_report_builder.utils import decode_attribute, encode_attribute, get_report_builder_class, split_attr
 from advanced_report_builder.views.charts_base import ChartBaseFieldForm
-from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin, QueryBuilderModalBase
+from advanced_report_builder.views.modals_base import QueryBuilderModalBase, QueryBuilderModalBaseMixin
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 
 
@@ -386,7 +386,7 @@ class TableFieldForm(ChartBaseFieldForm):
         if self.cleaned_data['decimal_places'] > 0:
             attributes.append(f'decimal_places-{self.cleaned_data["decimal_places"]}')
         if self.cleaned_data['has_filter']:
-            attributes.append(f'has_filter-1')
+            attributes.append('has_filter-1')
             if self.cleaned_data['filter']:
                 b64_filter = encode_attribute(self.cleaned_data['filter'])
                 attributes.append(f'filter-{b64_filter}')

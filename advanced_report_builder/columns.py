@@ -2,13 +2,13 @@ from django.contrib.humanize.templatetags.humanize import intcomma
 from django.db.models import Count
 from django_datatables.columns import (
     ColumnBase,
-    CurrencyPenceColumn,
-    CurrencyColumn,
-    NoHeadingColumn,
     ColumnLink,
+    CurrencyColumn,
+    CurrencyPenceColumn,
     ManyToManyColumn,
+    NoHeadingColumn,
 )
-from django_datatables.helpers import get_url, DUMMY_ID, render_replace
+from django_datatables.helpers import DUMMY_ID, get_url, render_replace
 
 
 class ReportBuilderDateColumn(ColumnBase):
@@ -52,7 +52,7 @@ class ReportBuilderNumberColumn(ColumnBase):
 class ReportBuilderCurrencyPenceColumn(CurrencyPenceColumn):
     def row_result(self, data, _page_data):
         try:
-            return intcomma('{:.2f}'.format(data[self.field] / 100.0))
+            return intcomma(f'{data[self.field] / 100.0:.2f}')
         except (KeyError, TypeError):
             return '0.00'
 
@@ -60,7 +60,7 @@ class ReportBuilderCurrencyPenceColumn(CurrencyPenceColumn):
 class ReportBuilderCurrencyColumn(CurrencyColumn):
     def row_result(self, data, _page_data):
         try:
-            return intcomma('{:.2f}'.format(data[self.field]))
+            return intcomma(f'{data[self.field]:.2f}')
         except (KeyError, TypeError):
             return '0.00'
 

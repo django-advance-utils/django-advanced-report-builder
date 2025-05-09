@@ -3,18 +3,18 @@ import json
 import operator
 from functools import reduce
 
-from django.db.models import FloatField, ExpressionWrapper
+from django.db.models import ExpressionWrapper, FloatField
 from django.db.models.functions import NullIf
-from django_datatables.columns import CurrencyPenceColumn, CurrencyColumn
+from django_datatables.columns import CurrencyColumn, CurrencyPenceColumn
 
 from advanced_report_builder.columns import (
-    ReportBuilderCurrencyPenceColumn,
     ReportBuilderCurrencyColumn,
+    ReportBuilderCurrencyPenceColumn,
     ReportBuilderNumberColumn,
 )
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.filter_query import FilterQueryMixin
-from advanced_report_builder.globals import ANNOTATION_FUNCTIONS, ANNOTATION_CHOICE_COUNT, ALIGNMENT_CLASS
+from advanced_report_builder.globals import ALIGNMENT_CLASS, ANNOTATION_CHOICE_COUNT, ANNOTATION_FUNCTIONS
 from advanced_report_builder.utils import decode_attribute
 
 

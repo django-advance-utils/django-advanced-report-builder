@@ -10,19 +10,19 @@ from django_datatables.columns import MenuColumn
 from django_datatables.datatables import DatatableExcludedRow
 from django_datatables.helpers import DUMMY_ID
 from django_datatables.widgets import DataTableReorderWidget
-from django_menus.menu import MenuItem, HtmlMenu
+from django_menus.menu import HtmlMenu, MenuItem
 from django_modals.fields import FieldEx
 from django_modals.form_helpers import HorizontalNoEnterHelper
 from django_modals.helper import modal_button, modal_button_method
-from django_modals.modals import ModelFormModal, Modal
-from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
-from django_modals.widgets.select2 import Select2Multiple, Select2
+from django_modals.modals import Modal, ModelFormModal
+from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
+from django_modals.widgets.select2 import Select2, Select2Multiple
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.data_merge.utils import DataMergeUtils
 from advanced_report_builder.data_merge.widget import DataMergeWidget
 from advanced_report_builder.filter_query import FilterQueryMixin
-from advanced_report_builder.models import ReportType, CalendarReportDescription, CalendarReportDataSet, CalendarReport
+from advanced_report_builder.models import CalendarReport, CalendarReportDataSet, CalendarReportDescription, ReportType
 from advanced_report_builder.utils import crispy_modal_link_args
 from advanced_report_builder.views.charts_base import ChartJSTable
 from advanced_report_builder.views.datatables.utils import DescriptionColumn

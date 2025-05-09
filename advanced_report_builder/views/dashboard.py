@@ -1,6 +1,7 @@
 import copy
 
 from ajax_helpers.mixins import AjaxHelpers
+from django.conf import settings
 from django.forms import ModelChoiceField
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -8,8 +9,8 @@ from django.urls import reverse
 from django.views.generic import TemplateView
 from django_menus.menu import MenuMixin
 from django_modals.forms import CrispyForm
-from django_modals.modals import ModelFormModal, FormModal
-from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF, PERMISSION_DISABLE
+from django_modals.modals import FormModal, ModelFormModal
+from django_modals.processes import PERMISSION_DISABLE, PERMISSION_OFF, PROCESS_EDIT_DELETE
 from django_modals.widgets.select2 import Select2
 from django_modals.widgets.widgets import Toggle
 
@@ -22,7 +23,6 @@ from advanced_report_builder.views.kanban import KanbanView
 from advanced_report_builder.views.line_charts import LineChartView
 from advanced_report_builder.views.pie_charts import PieChartView
 from advanced_report_builder.views.single_values import SingleValueView
-from django.conf import settings
 
 
 class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):

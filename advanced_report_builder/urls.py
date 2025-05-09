@@ -1,38 +1,38 @@
 from django.urls import path
 
 from advanced_report_builder.views.bar_charts import (
-    BarChartModal,
-    BarChartFieldModal,
-    BarChartShowBreakdownModal,
     BarChartBreakdownFieldModal,
+    BarChartFieldModal,
+    BarChartModal,
+    BarChartShowBreakdownModal,
 )
 from advanced_report_builder.views.calendar import (
-    CalendarModal,
-    CalendarDataSetModal,
     CalendarDataSetDuplicateModal,
-    CalendarDescriptionModal,
+    CalendarDataSetModal,
     CalendarDescriptionDuplicateModal,
+    CalendarDescriptionModal,
+    CalendarModal,
 )
 from advanced_report_builder.views.custom import CustomModal
-from advanced_report_builder.views.dashboard import DashboardReportModal, DashboardModal, DashboardAddReportModal
-from advanced_report_builder.views.datatables.modal import TableModal, TableFieldModal, TablePivotModal
-from advanced_report_builder.views.query_modal.modal import QueryModal, QueryOrderModal
-from advanced_report_builder.views.funnel_charts import FunnelChartModal, FunnelChartFieldModal
+from advanced_report_builder.views.dashboard import DashboardAddReportModal, DashboardModal, DashboardReportModal
+from advanced_report_builder.views.datatables.modal import TableFieldModal, TableModal, TablePivotModal
+from advanced_report_builder.views.funnel_charts import FunnelChartFieldModal, FunnelChartModal
 from advanced_report_builder.views.kanban import (
-    KanbanModal,
-    KanbanLaneModal,
-    KanbanLaneDuplicateModal,
-    KanbanDescriptionModal,
     KanbanDescriptionDuplicateModal,
+    KanbanDescriptionModal,
+    KanbanLaneDuplicateModal,
+    KanbanLaneModal,
+    KanbanModal,
 )
-from advanced_report_builder.views.line_charts import LineChartModal, LineChartFieldModal
-from advanced_report_builder.views.pie_charts import PieChartModal, PieChartFieldModal
+from advanced_report_builder.views.line_charts import LineChartFieldModal, LineChartModal
+from advanced_report_builder.views.pie_charts import PieChartFieldModal, PieChartModal
+from advanced_report_builder.views.query_modal.modal import QueryModal, QueryOrderModal
 from advanced_report_builder.views.reports import DuplicateReportModal
 from advanced_report_builder.views.single_values import (
+    QueryNumeratorModal,
     SingleValueModal,
     SingleValueShowBreakdownModal,
     SingleValueTableFieldModal,
-    QueryNumeratorModal,
 )
 from advanced_report_builder.views.targets.views import TargetModal
 

@@ -1,16 +1,16 @@
 import json
 
-from crispy_forms.layout import Div, HTML
+from crispy_forms.layout import HTML, Div
 from django.forms import CharField
 from django.urls import reverse
-from django_datatables.columns import MenuColumn, ColumnBase
+from django_datatables.columns import ColumnBase, MenuColumn
 from django_datatables.widgets import DataTableReorderWidget
-from django_menus.menu import MenuItem, HtmlMenu
+from django_menus.menu import HtmlMenu, MenuItem
 from django_modals.fields import FieldEx
 from django_modals.form_helpers import HorizontalNoEnterHelper
 from django_modals.forms import ModelCrispyForm
 from django_modals.modals import ModelFormModal
-from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
+from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
 
 from advanced_report_builder.models import ReportQuery, ReportQueryOrder, ReportType
 from advanced_report_builder.toggle import RBToggle

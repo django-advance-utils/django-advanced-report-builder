@@ -1,13 +1,12 @@
 from django.views.generic import TemplateView
 from django_menus.menu import MenuItem
-from django_menus.menu import MenuMixin
 from django_modals.modals import ModelFormModal
-from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
+from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
 from django_modals.widgets.select2 import Select2Multiple
 
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.models import CustomReport, ReportType
-from advanced_report_builder.utils import split_slug, make_slug_str
+from advanced_report_builder.utils import split_slug
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 from advanced_report_builder.views.report import ReportBase
 

@@ -1,8 +1,9 @@
+from django.apps import apps
 from django_datatables.columns import ColumnNameError
 from django_datatables.datatables import ColumnInitialisor
-from django.apps import apps
+
 from advanced_report_builder.exceptions import ReportError
-from advanced_report_builder.globals import DATE_FIELDS, NUMBER_FIELDS, LINK_COLUMNS, COLOUR_COLUMNS
+from advanced_report_builder.globals import COLOUR_COLUMNS, DATE_FIELDS, LINK_COLUMNS, NUMBER_FIELDS
 from advanced_report_builder.utils import get_report_builder_class
 
 
@@ -96,16 +97,7 @@ class ReportBuilderFieldUtils:
                 selected_field_id=selected_field_value,
                 for_select2=for_select2,
             )
-        elif field_type == 'order':
-            self._get_fields(
-                base_model=base_model,
-                fields=fields_values,
-                report_builder_class=report_builder_class,
-                selected_field_id=selected_field_value,
-                for_select2=for_select2,
-                show_order_by_fields=True,
-            )
-        elif field_type == 'django_order':
+        elif field_type == 'order' or field_type == 'django_order':
             self._get_fields(
                 base_model=base_model,
                 fields=fields_values,
