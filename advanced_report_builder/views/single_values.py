@@ -1,7 +1,7 @@
 import json
 
 from django.core.exceptions import ValidationError
-from django.db.models import Count, Sum, ExpressionWrapper, FloatField
+from django.db.models import Count, ExpressionWrapper, FloatField, Sum
 from django.db.models.functions import Coalesce, NullIf
 from django.forms import ChoiceField
 from django.shortcuts import get_object_or_404
@@ -12,7 +12,7 @@ from django_modals.fields import FieldEx
 from django_modals.form_helpers import HorizontalNoEnterHelper
 from django_modals.helper import show_modal
 from django_modals.modals import Modal, ModelFormModal
-from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
+from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
 from django_modals.widgets.select2 import Select2Multiple
 from django_modals.widgets.widgets import Toggle
 
@@ -20,16 +20,16 @@ from advanced_report_builder.column_types import NUMBER_FIELDS
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import (
-    ANNOTATION_CHOICE_SUM,
     ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT,
+    ANNOTATION_CHOICE_SUM,
 )
-from advanced_report_builder.models import SingleValueReport, ReportType, ReportQuery
-from advanced_report_builder.utils import get_report_builder_class, get_query_js
+from advanced_report_builder.models import ReportQuery, ReportType, SingleValueReport
+from advanced_report_builder.utils import get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartBaseView
 from advanced_report_builder.views.datatables.modal import (
-    TableFieldModal,
     TableFieldForm,
+    TableFieldModal,
 )
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
 from advanced_report_builder.views.helpers import QueryBuilderModelForm

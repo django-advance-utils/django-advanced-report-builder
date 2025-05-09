@@ -9,7 +9,7 @@ from crispy_forms.layout import Div
 from date_offset.monthdelta import MonthDelta
 from django.core.exceptions import FieldDoesNotExist
 from django.db.models import Q
-from django.forms import CharField, ChoiceField, BooleanField
+from django.forms import BooleanField, CharField, ChoiceField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_datatables.datatables import DatatableTable
@@ -17,42 +17,42 @@ from django_menus.menu import MenuItem
 from django_modals.fields import FieldEx
 from django_modals.form_helpers import HorizontalNoEnterHelper
 from django_modals.modals import FormModal, Modal
-from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
+from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
 from django_modals.widgets.colour_picker import ColourPickerWidget
-from django_modals.widgets.select2 import Select2Multiple, Select2
+from django_modals.widgets.select2 import Select2, Select2Multiple
 from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.column_types import NUMBER_FIELDS
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.generate_series import GenerateSeries
 from advanced_report_builder.globals import (
-    DEFAULT_DATE_FORMAT,
-    DATE_FORMAT_TYPES_DJANGO_FORMAT,
-    ANNOTATION_VALUE_YEAR,
-    ANNOTATION_VALUE_QUARTER,
-    ANNOTATION_VALUE_MONTH,
-    ANNOTATION_VALUE_WEEK,
     ANNOTATION_VALUE_DAY,
     ANNOTATION_VALUE_FUNCTIONS,
+    ANNOTATION_VALUE_MONTH,
+    ANNOTATION_VALUE_QUARTER,
+    ANNOTATION_VALUE_WEEK,
+    ANNOTATION_VALUE_YEAR,
+    DATE_FORMAT_TYPES_DJANGO_FORMAT,
+    DEFAULT_DATE_FORMAT,
     GENERATE_SERIES_INTERVALS,
 )
 from advanced_report_builder.models import BarChartReport, ReportType
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import (
-    split_attr,
-    encode_attribute,
     decode_attribute,
+    encode_attribute,
     get_report_builder_class,
+    split_attr,
 )
-from advanced_report_builder.views.charts_base import ChartBaseView, ChartBaseFieldForm
+from advanced_report_builder.views.charts_base import ChartBaseFieldForm, ChartBaseView
 from advanced_report_builder.views.datatables.modal import (
-    TableFieldModal,
     TableFieldForm,
+    TableFieldModal,
 )
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
 from advanced_report_builder.views.modals_base import (
-    QueryBuilderModalBaseMixin,
     QueryBuilderModalBase,
+    QueryBuilderModalBaseMixin,
 )
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 

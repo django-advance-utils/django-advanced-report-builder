@@ -1,41 +1,41 @@
 import json
 from calendar import monthrange
-from datetime import timedelta, date, datetime
+from datetime import date, datetime, timedelta
 
 from django.conf import settings
 from django.db.models import Q
 from django.forms import CharField, ChoiceField
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.template import Template, Context, TemplateSyntaxError
+from django.template import Context, Template, TemplateSyntaxError
 from django.urls import reverse
 from django.views.generic import TemplateView
 from django_datatables.columns import ColumnBase, MenuColumn
 from django_datatables.datatables import DatatableExcludedRow
 from django_datatables.helpers import DUMMY_ID, row_link
 from django_datatables.widgets import DataTableReorderWidget
-from django_menus.menu import MenuItem, HtmlMenu
+from django_menus.menu import HtmlMenu, MenuItem
 from django_modals.fields import FieldEx
 from django_modals.form_helpers import HorizontalNoEnterHelper
 from django_modals.helper import modal_button, modal_button_method
-from django_modals.modals import ModelFormModal, Modal
-from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
-from django_modals.widgets.select2 import Select2Multiple, Select2
+from django_modals.modals import Modal, ModelFormModal
+from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
+from django_modals.widgets.select2 import Select2, Select2Multiple
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.data_merge.utils import DataMergeUtils
 from advanced_report_builder.data_merge.widget import DataMergeWidget
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import (
-    DATE_FORMAT_TYPES_DJANGO_FORMAT,
     DATE_FORMAT_TYPE_DD_MM_YY_SLASH,
     DATE_FORMAT_TYPE_SHORT_WORDS_MM_YY,
+    DATE_FORMAT_TYPES_DJANGO_FORMAT,
 )
 from advanced_report_builder.models import (
     KanbanReport,
+    KanbanReportDescription,
     KanbanReportLane,
     ReportType,
-    KanbanReportDescription,
 )
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import (

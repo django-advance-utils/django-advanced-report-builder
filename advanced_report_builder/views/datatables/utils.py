@@ -1,35 +1,33 @@
 import copy
 import json
 
-from django.db.models import Q, ExpressionWrapper, FloatField, F
+from django.db.models import ExpressionWrapper, F, FloatField, Q
 from django.db.models.functions import NullIf
 from django_datatables.helpers import render_replace
 from django_datatables.plugins.column_totals import ColumnTotals
 
 from advanced_report_builder.column_types import (
+    CURRENCY_COLUMNS,
     DATE_FIELDS,
+    LINK_COLUMNS,
     NUMBER_FIELDS,
-    REVERSE_FOREIGN_KEY_STR_COLUMNS,
     REVERSE_FOREIGN_KEY_BOOL_COLUMNS,
     REVERSE_FOREIGN_KEY_CHOICE_COLUMNS,
     REVERSE_FOREIGN_KEY_DATE_COLUMNS,
-    LINK_COLUMNS,
-    CURRENCY_COLUMNS,
+    REVERSE_FOREIGN_KEY_STR_COLUMNS,
 )
 from advanced_report_builder.columns import ReportBuilderDateColumn
 from advanced_report_builder.globals import (
-    ALIGNMENT_CLASS,
-    REVERSE_FOREIGN_KEY_DELIMITER_COMMA,
-    REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_XOR,
-    DATE_FORMAT_TYPE_DD_MM_YY_SLASH,
-    ANNOTATION_CHOICE_NA,
     ALIGNMENT_CHOICE_RIGHT,
-)
-from advanced_report_builder.globals import (
-    DATE_FORMAT_TYPES_DJANGO_FORMAT,
+    ALIGNMENT_CLASS,
+    ANNOTATION_CHOICE_NA,
     ANNOTATION_VALUE_FUNCTIONS,
+    DATE_FORMAT_TYPE_DD_MM_YY_SLASH,
+    DATE_FORMAT_TYPES_DJANGO_FORMAT,
+    REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_XOR,
+    REVERSE_FOREIGN_KEY_DELIMITER_COMMA,
 )
-from advanced_report_builder.utils import split_attr, decode_attribute
+from advanced_report_builder.utils import decode_attribute, split_attr
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
 
 

@@ -1,12 +1,11 @@
 from django.db import ProgrammingError
-from django_datatables.datatables import DatatableView, DatatableError
+from django_datatables.datatables import DatatableError, DatatableView
 from django_datatables.helpers import row_link
 from django_menus.menu import MenuItem
 
 from advanced_report_builder.columns import ArrowColumn
 from advanced_report_builder.exceptions import ReportError
-from advanced_report_builder.utils import get_report_builder_class
-from advanced_report_builder.utils import split_slug
+from advanced_report_builder.utils import get_report_builder_class, split_slug
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
 from advanced_report_builder.views.report import ReportBase
 

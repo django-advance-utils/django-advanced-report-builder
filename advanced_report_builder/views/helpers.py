@@ -1,5 +1,5 @@
 from crispy_forms.bootstrap import StrictButton
-from django_modals.forms import ModelCrispyForm, CrispyForm
+from django_modals.forms import CrispyForm, ModelCrispyForm
 
 
 class QueryBuilderModelForm(ModelCrispyForm):

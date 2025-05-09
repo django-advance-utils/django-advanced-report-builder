@@ -1,16 +1,17 @@
 from copy import deepcopy
 
+from django.shortcuts import get_object_or_404
+
 from advanced_report_builder.models import (
-    TableReport,
-    SingleValueReport,
     BarChartReport,
-    PieChartReport,
+    CustomReport,
     FunnelChartReport,
     KanbanReport,
     LineChartReport,
-    CustomReport,
+    PieChartReport,
+    SingleValueReport,
+    TableReport,
 )
-from django.shortcuts import get_object_or_404
 
 
 class DuplicateReport:

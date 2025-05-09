@@ -1,12 +1,11 @@
-from django.db.models import Sum, Max, Min, Count, Avg
+from django.db.models import Avg, Count, Max, Min, Sum
 from django.db.models.functions import (
+    TruncDay,
     TruncMonth,
     TruncQuarter,
-    TruncYear,
     TruncWeek,
-    TruncDay,
+    TruncYear,
 )
-
 
 REVERSE_FOREIGN_KEY_DELIMITER_COMMA = 1
 REVERSE_FOREIGN_KEY_DELIMITER_SEMICOLON = 2

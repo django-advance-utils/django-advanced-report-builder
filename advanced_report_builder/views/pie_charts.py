@@ -2,28 +2,28 @@ import base64
 import json
 
 from crispy_forms.layout import Div
-from django.forms import CharField, ChoiceField, BooleanField
+from django.forms import BooleanField, CharField, ChoiceField
 from django.urls import reverse
 from django_menus.menu import MenuItem
 from django_modals.fields import FieldEx
 from django_modals.form_helpers import HorizontalNoEnterHelper
 from django_modals.modals import FormModal
-from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
+from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
 from django_modals.widgets.colour_picker import ColourPickerWidget
 from django_modals.widgets.select2 import Select2Multiple
 
 from advanced_report_builder.models import PieChartReport
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import (
-    split_attr,
-    encode_attribute,
     decode_attribute,
+    encode_attribute,
     get_report_builder_class,
+    split_attr,
 )
-from advanced_report_builder.views.charts_base import ChartBaseView, ChartBaseFieldForm
+from advanced_report_builder.views.charts_base import ChartBaseFieldForm, ChartBaseView
 from advanced_report_builder.views.modals_base import (
-    QueryBuilderModalBaseMixin,
     QueryBuilderModalBase,
+    QueryBuilderModalBaseMixin,
 )
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 

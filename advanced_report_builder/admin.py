@@ -1,22 +1,23 @@
 from django.contrib import admin
+
 from advanced_report_builder.models import (
-    Report,
-    ReportType,
-    TableReport,
-    ReportQuery,
-    SingleValueReport,
+    BarChartReport,
+    CustomReport,
     Dashboard,
     DashboardReport,
-    BarChartReport,
+    FunnelChartReport,
+    KanbanReport,
+    KanbanReportDescription,
+    KanbanReportLane,
     LineChartReport,
     PieChartReport,
-    FunnelChartReport,
+    Report,
+    ReportQuery,
     ReportTag,
-    KanbanReport,
-    KanbanReportLane,
+    ReportType,
+    SingleValueReport,
+    TableReport,
     Target,
-    CustomReport,
-    KanbanReportDescription,
 )
 
 

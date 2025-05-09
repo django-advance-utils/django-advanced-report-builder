@@ -4,41 +4,41 @@ from datetime import datetime
 
 from crispy_forms.layout import Div
 from date_offset.date_offset import DateOffset
-from django.forms import CharField, ChoiceField, BooleanField
+from django.forms import BooleanField, CharField, ChoiceField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_menus.menu import MenuItem
 from django_modals.fields import FieldEx
 from django_modals.form_helpers import HorizontalNoEnterHelper
 from django_modals.modals import FormModal
-from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
+from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
 from django_modals.widgets.colour_picker import ColourPickerWidget
 from django_modals.widgets.select2 import Select2Multiple
 
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import (
-    ANNOTATION_VALUE_YEAR,
-    ANNOTATION_VALUE_QUARTER,
-    ANNOTATION_VALUE_MONTH,
-    ANNOTATION_VALUE_WEEK,
     ANNOTATION_VALUE_DAY,
+    ANNOTATION_VALUE_MONTH,
+    ANNOTATION_VALUE_QUARTER,
+    ANNOTATION_VALUE_WEEK,
+    ANNOTATION_VALUE_YEAR,
 )
 from advanced_report_builder.models import LineChartReport, ReportType
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import (
-    split_attr,
-    encode_attribute,
     decode_attribute,
+    encode_attribute,
     get_report_builder_class,
+    split_attr,
 )
 from advanced_report_builder.views.charts_base import (
+    ChartBaseFieldForm,
     ChartBaseView,
     ChartJSTable,
-    ChartBaseFieldForm,
 )
 from advanced_report_builder.views.modals_base import (
-    QueryBuilderModalBaseMixin,
     QueryBuilderModalBase,
+    QueryBuilderModalBaseMixin,
 )
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 
@@ -130,11 +130,11 @@ class LineChartView(ChartBaseView):
         ]
 
     def setup_table(self, base_model):
-        axis_scale = getattr(self.chart_report, 'axis_scale')
+        axis_scale = self.chart_report.axis_scale
         targets = None
 
         if getattr(self.chart_report, 'has_targets', False):
-            targets = getattr(self.chart_report, 'targets')
+            targets = self.chart_report.targets
         self.table = self.chart_js_table(model=base_model, axis_scale=axis_scale, targets=targets)
 
 

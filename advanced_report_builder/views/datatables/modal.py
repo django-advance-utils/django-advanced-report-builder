@@ -4,48 +4,48 @@ import json
 from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Div
 from django.apps import apps
-from django.forms import CharField, ChoiceField, BooleanField, IntegerField
+from django.forms import BooleanField, CharField, ChoiceField, IntegerField
 from django.urls import reverse
 from django_modals.fields import FieldEx
 from django_modals.form_helpers import HorizontalNoEnterHelper
 from django_modals.modals import FormModal
-from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
+from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
 from django_modals.widgets.select2 import Select2Multiple
 from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.column_types import (
-    NUMBER_FIELDS,
-    DATE_FIELDS,
     CURRENCY_COLUMNS,
+    DATE_FIELDS,
     LINK_COLUMNS,
-    REVERSE_FOREIGN_KEY_STR_COLUMNS,
+    NUMBER_FIELDS,
     REVERSE_FOREIGN_KEY_BOOL_COLUMNS,
     REVERSE_FOREIGN_KEY_CHOICE_COLUMNS,
     REVERSE_FOREIGN_KEY_DATE_COLUMNS,
+    REVERSE_FOREIGN_KEY_STR_COLUMNS,
 )
 from advanced_report_builder.globals import (
+    ALIGNMENT_CHOICE_RIGHT,
+    ALIGNMENT_CHOICES,
     ANNOTATION_VALUE_CHOICES,
     ANNOTATIONS_CHOICES,
     DATE_FORMAT_TYPES,
-    ALIGNMENT_CHOICES,
     REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_CHOICES,
-    REVERSE_FOREIGN_KEY_DELIMITER_CHOICES,
-    REVERSE_FOREIGN_KEY_ANNOTATION_DATE_CHOICES,
     REVERSE_FOREIGN_KEY_ANNOTATION_DATE_ARRAY,
-    ALIGNMENT_CHOICE_RIGHT,
+    REVERSE_FOREIGN_KEY_ANNOTATION_DATE_CHOICES,
+    REVERSE_FOREIGN_KEY_DELIMITER_CHOICES,
 )
-from advanced_report_builder.models import TableReport, ReportType
+from advanced_report_builder.models import ReportType, TableReport
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import (
-    split_attr,
-    encode_attribute,
     decode_attribute,
+    encode_attribute,
     get_report_builder_class,
+    split_attr,
 )
 from advanced_report_builder.views.charts_base import ChartBaseFieldForm
 from advanced_report_builder.views.modals_base import (
-    QueryBuilderModalBaseMixin,
     QueryBuilderModalBase,
+    QueryBuilderModalBaseMixin,
 )
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 
@@ -609,7 +609,7 @@ class TableFieldForm(ChartBaseFieldForm):
 
     def save_filter(self, attributes):
         if self.cleaned_data['has_filter']:
-            attributes.append(f'has_filter-1')
+            attributes.append('has_filter-1')
             if self.cleaned_data['filter']:
                 b64_filter = encode_attribute(self.cleaned_data['filter'])
                 attributes.append(f'filter-{b64_filter}')
@@ -631,7 +631,7 @@ class TableFieldForm(ChartBaseFieldForm):
         if int(self.cleaned_data['delimiter_type']) != 0:
             attributes.append(f'delimiter_type-{self.cleaned_data["delimiter_type"]}')
         if self.cleaned_data['has_filter']:
-            attributes.append(f'has_filter-1')
+            attributes.append('has_filter-1')
             if self.cleaned_data['filter']:
                 b64_filter = encode_attribute(self.cleaned_data['filter'])
                 attributes.append(f'filter-{b64_filter}')
@@ -640,7 +640,7 @@ class TableFieldForm(ChartBaseFieldForm):
         if int(self.cleaned_data['annotations_type']) != 0:
             attributes.append(f'annotations_type-{self.cleaned_data["annotations_type"]}')
         if self.cleaned_data['has_filter']:
-            attributes.append(f'has_filter-1')
+            attributes.append('has_filter-1')
             if self.cleaned_data['filter']:
                 b64_filter = encode_attribute(self.cleaned_data['filter'])
                 attributes.append(f'filter-{b64_filter}')
@@ -649,7 +649,7 @@ class TableFieldForm(ChartBaseFieldForm):
         if int(self.cleaned_data['delimiter_type']) != 0:
             attributes.append(f'delimiter_type-{self.cleaned_data["delimiter_type"]}')
         if self.cleaned_data['has_filter']:
-            attributes.append(f'has_filter-1')
+            attributes.append('has_filter-1')
             if self.cleaned_data['filter']:
                 b64_filter = encode_attribute(self.cleaned_data['filter'])
                 attributes.append(f'filter-{b64_filter}')
@@ -662,7 +662,7 @@ class TableFieldForm(ChartBaseFieldForm):
         if self.cleaned_data['date_format']:
             attributes.append(f'date_format-{self.cleaned_data["date_format"]}')
         if self.cleaned_data['has_filter']:
-            attributes.append(f'has_filter-1')
+            attributes.append('has_filter-1')
             if self.cleaned_data['filter']:
                 b64_filter = encode_attribute(self.cleaned_data['filter'])
                 attributes.append(f'filter-{b64_filter}')

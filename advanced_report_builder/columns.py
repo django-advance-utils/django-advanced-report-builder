@@ -1,31 +1,29 @@
 from django.contrib.humanize.templatetags.humanize import intcomma
-from django.contrib.postgres.aggregates import StringAgg, BoolOr, BoolAnd, ArrayAgg
-from django.db.models import Count, BooleanField, Min, Max
+from django.contrib.postgres.aggregates import ArrayAgg, BoolAnd, BoolOr, StringAgg
+from django.db.models import BooleanField, Count, Max, Min
 from django.db.models.functions import Cast
 from django_datatables.columns import (
     ColumnBase,
-    CurrencyPenceColumn,
-    CurrencyColumn,
-    NoHeadingColumn,
     ColumnLink,
+    CurrencyColumn,
+    CurrencyPenceColumn,
     ManyToManyColumn,
+    NoHeadingColumn,
 )
-from django_datatables.helpers import get_url, DUMMY_ID, render_replace
+from django_datatables.helpers import DUMMY_ID, get_url, render_replace
 from django_datatables.model_def import DatatableModel
 
 from advanced_report_builder.globals import (
-    REVERSE_FOREIGN_KEY_DELIMITER_COMMA,
-    REVERSE_FOREIGN_KEY_DELIMITER_VALUES,
     DATE_FORMAT_TYPE_DD_MM_YY_SLASH,
     DATE_FORMAT_TYPES_DJANGO_FORMAT,
+    REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_AND,
+    REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_ARRAY,
+    REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_XOR,
     REVERSE_FOREIGN_KEY_ANNOTATION_DATE_ARRAY,
     REVERSE_FOREIGN_KEY_ANNOTATION_DATE_MAX,
     REVERSE_FOREIGN_KEY_ANNOTATION_DATE_MIN,
-)
-from advanced_report_builder.globals import (
-    REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_XOR,
-    REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_AND,
-    REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_ARRAY,
+    REVERSE_FOREIGN_KEY_DELIMITER_COMMA,
+    REVERSE_FOREIGN_KEY_DELIMITER_VALUES,
 )
 
 
@@ -70,7 +68,7 @@ class ReportBuilderNumberColumn(ColumnBase):
 class ReportBuilderCurrencyPenceColumn(CurrencyPenceColumn):
     def row_result(self, data, _page_data):
         try:
-            return intcomma('{:.2f}'.format(data[self.field] / 100.0))
+            return intcomma(f'{data[self.field] / 100.0:.2f}')
         except (KeyError, TypeError):
             return '0.00'
 
@@ -78,7 +76,7 @@ class ReportBuilderCurrencyPenceColumn(CurrencyPenceColumn):
 class ReportBuilderCurrencyColumn(CurrencyColumn):
     def row_result(self, data, _page_data):
         try:
-            return intcomma('{:.2f}'.format(data[self.field]))
+            return intcomma(f'{data[self.field]:.2f}')
         except (KeyError, TypeError):
             return '0.00'
 

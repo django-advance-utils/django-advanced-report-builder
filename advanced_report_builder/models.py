@@ -1,22 +1,21 @@
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.dates import MONTHS
-from django_datatables.columns import DatatableColumn, NoHeadingColumn, ManyToManyColumn
+from django_datatables.columns import DatatableColumn, ManyToManyColumn, NoHeadingColumn
 from django_datatables.model_def import DatatableModel
 from django_modals.model_fields.colour import ColourField
 from time_stamped_model.models import TimeStampedModel
 
-from django.conf import settings
-
 from advanced_report_builder.globals import (
-    DISPLAY_OPTION_CHOICES,
-    DISPLAY_OPTION_2_PER_ROW,
-    DISPLAY_OPTION_NONE,
-    DISPLAY_OPTION_CLASSES,
+    ANNOTATION_CHART_SCALE,
+    ANNOTATION_CHOICE_COUNT,
     ANNOTATION_VALUE_CHOICES,
     ANNOTATIONS_CHOICES,
-    ANNOTATION_CHOICE_COUNT,
-    ANNOTATION_CHART_SCALE,
+    DISPLAY_OPTION_2_PER_ROW,
+    DISPLAY_OPTION_CHOICES,
+    DISPLAY_OPTION_CLASSES,
+    DISPLAY_OPTION_NONE,
 )
 from advanced_report_builder.signals import model_report_save
 

@@ -1,12 +1,12 @@
 import base64
 import json
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 
 from date_offset.date_offset import DateOffset
 from dateutil.relativedelta import relativedelta
 from django.apps import apps
 from django.core.exceptions import FieldError
-from django.db import ProgrammingError, DataError
+from django.db import DataError, ProgrammingError
 from django.db.models import Q
 from django.forms import ChoiceField
 from django.shortcuts import get_object_or_404
@@ -21,18 +21,18 @@ from advanced_report_builder.columns import ReportBuilderDateColumn
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.globals import (
+    ANNOTATION_VALUE_DAY,
     ANNOTATION_VALUE_FUNCTIONS,
-    ANNOTATION_VALUE_YEAR,
+    ANNOTATION_VALUE_MONTH,
     ANNOTATION_VALUE_QUARTER,
     ANNOTATION_VALUE_WEEK,
-    ANNOTATION_VALUE_DAY,
-    ANNOTATION_VALUE_MONTH,
+    ANNOTATION_VALUE_YEAR,
 )
 from advanced_report_builder.models import ReportType
 from advanced_report_builder.utils import (
-    split_slug,
-    split_attr,
     get_report_builder_class,
+    split_attr,
+    split_slug,
 )
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.helpers import QueryBuilderForm

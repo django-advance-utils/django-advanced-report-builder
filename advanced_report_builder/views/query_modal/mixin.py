@@ -1,10 +1,10 @@
-from crispy_forms.layout import Div, HTML
+from crispy_forms.layout import HTML, Div
 from django.conf import settings
 from django.forms import CharField
 from django.urls import reverse
 from django_datatables.columns import MenuColumn
 from django_datatables.widgets import DataTableReorderWidget
-from django_menus.menu import MenuItem, HtmlMenu
+from django_menus.menu import HtmlMenu, MenuItem
 
 from advanced_report_builder.models import ReportQuery
 from advanced_report_builder.utils import get_query_js

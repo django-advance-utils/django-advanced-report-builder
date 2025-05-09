@@ -1,12 +1,12 @@
 from django.db import models
-from django_datatables.columns import CurrencyColumn, CurrencyPenceColumn, ColumnLink
+from django_datatables.columns import ColumnLink, CurrencyColumn, CurrencyPenceColumn
 
 from advanced_report_builder.columns import (
     ColourColumn,
-    ReverseForeignKeyStrColumn,
     ReverseForeignKeyBoolColumn,
     ReverseForeignKeyChoiceColumn,
     ReverseForeignKeyDateColumn,
+    ReverseForeignKeyStrColumn,
 )
 
 NUMBER_FIELDS = (

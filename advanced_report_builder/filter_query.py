@@ -179,7 +179,7 @@ class FilterQueryMixin:
             elif display_operator in ['not_equal', 'not_in']:
                 query_list.append(~((Q((field + '__gte', value[0]))) & (Q((field + '__lte', value[1])))))
             else:
-                query_list.append(((Q((field + '__gte', value[0]))) & (Q((field + '__lte', value[1])))))
+                query_list.append((Q((field + '__gte', value[0]))) & (Q((field + '__lte', value[1]))))
 
     @staticmethod
     def get_variable_year(value, query_list, display_operator, field, query_string):
@@ -229,7 +229,7 @@ class FilterQueryMixin:
                     )
                 else:
                     query_list.append(
-                        ((Q((field + '__month__gt', start_month))) & (Q((field + '__month__lte', end_month))))
+                        (Q((field + '__month__gt', start_month))) & (Q((field + '__month__lte', end_month)))
                     )
             else:
                 start_month = self.get_financial_month() - 1
@@ -246,11 +246,11 @@ class FilterQueryMixin:
                     )
                 else:
                     query_list.append(
-                        (
+                        
                             (Q((field + '__month', months[0])))
                             | (Q((field + '__month', months[1])))
                             | (Q((field + '__month', months[2])))
-                        )
+                        
                     )
 
     def get_logged_in_user(self, value, query_list, display_operator, field, query_string):

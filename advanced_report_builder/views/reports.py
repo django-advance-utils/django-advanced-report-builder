@@ -6,7 +6,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.views.generic import TemplateView
-from django_menus.menu import MenuMixin, MenuItemDisplay
+from django_menus.menu import MenuItemDisplay, MenuMixin
 from django_modals.helper import modal_button, modal_button_method
 from django_modals.modals import Modal
 
