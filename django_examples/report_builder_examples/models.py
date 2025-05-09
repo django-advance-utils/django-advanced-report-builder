@@ -6,7 +6,7 @@ from django_datatables.columns import (
     DatatableColumn,
     CurrencyPenceColumn,
     ColumnBase,
-    DateColumn, ManyToManyColumn,
+    DateColumn, ManyToManyColumn, DateTimeColumn,
 )
 from django_datatables.model_def import DatatableModel
 from time_stamped_model.models import TimeStampedModel
@@ -468,3 +468,27 @@ class Contract(TimeStampedModel):
 class ReportPermission(TimeStampedModel):
     report = models.OneToOneField('advanced_report_builder.Report', primary_key=True, on_delete=models.CASCADE)
     requires_superuser = models.BooleanField(default=False)
+
+
+class Event(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(null=True, blank=True)
+    start_date_time = models.DateTimeField()
+    end_date_time = models.DateTimeField(null=True, blank=True)
+    user_profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+
+    class Datatable(DatatableModel):
+        collink_1 = ReportBuilderColumnLink(title='Col link 1',
+                                            field='name',
+                                            url_name='report_builder_examples:example_link')
+
+    class ReportBuilder(ReportBuilderFields):
+        colour = '#ff6440'
+        title = 'Event'
+        fields = ['name',
+                  'description',
+                  DateTimeColumn(column_name='start_date_time', field='start_date_time', title='Start Date Time'),
+                  DateTimeColumn(column_name='end_date_time', field='end_date_time', title='End Date Time'),
+                  'collink_1']
+        includes = {'user_profile': {'title': 'User',
+                                     'model': 'report_builder_examples.UserProfile.ReportBuilder'}}
