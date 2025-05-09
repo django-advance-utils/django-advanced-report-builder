@@ -82,10 +82,7 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
                 field=self.table_report.link_field,
                 report_builder_class=report_builder_class,
             )
-            if isinstance(col_type_override.field, list):
-                field = col_type_override.field[0]
-            else:
-                field = 'id'
+            field = col_type_override.field[0] if isinstance(col_type_override.field, list) else 'id'
             if field not in fields_used:
                 table.add_columns(f'.{field}')
             table.table_options['row_href'] = row_link(col_type_override.url, field)

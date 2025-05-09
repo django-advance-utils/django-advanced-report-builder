@@ -44,10 +44,7 @@ class DataMergeUtils(ReportBuilderFieldUtils):
                 title = include.get('title')
                 if title is None or title == '':
                     title = new_report_builder_class.title
-                if menus is not None:
-                    menu = []
-                else:
-                    menu = None
+                menu = [] if menus is not None else None
                 self.get_menu_fields(
                     base_model=new_model,
                     report_builder_class=new_report_builder_class,
@@ -101,7 +98,7 @@ class DataMergeUtils(ReportBuilderFieldUtils):
                 report_builder_class=report_builder_class,
                 table=table,
             )
-            if django_field is not None or isinstance(col_type_override.field, (list, tuple)):
+            if django_field is not None or isinstance(col_type_override.field, list | tuple):
                 if field not in columns and f'.{field}' not in columns:
                     columns.add('.' + field)
 

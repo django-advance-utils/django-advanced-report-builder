@@ -97,10 +97,9 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         if is_ajax(request) and request.content_type in [
             'application/json',
             'multipart/form-data',
-        ]:
-            if hasattr(super(), 'post'):
-                # noinspection PyUnresolvedReferences
-                return super().post(request, *args, **kwargs)
+        ] and hasattr(super(), 'post'):
+            # noinspection PyUnresolvedReferences
+            return super().post(request, *args, **kwargs)
 
         view = self.get_view(report=self.report)
         self.kwargs['report'] = self.report

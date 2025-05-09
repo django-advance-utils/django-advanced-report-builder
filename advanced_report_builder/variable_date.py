@@ -296,7 +296,7 @@ class VariableDate:
             end_date = date_offset.get_offset('36m', today)
             number_of_days = (end_date - start_date).days
         else:
-            assert False, 'unknown date value'
+            raise AssertionError('unknown date value')
 
         start_date_and_time = datetime.combine(start_date, datetime.min.time())
         end_date_and_time = datetime.combine(end_date, datetime.max.time())

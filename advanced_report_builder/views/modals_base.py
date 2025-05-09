@@ -80,10 +80,7 @@ class QueryBuilderModalBaseMixin(ReportBuilderFieldUtils):
             if new_model != previous_base_model:
                 _foreign_key = getattr(base_model, include_field, None)
 
-                if hasattr(_foreign_key, 'field'):
-                    add_null_field = _foreign_key.field.null
-                else:
-                    add_null_field = True
+                add_null_field = _foreign_key.field.null if hasattr(_foreign_key, 'field') else True
 
                 if add_null_field:
                     field_types.get_foreign_key_null_field(

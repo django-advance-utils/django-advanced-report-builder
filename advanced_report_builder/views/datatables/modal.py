@@ -233,7 +233,7 @@ class TableFieldForm(ChartBaseFieldForm):
         return self.button('Cancel', commands, css_class, **kwargs)
 
     def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
-        if self.django_field is not None and isinstance(self.django_field, (NUMBER_FIELDS, CURRENCY_COLUMNS)):
+        if self.django_field is not None and isinstance(self.django_field, NUMBER_FIELDS | CURRENCY_COLUMNS):
             return StrictButton(
                 button_text,
                 onclick=f'save_modal_{self.form_id}()',

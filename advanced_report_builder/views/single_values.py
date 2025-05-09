@@ -120,7 +120,7 @@ class SingleValueView(ChartBaseView):
                 raise ReportError('Unknown annotation type')
 
             annotations = list(numerator_col_type_override.annotations.values())[0]
-            if numerator_filter and isinstance(annotations, (Sum, Count)):
+            if numerator_filter and isinstance(annotations, Sum | Count):
                 annotations.filter = numerator_filter
                 numerator = Coalesce(annotations + 0.0, 0.0)
             else:

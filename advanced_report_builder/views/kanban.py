@@ -177,10 +177,7 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
                 field=kanban_report_lane.link_field,
                 report_builder_class=report_builder_class,
             )
-            if isinstance(col_type_override.field, list):
-                field = col_type_override.field[0]
-            else:
-                field = 'id'
+            field = col_type_override.field[0] if isinstance(col_type_override.field, list) else 'id'
             if field not in table.columns:
                 table.add_columns(f'.{field}')
             table.has_link = True
@@ -229,7 +226,7 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
             result = datetime.combine(start_date, datetime.min.time()) + timedelta(days=number_of_days)
             return result
 
-        assert False
+        raise AssertionError()
 
     @staticmethod
     def get_date_format():
@@ -259,7 +256,7 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
         ):
             date_string = date.strftime(current_date, self.get_month_format())
             return f'{label} {date_string}'
-        assert False
+        raise AssertionError()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
