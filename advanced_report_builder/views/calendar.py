@@ -88,6 +88,7 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
         if table.extra_query_filter:
             query = query.filter(table.extra_query_filter)
         return self.view_filter(query, table)
+
     #
     # def get_lane(self, base_model, kanban_report_lane, lanes, label=None, extra_query_filter=None, multiple=False):
     #
@@ -270,24 +271,32 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
         if not table.query_data:
             return query
 
-        return self.process_query_filters(query=query,
-                                          search_filter_data=table.query_data)
+        return self.process_query_filters(query=query, search_filter_data=table.query_data)
 
     # noinspection PyMethodMayBeStatic
     def pod_dashboard_view_menu(self):
         return []
 
     def pod_report_menu(self):
-        return [MenuItem(f'advanced_report_builder:calendar_modal,pk-{self.chart_report.id}',
-                         menu_display='Edit',
-                         font_awesome='fas fa-pencil-alt', css_classes=['btn-primary']),
-                *self.duplicate_menu(request=self.request, report_id=self.chart_report.id)
-                ]
+        return [
+            MenuItem(
+                f'advanced_report_builder:calendar_modal,pk-{self.chart_report.id}',
+                menu_display='Edit',
+                font_awesome='fas fa-pencil-alt',
+                css_classes=['btn-primary'],
+            ),
+            *self.duplicate_menu(request=self.request, report_id=self.chart_report.id),
+        ]
 
     def pod_dashboard_edit_menu(self):
-        return [MenuItem(f'advanced_report_builder:dashboard_report_modal,pk-{self.dashboard_report.id}',
-                         menu_display='Edit',
-                         font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
+        return [
+            MenuItem(
+                f'advanced_report_builder:dashboard_report_modal,pk-{self.dashboard_report.id}',
+                menu_display='Edit',
+                font_awesome='fas fa-pencil-alt',
+                css_classes=['btn-primary'],
+            )
+        ]
 
     # noinspection PyMethodMayBeStatic
     def queries_menu(self, report, dashboard_report):
@@ -302,23 +311,26 @@ class CalendarModal(ModelFormModal):
     widgets = {'report_tags': Select2Multiple}
     ajax_commands = ['datatable', 'button']
 
-    form_fields = ['name',
-                   'notes',
-                   'report_tags',
-                   'height']
+    form_fields = ['name', 'notes', 'report_tags', 'height']
 
     def form_setup(self, form, *_args, **_kwargs):
         org_id = self.object.id if hasattr(self, 'object') else None
         form.fields['notes'].widget.attrs['rows'] = 3
         if org_id is not None:
-            lane_menu_items = [MenuItem(f'advanced_report_builder:calendar_data_set_duplicate_modal,pk-{DUMMY_ID}',
-                                        menu_display='Duplicate',
-                                        css_classes='btn btn-sm btn-outline-dark',
-                                        font_awesome='fas fa-clone'),
-                               MenuItem(f'advanced_report_builder:calendar_data_set_modal,pk-{DUMMY_ID}',
-                                        menu_display='Edit',
-                                        css_classes='btn btn-sm btn-outline-dark',
-                                        font_awesome='fas fa-pencil')]
+            lane_menu_items = [
+                MenuItem(
+                    f'advanced_report_builder:calendar_data_set_duplicate_modal,pk-{DUMMY_ID}',
+                    menu_display='Duplicate',
+                    css_classes='btn btn-sm btn-outline-dark',
+                    font_awesome='fas fa-clone',
+                ),
+                MenuItem(
+                    f'advanced_report_builder:calendar_data_set_modal,pk-{DUMMY_ID}',
+                    menu_display='Edit',
+                    css_classes='btn btn-sm btn-outline-dark',
+                    font_awesome='fas fa-pencil',
+                ),
+            ]
 
             form.fields['data_sets'] = CharField(
                 required=False,
@@ -326,25 +338,35 @@ class CalendarModal(ModelFormModal):
                 widget=DataTableReorderWidget(
                     model=CalendarReportDataSet,
                     order_field='order',
-                    fields=['_.index',
-                            '.id',
-                            'name',
-                            MenuColumn(column_name='menu', field='id',
-                                       column_defs={'orderable': False, 'className': 'dt-right'},
-                                       menu=HtmlMenu(self.request, 'button_group').add_items(*lane_menu_items)),
-                            ],
-                    attrs={'filter': {'calendar_report__id': self.object.id}})
+                    fields=[
+                        '_.index',
+                        '.id',
+                        'name',
+                        MenuColumn(
+                            column_name='menu',
+                            field='id',
+                            column_defs={'orderable': False, 'className': 'dt-right'},
+                            menu=HtmlMenu(self.request, 'button_group').add_items(*lane_menu_items),
+                        ),
+                    ],
+                    attrs={'filter': {'calendar_report__id': self.object.id}},
+                ),
             )
 
             description_menu_items = [
-                MenuItem(f'advanced_report_builder:calendar_description_duplicate_modal,pk-{DUMMY_ID}',
-                         menu_display='Duplicate',
-                         css_classes='btn btn-sm btn-outline-dark',
-                         font_awesome='fas fa-clone'),
-                MenuItem(f'advanced_report_builder:calendar_description_modal,pk-{DUMMY_ID}',
-                         menu_display='Edit',
-                         css_classes='btn btn-sm btn-outline-dark',
-                         font_awesome='fas fa-pencil')]
+                MenuItem(
+                    f'advanced_report_builder:calendar_description_duplicate_modal,pk-{DUMMY_ID}',
+                    menu_display='Duplicate',
+                    css_classes='btn btn-sm btn-outline-dark',
+                    font_awesome='fas fa-clone',
+                ),
+                MenuItem(
+                    f'advanced_report_builder:calendar_description_modal,pk-{DUMMY_ID}',
+                    menu_display='Edit',
+                    css_classes='btn btn-sm btn-outline-dark',
+                    font_awesome='fas fa-pencil',
+                ),
+            ]
 
             form.fields['descriptions'] = CharField(
                 required=False,
@@ -352,34 +374,50 @@ class CalendarModal(ModelFormModal):
                 widget=DataTableReorderWidget(
                     model=CalendarReportDescription,
                     order_field='order',
-                    fields=['_.index',
-                            '.id',
-                            'name',
-                            MenuColumn(column_name='menu', field='id',
-                                       column_defs={'orderable': False, 'className': 'dt-right'},
-                                       menu=HtmlMenu(self.request, 'button_group').add_items(*description_menu_items)),
-                            ],
-                    attrs={'filter': {'calendar_report__id': self.object.id}})
+                    fields=[
+                        '_.index',
+                        '.id',
+                        'name',
+                        MenuColumn(
+                            column_name='menu',
+                            field='id',
+                            column_defs={'orderable': False, 'className': 'dt-right'},
+                            menu=HtmlMenu(self.request, 'button_group').add_items(*description_menu_items),
+                        ),
+                    ],
+                    attrs={'filter': {'calendar_report__id': self.object.id}},
+                ),
             )
 
             modal_button('Custom Close', 'close', 'btn-warning')
 
-            return [*self.form_fields,
-                    crispy_modal_link_args('advanced_report_builder:calendar_data_set_modal',
-                                           'Add Data Set',
-                                           'calendar_report_id-', self.object.id, div=True,
-                                           div_classes='form-buttons', button_classes='btn btn-primary',
-                                           font_awesome='fa fa-plus'),
-                    'data_sets',
-                    crispy_modal_link_args('advanced_report_builder:calendar_description_modal', 'Add Description',
-                                           'calendar_report_id-', self.object.id, div=True,
-                                           div_classes='form-buttons', button_classes='btn btn-primary',
-                                           font_awesome='fa fa-plus'),
-                    'descriptions',
-                    ]
+            return [
+                *self.form_fields,
+                crispy_modal_link_args(
+                    'advanced_report_builder:calendar_data_set_modal',
+                    'Add Data Set',
+                    'calendar_report_id-',
+                    self.object.id,
+                    div=True,
+                    div_classes='form-buttons',
+                    button_classes='btn btn-primary',
+                    font_awesome='fa fa-plus',
+                ),
+                'data_sets',
+                crispy_modal_link_args(
+                    'advanced_report_builder:calendar_description_modal',
+                    'Add Description',
+                    'calendar_report_id-',
+                    self.object.id,
+                    div=True,
+                    div_classes='form-buttons',
+                    button_classes='btn btn-primary',
+                    font_awesome='fa fa-plus',
+                ),
+                'descriptions',
+            ]
 
     def datatable_sort(self, **kwargs):
-
         form = self.get_form()
         widget = form.fields[kwargs['table_id'][3:]].widget
         _model = widget.attrs['table_model']
@@ -411,18 +449,18 @@ class CalendarDataSetModal(QueryBuilderModalBase):
 
     widgets = {'report_tags': Select2Multiple}
 
-    form_fields = ['name',
-                   'report_type',
-                   'heading_field',
-                   'calendar_report_description',
-                   'background_colour_field',
-                   'link_field',
-                   'start_date_field',
-                   'end_date_field',
-                   ]
+    form_fields = [
+        'name',
+        'report_type',
+        'heading_field',
+        'calendar_report_description',
+        'background_colour_field',
+        'link_field',
+        'start_date_field',
+        'end_date_field',
+    ]
 
     def form_setup(self, form, *_args, **_kwargs):
-
         if 'data' in _kwargs:
             heading_field = _kwargs['data'].get('heading_field')
             start_date_field = _kwargs['data'].get('start_date_field')
@@ -431,7 +469,8 @@ class CalendarDataSetModal(QueryBuilderModalBase):
             background_colour_field = _kwargs['data'].get('background_colour_field')
             link_field = _kwargs['data'].get('link_field')
             calendar_report_description = CalendarReportDescription.objects.filter(
-                pk=_kwargs['data'].get('calendar_report_description')).first()
+                pk=_kwargs['data'].get('calendar_report_description')
+            ).first()
             report_type = get_object_or_404(ReportType, id=report_type_id)
 
         else:
@@ -445,82 +484,88 @@ class CalendarDataSetModal(QueryBuilderModalBase):
 
         form.fields['calendar_report_description'].widget = Select2(attrs={'ajax': True})
         if calendar_report_description is not None:
-            form.fields['calendar_report_description'].widget.select_data = [{'id': calendar_report_description.id,
-                                                                              'text': calendar_report_description.name}]
+            form.fields['calendar_report_description'].widget.select_data = [
+                {'id': calendar_report_description.id, 'text': calendar_report_description.name}
+            ]
         form.fields['calendar_report_description'].label = 'Description'
 
-        self.setup_field(field_type='all',
-                         form=form,
-                         field_name='heading_field',
-                         selected_field_id=heading_field,
-                         report_type=report_type)
+        self.setup_field(
+            field_type='all',
+            form=form,
+            field_name='heading_field',
+            selected_field_id=heading_field,
+            report_type=report_type,
+        )
 
+        self.setup_field(
+            field_type='date',
+            form=form,
+            field_name='start_date_field',
+            selected_field_id=start_date_field,
+            report_type=report_type,
+        )
 
-        self.setup_field(field_type='date',
-                         form=form,
-                         field_name='start_date_field',
-                         selected_field_id=start_date_field,
-                         report_type=report_type)
+        self.setup_field(
+            field_type='date',
+            form=form,
+            field_name='end_date_field',
+            selected_field_id=end_date_field,
+            report_type=report_type,
+        )
 
-        self.setup_field(field_type='date',
-                         form=form,
-                         field_name='end_date_field',
-                         selected_field_id=end_date_field,
-                         report_type=report_type)
+        self.setup_field(
+            field_type='colour',
+            form=form,
+            field_name='background_colour_field',
+            selected_field_id=background_colour_field,
+            report_type=report_type,
+        )
 
-        self.setup_field(field_type='colour',
-                         form=form,
-                         field_name='background_colour_field',
-                         selected_field_id=background_colour_field,
-                         report_type=report_type)
+        self.setup_field(
+            field_type='link', form=form, field_name='link_field', selected_field_id=link_field, report_type=report_type
+        )
 
-        self.setup_field(field_type='link',
-                         form=form,
-                         field_name='link_field',
-                         selected_field_id=link_field,
-                         report_type=report_type)
-
-        return ('name',
-                'report_type',
-                'heading_field',
-                'calendar_report_description',
-                'start_date_field',
-                'end_date_field',
-                'background_colour_field',
-                'link_field',
-                FieldEx('query_data',
-                        template='advanced_report_builder/query_builder.html'),
-                )
+        return (
+            'name',
+            'report_type',
+            'heading_field',
+            'calendar_report_description',
+            'start_date_field',
+            'end_date_field',
+            'background_colour_field',
+            'link_field',
+            FieldEx('query_data', template='advanced_report_builder/query_builder.html'),
+        )
 
     def select2_heading_field(self, **kwargs):
-        return self.get_fields_for_select2(field_type='all',
-                                           report_type=kwargs['report_type'],
-                                           search_string=kwargs.get('search'))
+        return self.get_fields_for_select2(
+            field_type='all', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+        )
 
     def select2_order_by_field(self, **kwargs):
-        return self.get_fields_for_select2(field_type='django_order',
-                                           report_type=kwargs['report_type'],
-                                           search_string=kwargs.get('search'))
+        return self.get_fields_for_select2(
+            field_type='django_order', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+        )
 
     def select2_start_date_field(self, **kwargs):
-        return self.get_fields_for_select2(field_type='date',
-                                           report_type=kwargs['report_type'],
-                                           search_string=kwargs.get('search'))
+        return self.get_fields_for_select2(
+            field_type='date', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+        )
 
     def select2_end_date_field(self, **kwargs):
-        return self.get_fields_for_select2(field_type='date',
-                                           report_type=kwargs['report_type'],
-                                           search_string=kwargs.get('search'))
+        return self.get_fields_for_select2(
+            field_type='date', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+        )
 
     def select2_link_field(self, **kwargs):
-        return self.get_fields_for_select2(field_type='link',
-                                           report_type=kwargs['report_type'],
-                                           search_string=kwargs.get('search'))
+        return self.get_fields_for_select2(
+            field_type='link', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+        )
 
     def select2_background_colour_field(self, **kwargs):
-        return self.get_fields_for_select2(field_type='colour',
-                                           report_type=kwargs['report_type'],
-                                           search_string=kwargs.get('search'))
+        return self.get_fields_for_select2(
+            field_type='colour', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+        )
 
     def select2_calendar_report_description(self, **kwargs):
         descriptions = []
@@ -528,8 +573,9 @@ class CalendarDataSetModal(QueryBuilderModalBase):
         if report_type_id != '':
             calendar_report_id = self.object.calendar_report_id
 
-            _filter = CalendarReportDescription.objects.filter(report_type_id=report_type_id,
-                                                               calendar_report_id=calendar_report_id)
+            _filter = CalendarReportDescription.objects.filter(
+                report_type_id=report_type_id, calendar_report_id=calendar_report_id
+            )
 
             search = kwargs.get('search')
             if search:
@@ -546,7 +592,6 @@ class CalendarDataSetModal(QueryBuilderModalBase):
 
 
 class CalendarDataSetDuplicateModal(Modal):
-
     def modal_content(self):
         return 'Are you sure you want to duplicate this lane?'
 
@@ -571,16 +616,12 @@ class CalendarDescriptionModal(DataMergeUtils, QueryBuilderModalBase):
 
     widgets = {'report_tags': Select2Multiple}
 
-    form_fields = ['name',
-                   'report_type',
-                   'description']
+    form_fields = ['name', 'report_type', 'description']
 
     def form_setup(self, form, *_args, **_kwargs):
         form.fields['description'].widget = DataMergeWidget()
 
-        return ('name',
-                'report_type',
-                'description')
+        return ('name', 'report_type', 'description')
 
     def ajax_get_description_data_merge_menu(self, **kwargs):
         field_auto_id = kwargs['field_auto_id']
@@ -588,16 +629,11 @@ class CalendarDescriptionModal(DataMergeUtils, QueryBuilderModalBase):
         if kwargs['report_type'] != '':
             report_builder_class, base_model = self.get_report_builder_class(report_type_id=kwargs['report_type'])
 
-            self.get_menu_fields(base_model=base_model,
-                                 report_builder_class=report_builder_class,
-                                 menus=menus)
+            self.get_menu_fields(base_model=base_model, report_builder_class=report_builder_class, menus=menus)
 
-            menus = [{'code': 'data_merge',
-                      'text': 'Data Merge',
-                      'menu': menus}]
+            menus = [{'code': 'data_merge', 'text': 'Data Merge', 'menu': menus}]
 
-        return self.command_response(f'build_data_merge_menu_{field_auto_id}',
-                                     data=json.dumps(menus))
+        return self.command_response(f'build_data_merge_menu_{field_auto_id}', data=json.dumps(menus))
 
     def form_valid(self, form):
         form.save()
@@ -605,7 +641,6 @@ class CalendarDescriptionModal(DataMergeUtils, QueryBuilderModalBase):
 
 
 class CalendarDescriptionDuplicateModal(Modal):
-
     def modal_content(self):
         return 'Are you sure you want to duplicate this description?'
 

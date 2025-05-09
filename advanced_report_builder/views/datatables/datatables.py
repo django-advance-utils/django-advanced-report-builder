@@ -50,15 +50,16 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
         pivot_fields = self.table_report.pivot_fields
         fields_used = set()
         fields_map = {}
-        report_builder_class = get_report_builder_class(model=base_model,
-                                                        report_type=self.table_report.report_type)
-        self.process_query_results(report_builder_class=report_builder_class,
-                                   table=table,
-                                   base_model=base_model,
-                                   fields_used=fields_used,
-                                   fields_map=fields_map,
-                                   table_fields=table_fields,
-                                   pivot_fields=pivot_fields)
+        report_builder_class = get_report_builder_class(model=base_model, report_type=self.table_report.report_type)
+        self.process_query_results(
+            report_builder_class=report_builder_class,
+            table=table,
+            base_model=base_model,
+            fields_used=fields_used,
+            fields_map=fields_map,
+            table_fields=table_fields,
+            pivot_fields=pivot_fields,
+        )
 
         if self.table_report.order_by_field:
             order_by_field = self.table_report.order_by_field
@@ -77,9 +78,9 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
         if self.table_report.has_clickable_rows and self.table_report.link_field and self.kwargs.get('enable_links'):
             table.table_classes.append('row_link')
             table.add_columns(ArrowColumn(column_name='arrow_icon'))
-            _, col_type_override, _, _ = self.get_field_details(base_model=base_model,
-                                                                field=self.table_report.link_field,
-                                                                report_builder_class=report_builder_class)
+            _, col_type_override, _, _ = self.get_field_details(
+                base_model=base_model, field=self.table_report.link_field, report_builder_class=report_builder_class
+            )
             if isinstance(col_type_override.field, list):
                 field = col_type_override.field[0]
             else:
@@ -97,8 +98,7 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
         return title
 
     def add_to_context(self, **kwargs):
-        return {'title': self.get_title(),
-                'table_report': self.table_report}
+        return {'title': self.get_title(), 'table_report': self.table_report}
 
     def setup_menu(self):
         super().setup_menu()
@@ -115,16 +115,20 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
         )
 
     def pod_dashboard_edit_menu(self):
-        return [MenuItem(f'advanced_report_builder:dashboard_report_modal,pk-{self.dashboard_report.id}',
-                         menu_display='Edit',
-                         font_awesome='fas fa-pencil-alt', css_classes=['btn-primary'])]
+        return [
+            MenuItem(
+                f'advanced_report_builder:dashboard_report_modal,pk-{self.dashboard_report.id}',
+                menu_display='Edit',
+                font_awesome='fas fa-pencil-alt',
+                css_classes=['btn-primary'],
+            )
+        ]
 
     # noinspection PyMethodMayBeStatic
     def pod_dashboard_view_menu(self):
         return []
 
     def pod_report_menu(self):
-
         query_id = self.slug.get(f'query{self.table_report.id}')
         slug_str = ''
         if query_id:
@@ -133,11 +137,15 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
         return self.edit_report_menu(request=self.request, chart_report_id=self.table_report.id, slug_str=slug_str)
 
     def edit_report_menu(self, request, chart_report_id, slug_str):
-        return [MenuItem(f'advanced_report_builder:table_modal,pk-{chart_report_id}{slug_str}',
-                         menu_display='Edit',
-                         font_awesome='fas fa-pencil-alt', css_classes=['btn-primary']),
-                *self.duplicate_menu(request=self.request, report_id=chart_report_id)
-                ]
+        return [
+            MenuItem(
+                f'advanced_report_builder:table_modal,pk-{chart_report_id}{slug_str}',
+                menu_display='Edit',
+                font_awesome='fas fa-pencil-alt',
+                css_classes=['btn-primary'],
+            ),
+            *self.duplicate_menu(request=self.request, report_id=chart_report_id),
+        ]
 
     def get_dashboard_class(self, report):
         pivot_fields = report.tablereport.pivot_fields

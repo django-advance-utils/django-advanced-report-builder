@@ -1,3 +1,2 @@
 class CustomiseReportBuilder:
     pass
-

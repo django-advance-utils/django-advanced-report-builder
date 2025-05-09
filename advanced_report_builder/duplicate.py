@@ -1,22 +1,30 @@
 from copy import deepcopy
 
-from advanced_report_builder.models import TableReport, SingleValueReport, BarChartReport, PieChartReport, \
-    FunnelChartReport, KanbanReport, LineChartReport, CustomReport
+from advanced_report_builder.models import (
+    TableReport,
+    SingleValueReport,
+    BarChartReport,
+    PieChartReport,
+    FunnelChartReport,
+    KanbanReport,
+    LineChartReport,
+    CustomReport,
+)
 from django.shortcuts import get_object_or_404
 
 
 class DuplicateReport:
-
     def duplicate(self, report):
-        duplicate_methods = {'tablereport': self._duplicate_table_report,
-                             'singlevaluereport': self._duplicate_single_value_report,
-                             'barchartreport': self._duplicate_bar_chart_report,
-                             'linechartreport': self._duplicate_line_chart_report,
-                             'piechartreport': self._duplicate_pie_chart_report,
-                             'funnelchartreport': self._duplicate_funnel_chart_report,
-                             'kanbanreport': self._duplicate_kanban_report,
-                             'customreport': self._duplicate_custom_report,
-                             }
+        duplicate_methods = {
+            'tablereport': self._duplicate_table_report,
+            'singlevaluereport': self._duplicate_single_value_report,
+            'barchartreport': self._duplicate_bar_chart_report,
+            'linechartreport': self._duplicate_line_chart_report,
+            'piechartreport': self._duplicate_pie_chart_report,
+            'funnelchartreport': self._duplicate_funnel_chart_report,
+            'kanbanreport': self._duplicate_kanban_report,
+            'customreport': self._duplicate_custom_report,
+        }
         new_report = duplicate_methods[report.instance_type](report_id=report.id)
         return new_report
 

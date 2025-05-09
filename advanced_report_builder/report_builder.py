@@ -20,5 +20,3 @@ class ReportBuilderFields:
     default_multiple_pk = 'id'
 
     extra_chart_field = ['record_count']
-
-

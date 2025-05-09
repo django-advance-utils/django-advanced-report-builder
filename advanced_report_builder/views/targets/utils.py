@@ -41,8 +41,9 @@ def get_target_value(min_date, max_date, target, month_range=False):
                     days_in_month = monthrange(year, month)[1]
 
                     # Work out the days inside the target in this month:
-                    if (month == min_date.month and year == min_date.year) and \
-                            (month == max_date.month and year == max_date.year):
+                    if (month == min_date.month and year == min_date.year) and (
+                        month == max_date.month and year == max_date.year
+                    ):
                         # if start and end dates are in the same month and year, just subtract min from max.
                         days_in_target = (max_date - min_date).days
                     elif month == min_date.month and year == min_date.year:

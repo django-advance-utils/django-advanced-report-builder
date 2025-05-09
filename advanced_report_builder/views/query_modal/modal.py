@@ -24,8 +24,7 @@ class QueryForm(QueryBuilderModelForm):
 
     class Meta:
         model = ReportQuery
-        fields = ['name',
-                  'query']
+        fields = ['name', 'query']
 
 
 class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
@@ -48,8 +47,7 @@ class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
         return self.command_response('close')
 
     def form_setup(self, form, *_args, **_kwargs):
-        fields = ['name',
-                  FieldEx('query', template='advanced_report_builder/query_builder.html')]
+        fields = ['name', FieldEx('query', template='advanced_report_builder/query_builder.html')]
 
         if self.object.id and self.slug.get('show_order_by') == '1':
             self.add_query_orders(form=form, fields=fields)
@@ -71,11 +69,13 @@ class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
         order_by_field = data_dict['order_by_field']
         field_values = []
         report_builder_class, base_model = self.get_report_builder_base_and_class()
-        self.get_field_display_value(field_type='order',
-                                     fields_values=field_values,
-                                     base_model=base_model,
-                                     report_builder_class=report_builder_class,
-                                     selected_field_value=order_by_field)
+        self.get_field_display_value(
+            field_type='order',
+            fields_values=field_values,
+            base_model=base_model,
+            report_builder_class=report_builder_class,
+            selected_field_value=order_by_field,
+        )
 
         if len(field_values) > 0:
             return field_values[0]['label']
@@ -83,36 +83,43 @@ class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
         return order_by_field
 
     def add_query_orders(self, form, fields):
-        add_query_js = 'django_modal.process_commands_lock([{"function": "post_modal", ' \
-                       '"button": {"button": "add_query_order"}}])'
+        add_query_js = (
+            'django_modal.process_commands_lock([{"function": "post_modal", "button": {"button": "add_query_order"}}])'
+        )
 
         description_add_menu_items = [
+            MenuItem(
+                add_query_js.replace('"', '&quot;'),
+                menu_display='Add Order by',
+                css_classes='btn btn-primary',
+                font_awesome='fas fa-pencil',
+                link_type=MenuItem.HREF,
+            )
+        ]
 
-            MenuItem(add_query_js.replace('"', "&quot;"),
-                     menu_display='Add Order by',
-                     css_classes='btn btn-primary',
-                     font_awesome='fas fa-pencil',
-                     link_type=MenuItem.HREF)]
-
-        menu = HtmlMenu(self.request,
-                        'advanced_report_builder/datatables/onclick_menu.html').add_items(
-            *description_add_menu_items)
+        menu = HtmlMenu(self.request, 'advanced_report_builder/datatables/onclick_menu.html').add_items(
+            *description_add_menu_items
+        )
 
         fields.append(Div(HTML(menu.render()), css_class='form-buttons'))
         edit_query_js = get_query_js('edit_query_order', 'query_order_id')
         duplicate_query_js = get_query_js('duplicate_query_order', 'query_order_id')
         description_edit_menu_items = [
-            MenuItem(duplicate_query_js.replace('"', "&quot;"),
-                     menu_display='Duplicate',
-                     css_classes='btn btn-sm btn-outline-dark',
-                     font_awesome='fas fa-clone',
-                     link_type=MenuItem.HREF),
-
-            MenuItem(edit_query_js.replace('"', "&quot;"),
-                     menu_display='Edit',
-                     css_classes='btn btn-sm btn-outline-dark btn-query-edit',
-                     font_awesome='fas fa-pencil',
-                     link_type=MenuItem.HREF)]
+            MenuItem(
+                duplicate_query_js.replace('"', '&quot;'),
+                menu_display='Duplicate',
+                css_classes='btn btn-sm btn-outline-dark',
+                font_awesome='fas fa-clone',
+                link_type=MenuItem.HREF,
+            ),
+            MenuItem(
+                edit_query_js.replace('"', '&quot;'),
+                menu_display='Edit',
+                css_classes='btn btn-sm btn-outline-dark btn-query-edit',
+                font_awesome='fas fa-pencil',
+                link_type=MenuItem.HREF,
+            ),
+        ]
 
         template = 'advanced_report_builder/datatables/onclick_menu.html'
         form.fields['orders'] = CharField(
@@ -121,17 +128,21 @@ class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
             widget=DataTableReorderWidget(
                 model=ReportQueryOrder,
                 order_field='order',
-                fields=['_.index',
-                        '.id',
-                        ColumnBase(column_name='order_by',
-                                   field='order_by_field',
-                                   row_result=self.order_by_result),
-                        'order_by_ascending',
-                        MenuColumn(column_name='menu', field='id',
-                                   column_defs={'orderable': False, 'className': 'dt-right'},
-                                   menu=HtmlMenu(self.request, template).add_items(*description_edit_menu_items)),
-                        ],
-                attrs={'filter': {'report_query__id': self.object.id}}))
+                fields=[
+                    '_.index',
+                    '.id',
+                    ColumnBase(column_name='order_by', field='order_by_field', row_result=self.order_by_result),
+                    'order_by_ascending',
+                    MenuColumn(
+                        column_name='menu',
+                        field='id',
+                        column_defs={'orderable': False, 'className': 'dt-right'},
+                        menu=HtmlMenu(self.request, template).add_items(*description_edit_menu_items),
+                    ),
+                ],
+                attrs={'filter': {'report_query__id': self.object.id}},
+            ),
+        )
         fields.append('orders')
 
     def get_report_type(self):
@@ -146,21 +157,27 @@ class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
         report_query_order.save()
 
         report_type = self.get_report_type()
-        url = reverse('advanced_report_builder:query_order_modal',
-                      kwargs={'slug': f'pk-{report_query_order.id}-report_type-{report_type}'})
+        url = reverse(
+            'advanced_report_builder:query_order_modal',
+            kwargs={'slug': f'pk-{report_query_order.id}-report_type-{report_type}'},
+        )
         return self.command_response('show_modal', modal=url)
 
     def button_add_query_order(self, **_kwargs):
         report_type = self.get_report_type()
-        url = reverse('advanced_report_builder:query_order_modal',
-                      kwargs={'slug': f'report_query_id-{self.object.id}-report_type-{report_type}'})
+        url = reverse(
+            'advanced_report_builder:query_order_modal',
+            kwargs={'slug': f'report_query_id-{self.object.id}-report_type-{report_type}'},
+        )
         return self.command_response('show_modal', modal=url)
 
     def button_edit_query_order(self, **_kwargs):
         query_order_id = _kwargs['query_order_id'][1:]
         report_type = self.get_report_type()
-        url = reverse('advanced_report_builder:query_order_modal',
-                      kwargs={'slug': f'pk-{query_order_id}-report_type-{report_type}'})
+        url = reverse(
+            'advanced_report_builder:query_order_modal',
+            kwargs={'slug': f'pk-{query_order_id}-report_type-{report_type}'},
+        )
         return self.command_response('show_modal', modal=url)
 
     def datatable_sort(self, **kwargs):
@@ -174,17 +191,14 @@ class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
 
 
 class OrderByFieldForm(ModelCrispyForm):
-
     class Meta:
         model = ReportQueryOrder
-        fields = ['order_by_field',
-                  'order_by_ascending']
+        fields = ['order_by_field', 'order_by_ascending']
 
     cancel_class = 'btn-secondary modal-cancel'
 
     def cancel_button(self, css_class=cancel_class, **kwargs):
-        commands = [{'function': 'save_query_builder_id_query'},
-                    {'function': 'close'}]
+        commands = [{'function': 'save_query_builder_id_query'}, {'function': 'close'}]
         return self.button('Cancel', commands, css_class, **kwargs)
 
 
@@ -198,7 +212,6 @@ class QueryOrderModal(QueryBuilderModalBaseMixin, ModelFormModal):
     no_header_x = True
 
     def form_setup(self, form, *_args, **_kwargs):
-
         form.fields['order_by_ascending'].widget = RBToggle()
 
         report_type = ReportType.objects.get(id=self.slug['report_type'])
@@ -207,16 +220,18 @@ class QueryOrderModal(QueryBuilderModalBaseMixin, ModelFormModal):
         else:
             order_by_field = form.instance.order_by_field
 
-        self.setup_field(field_type='order',
-                         form=form,
-                         field_name='order_by_field',
-                         selected_field_id=order_by_field,
-                         report_type=report_type)
+        self.setup_field(
+            field_type='order',
+            form=form,
+            field_name='order_by_field',
+            selected_field_id=order_by_field,
+            report_type=report_type,
+        )
 
     def select2_order_by_field(self, **kwargs):
-        return self.get_fields_for_select2(field_type='django_order',
-                                           report_type=self.slug['report_type'],
-                                           search_string=kwargs.get('search'))
+        return self.get_fields_for_select2(
+            field_type='django_order', report_type=self.slug['report_type'], search_string=kwargs.get('search')
+        )
 
     def post_save(self, created, form):
         self.add_command({'function': 'save_query_builder_id_query'})

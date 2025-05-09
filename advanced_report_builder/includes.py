@@ -25,9 +25,11 @@ class DashboardInclude(SourceBase):
 
 class ChartJS(SourceBase):
     static_path = 'advanced_report_builder/chart-js/'
-    js_filename = ['chart.min.js',
-                   'chartjs-adapter-moment.min.js',  # this does require moment however it's already included
-                   'chartjs-plugin-datalabels.min.js']
+    js_filename = [
+        'chart.min.js',
+        'chartjs-adapter-moment.min.js',  # this does require moment however it's already included
+        'chartjs-plugin-datalabels.min.js',
+    ]
 
 
 class D3(SourceBase):
@@ -40,24 +42,15 @@ class D3Funnel(SourceBase):
     js_filename = ['d3-funnel.min.js']
 
 
-
-
 class FullCalendar(SourceBase):
     static_path = 'advanced_report_builder/fullcalendar/packages/'
 
     js_path = cdn_js_path = ''
     css_path = cdn_css_path = ''
 
-    css_filename = ['core/main.css',
-                    'daygrid/main.css',
-                    'timegrid/main.css',
-                    'list/main.css']
+    css_filename = ['core/main.css', 'daygrid/main.css', 'timegrid/main.css', 'list/main.css']
 
-    js_filename = ['core/main.js',
-                   'interaction/main.js',
-                   'daygrid/main.js',
-                   'timegrid/main.js',
-                   'list/main.js']
+    js_filename = ['core/main.js', 'interaction/main.js', 'daygrid/main.js', 'timegrid/main.js', 'list/main.js']
 
 
 class Moment(SourceBase):

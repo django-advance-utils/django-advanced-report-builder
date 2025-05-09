@@ -7,8 +7,11 @@ from django.db.models import FloatField, ExpressionWrapper
 from django.db.models.functions import NullIf
 from django_datatables.columns import CurrencyPenceColumn, CurrencyColumn
 
-from advanced_report_builder.columns import ReportBuilderCurrencyPenceColumn, ReportBuilderCurrencyColumn, \
-    ReportBuilderNumberColumn
+from advanced_report_builder.columns import (
+    ReportBuilderCurrencyPenceColumn,
+    ReportBuilderCurrencyColumn,
+    ReportBuilderNumberColumn,
+)
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import ANNOTATION_FUNCTIONS, ANNOTATION_CHOICE_COUNT, ALIGNMENT_CLASS
@@ -19,9 +22,23 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
     use_annotations = True
     number_field = ReportBuilderNumberColumn
 
-    def get_number_field(self, annotations_type, index, table_field, data_attr, fields, col_type_override,
-                         extra_filter=None, title_suffix='', multiple_index=0, decimal_places=None,
-                         convert_currency_fields=False, totals=None, divider=None, additional_options=None):
+    def get_number_field(
+        self,
+        annotations_type,
+        index,
+        table_field,
+        data_attr,
+        fields,
+        col_type_override,
+        extra_filter=None,
+        title_suffix='',
+        multiple_index=0,
+        decimal_places=None,
+        convert_currency_fields=False,
+        totals=None,
+        divider=None,
+        additional_options=None,
+    ):
         field_name = table_field['field']
         alignment_class = ALIGNMENT_CLASS.get(int(data_attr.get('alignment', 0)))
         new_field_name = field_name
@@ -46,7 +63,7 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
             col_type_override.table = None
             field = copy.deepcopy(col_type_override)
             if field.model_path and isinstance(field.field, str) and field.field.startswith(field.model_path):
-                raw_field_name = field.field[len(field.model_path):]
+                raw_field_name = field.field[len(field.model_path) :]
             else:
                 raw_field_name = field.field
 
@@ -63,16 +80,17 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                     field.annotations = []
                 if title:
                     field.title = title
-                self.set_extra_number_field_kwargs(data_attr=data_attr,
-                                                   options=field.options,
-                                                   multiple_index=multiple_index,
-                                                   additional_options=additional_options)
+                self.set_extra_number_field_kwargs(
+                    data_attr=data_attr,
+                    options=field.options,
+                    multiple_index=multiple_index,
+                    additional_options=additional_options,
+                )
 
             elif annotations_type == ANNOTATION_CHOICE_COUNT:
-                new_field_name = self.get_new_annotation_field_name(annotations_type=annotations_type,
-                                                                    field_name=field_name,
-                                                                    index=index,
-                                                                    data_attr=data_attr)
+                new_field_name = self.get_new_annotation_field_name(
+                    annotations_type=annotations_type, field_name=field_name, index=index, data_attr=data_attr
+                )
                 number_function_kwargs = {}
                 if title:
                     number_function_kwargs['title'] = title
@@ -84,10 +102,12 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                 function_type = ANNOTATION_FUNCTIONS[annotations_type]
 
                 number_function_kwargs['options'] = {}
-                self.set_extra_number_field_kwargs(data_attr=data_attr,
-                                                   options=number_function_kwargs['options'],
-                                                   multiple_index=multiple_index,
-                                                   additional_options=additional_options)
+                self.set_extra_number_field_kwargs(
+                    data_attr=data_attr,
+                    options=number_function_kwargs['options'],
+                    multiple_index=multiple_index,
+                    additional_options=additional_options,
+                )
                 if annotation_filter:
                     function = function_type(raw_field_name, filter=annotation_filter)
                 else:
@@ -101,8 +121,7 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                     number_function_kwargs['aggregations'] = {new_field_name: function}
                     number_function_kwargs['annotations'] = []
 
-                number_function_kwargs.update({'field': new_field_name,
-                                               'column_name': new_field_name})
+                number_function_kwargs.update({'field': new_field_name, 'column_name': new_field_name})
                 field = self.number_field(**number_function_kwargs)
             else:
                 css_class = field.column_defs.get('className')
@@ -115,10 +134,9 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                 if title:
                     field.title = title
                 if annotations_type != 0:
-                    new_field_name = self.get_new_annotation_field_name(annotations_type=annotations_type,
-                                                                        field_name=field_name,
-                                                                        index=index,
-                                                                        data_attr=data_attr)
+                    new_field_name = self.get_new_annotation_field_name(
+                        annotations_type=annotations_type, field_name=field_name, index=index, data_attr=data_attr
+                    )
                     function_type = ANNOTATION_FUNCTIONS[annotations_type]
                     if annotation_filter:
                         function = function_type(raw_field_name, filter=annotation_filter)
@@ -134,10 +152,12 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                         field.annotations = []
 
                     field.field = new_field_name
-                    self.set_extra_number_field_kwargs(data_attr=data_attr,
-                                                       options=field.options,
-                                                       multiple_index=multiple_index,
-                                                       additional_options=additional_options)
+                    self.set_extra_number_field_kwargs(
+                        data_attr=data_attr,
+                        options=field.options,
+                        multiple_index=multiple_index,
+                        additional_options=additional_options,
+                    )
             fields.append(field)
         else:
             number_function_kwargs = {'title': title}
@@ -146,15 +166,16 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                 number_function_kwargs['decimal_places'] = int(decimal_places)
             if annotations_type:
                 number_function_kwargs['options'] = {}
-                self.set_extra_number_field_kwargs(data_attr=data_attr,
-                                                   options=number_function_kwargs['options'],
-                                                   multiple_index=multiple_index,
-                                                   additional_options=additional_options)
+                self.set_extra_number_field_kwargs(
+                    data_attr=data_attr,
+                    options=number_function_kwargs['options'],
+                    multiple_index=multiple_index,
+                    additional_options=additional_options,
+                )
 
-                new_field_name = self.get_new_annotation_field_name(annotations_type=annotations_type,
-                                                                    field_name=field_name,
-                                                                    index=index,
-                                                                    data_attr=data_attr)
+                new_field_name = self.get_new_annotation_field_name(
+                    annotations_type=annotations_type, field_name=field_name, index=index, data_attr=data_attr
+                )
                 function_type = ANNOTATION_FUNCTIONS[annotations_type]
                 if annotation_filter:
                     function = function_type(field_name, filter=annotation_filter)
@@ -168,20 +189,20 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                     number_function_kwargs['aggregations'] = {new_field_name: function}
                     number_function_kwargs['annotations'] = []
                 field_name = new_field_name
-            number_function_kwargs.update({'field': field_name,
-                                           'column_name': field_name,
-                                           'model_path': ''})
+            number_function_kwargs.update({'field': field_name, 'column_name': field_name, 'model_path': ''})
             field = self.number_field(**number_function_kwargs)
             fields.append(field)
 
         if totals is not None:
             show_total = data_attr.get('show_totals')
             if show_total == '1':
-                self.set_number_total(totals=totals,
-                                      field_name=new_field_name,
-                                      col_type_override=col_type_override,
-                                      decimal_places=decimal_places,
-                                      css_class=css_class)
+                self.set_number_total(
+                    totals=totals,
+                    field_name=new_field_name,
+                    col_type_override=col_type_override,
+                    decimal_places=decimal_places,
+                    css_class=css_class,
+                )
         return field_name
 
     @staticmethod
@@ -202,8 +223,10 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
         return self.set_number_total(totals, field_name, col_type_override, decimal_places, css_class)
 
     def set_percentage_total(self, totals, field_name, denominator, numerator, decimal_places, css_class=''):
-        totals[field_name] = {'sum': 'percentage',
-                              'decimal_places': decimal_places,
-                              'denominator': denominator,
-                              'numerator': numerator,
-                              'css_class': css_class}
+        totals[field_name] = {
+            'sum': 'percentage',
+            'decimal_places': decimal_places,
+            'denominator': denominator,
+            'numerator': numerator,
+            'css_class': css_class,
+        }
