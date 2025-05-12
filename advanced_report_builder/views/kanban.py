@@ -35,8 +35,7 @@ from advanced_report_builder.models import (
     KanbanReport,
     KanbanReportDescription,
     KanbanReportLane,
-    ReportType,
-)
+    ReportType, )
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import (
     crispy_modal_link_args,
@@ -44,6 +43,7 @@ from advanced_report_builder.utils import (
 )
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartJSTable
+from advanced_report_builder.views.helpers import QueryBuilderModelForm
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
 from advanced_report_builder.views.report import ReportBase
 
@@ -532,6 +532,29 @@ class KanbanModal(ModelFormModal):
         return self.command_response()
 
 
+class KanbanLaneForm(QueryBuilderModelForm):
+    cancel_class = 'btn-secondary modal-cancel'
+
+    class Meta:
+        model = KanbanReportLane
+        fields = ['name',
+                  'report_type',
+                  'heading_field',
+                  'kanban_report_description',
+                  'order_by_field',
+                  'order_by_ascending',
+                  'multiple_type',
+                  'multiple_type_label',
+                  'multiple_type_date_field',
+                  'multiple_type_end_date_field',
+                  'multiple_start_period',
+                  'multiple_end_period',
+                  'link_field',
+                  'background_colour_field',
+                  'heading_colour_field',
+                  'query_data', ]
+
+
 class KanbanLaneModal(QueryBuilderModalBase):
     template_name = 'advanced_report_builder/kanban/modal.html'
     size = 'xl'
@@ -539,29 +562,10 @@ class KanbanLaneModal(QueryBuilderModalBase):
     permission_delete = PERMISSION_OFF
     model = KanbanReportLane
     helper_class = HorizontalNoEnterHelper
-
-    widgets = {'report_tags': Select2Multiple, 'order_by_ascending': RBToggle}
-
-    form_fields = [
-        'name',
-        'report_type',
-        'heading_field',
-        'kanban_report_description',
-        'order_by_field',
-        'order_by_ascending',
-        'multiple_type',
-        'multiple_type_label',
-        'multiple_type_date_field',
-        'multiple_type_end_date_field',
-        'multiple_start_period',
-        'multiple_end_period',
-        'link_field',
-        'background_colour_field',
-        'heading_colour_field',
-        'query_data',
-    ]
+    form_class = KanbanLaneForm
 
     def form_setup(self, form, *_args, **_kwargs):
+        form.fields['order_by_ascending'].widget = RBToggle()
         form.add_trigger(
             'multiple_type',
             'onchange',
