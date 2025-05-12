@@ -23,7 +23,7 @@ from advanced_report_builder.data_merge.utils import DataMergeUtils
 from advanced_report_builder.data_merge.widget import DataMergeWidget
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.models import CalendarReport, CalendarReportDataSet, CalendarReportDescription, ReportType
-from advanced_report_builder.utils import crispy_modal_link_args
+from advanced_report_builder.utils import crispy_modal_link_args, get_report_builder_class
 from advanced_report_builder.views.charts_base import ChartJSTable
 from advanced_report_builder.views.datatables.utils import DescriptionColumn
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
@@ -195,14 +195,15 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = self.get_title()
-        self.chart_report.calendarreportdataset_set.all()
+        calendar_report_data_sets = self.chart_report.calendarreportdataset_set.all()
         lanes = []
         headings = []
 
-        # for kanban_report_lane in kanban_report_lanes:
-        #     base_model = kanban_report_lane.get_base_model()
-        #     report_builder_class = get_report_builder_class(model=base_model,
-        #                                                     report_type=kanban_report_lane.report_type)
+        for calendar_report_data_set in calendar_report_data_sets:
+            base_model = calendar_report_data_set.get_base_model()
+            report_builder_class = get_report_builder_class(model=base_model,
+                                                            report_type=calendar_report_data_set.report_type)
+            tom = 100
         #     if kanban_report_lane.multiple_type == KanbanReportLane.MULTIPLE_TYPE_NA:
         #         self.get_lane(base_model=base_model,
         #                       kanban_report_lane=kanban_report_lane,
