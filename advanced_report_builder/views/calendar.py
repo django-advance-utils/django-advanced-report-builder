@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.views.generic import TemplateView
 from django_datatables.columns import MenuColumn
 from django_datatables.datatables import DatatableExcludedRow
-from django_datatables.helpers import DUMMY_ID
+from django_datatables.helpers import DUMMY_ID, row_link
 from django_datatables.widgets import DataTableReorderWidget
 from django_menus.menu import HtmlMenu, MenuItem
 from django_modals.fields import FieldEx
@@ -26,6 +26,7 @@ from advanced_report_builder.models import CalendarReport, CalendarReportDataSet
 from advanced_report_builder.utils import crispy_modal_link_args, get_report_builder_class
 from advanced_report_builder.views.charts_base import ChartJSTable
 from advanced_report_builder.views.datatables.utils import DescriptionColumn
+from advanced_report_builder.views.helpers import QueryBuilderModelForm
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
 from advanced_report_builder.views.report import ReportBase
 
@@ -89,73 +90,62 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
             query = query.filter(table.extra_query_filter)
         return self.view_filter(query, table)
 
-    #
-    # def get_lane(self, base_model, kanban_report_lane, lanes, label=None, extra_query_filter=None, multiple=False):
-    #
-    #     table = self.chart_js_table(model=base_model)
-    #
-    #     report_builder_class = get_report_builder_class(model=base_model,
-    #                                                     report_type=kanban_report_lane.report_type)
-    #     table_indexes = []
-    #
-    #     if kanban_report_lane.heading_field is not None:
-    #         table_indexes.append('heading')
-    #         table.add_columns(kanban_report_lane.heading_field)
-    #
-    #     if kanban_report_lane.background_colour_field is not None:
-    #         table_indexes.append('background_colour')
-    #         table.add_columns(kanban_report_lane.background_colour_field)
-    #
-    #     if kanban_report_lane.heading_colour_field is not None:
-    #         table_indexes.append('heading_colour')
-    #         table.add_columns(kanban_report_lane.heading_colour_field)
-    #
-    #     if kanban_report_lane.kanban_report_description is not None:
-    #         description = kanban_report_lane.kanban_report_description.description
-    #         columns, column_map = self.get_data_merge_columns(base_model=base_model,
-    #                                                           report_builder_class=report_builder_class,
-    #                                                           html=description,
-    #                                                           table=table)
-    #
-    #         table_indexes.append('description')
-    #         table.add_columns(DescriptionColumn(column_name='description',
-    #                                             field='',
-    #                                             html=description,
-    #                                             column_map=column_map))
-    #         table.add_columns(*columns)
-    #
-    #     table.table_options['indexes'] = table_indexes
-    #
-    #     if kanban_report_lane.link_field and self.kwargs.get('enable_links'):
-    #         _, col_type_override, _, _ = self.get_field_details(base_model=base_model,
-    #                                                             field=kanban_report_lane.link_field,
-    #                                                             report_builder_class=report_builder_class)
-    #         if isinstance(col_type_override.field, list):
-    #             field = col_type_override.field[0]
-    #         else:
-    #             field = 'id'
-    #         if field not in table.columns:
-    #             table.add_columns(f'.{field}')
-    #         table.has_link = True
-    #         table.table_options['row_href'] = row_link(col_type_override.url, field)
-    #     else:
-    #         table.has_link = False
-    #
-    #     table.datatable_template = 'advanced_report_builder/kanban/middle.html'
-    #
-    #     if kanban_report_lane.order_by_field:
-    #         if kanban_report_lane.order_by_ascending:
-    #             table.order_by = [kanban_report_lane.order_by_field]
-    #         else:
-    #             table.order_by = [f'-{kanban_report_lane.order_by_field}']
-    #
-    #     table.query_data = kanban_report_lane.query_data
-    #     table.extra_query_filter = extra_query_filter
-    #     table.view_filter = self.view_filter_extra
-    #     lanes.append({'datatable': table,
-    #                   'label': label,
-    #                   'kanban_report_lane': kanban_report_lane,
-    #                   'multiple': multiple})
+
+    def get_calendar(self, base_model, calendar_report_data_set, lanes, label=None, extra_query_filter=None):
+
+        table = self.chart_js_table(model=base_model)
+
+        report_builder_class = get_report_builder_class(model=base_model,
+                                                        report_type=calendar_report_data_set.report_type)
+        table_indexes = []
+
+        if calendar_report_data_set.heading_field is not None:
+            table_indexes.append('heading')
+            table.add_columns(calendar_report_data_set.heading_field)
+
+        if calendar_report_data_set.background_colour_field is not None:
+            table_indexes.append('background_colour')
+            table.add_columns(calendar_report_data_set.background_colour_field)
+
+        if calendar_report_data_set.calendar_report_description is not None:
+            description = calendar_report_data_set.calendar_report_description.description
+            columns, column_map = self.get_data_merge_columns(base_model=base_model,
+                                                              report_builder_class=report_builder_class,
+                                                              html=description,
+                                                              table=table)
+
+            table_indexes.append('description')
+            table.add_columns(DescriptionColumn(column_name='description',
+                                                field='',
+                                                html=description,
+                                                column_map=column_map))
+            table.add_columns(*columns)
+
+        table.table_options['indexes'] = table_indexes
+
+        if calendar_report_data_set.link_field and self.kwargs.get('enable_links'):
+            _, col_type_override, _, _ = self.get_field_details(base_model=base_model,
+                                                                field=calendar_report_data_set.link_field,
+                                                                report_builder_class=report_builder_class)
+            if isinstance(col_type_override.field, list):
+                field = col_type_override.field[0]
+            else:
+                field = 'id'
+            if field not in table.columns:
+                table.add_columns(f'.{field}')
+            table.has_link = True
+            table.table_options['row_href'] = row_link(col_type_override.url, field)
+        else:
+            table.has_link = False
+
+        table.datatable_template = 'advanced_report_builder/calendar/middle.html'
+
+        table.query_data = calendar_report_data_set.query_data
+        table.extra_query_filter = extra_query_filter
+        table.view_filter = self.view_filter_extra
+        lanes.append({'datatable': table,
+                      'label': label,
+                      'calendar_report_data_set': calendar_report_data_set})
     #
     # @staticmethod
     # def get_multiple_date(multiple_type, current_date):
@@ -201,67 +191,9 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
 
         for calendar_report_data_set in calendar_report_data_sets:
             base_model = calendar_report_data_set.get_base_model()
-            report_builder_class = get_report_builder_class(model=base_model,
-                                                            report_type=calendar_report_data_set.report_type)
-            tom = 100
-        #     if kanban_report_lane.multiple_type == KanbanReportLane.MULTIPLE_TYPE_NA:
-        #         self.get_lane(base_model=base_model,
-        #                       kanban_report_lane=kanban_report_lane,
-        #                       lanes=lanes)
-        #         headings.append({'label': kanban_report_lane.name,
-        #                          'row_span': 2,
-        #                          'col_span': 1})
-        #     else:
-        #         variable_date = VariableDate()
-        #         start_date_and_time, _, _ = variable_date.get_variable_dates(kanban_report_lane.multiple_start_period)
-        #         _, end_date_and_time, _ = variable_date.get_variable_dates(kanban_report_lane.multiple_end_period)
-        #
-        #         multiple_type = kanban_report_lane.multiple_type
-        #         current_start_date = start_date_and_time
-        #
-        #         _, _, _, field_name = self.get_field_details(base_model=base_model,
-        #                                                      field=kanban_report_lane.multiple_type_date_field,
-        #                                                      report_builder_class=report_builder_class)
-        #
-        #         end_field_name = None
-        #         if kanban_report_lane.multiple_type_end_date_field:
-        #             _, _, _, end_field_name = self.get_field_details(
-        #                 base_model=base_model,
-        #                 field=kanban_report_lane.multiple_type_end_date_field,
-        #                 report_builder_class=report_builder_class)
-        #
-        #         sub_lanes = []
-        #         while (current_end_date := self.get_multiple_date(
-        #                 multiple_type=multiple_type,
-        #                 current_date=current_start_date)) <= end_date_and_time:
-        #
-        #             if multiple_type in (KanbanReportLane.MULTIPLE_TYPE_DAILY,
-        #                                  KanbanReportLane.MULTIPLE_TYPE_WEEKLY,
-        #                                  KanbanReportLane.MULTIPLE_TYPE_MONTHLY):
-        #                 query_filter = Q((field_name + "__gte", current_start_date)) &\
-        #                                (Q((field_name + "__lt", current_end_date)))
-        #             else:
-        #
-        #                 query_filter = Q((end_field_name + "__gte", current_start_date)) &\
-        #                                 (Q((field_name + "__lt", current_end_date)))
-        #
-        #             label = self.get_full_label(multiple_type=multiple_type,
-        #                                         current_date=current_start_date,
-        #                                         label=kanban_report_lane.multiple_type_label)
-        #
-        #             self.get_lane(base_model=base_model,
-        #                           kanban_report_lane=kanban_report_lane,
-        #                           lanes=sub_lanes,
-        #                           label=label,
-        #                           extra_query_filter=query_filter,
-        #                           multiple=True)
-        #             current_start_date = current_end_date
-        #
-        #         headings.append({'label': kanban_report_lane.name,
-        #                          'col_span': len(sub_lanes),
-        #                          'row_span': 1})
-        #
-        #         lanes += sub_lanes
+            self.get_calendar(base_model=base_model,
+                              calendar_report_data_set=calendar_report_data_set,
+                              lanes=lanes)
 
         context['calendar_report'] = self.chart_report
         context['headings'] = headings
@@ -440,6 +372,22 @@ class CalendarModal(ModelFormModal):
                 self.command_response('redirect', url=url)
 
 
+class CalendarDataSetForm(QueryBuilderModelForm):
+    cancel_class = 'btn-secondary modal-cancel'
+
+    class Meta:
+        model = CalendarReportDataSet
+        fields = ['name',
+                  'report_type',
+                  'heading_field',
+                  'calendar_report_description',
+                  'background_colour_field',
+                  'link_field',
+                  'start_date_field',
+                  'end_date_field',
+                  'query_data', ]
+
+
 class CalendarDataSetModal(QueryBuilderModalBase):
     template_name = 'advanced_report_builder/calendar/modal.html'
     size = 'xl'
@@ -447,6 +395,7 @@ class CalendarDataSetModal(QueryBuilderModalBase):
     permission_delete = PERMISSION_OFF
     model = CalendarReportDataSet
     helper_class = HorizontalNoEnterHelper
+    form_class = CalendarDataSetForm
 
     widgets = {'report_tags': Select2Multiple}
 
@@ -459,6 +408,7 @@ class CalendarDataSetModal(QueryBuilderModalBase):
         'link_field',
         'start_date_field',
         'end_date_field',
+        'query_data',
     ]
 
     def form_setup(self, form, *_args, **_kwargs):

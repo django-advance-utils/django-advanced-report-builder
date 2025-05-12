@@ -1,0 +1,19 @@
+var table = {{ datatable.model_table_setup }};
+
+
+ var indexes = table.initsetup.tableOptions.indexes;
+
+
+var heading_index = indexes.indexOf('heading')
+
+var description_index = indexes.indexOf('description')
+var background_colour_index = indexes.indexOf('background_colour')
+
+$.each(table.data, function( index, card ) {
+    events.push({
+        title: card[heading_index],
+        start: '2025-05-02',
+        end: '2025-05-05',
+        backgroundColor: card[background_colour_index]
+    })
+});

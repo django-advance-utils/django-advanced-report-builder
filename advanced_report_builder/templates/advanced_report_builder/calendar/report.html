@@ -14,6 +14,18 @@
             <div class="col-xs-12" style="overflow: auto;">
 
                 <script>
+                    {% for lane in lanes %}
+                         function get_event_lane{{ forloop.counter }}(events) {
+                             {{ lane.datatable.render }}
+                         };
+                    {% endfor %}
+
+
+                         function get_events_data() {
+                             var events = [];
+                             {% for lane in lanes %}get_event_lane{{ forloop.counter }}(events);{% endfor %}
+                            return events
+                        }
 
                     document.addEventListener('DOMContentLoaded', function () {
                         var calendarEl = document.getElementById('calendar');
@@ -32,12 +44,7 @@
                             editable: true,
                             disableResizing: true,
                             eventLimit: true, // allow "more" link when too many events
-                            events: [
-                                {
-                                    title: 'All Day Event',
-                                    start: '2024-11-28',
-                                }
-                            ]
+                            events: get_events_data()
                         });
 
                         calendar.render();
