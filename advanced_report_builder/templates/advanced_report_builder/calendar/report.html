@@ -15,21 +15,17 @@
 
                 <script>
                     {% for lane in lanes %}
-                         function get_event_lane{{ forloop.counter }}(events) {
-                             {{ lane.datatable.render }}
-                         };
+                        function get_event_lane{{ forloop.counter }}(events) {
+                            {{ lane.datatable.render }}
+                        };
                     {% endfor %}
-
-
-                         function get_events_data() {
-                             var events = [];
-                             {% for lane in lanes %}get_event_lane{{ forloop.counter }}(events);{% endfor %}
-                            return events
-                        }
-
+                    function get_events_data() {
+                        var events = [];
+                        {% for lane in lanes %}get_event_lane{{ forloop.counter }}(events);{% endfor %}
+                        return events
+                    }
                     document.addEventListener('DOMContentLoaded', function () {
                         var calendarEl = document.getElementById('calendar');
-
                         var calendar = new FullCalendar.Calendar(calendarEl, {
                             plugins: ['interaction', 'dayGrid', 'timeGrid', 'list', 'yearView'],
                             height: 'parent',
