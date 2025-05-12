@@ -14,6 +14,7 @@ from advanced_report_builder.duplicate import DuplicateReport
 from advanced_report_builder.models import Report
 from advanced_report_builder.utils import split_slug
 from advanced_report_builder.views.bar_charts import BarChartView
+from advanced_report_builder.views.calendar import CalendarView
 from advanced_report_builder.views.datatables.datatables import TableView
 from advanced_report_builder.views.funnel_charts import FunnelChartView
 from advanced_report_builder.views.kanban import KanbanView
@@ -32,6 +33,7 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         'piechartreport': PieChartView,
         'funnelchartreport': FunnelChartView,
         'kanbanreport': KanbanView,
+        'calendarreport': CalendarView,
     }
     enable_links = True
 
