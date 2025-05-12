@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.views.generic import TemplateView
-from django_datatables.columns import MenuColumn
+from django_datatables.columns import MenuColumn, ColumnBase
 from django_datatables.datatables import DatatableExcludedRow
 from django_datatables.helpers import DUMMY_ID, row_link
 from django_datatables.widgets import DataTableReorderWidget
@@ -91,13 +91,17 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
         return self.view_filter(query, table)
 
 
-    def get_calendar(self, base_model, calendar_report_data_set, lanes, label=None, extra_query_filter=None):
+    def get_calendar_events(self, base_model, calendar_report_data_set, lanes, label=None, extra_query_filter=None):
 
         table = self.chart_js_table(model=base_model)
 
         report_builder_class = get_report_builder_class(model=base_model,
                                                         report_type=calendar_report_data_set.report_type)
-        table_indexes = []
+        table_indexes = ['start_date_field',
+                         'end_date_field']
+        # ColumnBase(column_name='Range', field='people', row_result=self.range, hidden=True)
+        table.add_columns(calendar_report_data_set.start_date_field,
+                          calendar_report_data_set.end_date_field)
 
         if calendar_report_data_set.heading_field is not None:
             table_indexes.append('heading')
@@ -191,9 +195,9 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
 
         for calendar_report_data_set in calendar_report_data_sets:
             base_model = calendar_report_data_set.get_base_model()
-            self.get_calendar(base_model=base_model,
-                              calendar_report_data_set=calendar_report_data_set,
-                              lanes=lanes)
+            self.get_calendar_events(base_model=base_model,
+                                     calendar_report_data_set=calendar_report_data_set,
+                                     lanes=lanes)
 
         context['calendar_report'] = self.chart_report
         context['headings'] = headings

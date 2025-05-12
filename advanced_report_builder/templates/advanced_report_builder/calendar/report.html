@@ -24,6 +24,12 @@
                         {% for lane in lanes %}get_event_lane{{ forloop.counter }}(events);{% endfor %}
                         return events
                     }
+
+                    function toISOFormat(dateStr) {
+                        const [day, month, year] = dateStr.split('/');
+                        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                    }
+
                     document.addEventListener('DOMContentLoaded', function () {
                         var calendarEl = document.getElementById('calendar');
                         var calendar = new FullCalendar.Calendar(calendarEl, {
