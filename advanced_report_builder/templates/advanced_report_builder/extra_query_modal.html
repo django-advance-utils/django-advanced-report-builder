@@ -1,0 +1,13 @@
+{% extends 'django_modals/modal_formset_base.html' %}
+
+{% block javascript %}
+<script>
+
+function save_modal_{{ form.form_id }}() {
+    id_query.save_query_builder();
+    id_extra_query.save_query_builder();
+    django_modal.process_commands_lock([{'function': 'post_modal'}]);
+}
+</script>
+{% endblock %}
+
