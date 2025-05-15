@@ -1,7 +1,7 @@
 import json
 
 from django.conf import settings
-from django.forms import CharField
+from django.forms import CharField, ModelChoiceField
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -22,7 +22,8 @@ from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.data_merge.utils import DataMergeUtils
 from advanced_report_builder.data_merge.widget import DataMergeWidget
 from advanced_report_builder.filter_query import FilterQueryMixin
-from advanced_report_builder.models import CalendarReport, CalendarReportDataSet, CalendarReportDescription, ReportType
+from advanced_report_builder.models import CalendarReport, CalendarReportDataSet, CalendarReportDescription, ReportType, \
+    ReportQuery
 from advanced_report_builder.utils import crispy_modal_link_args, get_report_builder_class
 from advanced_report_builder.views.charts_base import ChartJSTable
 from advanced_report_builder.views.datatables.utils import DescriptionColumn
@@ -383,6 +384,7 @@ class CalendarDataSetForm(QueryBuilderModelForm):
         model = CalendarReportDataSet
         fields = ['name',
                   'report_type',
+                  'display_type',
                   'heading_field',
                   'calendar_report_description',
                   'background_colour_field',
@@ -401,19 +403,8 @@ class CalendarDataSetModal(QueryBuilderModalBase):
     helper_class = HorizontalNoEnterHelper
     form_class = CalendarDataSetForm
 
-    widgets = {'report_tags': Select2Multiple}
+    widgets = {'report_tags': Select2Multiple,}
 
-    form_fields = [
-        'name',
-        'report_type',
-        'heading_field',
-        'calendar_report_description',
-        'background_colour_field',
-        'link_field',
-        'start_date_field',
-        'end_date_field',
-        'query_data',
-    ]
 
     def form_setup(self, form, *_args, **_kwargs):
         if 'data' in _kwargs:
@@ -443,6 +434,25 @@ class CalendarDataSetModal(QueryBuilderModalBase):
                 {'id': calendar_report_description.id, 'text': calendar_report_description.name}
             ]
         form.fields['calendar_report_description'].label = 'Description'
+        form.fields['calendar_report_description'].required = False
+        form.fields['report_type'] = ModelChoiceField(queryset=ReportType.objects.all(), widget=Select2, required=False)
+
+        form.add_trigger(
+            'display_type',
+            'onchange',
+            [
+                {
+                    'selector': '#div_id_calendar_report_description',
+                    'values': {CalendarReportDataSet.DISPLAY_TYPE_NAME_ONLY: 'hide'},
+                    'default': 'show',
+                },
+                {
+                    'selector': '#div_id_heading_field',
+                    'values': {CalendarReportDataSet.DISPLAY_TYPE_DESCRIPTION_ONLY: 'hide'},
+                    'default': 'show',
+                }
+            ],
+        )
 
         self.setup_field(
             field_type='all',
@@ -483,6 +493,7 @@ class CalendarDataSetModal(QueryBuilderModalBase):
         return (
             'name',
             'report_type',
+            'display_type',
             'heading_field',
             'calendar_report_description',
             'start_date_field',

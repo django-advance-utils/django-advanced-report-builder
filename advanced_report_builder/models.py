@@ -487,13 +487,43 @@ class CalendarReportDescription(TimeStampedModel):
 
 
 class CalendarReportDataSet(TimeStampedModel):
+    DISPLAY_TYPE_NAME_AND_DESCRIPTION = 1
+    DISPLAY_TYPE_DESCRIPTION_ONLY = 2
+    DISPLAY_TYPE_NAME_ONLY = 3
+
+    DISPLAY_TYPE_CHOICES = (
+        (DISPLAY_TYPE_NAME_AND_DESCRIPTION, 'Name and Description'),
+        (DISPLAY_TYPE_DESCRIPTION_ONLY, 'Description Only'),
+        (DISPLAY_TYPE_NAME_ONLY, 'Name Only'),
+    )
+
+    END_DATE_TYPE_FIELD = 1
+    END_DATE_TYPE_DURATION_FIELD = 2
+    END_DATE_TYPE_DURATION_FIXED = 3
+
+    END_DATE_TYPE_CHOICES = (
+        (END_DATE_TYPE_FIELD, 'Field'),
+        (END_DATE_TYPE_DURATION_FIELD, 'Duration Field'),
+        (END_DATE_TYPE_DURATION_FIXED, 'Duration Fixed'),
+    )
+
     calendar_report = models.ForeignKey(CalendarReport, on_delete=models.CASCADE)
     order = models.PositiveSmallIntegerField()
     report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
     heading_field = models.CharField(max_length=200, blank=True, null=True)
     name = models.CharField(max_length=200)
+    display_type = models.PositiveSmallIntegerField(
+        choices=DISPLAY_TYPE_CHOICES,
+        default=DISPLAY_TYPE_NAME_AND_DESCRIPTION,
+    )
     start_date_field = models.CharField(max_length=200, blank=True, null=True)
+    end_date_type = models.PositiveSmallIntegerField(
+        choices=END_DATE_TYPE_CHOICES,
+        default=END_DATE_TYPE_FIELD,
+    )
     end_date_field = models.CharField(max_length=200, blank=True, null=True)
+    end_duration_field = models.CharField(max_length=200, blank=True, null=True)
+    end_duration = models.PositiveSmallIntegerField(blank=True, null=True)
     background_colour_field = models.CharField(max_length=200, blank=True, null=True)
     link_field = models.CharField(max_length=200, blank=True, null=True)
     calendar_report_description = models.ForeignKey(CalendarReportDescription,
