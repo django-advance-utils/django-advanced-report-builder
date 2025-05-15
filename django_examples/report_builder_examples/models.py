@@ -408,6 +408,7 @@ class Payment(TimeStampedModel):
         created_field = CustomDateColumn(column_name='created_field', field='created', title='Created')
         # modified_field = CustomDateColumn(column_name='modified_field', field='modified', title='Modified')
 
+
     class ReportBuilder(ReportBuilderFields):
         colour = '#006440'
         title = 'Payment'
@@ -482,13 +483,17 @@ class Event(models.Model):
                                             field='name',
                                             url_name='report_builder_examples:example_link')
 
+        start_date_time_dt = DateTimeColumn(column_name='start_date_time_dt', field='start_date_time', title='Start Date Time')
+        end_date_time_dt = DateTimeColumn(column_name='end_date_time_dt', field='end_date_time', title='End Date Time')
+
+
     class ReportBuilder(ReportBuilderFields):
         colour = '#ff6440'
         title = 'Event'
         fields = ['name',
                   'description',
-                  DateTimeColumn(column_name='start_date_time', field='start_date_time', title='Start Date Time'),
-                  DateTimeColumn(column_name='end_date_time', field='end_date_time', title='End Date Time'),
+                  'start_date_time_dt',
+                  'end_date_time_dt',
                   'collink_1']
         includes = {'user_profile': {'title': 'User',
                                      'model': 'report_builder_examples.UserProfile.ReportBuilder'}}

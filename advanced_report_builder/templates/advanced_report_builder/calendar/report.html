@@ -26,11 +26,20 @@
                     }
 
                     function toISOFormat(dateStr) {
-                        const [day, month, year] = dateStr.split('/');
-                        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                        console.log(dateStr);
+                        if(' ' in dateStr) {
+                            const [date, time] = dateStr.split(' ');
+                            const [day, month, year] = date.split('/');
+                            return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${time}`;
+                        }
+                        else {
+                            const [day, month, year] = dateStr.split('/');
+                            return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                        }
                     }
 
-                    document.addEventListener('DOMContentLoaded', function () {
+                    document.addEventListener('DOMC' +
+                        ']ontentLoaded', function () {
                         var calendarEl = document.getElementById('calendar');
                         var calendar = new FullCalendar.Calendar(calendarEl, {
                             plugins: ['interaction', 'dayGrid', 'timeGrid', 'list', 'yearView'],
