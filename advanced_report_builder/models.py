@@ -489,12 +489,12 @@ class CalendarReportDescription(TimeStampedModel):
 class CalendarReportDataSet(TimeStampedModel):
     DISPLAY_TYPE_NAME_AND_DESCRIPTION = 1
     DISPLAY_TYPE_DESCRIPTION_ONLY = 2
-    DISPLAY_TYPE_NAME_ONLY = 3
+    DISPLAY_TYPE_HEADING_ONLY = 3
 
     DISPLAY_TYPE_CHOICES = (
         (DISPLAY_TYPE_NAME_AND_DESCRIPTION, 'Name and Description'),
         (DISPLAY_TYPE_DESCRIPTION_ONLY, 'Description Only'),
-        (DISPLAY_TYPE_NAME_ONLY, 'Name Only'),
+        (DISPLAY_TYPE_HEADING_ONLY, 'Heading Only'),
     )
 
     END_DATE_TYPE_FIELD = 1

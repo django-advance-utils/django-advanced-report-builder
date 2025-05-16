@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='calendarreportdataset',
             name='display_type',
-            field=models.PositiveSmallIntegerField(choices=[(1, 'Name and Description'), (2, 'Description Only'), (3, 'Name Only')], default=1),
+            field=models.PositiveSmallIntegerField(choices=[(1, 'Name and Description'), (2, 'Description Only'), (3, 'Heading Only')], default=1),
         ),
         migrations.AddField(
             model_name='calendarreportdataset',

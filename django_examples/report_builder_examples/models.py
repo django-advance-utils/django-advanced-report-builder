@@ -476,6 +476,7 @@ class Event(models.Model):
     description = models.TextField(null=True, blank=True)
     start_date_time = models.DateTimeField()
     end_date_time = models.DateTimeField(null=True, blank=True)
+    duration = models.IntegerField(default=0)
     user_profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
 
     class Datatable(DatatableModel):
@@ -494,6 +495,7 @@ class Event(models.Model):
                   'description',
                   'start_date_time_dt',
                   'end_date_time_dt',
+                  'duration',
                   'collink_1']
         includes = {'user_profile': {'title': 'User',
                                      'model': 'report_builder_examples.UserProfile.ReportBuilder'}}
