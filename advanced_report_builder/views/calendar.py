@@ -394,6 +394,7 @@ class CalendarDataSetModal(QueryBuilderModalBase):
             heading_field = _kwargs['data'].get('heading_field')
             start_date_field = _kwargs['data'].get('start_date_field')
             end_date_field = _kwargs['data'].get('end_date_field')
+            end_duration_field = _kwargs['data'].get('end_duration_field')
             report_type_id = _kwargs['data'].get('report_type')
             background_colour_field = _kwargs['data'].get('background_colour_field')
             link_field = _kwargs['data'].get('link_field')
@@ -407,6 +408,7 @@ class CalendarDataSetModal(QueryBuilderModalBase):
             report_type = form.instance.report_type
             start_date_field = form.instance.start_date_field
             end_date_field = form.instance.end_date_field
+            end_duration_field = form.instance.end_duration_field
             background_colour_field = form.instance.background_colour_field
             link_field = form.instance.link_field
             calendar_report_description = form.instance.calendar_report_description
@@ -486,7 +488,7 @@ class CalendarDataSetModal(QueryBuilderModalBase):
             field_type='number',
             form=form,
             field_name='end_duration_field',
-            selected_field_id=end_date_field,
+            selected_field_id=end_duration_field,
             report_type=report_type,
         )
 
@@ -538,6 +540,11 @@ class CalendarDataSetModal(QueryBuilderModalBase):
             field_type='date', report_type=kwargs['report_type'], search_string=kwargs.get('search')
         )
 
+    def select2_end_duration_field(self, **kwargs):
+        return self.get_fields_for_select2(
+            field_type='number', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+        )
+
     def select2_link_field(self, **kwargs):
         return self.get_fields_for_select2(
             field_type='link', report_type=kwargs['report_type'], search_string=kwargs.get('search')
@@ -553,15 +560,12 @@ class CalendarDataSetModal(QueryBuilderModalBase):
         report_type_id = kwargs['report_type']
         if report_type_id != '':
             calendar_report_id = self.object.calendar_report_id
-
             _filter = CalendarReportDescription.objects.filter(
                 report_type_id=report_type_id, calendar_report_id=calendar_report_id
             )
-
             search = kwargs.get('search')
             if search:
                 _filter = _filter.filter(name__icontains=search)
-
             for description in _filter.values('id', 'name'):
                 descriptions.append({'id': description['id'], 'text': description['name']})
 
