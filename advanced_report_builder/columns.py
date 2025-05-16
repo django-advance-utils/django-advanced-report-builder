@@ -238,17 +238,38 @@ class ReportBuilderColumnLink(ColumnLink):
     def url(self):
         return self._url
 
+    def setup_link(self, link_css, link_html):
+        if self.enable_links():
+            link_css = f' class="{link_css}"' if link_css else ''
+            link = f'<a{link_css} href="{self.url}">{{}}</a>'
+        else:
+            link = f'{{}}'
+        if isinstance(self.field, (list, tuple)):
+            self.options['render'] = [
+                render_replace(column=self.column_name + ':0', html=link.format(link_html), var='999999'),
+                render_replace(column=self.column_name + ':1'),
+            ]
+        elif self.var not in link_html:
+            self.options['render'] = [render_replace(column=self.link_ref_column,
+                                                     html=link.format(link_html), var='999999')]
+        else:
+            self.options['render'] = [render_replace(column=self.column_name,
+                                                     html=link.format(link_html),
+                                                     var=self.var),
+                                      render_replace(column=self.link_ref_column, var='999999')]
+
     @url.setter
     def url(self, url_name):
-        if (
-            not self.table
-            or self.table.view is None
-            or self.table.view.kwargs.get('enable_links')
-            or getattr(self.table.view, 'enable_links', False)
-        ):
+        if self.enable_links():
             self._url = get_url(url_name)
         else:
             self._url = f'#?{DUMMY_ID}'
+
+    def enable_links(self):
+        return (not self.table
+                or self.table.view is None
+                or self.table.view.kwargs.get('enable_links')
+                or getattr(self.table.view, 'enable_links', False))
 
 
 class RecordCountColumn(ColumnBase):
