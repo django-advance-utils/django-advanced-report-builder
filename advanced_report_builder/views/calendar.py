@@ -1,4 +1,5 @@
 import json
+from datetime import timedelta
 
 from django.conf import settings
 from django.forms import CharField, ModelChoiceField, TextInput, NumberInput
@@ -6,7 +7,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.views.generic import TemplateView
-from django_datatables.columns import MenuColumn, ColumnBase
+from django_datatables.columns import MenuColumn, ColumnBase, DateColumn
 from django_datatables.datatables import DatatableExcludedRow
 from django_datatables.helpers import DUMMY_ID, row_link
 from django_datatables.widgets import DataTableReorderWidget
@@ -98,11 +99,30 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
 
         report_builder_class = get_report_builder_class(model=base_model,
                                                         report_type=calendar_report_data_set.report_type)
-        table_indexes = ['start_date_field',
-                         'end_date_field']
-        # ColumnBase(column_name='Range', field='people', row_result=self.range, hidden=True)
-        table.add_columns(calendar_report_data_set.start_date_field,
-                          calendar_report_data_set.end_date_field)
+        table_indexes = ['start_date_field', 'end_date_field']
+        table.add_columns(calendar_report_data_set.start_date_field)
+        if calendar_report_data_set.end_date_type == CalendarReportDataSet.END_DATE_TYPE_FIELD:
+            table.add_columns(calendar_report_data_set.end_date_field)
+        elif calendar_report_data_set.end_date_type == CalendarReportDataSet.END_DATE_TYPE_DURATION_FIELD:
+            pass
+        elif calendar_report_data_set.end_date_type == CalendarReportDataSet.END_DATE_TYPE_DURATION_FIXED:
+
+            _, _, _, start_field_col_field = self.get_field_details(base_model=base_model,
+                                                                    field=calendar_report_data_set.start_date_field,
+                                                                    report_builder_class=report_builder_class)
+
+            class EndDateColumn(DateColumn):
+                def row_result(self, data, _page_result):
+                    start_date = data.get(self.model_path + start_field_col_field)
+                    end_date = start_date + timedelta(seconds=calendar_report_data_set.end_duration)
+                    try:
+                        date = end_date.strftime('%d/%m/%Y')
+                        time_str = end_date.strftime('%H:%M')
+                        return date + ' ' + time_str
+                    except AttributeError:
+                        return ""
+
+            table.add_columns(EndDateColumn(column_name='EndDate'))
 
         if (calendar_report_data_set.display_type in (CalendarReportDataSet.DISPLAY_TYPE_NAME_AND_DESCRIPTION,
                                                      CalendarReportDataSet.DISPLAY_TYPE_HEADING_ONLY) and
@@ -347,8 +367,6 @@ class CalendarModal(ModelFormModal):
             if url_name and self.slug.get('new'):
                 url = reverse(url_name, kwargs={'slug': self.object.slug})
                 self.command_response('redirect', url=url)
-
-
 
 
 class CalendarDataSetForm(QueryBuilderModelForm):
