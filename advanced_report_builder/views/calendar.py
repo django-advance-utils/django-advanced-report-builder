@@ -6,6 +6,7 @@ from django.forms import CharField, ModelChoiceField, TextInput, NumberInput
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django.utils.duration import duration_string
 from django.views.generic import TemplateView
 from django_datatables.columns import MenuColumn, ColumnBase, DateColumn
 from django_datatables.datatables import DatatableExcludedRow
@@ -104,14 +105,39 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
         if calendar_report_data_set.end_date_type == CalendarReportDataSet.END_DATE_TYPE_FIELD:
             table.add_columns(calendar_report_data_set.end_date_field)
         elif calendar_report_data_set.end_date_type == CalendarReportDataSet.END_DATE_TYPE_DURATION_FIELD:
-            pass
+            _, _, _, start_field_col_field = self.get_field_details(base_model=base_model,
+                                                                    field=calendar_report_data_set.start_date_field,
+                                                                    report_builder_class=report_builder_class)
+            _, _, _, end_duration_col_field = self.get_field_details(base_model=base_model,
+                                                                    field=calendar_report_data_set.end_duration_field,
+                                                                    report_builder_class=report_builder_class)
+            class DurationEndDateColumn(DateColumn):
+
+                def col_setup(self):
+                    self.field = [start_field_col_field, end_duration_col_field]
+
+                def row_result(self, data, _page_result):
+                    start_date = data.get(self.model_path + start_field_col_field)
+                    end_duration = data.get(self.model_path + end_duration_col_field)
+                    if end_duration is None or end_duration <= 0:
+                        end_duration = 3600
+                    end_date = start_date + timedelta(seconds=end_duration)
+                    try:
+                        date = end_date.strftime('%d/%m/%Y')
+                        time_str = end_date.strftime('%H:%M')
+                        return date + ' ' + time_str
+                    except AttributeError:
+                        return ""
+
+            table.add_columns(DurationEndDateColumn(column_name='EndDate'))
+
         elif calendar_report_data_set.end_date_type == CalendarReportDataSet.END_DATE_TYPE_DURATION_FIXED:
 
             _, _, _, start_field_col_field = self.get_field_details(base_model=base_model,
                                                                     field=calendar_report_data_set.start_date_field,
                                                                     report_builder_class=report_builder_class)
 
-            class EndDateColumn(DateColumn):
+            class FixedDurationEndDateColumn(DateColumn):
                 def row_result(self, data, _page_result):
                     start_date = data.get(self.model_path + start_field_col_field)
                     end_date = start_date + timedelta(seconds=calendar_report_data_set.end_duration)
@@ -122,7 +148,7 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
                     except AttributeError:
                         return ""
 
-            table.add_columns(EndDateColumn(column_name='EndDate'))
+            table.add_columns(FixedDurationEndDateColumn(column_name='EndDate'))
 
         if (calendar_report_data_set.display_type in (CalendarReportDataSet.DISPLAY_TYPE_NAME_AND_DESCRIPTION,
                                                      CalendarReportDataSet.DISPLAY_TYPE_HEADING_ONLY) and
