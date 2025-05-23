@@ -37,7 +37,7 @@
                                 return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
                             }
                         }
-                        var calendarEl = document.getElementById('calendar');
+                        var calendarEl = document.getElementById('calendar_{{ field_id }}');
                         var calendar = new FullCalendar.Calendar(calendarEl, {
                             plugins: ['interaction', 'dayGrid', 'timeGrid', 'list', 'yearView'],
                             height: 'parent',
@@ -46,7 +46,7 @@
                                 center: 'title',
                                 right: 'dayGridMonth,timeGridWeek,timeGridDay,year,listWeek'
                             },
-                            defaultView: 'dayGridMonth',
+                            defaultView: '{{ calendar_report.get_view_type }}',
                             defaultDate: '{% now "Y-m-d" %}',
                             navLinks: true, // can click day/week names to navigate views
                             editable: true,
@@ -54,8 +54,6 @@
                             eventLimit: true, // allow "more" link when too many events
                             events: get_events_data(),
                             eventRender: function(info) {
-                          // For dayGrid and timeGrid views
-
                                 if ( info.event.extendedProps.description !== undefined) {
                                     var descriptionEl = document.createElement('div');
                                     descriptionEl.innerText = info.event.extendedProps.description;
@@ -64,8 +62,6 @@
                                     info.el.querySelector('.fc-title').appendChild(document.createElement('br'));
                                     info.el.querySelector('.fc-title').appendChild(descriptionEl);
                                 }
-
-
                             }
                         });
                         calendar.render();
@@ -73,7 +69,7 @@
 
                 </script>
                 <div class="panel-body">
-                    <div id='calendar' style="height: {{ calendar_report.height }}px"></div>
+                    <div id='calendar_{{ field_id }}' style="height: {{ calendar_report.height }}px"></div>
                 </div>
             </div>
         </div>

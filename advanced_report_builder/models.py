@@ -462,7 +462,35 @@ class KanbanReportDescription(TimeStampedModel):
 
 
 class CalendarReport(Report):
+    VIEW_TYPE_MONTH = 1
+    VIEW_TYPE_GRID_WEEK = 2
+    VIEW_TYPE_LIST_WEEK = 3
+    VIEW_TYPE_DAY = 4
+    VIEW_TYPE_YEAR = 5
+
+    VIEW_TYPE_CODES = {VIEW_TYPE_MONTH: 'dayGridMonth',
+                       VIEW_TYPE_GRID_WEEK: 'timeGridWeek',
+                       VIEW_TYPE_LIST_WEEK: 'listWeek',
+                       VIEW_TYPE_DAY: 'timeGridDay',
+                       VIEW_TYPE_YEAR: 'year',
+                       }
+
+    VIEW_TYPE_CHOICES = (
+        (VIEW_TYPE_MONTH, 'Month'),
+        (VIEW_TYPE_GRID_WEEK, 'Grid Week'),
+        (VIEW_TYPE_LIST_WEEK, 'List Week'),
+        (VIEW_TYPE_DAY, 'Day'),
+        (VIEW_TYPE_YEAR, 'Year'),
+    )
+
     height = models.PositiveSmallIntegerField(default=600)
+    view_type = models.PositiveSmallIntegerField(
+        choices=VIEW_TYPE_CHOICES,
+        default=VIEW_TYPE_MONTH,
+    )
+
+    def get_view_type(self):
+        return self.VIEW_TYPE_CODES.get(self.view_type)
 
 
 class CalendarReportDescription(TimeStampedModel):

@@ -1,6 +1,7 @@
 import json
 from datetime import timedelta
 
+from ajax_helpers.utils import random_string
 from django.conf import settings
 from django.forms import CharField, ModelChoiceField, TextInput, NumberInput
 from django.http import JsonResponse
@@ -220,6 +221,7 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
         context['calendar_report'] = self.chart_report
         context['headings'] = headings
         context['lanes'] = lanes
+        context['field_id'] = random_string()
         return context
 
     def view_filter(self, query, table):
@@ -266,7 +268,7 @@ class CalendarModal(ModelFormModal):
     widgets = {'report_tags': Select2Multiple}
     ajax_commands = ['datatable', 'button']
 
-    form_fields = ['name', 'notes', 'report_tags', 'height']
+    form_fields = ['name', 'notes', 'report_tags', 'height', 'view_type']
 
     def form_setup(self, form, *_args, **_kwargs):
         org_id = self.object.id if hasattr(self, 'object') else None
