@@ -15,7 +15,8 @@ from advanced_report_builder.globals import (
     DISPLAY_OPTION_2_PER_ROW,
     DISPLAY_OPTION_CHOICES,
     DISPLAY_OPTION_CLASSES,
-    DISPLAY_OPTION_NONE,
+    DISPLAY_OPTION_NONE, CALENDAR_VIEW_TYPE_MONTH, CALENDAR_VIEW_TYPE_GRID_WEEK, CALENDAR_VIEW_TYPE_LIST_WEEK,
+    CALENDAR_VIEW_TYPE_DAY, CALENDAR_VIEW_TYPE_YEAR, CALENDAR_VIEW_TYPE_CHOICES,
 )
 from advanced_report_builder.signals import model_report_save
 
@@ -462,35 +463,23 @@ class KanbanReportDescription(TimeStampedModel):
 
 
 class CalendarReport(Report):
-    VIEW_TYPE_MONTH = 1
-    VIEW_TYPE_GRID_WEEK = 2
-    VIEW_TYPE_LIST_WEEK = 3
-    VIEW_TYPE_DAY = 4
-    VIEW_TYPE_YEAR = 5
-
-    VIEW_TYPE_CODES = {VIEW_TYPE_MONTH: 'dayGridMonth',
-                       VIEW_TYPE_GRID_WEEK: 'timeGridWeek',
-                       VIEW_TYPE_LIST_WEEK: 'listWeek',
-                       VIEW_TYPE_DAY: 'timeGridDay',
-                       VIEW_TYPE_YEAR: 'year',
+    VIEW_TYPE_CODES = {CALENDAR_VIEW_TYPE_MONTH: 'dayGridMonth',
+                       CALENDAR_VIEW_TYPE_GRID_WEEK: 'timeGridWeek',
+                       CALENDAR_VIEW_TYPE_LIST_WEEK: 'listWeek',
+                       CALENDAR_VIEW_TYPE_DAY: 'timeGridDay',
+                       CALENDAR_VIEW_TYPE_YEAR: 'year',
                        }
-
-    VIEW_TYPE_CHOICES = (
-        (VIEW_TYPE_MONTH, 'Month'),
-        (VIEW_TYPE_GRID_WEEK, 'Grid Week'),
-        (VIEW_TYPE_LIST_WEEK, 'List Week'),
-        (VIEW_TYPE_DAY, 'Day'),
-        (VIEW_TYPE_YEAR, 'Year'),
-    )
 
     height = models.PositiveSmallIntegerField(default=600)
     view_type = models.PositiveSmallIntegerField(
-        choices=VIEW_TYPE_CHOICES,
-        default=VIEW_TYPE_MONTH,
+        choices=CALENDAR_VIEW_TYPE_CHOICES,
+        default=CALENDAR_VIEW_TYPE_MONTH,
     )
 
     def get_view_type(self):
         return self.VIEW_TYPE_CODES.get(self.view_type)
+
+
 
 
 class CalendarReportDescription(TimeStampedModel):
@@ -659,6 +648,7 @@ class DashboardReport(TimeStampedModel):
     display_option = models.PositiveIntegerField(choices=DISPLAY_OPTION_CHOICES, default=DISPLAY_OPTION_NONE)
     show_versions = models.BooleanField(default=True)
     report_query = models.ForeignKey(ReportQuery, blank=True, null=True, on_delete=models.CASCADE)
+    options = models.JSONField(null=True, blank=True)
 
     def get_class(self, extra_class_name):
         if self.display_option != DISPLAY_OPTION_NONE:

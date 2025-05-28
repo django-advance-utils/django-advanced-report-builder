@@ -2,7 +2,7 @@ import copy
 
 from ajax_helpers.mixins import AjaxHelpers
 from django.conf import settings
-from django.forms import ModelChoiceField
+from django.forms import ModelChoiceField, ChoiceField
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -18,6 +18,7 @@ from django_modals.processes import (
 from django_modals.widgets.select2 import Select2
 from django_modals.widgets.widgets import Toggle
 
+from advanced_report_builder.globals import CALENDAR_VIEW_TYPE_CHOICES
 from advanced_report_builder.models import (
     Dashboard,
     DashboardReport,
@@ -206,20 +207,24 @@ class DashboardReportModal(ModelFormModal):
     permission_delete = PERMISSION_OFF
     permission_create = PERMISSION_DISABLE
 
-    form_fields = [
-        'name_override',
-        'top',
-        'display_option',
-        'show_versions',
-        'report_query',
-    ]
+    @property
+    def form_fields(self):
+        fields = [
+            'name_override',
+            'top',
+            'display_option']
+        if self.object.report.instance_type != 'calendarreport':
+            fields += [
+                'show_versions',
+                'report_query',
+            ]
+        return fields
     widgets = {
         'top': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
         'show_versions': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
     }
 
-    @staticmethod
-    def form_setup(form, *_args, **_kwargs):
+    def form_setup(self, form, *_args, **_kwargs):
         form.add_trigger(
             'top',
             'onchange',
@@ -231,8 +236,29 @@ class DashboardReportModal(ModelFormModal):
                 },
             ],
         )
-        report_queries = ReportQuery.objects.filter(report=form.instance.report)
-        form.fields['report_query'] = ModelChoiceField(queryset=report_queries, widget=Select2, required=False)
+        if self.object.report.instance_type == 'calendarreport':
+            view_type = self.object.report.calendarreport.get_view_type_display()
+            choices = [(0, f'Default ({view_type})'), * CALENDAR_VIEW_TYPE_CHOICES]
+            if self.object.options:
+                calendar_view_type = self.object.options.get('calendar_view_type')
+            else:
+                calendar_view_type = None
+            form.fields['calendar_view_type'] = ChoiceField(choices=choices,
+                                                            required=False,
+                                                            widget=Select2(),
+                                                            initial=calendar_view_type)
+        else:
+            report_queries = ReportQuery.objects.filter(report=form.instance.report)
+            form.fields['report_query'] = ModelChoiceField(queryset=report_queries, widget=Select2, required=False)
+
+    def form_valid(self, form):
+        instance = form.save(commit=False)
+        instance._current_user = self.request.user
+        if instance.report.instance_type == 'calendarreport':
+            options = {'calendar_view_type': form.cleaned_data['calendar_view_type']}
+            instance.options = options
+        instance.save()
+        return self.command_response('reload')
 
 
 class DashboardAddReportForm(CrispyForm):
