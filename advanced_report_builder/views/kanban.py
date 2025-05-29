@@ -35,7 +35,8 @@ from advanced_report_builder.models import (
     KanbanReport,
     KanbanReportDescription,
     KanbanReportLane,
-    ReportType, )
+    ReportType,
+)
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import (
     crispy_modal_link_args,
@@ -537,22 +538,24 @@ class KanbanLaneForm(QueryBuilderModelForm):
 
     class Meta:
         model = KanbanReportLane
-        fields = ['name',
-                  'report_type',
-                  'heading_field',
-                  'kanban_report_description',
-                  'order_by_field',
-                  'order_by_ascending',
-                  'multiple_type',
-                  'multiple_type_label',
-                  'multiple_type_date_field',
-                  'multiple_type_end_date_field',
-                  'multiple_start_period',
-                  'multiple_end_period',
-                  'link_field',
-                  'background_colour_field',
-                  'heading_colour_field',
-                  'query_data', ]
+        fields = [
+            'name',
+            'report_type',
+            'heading_field',
+            'kanban_report_description',
+            'order_by_field',
+            'order_by_ascending',
+            'multiple_type',
+            'multiple_type_label',
+            'multiple_type_date_field',
+            'multiple_type_end_date_field',
+            'multiple_start_period',
+            'multiple_end_period',
+            'link_field',
+            'background_colour_field',
+            'heading_colour_field',
+            'query_data',
+        ]
 
 
 class KanbanLaneModal(QueryBuilderModalBase):

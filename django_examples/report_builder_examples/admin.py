@@ -1,23 +1,22 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from django.utils.translation import gettext_lazy as _
+
 from report_builder_examples.models import (
     Company,
-    Person,
-    Tags,
-    Sector,
-    Tally,
-    Payment,
-    CompanyInformation,
-    ReportPermission,
     CompanyCategory,
+    CompanyInformation,
     Contract,
+    Payment,
+    Person,
+    ReportPermission,
+    Sector,
+    Tags,
+    Tally,
     TallyGroup,
     TallyTag,
-
+    UserProfile,
 )
-from django.contrib.auth.admin import UserAdmin
-
-from report_builder_examples.models import UserProfile
-from django.utils.translation import gettext_lazy as _
 
 
 @admin.register(Sector)
@@ -51,7 +50,7 @@ class TagsAdmin(admin.ModelAdmin):
 
 @admin.register(TallyTag)
 class TallTagAdmin(admin.ModelAdmin):
-    list_display = ('name', )
+    list_display = ('name',)
 
 
 @admin.register(TallyGroup)

@@ -1,6 +1,6 @@
 from ajax_helpers.mixins import AjaxHelpers
 from django_datatables.datatables import DatatableView
-from django_menus.menu import MenuMixin, MenuItem
+from django_menus.menu import MenuItem, MenuMixin
 
 
 class MainMenu(AjaxHelpers, MenuMixin):

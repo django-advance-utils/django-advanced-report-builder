@@ -3,24 +3,25 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Count, Sum
 from django_datatables.columns import (
-    DatatableColumn,
-    CurrencyPenceColumn,
     ColumnBase,
-    DateColumn, ManyToManyColumn,
+    CurrencyPenceColumn,
+    DatatableColumn,
+    DateColumn,
+    ManyToManyColumn,
 )
 from django_datatables.model_def import DatatableModel
 from time_stamped_model.models import TimeStampedModel
 
 from advanced_report_builder.columns import (
-    ColourColumn,
     ArrowColumn,
+    ColourColumn,
     FilterForeignKeyColumn,
     ReportBuilderColumnLink,
     ReportBuilderManyToManyColumn,
-    ReverseForeignKeyStrColumn,
     ReverseForeignKeyBoolColumn,
     ReverseForeignKeyChoiceColumn,
     ReverseForeignKeyDateColumn,
+    ReverseForeignKeyStrColumn,
 )
 from advanced_report_builder.report_builder import ReportBuilderFields
 from report_builder_examples.report_overrides import CustomDateColumn
@@ -323,6 +324,7 @@ class Note(models.Model):
     date = models.DateField()
     notes = models.TextField()
 
+
 class TallyGroup(models.Model):
     name = models.CharField(max_length=200)
     date = models.DateField()
@@ -337,13 +339,16 @@ class TallyGroup(models.Model):
         fields = [
             'id',
             'date',
-            'name',]
+            'name',
+        ]
+
 
 class TallyTag(models.Model):
     name = models.CharField(max_length=200)
 
     def __str__(self):
         return self.name
+
 
 class Tally(models.Model):
     date = models.DateField()
@@ -361,7 +366,6 @@ class Tally(models.Model):
 
     class Meta:
         verbose_name_plural = 'Tallies'
-
 
     class Datatable(DatatableModel):
         tag = ManyToManyColumn(field='tally_tags__name')
@@ -391,7 +395,7 @@ class Tally(models.Model):
             'tally_group': {
                 'title': 'Tally Group',
                 'model': 'report_builder_examples.TallyGroup.ReportBuilder',
-            }
+            },
         }
 
 

@@ -3,8 +3,6 @@ from django_datatables.columns import ColumnLink
 from django_menus.menu import MenuItem
 from django_modals.modals import ModelFormModal
 from django_modals.widgets.widgets import Toggle
-from report_builder_examples.views.base import MainMenu, MainIndices
-from report_builder_examples.views.custom import Custom1, CustomWithQuery
 
 from advanced_report_builder.models import Report
 from advanced_report_builder.views.bar_charts import BarChartView
@@ -16,6 +14,8 @@ from advanced_report_builder.views.pie_charts import PieChartView
 from advanced_report_builder.views.reports import ViewReportBase
 from advanced_report_builder.views.single_values import SingleValueView
 from report_builder_examples.models import ReportPermission
+from report_builder_examples.views.base import MainIndices, MainMenu
+from report_builder_examples.views.custom import Custom1, CustomWithQuery
 
 
 class ViewReports(MainIndices):
@@ -188,9 +188,8 @@ class ViewReport(MainMenu, ViewReportBase):
 
     def has_permission(self):
         report = self.report
-        if hasattr(report, 'reportpermission'):
-            if report.reportpermission.requires_superuser:
-                return self.request.user.is_superuser
+        if hasattr(report, 'reportpermission') and report.reportpermission.requires_superuser:
+            return self.request.user.is_superuser
         return True
 
 

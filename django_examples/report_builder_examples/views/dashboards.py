@@ -1,10 +1,10 @@
 from django.shortcuts import redirect
 from django_datatables.columns import ColumnLink
 from django_menus.menu import MenuItem
-from report_builder_examples.views.base import MainMenu, MainIndices
 
 from advanced_report_builder.models import Dashboard
 from advanced_report_builder.views.dashboard import ViewDashboardBase
+from report_builder_examples.views.base import MainIndices, MainMenu
 from report_builder_examples.views.custom import Custom1, CustomWithQuery
 
 
@@ -86,9 +86,8 @@ class ViewDashboard(MainMenu, ViewDashboardBase):
             return redirect('report_builder_examples:view_dashboard', slug=self.dashboard.slug)
 
     def has_report_got_permission(self, report):
-        if hasattr(report, 'reportpermission'):
-            if report.reportpermission.requires_superuser:
-                return self.request.user.is_superuser
+        if hasattr(report, 'reportpermission') and report.reportpermission.requires_superuser:
+            return self.request.user.is_superuser
         return True
 
     def report_no_permission(self, dashboard_report, reports):

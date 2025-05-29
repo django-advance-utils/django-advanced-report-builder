@@ -143,7 +143,6 @@ REPORT_BUILDER_DETAIL_URL_NAME = 'report_builder_examples:view_report'
 REPORT_BUILDER_DASHBOARD_URL_NAME = 'report_builder_examples:view_dashboard'
 
 if SHOW_DEBUG_TOOLBAR:
-    import os  # only if you haven't already imported this
     import socket  # only if you haven't already imported this
 
     hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
