@@ -1,0 +1,33 @@
+
+var table = {{ datatable.model_table_setup }};
+var indexes = table.initsetup.tableOptions.indexes;
+var heading_index = indexes.indexOf('heading');
+var description_index = indexes.indexOf('description');
+var background_colour_index = indexes.indexOf('background_colour');
+var start_date_field_index = indexes.indexOf('start_date_field');
+var end_date_field_index = indexes.indexOf('end_date_field');
+var description = indexes.indexOf('description');
+var link_index = -1;
+if(table.initsetup.tableOptions.row_href) {
+    link_details = table.initsetup.tableOptions.row_href[0];
+    link_index = table.initsetup.field_ids.indexOf(link_details.column);
+}
+$.each(table.data, function( index, card ) {
+
+    var start_date = toISOFormat(card[start_date_field_index]);
+    var end_date = toISOFormat(card[end_date_field_index]);
+    var link = '';
+    if(link_index >= 0) {
+        link = link_details.html.replace(link_details.var, card[link_index]);
+    }
+    var event = {
+        title: card[heading_index],
+        start: start_date,
+        end: end_date,
+        backgroundColor: card[background_colour_index],
+        borderColor: card[background_colour_index],
+        description: card[description],
+        url: link
+    }
+    events.push(event)
+});

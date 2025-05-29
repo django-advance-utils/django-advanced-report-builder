@@ -7,6 +7,7 @@ from report_builder_examples.models import (
     CompanyCategory,
     CompanyInformation,
     Contract,
+    Event,
     Payment,
     Person,
     ReportPermission,
@@ -111,3 +112,8 @@ class CompanyCategoryAdmin(admin.ModelAdmin):
 @admin.register(Contract)
 class ContractAdmin(admin.ModelAdmin):
     list_display = ('company', 'start_date', 'end_date', 'amount')
+
+
+@admin.register(Event)
+class EventAdmin(admin.ModelAdmin):
+    list_display = ('name', 'description', 'start_date_time', 'end_date_time', 'user_profile')

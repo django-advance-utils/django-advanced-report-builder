@@ -1,0 +1,77 @@
+{% load datatable_tags %}
+{% load ajax_helpers %}
+
+
+<div class="card report-card">
+    <div class="card-header">
+        <div class="d-flex align-items-center">
+            <h5 class="mr-auto">{{ title }}</h5>
+            {% block button_menu %}{{ menus.button_menu.render }}{% endblock %}
+        </div>
+    </div>
+    <div class="dashboard-tile detail">
+        <div class="content" style="padding: 2px;">
+            <div class="col-xs-12" style="overflow: auto;">
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        {% for lane in lanes %}
+                        function get_event_lane{{ forloop.counter }}(events) {
+                            {{ lane.datatable.render }}
+                        };
+                        {% endfor %}
+                        function get_events_data() {
+                            var events = [];
+                            {% for lane in lanes %}get_event_lane{{ forloop.counter }}(events);{% endfor %}
+                            return events
+                        }
+
+                        function toISOFormat(dateStr) {
+                            if (dateStr.includes(' ')) {
+                                const [date, time] = dateStr.split(' ');
+                                const [day, month, year] = date.split('/');
+                                return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${time}`;
+                            }
+                            else {
+                                const [day, month, year] = dateStr.split('/');
+                                return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                            }
+                        }
+                        var calendarEl = document.getElementById('calendar_{{ field_id }}');
+                        var calendar = new FullCalendar.Calendar(calendarEl, {
+                            plugins: ['interaction', 'dayGrid', 'timeGrid', 'list', 'yearView'],
+                            height: 'parent',
+                            header: {
+                                left: 'prev,next today',
+                                center: 'title',
+                                right: 'dayGridMonth,timeGridWeek,timeGridDay,year,listWeek'
+                            },
+                            defaultView: '{{ view_type }}',
+                            defaultDate: '{% now "Y-m-d" %}',
+                            navLinks: true, // can click day/week names to navigate views
+                            editable: true,
+                            disableResizing: true,
+                            eventLimit: true, // allow "more" link when too many events
+                            events: get_events_data(),
+                            eventRender: function(info) {
+                                if ( info.event.extendedProps.description !== undefined) {
+                                    var descriptionEl = document.createElement('div');
+                                    descriptionEl.innerText = info.event.extendedProps.description;
+                                    descriptionEl.style.fontSize = '0.85em';
+                                    descriptionEl.style.color = info.event.color;
+                                    info.el.querySelector('.fc-title').appendChild(document.createElement('br'));
+                                    info.el.querySelector('.fc-title').appendChild(descriptionEl);
+                                }
+                            }
+                        });
+                        calendar.render();
+                    });
+
+                </script>
+                <div class="panel-body">
+                    <div id='calendar_{{ field_id }}' style="height: {{ calendar_report.height }}px"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
