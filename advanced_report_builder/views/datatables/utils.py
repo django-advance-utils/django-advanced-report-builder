@@ -3,7 +3,7 @@ import json
 
 from django.db.models import ExpressionWrapper, F, FloatField, Q
 from django.db.models.functions import NullIf
-from django.template import Template, Context, TemplateSyntaxError
+from django.template import Context, Template, TemplateSyntaxError
 from django_datatables.columns import ColumnBase
 from django_datatables.helpers import render_replace
 from django_datatables.plugins.column_totals import ColumnTotals
@@ -680,6 +680,7 @@ class TableUtilsMixin(ReportUtilsMixin):
         if field_attr:
             field = (field, field_attr)
         return field
+
 
 class DescriptionColumn(ColumnBase):
     def row_result(self, data, _page_data, columns):

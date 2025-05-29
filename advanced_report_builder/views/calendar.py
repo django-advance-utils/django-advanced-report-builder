@@ -3,13 +3,12 @@ from datetime import timedelta
 
 from ajax_helpers.utils import random_string
 from django.conf import settings
-from django.forms import CharField, ModelChoiceField, TextInput, NumberInput
+from django.forms import CharField, ModelChoiceField, NumberInput
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
-from django.utils.duration import duration_string
 from django.views.generic import TemplateView
-from django_datatables.columns import MenuColumn, ColumnBase, DateColumn
+from django_datatables.columns import DateColumn, MenuColumn
 from django_datatables.datatables import DatatableExcludedRow
 from django_datatables.helpers import DUMMY_ID, row_link
 from django_datatables.widgets import DataTableReorderWidget
@@ -25,8 +24,12 @@ from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.data_merge.utils import DataMergeUtils
 from advanced_report_builder.data_merge.widget import DataMergeWidget
 from advanced_report_builder.filter_query import FilterQueryMixin
-from advanced_report_builder.models import CalendarReport, CalendarReportDataSet, CalendarReportDescription, ReportType, \
-    ReportQuery
+from advanced_report_builder.models import (
+    CalendarReport,
+    CalendarReportDataSet,
+    CalendarReportDescription,
+    ReportType,
+)
 from advanced_report_builder.utils import crispy_modal_link_args, get_report_builder_class
 from advanced_report_builder.views.charts_base import ChartJSTable
 from advanced_report_builder.views.datatables.utils import DescriptionColumn
@@ -94,26 +97,29 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
             query = query.filter(table.extra_query_filter)
         return self.view_filter(query, table)
 
-
     def get_calendar_events(self, base_model, calendar_report_data_set, lanes, label=None, extra_query_filter=None):
-
         table = self.chart_js_table(model=base_model)
 
-        report_builder_class = get_report_builder_class(model=base_model,
-                                                        report_type=calendar_report_data_set.report_type)
+        report_builder_class = get_report_builder_class(
+            model=base_model, report_type=calendar_report_data_set.report_type
+        )
         table_indexes = ['start_date_field', 'end_date_field']
         table.add_columns(calendar_report_data_set.start_date_field)
         if calendar_report_data_set.end_date_type == CalendarReportDataSet.END_DATE_TYPE_FIELD:
             table.add_columns(calendar_report_data_set.end_date_field)
         elif calendar_report_data_set.end_date_type == CalendarReportDataSet.END_DATE_TYPE_DURATION_FIELD:
-            _, _, _, start_field_col_field = self.get_field_details(base_model=base_model,
-                                                                    field=calendar_report_data_set.start_date_field,
-                                                                    report_builder_class=report_builder_class)
-            _, _, _, end_duration_col_field = self.get_field_details(base_model=base_model,
-                                                                    field=calendar_report_data_set.end_duration_field,
-                                                                    report_builder_class=report_builder_class)
-            class DurationEndDateColumn(DateColumn):
+            _, _, _, start_field_col_field = self.get_field_details(
+                base_model=base_model,
+                field=calendar_report_data_set.start_date_field,
+                report_builder_class=report_builder_class,
+            )
+            _, _, _, end_duration_col_field = self.get_field_details(
+                base_model=base_model,
+                field=calendar_report_data_set.end_duration_field,
+                report_builder_class=report_builder_class,
+            )
 
+            class DurationEndDateColumn(DateColumn):
                 def col_setup(self):
                     self.field = [start_field_col_field, end_duration_col_field]
 
@@ -128,15 +134,16 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
                         time_str = end_date.strftime('%H:%M')
                         return date + ' ' + time_str
                     except AttributeError:
-                        return ""
+                        return ''
 
             table.add_columns(DurationEndDateColumn(column_name='EndDate'))
 
         elif calendar_report_data_set.end_date_type == CalendarReportDataSet.END_DATE_TYPE_DURATION_FIXED:
-
-            _, _, _, start_field_col_field = self.get_field_details(base_model=base_model,
-                                                                    field=calendar_report_data_set.start_date_field,
-                                                                    report_builder_class=report_builder_class)
+            _, _, _, start_field_col_field = self.get_field_details(
+                base_model=base_model,
+                field=calendar_report_data_set.start_date_field,
+                report_builder_class=report_builder_class,
+            )
 
             class FixedDurationEndDateColumn(DateColumn):
                 def row_result(self, data, _page_result):
@@ -147,13 +154,18 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
                         time_str = end_date.strftime('%H:%M')
                         return date + ' ' + time_str
                     except AttributeError:
-                        return ""
+                        return ''
 
             table.add_columns(FixedDurationEndDateColumn(column_name='EndDate'))
 
-        if (calendar_report_data_set.display_type in (CalendarReportDataSet.DISPLAY_TYPE_NAME_AND_DESCRIPTION,
-                                                     CalendarReportDataSet.DISPLAY_TYPE_HEADING_ONLY) and
-                calendar_report_data_set.heading_field is not None):
+        if (
+            calendar_report_data_set.display_type
+            in (
+                CalendarReportDataSet.DISPLAY_TYPE_NAME_AND_DESCRIPTION,
+                CalendarReportDataSet.DISPLAY_TYPE_HEADING_ONLY,
+            )
+            and calendar_report_data_set.heading_field is not None
+        ):
             table_indexes.append('heading')
             table.add_columns(calendar_report_data_set.heading_field)
 
@@ -161,34 +173,40 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
             table_indexes.append('background_colour')
             table.add_columns(calendar_report_data_set.background_colour_field)
 
-        if (calendar_report_data_set.display_type in (CalendarReportDataSet.DISPLAY_TYPE_NAME_AND_DESCRIPTION,
-                                                     CalendarReportDataSet.DISPLAY_TYPE_DESCRIPTION_ONLY) and
-                calendar_report_data_set.calendar_report_description is not None):
+        if (
+            calendar_report_data_set.display_type
+            in (
+                CalendarReportDataSet.DISPLAY_TYPE_NAME_AND_DESCRIPTION,
+                CalendarReportDataSet.DISPLAY_TYPE_DESCRIPTION_ONLY,
+            )
+            and calendar_report_data_set.calendar_report_description is not None
+        ):
             description = calendar_report_data_set.calendar_report_description.description
-            columns, column_map = self.get_data_merge_columns(base_model=base_model,
-                                                              report_builder_class=report_builder_class,
-                                                              html=description,
-                                                              table=table)
-            description_column_name = 'description'\
-                if calendar_report_data_set.display_type == CalendarReportDataSet.DISPLAY_TYPE_NAME_AND_DESCRIPTION\
+            columns, column_map = self.get_data_merge_columns(
+                base_model=base_model, report_builder_class=report_builder_class, html=description, table=table
+            )
+            description_column_name = (
+                'description'
+                if calendar_report_data_set.display_type == CalendarReportDataSet.DISPLAY_TYPE_NAME_AND_DESCRIPTION
                 else 'heading'
+            )
             table_indexes.append(description_column_name)
-            table.add_columns(DescriptionColumn(column_name=description_column_name,
-                                                field='',
-                                                html=description,
-                                                column_map=column_map))
+            table.add_columns(
+                DescriptionColumn(
+                    column_name=description_column_name, field='', html=description, column_map=column_map
+                )
+            )
             table.add_columns(*columns)
 
         table.table_options['indexes'] = table_indexes
 
         if calendar_report_data_set.link_field and self.kwargs.get('enable_links'):
-            _, col_type_override, _, _ = self.get_field_details(base_model=base_model,
-                                                                field=calendar_report_data_set.link_field,
-                                                                report_builder_class=report_builder_class)
-            if isinstance(col_type_override.field, list):
-                field = col_type_override.field[0]
-            else:
-                field = 'id'
+            _, col_type_override, _, _ = self.get_field_details(
+                base_model=base_model,
+                field=calendar_report_data_set.link_field,
+                report_builder_class=report_builder_class,
+            )
+            field = col_type_override.field[0] if isinstance(col_type_override.field, list) else 'id'
             if field not in table.columns:
                 table.add_columns(f'.{field}')
             table.has_link = True
@@ -201,9 +219,7 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
         table.query_data = calendar_report_data_set.query_data
         table.extra_query_filter = extra_query_filter
         table.view_filter = self.view_filter_extra
-        lanes.append({'datatable': table,
-                      'label': label,
-                      'calendar_report_data_set': calendar_report_data_set})
+        lanes.append({'datatable': table, 'label': label, 'calendar_report_data_set': calendar_report_data_set})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -214,9 +230,9 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
 
         for calendar_report_data_set in calendar_report_data_sets:
             base_model = calendar_report_data_set.get_base_model()
-            self.get_calendar_events(base_model=base_model,
-                                     calendar_report_data_set=calendar_report_data_set,
-                                     lanes=lanes)
+            self.get_calendar_events(
+                base_model=base_model, calendar_report_data_set=calendar_report_data_set, lanes=lanes
+            )
         view_type = None
         if self.dashboard_report and self.dashboard_report.options is not None:
             view_type = self.dashboard_report.options.get('calendar_view_type')
@@ -411,23 +427,26 @@ class CalendarDataSetForm(QueryBuilderModelForm):
 
     class Meta:
         model = CalendarReportDataSet
-        fields = ['name',
-                  'report_type',
-                  'display_type',
-                  'heading_field',
-                  'calendar_report_description',
-                  'background_colour_field',
-                  'link_field',
-                  'start_date_field',
-                  'end_date_type',
-                  'end_date_field',
-                  'end_duration_field',
-                  'end_duration',
-                  'query_data', ]
+        fields = [
+            'name',
+            'report_type',
+            'display_type',
+            'heading_field',
+            'calendar_report_description',
+            'background_colour_field',
+            'link_field',
+            'start_date_field',
+            'end_date_type',
+            'end_date_field',
+            'end_duration_field',
+            'end_duration',
+            'query_data',
+        ]
         widgets = {
             'display_type': Select2,
             'end_date_type': Select2,
         }
+
     end_duration = CharField(widget=DurationWidget)
 
 
@@ -439,7 +458,6 @@ class CalendarDataSetModal(QueryBuilderModalBase):
     model = CalendarReportDataSet
     helper_class = HorizontalNoEnterHelper
     form_class = CalendarDataSetForm
-
 
     def form_setup(self, form, *_args, **_kwargs):
         if 'data' in _kwargs:
@@ -488,7 +506,7 @@ class CalendarDataSetModal(QueryBuilderModalBase):
                     'selector': '#div_id_heading_field',
                     'values': {CalendarReportDataSet.DISPLAY_TYPE_DESCRIPTION_ONLY: 'hide'},
                     'default': 'show',
-                }
+                },
             ],
         )
         form.add_trigger(
@@ -509,7 +527,7 @@ class CalendarDataSetModal(QueryBuilderModalBase):
                     'selector': '#div_id_end_duration',
                     'values': {CalendarReportDataSet.END_DATE_TYPE_DURATION_FIXED: 'show'},
                     'default': 'hide',
-                }
+                },
             ],
         )
         self.setup_field(

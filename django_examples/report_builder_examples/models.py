@@ -3,24 +3,26 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Count, Sum
 from django_datatables.columns import (
-    DatatableColumn,
-    CurrencyPenceColumn,
     ColumnBase,
-    DateColumn, ManyToManyColumn, DateTimeColumn,
+    CurrencyPenceColumn,
+    DatatableColumn,
+    DateColumn,
+    DateTimeColumn,
+    ManyToManyColumn,
 )
 from django_datatables.model_def import DatatableModel
 from time_stamped_model.models import TimeStampedModel
 
 from advanced_report_builder.columns import (
-    ColourColumn,
     ArrowColumn,
+    ColourColumn,
     FilterForeignKeyColumn,
     ReportBuilderColumnLink,
     ReportBuilderManyToManyColumn,
-    ReverseForeignKeyStrColumn,
     ReverseForeignKeyBoolColumn,
     ReverseForeignKeyChoiceColumn,
     ReverseForeignKeyDateColumn,
+    ReverseForeignKeyStrColumn,
 )
 from advanced_report_builder.report_builder import ReportBuilderFields
 from report_builder_examples.report_overrides import CustomDateColumn
@@ -323,6 +325,7 @@ class Note(models.Model):
     date = models.DateField()
     notes = models.TextField()
 
+
 class TallyGroup(models.Model):
     name = models.CharField(max_length=200)
     date = models.DateField()
@@ -337,13 +340,16 @@ class TallyGroup(models.Model):
         fields = [
             'id',
             'date',
-            'name',]
+            'name',
+        ]
+
 
 class TallyTag(models.Model):
     name = models.CharField(max_length=200)
 
     def __str__(self):
         return self.name
+
 
 class Tally(models.Model):
     date = models.DateField()
@@ -361,7 +367,6 @@ class Tally(models.Model):
 
     class Meta:
         verbose_name_plural = 'Tallies'
-
 
     class Datatable(DatatableModel):
         tag = ManyToManyColumn(field='tally_tags__name')
@@ -391,7 +396,7 @@ class Tally(models.Model):
             'tally_group': {
                 'title': 'Tally Group',
                 'model': 'report_builder_examples.TallyGroup.ReportBuilder',
-            }
+            },
         }
 
 
@@ -407,7 +412,6 @@ class Payment(TimeStampedModel):
         currency_amount = CurrencyPenceColumn(column_name='currency_amount', field='amount')
         created_field = CustomDateColumn(column_name='created_field', field='created', title='Created')
         # modified_field = CustomDateColumn(column_name='modified_field', field='modified', title='Modified')
-
 
     class ReportBuilder(ReportBuilderFields):
         colour = '#006440'
@@ -480,22 +484,17 @@ class Event(models.Model):
     user_profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
 
     class Datatable(DatatableModel):
-        collink_1 = ReportBuilderColumnLink(title='Col link 1',
-                                            field='name',
-                                            url_name='report_builder_examples:example_link')
+        collink_1 = ReportBuilderColumnLink(
+            title='Col link 1', field='name', url_name='report_builder_examples:example_link'
+        )
 
-        start_date_time_dt = DateTimeColumn(column_name='start_date_time_dt', field='start_date_time', title='Start Date Time')
+        start_date_time_dt = DateTimeColumn(
+            column_name='start_date_time_dt', field='start_date_time', title='Start Date Time'
+        )
         end_date_time_dt = DateTimeColumn(column_name='end_date_time_dt', field='end_date_time', title='End Date Time')
-
 
     class ReportBuilder(ReportBuilderFields):
         colour = '#ff6440'
         title = 'Event'
-        fields = ['name',
-                  'description',
-                  'start_date_time_dt',
-                  'end_date_time_dt',
-                  'duration',
-                  'collink_1']
-        includes = {'user_profile': {'title': 'User',
-                                     'model': 'report_builder_examples.UserProfile.ReportBuilder'}}
+        fields = ['name', 'description', 'start_date_time_dt', 'end_date_time_dt', 'duration', 'collink_1']
+        includes = {'user_profile': {'title': 'User', 'model': 'report_builder_examples.UserProfile.ReportBuilder'}}

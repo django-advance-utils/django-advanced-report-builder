@@ -1,13 +1,13 @@
 from django.urls import path
 from django.views.generic import TemplateView
-from report_builder_examples.views.dashboards import ViewDashboards, ViewDashboard
-from report_builder_examples.views.targets import ViewTargets
 
+from report_builder_examples.views.dashboards import ViewDashboard, ViewDashboards
 from report_builder_examples.views.reports import (
+    PermissionModal,
     ViewReport,
     ViewReports,
-    PermissionModal,
 )
+from report_builder_examples.views.targets import ViewTargets
 
 app_name = 'report_builder_examples'
 

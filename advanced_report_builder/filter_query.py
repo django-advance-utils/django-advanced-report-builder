@@ -243,11 +243,9 @@ class FilterQueryMixin:
                     )
                 else:
                     query_list.append(
-                        
-                            (Q((field + '__month', months[0])))
-                            | (Q((field + '__month', months[1])))
-                            | (Q((field + '__month', months[2])))
-                        
+                        (Q((field + '__month', months[0])))
+                        | (Q((field + '__month', months[1])))
+                        | (Q((field + '__month', months[2])))
                     )
 
     def get_logged_in_user(self, value, query_list, display_operator, field, query_string):

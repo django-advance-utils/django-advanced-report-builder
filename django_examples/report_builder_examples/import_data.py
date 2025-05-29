@@ -4,9 +4,9 @@ import random
 
 from date_offset.date_offset import DateOffset
 from django.contrib.contenttypes.models import ContentType
-from report_builder_examples import models
 
 from advanced_report_builder.models import ReportType
+from report_builder_examples import models
 
 
 def import_data(path):
@@ -37,7 +37,7 @@ def import_companies(path):
     start_date = date_offset.get_offset('-1y', include_time=True)
     end_date = date_offset.get_offset('1m', include_time=True)
     print(start_date)
-    with open(path + '/data/test_data.csv', 'r') as f:
+    with open(path + '/data/test_data.csv') as f:
         titles = {c[1]: c[0] for c in models.Person.title_choices}
         csv_reader = csv.DictReader(f)
         for r in csv_reader:
@@ -67,7 +67,7 @@ def import_companies(path):
 
 
 def import_tallies(path):
-    with open(path + '/data/test_tallies_data.csv', 'r') as f:
+    with open(path + '/data/test_tallies_data.csv') as f:
         csv_reader = csv.DictReader(f)
         for r in csv_reader:
             models.Tally.objects.get_or_create(

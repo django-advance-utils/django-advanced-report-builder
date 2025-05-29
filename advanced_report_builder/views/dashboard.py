@@ -2,7 +2,7 @@ import copy
 
 from ajax_helpers.mixins import AjaxHelpers
 from django.conf import settings
-from django.forms import ModelChoiceField, ChoiceField
+from django.forms import ChoiceField, ModelChoiceField
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -210,16 +210,14 @@ class DashboardReportModal(ModelFormModal):
 
     @property
     def form_fields(self):
-        fields = [
-            'name_override',
-            'top',
-            'display_option']
+        fields = ['name_override', 'top', 'display_option']
         if self.object.report.instance_type != 'calendarreport':
             fields += [
                 'show_versions',
                 'report_query',
             ]
         return fields
+
     widgets = {
         'top': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
         'show_versions': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
@@ -239,15 +237,11 @@ class DashboardReportModal(ModelFormModal):
         )
         if self.object.report.instance_type == 'calendarreport':
             view_type = self.object.report.calendarreport.get_view_type_display()
-            choices = [(0, f'Default ({view_type})'), * CALENDAR_VIEW_TYPE_CHOICES]
-            if self.object.options:
-                calendar_view_type = self.object.options.get('calendar_view_type')
-            else:
-                calendar_view_type = None
-            form.fields['calendar_view_type'] = ChoiceField(choices=choices,
-                                                            required=False,
-                                                            widget=Select2(),
-                                                            initial=calendar_view_type)
+            choices = [(0, f'Default ({view_type})'), *CALENDAR_VIEW_TYPE_CHOICES]
+            calendar_view_type = self.object.options.get('calendar_view_type') if self.object.options else None
+            form.fields['calendar_view_type'] = ChoiceField(
+                choices=choices, required=False, widget=Select2(), initial=calendar_view_type
+            )
         else:
             report_queries = ReportQuery.objects.filter(report=form.instance.report)
             form.fields['report_query'] = ModelChoiceField(queryset=report_queries, widget=Select2, required=False)

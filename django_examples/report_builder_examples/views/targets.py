@@ -1,7 +1,7 @@
 from django_modals.datatables import EditColumn
-from report_builder_examples.views.base import MainIndices
 
 from advanced_report_builder.models import Target
+from report_builder_examples.views.base import MainIndices
 
 
 class ViewTargets(MainIndices):

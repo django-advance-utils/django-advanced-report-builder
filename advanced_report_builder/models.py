@@ -12,11 +12,16 @@ from advanced_report_builder.globals import (
     ANNOTATION_CHOICE_COUNT,
     ANNOTATION_VALUE_CHOICES,
     ANNOTATIONS_CHOICES,
+    CALENDAR_VIEW_TYPE_CHOICES,
+    CALENDAR_VIEW_TYPE_DAY,
+    CALENDAR_VIEW_TYPE_GRID_WEEK,
+    CALENDAR_VIEW_TYPE_LIST_WEEK,
+    CALENDAR_VIEW_TYPE_MONTH,
+    CALENDAR_VIEW_TYPE_YEAR,
     DISPLAY_OPTION_2_PER_ROW,
     DISPLAY_OPTION_CHOICES,
     DISPLAY_OPTION_CLASSES,
-    DISPLAY_OPTION_NONE, CALENDAR_VIEW_TYPE_MONTH, CALENDAR_VIEW_TYPE_GRID_WEEK, CALENDAR_VIEW_TYPE_LIST_WEEK,
-    CALENDAR_VIEW_TYPE_DAY, CALENDAR_VIEW_TYPE_YEAR, CALENDAR_VIEW_TYPE_CHOICES,
+    DISPLAY_OPTION_NONE,
 )
 from advanced_report_builder.signals import model_report_save
 
@@ -463,12 +468,13 @@ class KanbanReportDescription(TimeStampedModel):
 
 
 class CalendarReport(Report):
-    VIEW_TYPE_CODES = {CALENDAR_VIEW_TYPE_MONTH: 'dayGridMonth',
-                       CALENDAR_VIEW_TYPE_GRID_WEEK: 'timeGridWeek',
-                       CALENDAR_VIEW_TYPE_LIST_WEEK: 'listWeek',
-                       CALENDAR_VIEW_TYPE_DAY: 'timeGridDay',
-                       CALENDAR_VIEW_TYPE_YEAR: 'year',
-                       }
+    VIEW_TYPE_CODES = {
+        CALENDAR_VIEW_TYPE_MONTH: 'dayGridMonth',
+        CALENDAR_VIEW_TYPE_GRID_WEEK: 'timeGridWeek',
+        CALENDAR_VIEW_TYPE_LIST_WEEK: 'listWeek',
+        CALENDAR_VIEW_TYPE_DAY: 'timeGridDay',
+        CALENDAR_VIEW_TYPE_YEAR: 'year',
+    }
 
     height = models.PositiveSmallIntegerField(default=600)
     view_type = models.PositiveSmallIntegerField(
@@ -543,8 +549,9 @@ class CalendarReportDataSet(TimeStampedModel):
     end_duration = models.PositiveSmallIntegerField(blank=True, null=True)
     background_colour_field = models.CharField(max_length=200, blank=True, null=True)
     link_field = models.CharField(max_length=200, blank=True, null=True)
-    calendar_report_description = models.ForeignKey(CalendarReportDescription,
-                                                    null=True, blank=False, on_delete=models.CASCADE)
+    calendar_report_description = models.ForeignKey(
+        CalendarReportDescription, null=True, blank=False, on_delete=models.CASCADE
+    )
     query_data = models.JSONField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
