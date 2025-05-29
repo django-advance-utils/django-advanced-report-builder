@@ -12,6 +12,12 @@ from advanced_report_builder.globals import (
     ANNOTATION_CHOICE_COUNT,
     ANNOTATION_VALUE_CHOICES,
     ANNOTATIONS_CHOICES,
+    CALENDAR_VIEW_TYPE_CHOICES,
+    CALENDAR_VIEW_TYPE_DAY,
+    CALENDAR_VIEW_TYPE_GRID_WEEK,
+    CALENDAR_VIEW_TYPE_LIST_WEEK,
+    CALENDAR_VIEW_TYPE_MONTH,
+    CALENDAR_VIEW_TYPE_YEAR,
     DISPLAY_OPTION_2_PER_ROW,
     DISPLAY_OPTION_CHOICES,
     DISPLAY_OPTION_CLASSES,
@@ -192,6 +198,7 @@ class Report(TimeStampedModel):
                 'funnelchartreport': 'Funnel Chart',
                 'kanbanreport': 'Kanban',
                 'customreport': 'Custom',
+                'calendarreport': 'Calendar',
             }
 
             def col_setup(self):
@@ -216,6 +223,7 @@ class Report(TimeStampedModel):
                 'funnelchartreport': '<i class="fas fa-filter"></i>',
                 'kanbanreport': '<i class="fas fa-chart-bar fa-flip-vertical"></i>',
                 'customreport': '<i class="fas fa-file"></i>',
+                'calendarreport': '<i class="fas fa-calendar"></i>',
             }
 
             def col_setup(self):
@@ -459,6 +467,104 @@ class KanbanReportDescription(TimeStampedModel):
         ordering = ('order',)
 
 
+class CalendarReport(Report):
+    VIEW_TYPE_CODES = {
+        CALENDAR_VIEW_TYPE_MONTH: 'dayGridMonth',
+        CALENDAR_VIEW_TYPE_GRID_WEEK: 'timeGridWeek',
+        CALENDAR_VIEW_TYPE_LIST_WEEK: 'listWeek',
+        CALENDAR_VIEW_TYPE_DAY: 'timeGridDay',
+        CALENDAR_VIEW_TYPE_YEAR: 'year',
+    }
+
+    height = models.PositiveSmallIntegerField(default=600)
+    view_type = models.PositiveSmallIntegerField(
+        choices=CALENDAR_VIEW_TYPE_CHOICES,
+        default=CALENDAR_VIEW_TYPE_MONTH,
+    )
+
+    def get_view_type_for_calendar(self, view_type=None):
+        if view_type is None:
+            view_type = self.view_type
+        return self.VIEW_TYPE_CODES.get(view_type)
+
+
+class CalendarReportDescription(TimeStampedModel):
+    calendar_report = models.ForeignKey(CalendarReport, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200)
+    report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
+    description = models.TextField(blank=True, null=True)
+    order = models.PositiveSmallIntegerField()
+
+    def save(self, *args, **kwargs):
+        self.set_order_field(extra_filters={'calendar_report': self.calendar_report})
+        return super().save(*args, **kwargs)
+
+    def get_base_model(self):
+        return self.report_type.content_type.model_class()
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ('order',)
+
+
+class CalendarReportDataSet(TimeStampedModel):
+    DISPLAY_TYPE_NAME_AND_DESCRIPTION = 1
+    DISPLAY_TYPE_DESCRIPTION_ONLY = 2
+    DISPLAY_TYPE_HEADING_ONLY = 3
+
+    DISPLAY_TYPE_CHOICES = (
+        (DISPLAY_TYPE_NAME_AND_DESCRIPTION, 'Name and Description'),
+        (DISPLAY_TYPE_DESCRIPTION_ONLY, 'Description Only'),
+        (DISPLAY_TYPE_HEADING_ONLY, 'Heading Only'),
+    )
+
+    END_DATE_TYPE_FIELD = 1
+    END_DATE_TYPE_DURATION_FIELD = 2
+    END_DATE_TYPE_DURATION_FIXED = 3
+
+    END_DATE_TYPE_CHOICES = (
+        (END_DATE_TYPE_FIELD, 'Field'),
+        (END_DATE_TYPE_DURATION_FIELD, 'Duration Field'),
+        (END_DATE_TYPE_DURATION_FIXED, 'Duration Fixed'),
+    )
+
+    calendar_report = models.ForeignKey(CalendarReport, on_delete=models.CASCADE)
+    order = models.PositiveSmallIntegerField()
+    report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
+    heading_field = models.CharField(max_length=200, blank=True, null=True)
+    name = models.CharField(max_length=200)
+    display_type = models.PositiveSmallIntegerField(
+        choices=DISPLAY_TYPE_CHOICES,
+        default=DISPLAY_TYPE_NAME_AND_DESCRIPTION,
+    )
+    start_date_field = models.CharField(max_length=200, blank=True, null=True)
+    end_date_type = models.PositiveSmallIntegerField(
+        choices=END_DATE_TYPE_CHOICES,
+        default=END_DATE_TYPE_FIELD,
+    )
+    end_date_field = models.CharField(max_length=200, blank=True, null=True)
+    end_duration_field = models.CharField(max_length=200, blank=True, null=True)
+    end_duration = models.PositiveSmallIntegerField(blank=True, null=True)
+    background_colour_field = models.CharField(max_length=200, blank=True, null=True)
+    link_field = models.CharField(max_length=200, blank=True, null=True)
+    calendar_report_description = models.ForeignKey(
+        CalendarReportDescription, null=True, blank=False, on_delete=models.CASCADE
+    )
+    query_data = models.JSONField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        self.set_order_field(extra_filters={'calendar_report': self.calendar_report})
+        return super().save(*args, **kwargs)
+
+    def get_base_model(self):
+        return self.report_type.content_type.model_class()
+
+    class Meta:
+        ordering = ('order',)
+
+
 class KanbanReportLane(TimeStampedModel):
     MULTIPLE_TYPE_NA = 0
     MULTIPLE_TYPE_DAILY = 1
@@ -549,6 +655,7 @@ class DashboardReport(TimeStampedModel):
     display_option = models.PositiveIntegerField(choices=DISPLAY_OPTION_CHOICES, default=DISPLAY_OPTION_NONE)
     show_versions = models.BooleanField(default=True)
     report_query = models.ForeignKey(ReportQuery, blank=True, null=True, on_delete=models.CASCADE)
+    options = models.JSONField(null=True, blank=True)
 
     def get_class(self, extra_class_name):
         if self.display_option != DISPLAY_OPTION_NONE:

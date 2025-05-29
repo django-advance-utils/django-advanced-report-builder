@@ -2,7 +2,7 @@ import copy
 
 from ajax_helpers.mixins import AjaxHelpers
 from django.conf import settings
-from django.forms import ModelChoiceField
+from django.forms import ChoiceField, ModelChoiceField
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -18,6 +18,7 @@ from django_modals.processes import (
 from django_modals.widgets.select2 import Select2
 from django_modals.widgets.widgets import Toggle
 
+from advanced_report_builder.globals import CALENDAR_VIEW_TYPE_CHOICES
 from advanced_report_builder.models import (
     Dashboard,
     DashboardReport,
@@ -26,6 +27,7 @@ from advanced_report_builder.models import (
 )
 from advanced_report_builder.utils import split_slug
 from advanced_report_builder.views.bar_charts import BarChartView
+from advanced_report_builder.views.calendar import CalendarView
 from advanced_report_builder.views.datatables.datatables import TableView
 from advanced_report_builder.views.funnel_charts import FunnelChartView
 from advanced_report_builder.views.kanban import KanbanView
@@ -46,6 +48,7 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         'piechartreport': PieChartView,
         'funnelchartreport': FunnelChartView,
         'kanbanreport': KanbanView,
+        'calendarreport': CalendarView,
     }
 
     custom_views = {}
@@ -158,6 +161,7 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         view_kwargs['dashboard_report'] = dashboard_report
         view_kwargs['enable_edit'] = self.enable_edit
         view_kwargs['enable_links'] = self.enable_links
+
         return report_view.as_view()(self.request, *self.args, **view_kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -204,20 +208,22 @@ class DashboardReportModal(ModelFormModal):
     permission_delete = PERMISSION_OFF
     permission_create = PERMISSION_DISABLE
 
-    form_fields = [
-        'name_override',
-        'top',
-        'display_option',
-        'show_versions',
-        'report_query',
-    ]
+    @property
+    def form_fields(self):
+        fields = ['name_override', 'top', 'display_option']
+        if self.object.report.instance_type != 'calendarreport':
+            fields += [
+                'show_versions',
+                'report_query',
+            ]
+        return fields
+
     widgets = {
         'top': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
         'show_versions': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
     }
 
-    @staticmethod
-    def form_setup(form, *_args, **_kwargs):
+    def form_setup(self, form, *_args, **_kwargs):
         form.add_trigger(
             'top',
             'onchange',
@@ -229,8 +235,25 @@ class DashboardReportModal(ModelFormModal):
                 },
             ],
         )
-        report_queries = ReportQuery.objects.filter(report=form.instance.report)
-        form.fields['report_query'] = ModelChoiceField(queryset=report_queries, widget=Select2, required=False)
+        if self.object.report.instance_type == 'calendarreport':
+            view_type = self.object.report.calendarreport.get_view_type_display()
+            choices = [(0, f'Default ({view_type})'), *CALENDAR_VIEW_TYPE_CHOICES]
+            calendar_view_type = self.object.options.get('calendar_view_type') if self.object.options else None
+            form.fields['calendar_view_type'] = ChoiceField(
+                choices=choices, required=False, widget=Select2(), initial=calendar_view_type
+            )
+        else:
+            report_queries = ReportQuery.objects.filter(report=form.instance.report)
+            form.fields['report_query'] = ModelChoiceField(queryset=report_queries, widget=Select2, required=False)
+
+    def form_valid(self, form):
+        instance = form.save(commit=False)
+        instance._current_user = self.request.user
+        if instance.report.instance_type == 'calendarreport':
+            options = {'calendar_view_type': form.cleaned_data['calendar_view_type']}
+            instance.options = options
+        instance.save()
+        return self.command_response('reload')
 
 
 class DashboardAddReportForm(CrispyForm):
