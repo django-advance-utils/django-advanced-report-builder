@@ -476,10 +476,10 @@ class CalendarReport(Report):
         default=CALENDAR_VIEW_TYPE_MONTH,
     )
 
-    def get_view_type(self):
-        return self.VIEW_TYPE_CODES.get(self.view_type)
-
-
+    def get_view_type_for_calendar(self, view_type=None):
+        if view_type is None:
+            view_type = self.view_type
+        return self.VIEW_TYPE_CODES.get(view_type)
 
 
 class CalendarReportDescription(TimeStampedModel):

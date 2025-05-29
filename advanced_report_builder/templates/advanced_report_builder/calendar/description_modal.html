@@ -2,11 +2,11 @@
 
 {% block javascript %}
 <script>
-            $(function () {
-                $('#id_report_type').on('change', function (e) {
-                    $('#id_heading_field').val('').trigger('change');
-                    reset_id_description();
-                });
-            });
+    $(function () {
+        $('#id_report_type').on('change', function (e) {
+            $('#id_heading_field').val('').trigger('change');
+            reset_id_description();
+        });
+    });
 </script>
 {% endblock %}

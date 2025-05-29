@@ -46,7 +46,7 @@
                                 center: 'title',
                                 right: 'dayGridMonth,timeGridWeek,timeGridDay,year,listWeek'
                             },
-                            defaultView: '{{ calendar_report.get_view_type }}',
+                            defaultView: '{{ view_type }}',
                             defaultDate: '{% now "Y-m-d" %}',
                             navLinks: true, // can click day/week names to navigate views
                             editable: true,

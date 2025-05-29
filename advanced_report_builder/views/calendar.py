@@ -217,7 +217,13 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
             self.get_calendar_events(base_model=base_model,
                                      calendar_report_data_set=calendar_report_data_set,
                                      lanes=lanes)
+        view_type = None
+        if self.dashboard_report and self.dashboard_report.options is not None:
+            view_type = self.dashboard_report.options.get('calendar_view_type')
+            if view_type is not None:
+                view_type = int(view_type)
 
+        context['view_type'] = self.chart_report.get_view_type_for_calendar(view_type=view_type)
         context['calendar_report'] = self.chart_report
         context['headings'] = headings
         context['lanes'] = lanes

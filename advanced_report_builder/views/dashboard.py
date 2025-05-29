@@ -161,6 +161,7 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         view_kwargs['dashboard_report'] = dashboard_report
         view_kwargs['enable_edit'] = self.enable_edit
         view_kwargs['enable_links'] = self.enable_links
+
         return report_view.as_view()(self.request, *self.args, **view_kwargs)
 
     def post(self, request, *args, **kwargs):

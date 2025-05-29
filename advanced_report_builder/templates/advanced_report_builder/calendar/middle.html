@@ -1,9 +1,6 @@
 
 var table = {{ datatable.model_table_setup }};
-
-
- var indexes = table.initsetup.tableOptions.indexes;
-
+var indexes = table.initsetup.tableOptions.indexes;
 var heading_index = indexes.indexOf('heading');
 var description_index = indexes.indexOf('description');
 var background_colour_index = indexes.indexOf('background_colour');
@@ -32,6 +29,5 @@ $.each(table.data, function( index, card ) {
         description: card[description],
         url: link
     }
-    console.log(event);
     events.push(event)
 });
