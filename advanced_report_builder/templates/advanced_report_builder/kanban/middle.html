@@ -25,8 +25,13 @@
                 link = link_details.html.replace(link_details.var, card[link_index]);
                 styles += 'cursor:pointer;';
             }
+            console.log(card[background_colour_index])
             if(background_colour_index >= 0){
-                styles += 'background-color:' + card[background_colour_index] + ';'
+                var background_colour = card[background_colour_index];
+                if (!background_colour.startsWith('#')) {
+                    background_colour = '#' + background_colour;
+                }
+                styles += 'background-color:' +background_colour + ';'
             }
             html += '<div class="kanban_item"';
             if(styles !== ''){
@@ -38,7 +43,11 @@
             html += '>'
             if(heading_index >= 0) {
                 if(heading_colour_index >= 0) {
-                    html += '<h5 style="color: ' + card[heading_colour_index] + '">' + card[heading_index] + '</h5>';
+                    var heading_colour = card[heading_colour_index];
+                    if (!heading_colour.startsWith('#')) {
+                        heading_colour = '#' + heading_colour;
+                    }
+                    html += '<h5 style="color: ' + heading_colour + '">' + card[heading_index] + '</h5>';
                 } else {
                     html += '<h5>' + card[heading_index] + '</h5>';
                 }
