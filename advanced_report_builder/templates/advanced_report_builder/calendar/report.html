@@ -27,7 +27,10 @@
                         }
 
                         function toISOFormat(dateStr) {
-                            if (dateStr.includes(' ')) {
+                            if (dateStr.includes('-')) {
+                                return dateStr;
+                            }
+                            else if (dateStr.includes(' ')) {
                                 const [date, time] = dateStr.split(' ');
                                 const [day, month, year] = date.split('/');
                                 return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${time}`;
