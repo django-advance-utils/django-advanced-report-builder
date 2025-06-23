@@ -8,7 +8,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.views.generic import TemplateView
-from django_datatables.columns import DateColumn, MenuColumn
+from django_datatables.columns import DateColumn, MenuColumn, DateTimeColumn
 from django_datatables.datatables import DatatableExcludedRow
 from django_datatables.helpers import DUMMY_ID, row_link
 from django_datatables.widgets import DataTableReorderWidget
@@ -39,6 +39,8 @@ from advanced_report_builder.views.report import ReportBase
 
 
 class CalendarTable(ChartJSTable):
+    DATE_COLUMNS = (DateColumn, DateTimeColumn)
+
     def get_table_array(self, request, results):
         result_processes = self.get_result_processes()
         for p in result_processes:
@@ -54,6 +56,8 @@ class CalendarTable(ChartJSTable):
                 for column in self.columns:
                     if isinstance(column, DescriptionColumn):
                         row_data.append(column.row_result(data_dict, self.page_results, columns=self.columns))
+                    elif isinstance(column, self.DATE_COLUMNS) and hasattr(column, 'iso_row_result'):
+                        row_data.append(column.iso_row_result(data_dict, self.page_results))
                     else:
                         row_data.append(column.row_result(data_dict, self.page_results))
 
