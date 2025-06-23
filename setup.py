@@ -5,7 +5,7 @@ with open('README.md') as fh:
 
 setuptools.setup(
     name='django-advanced-report-builder',
-    version='1.0.2',
+    version='1.0.3',
     author='Thomas Turner',
     description='Django app that allows you to build reports from modals',
     long_description=long_description,
