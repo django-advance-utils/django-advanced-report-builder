@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from ajax_helpers.utils import random_string
 from django.conf import settings
-from django.forms import CharField, ModelChoiceField, NumberInput
+from django.forms import CharField, ModelChoiceField, NumberInput, IntegerField
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -151,8 +151,13 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
 
             class FixedDurationEndDateColumn(DateColumn):
                 def row_result(self, data, _page_result):
+
                     start_date = data.get(self.model_path + start_field_col_field)
-                    end_date = start_date + timedelta(seconds=calendar_report_data_set.end_duration)
+                    end_duration = calendar_report_data_set.end_duration
+                    if end_duration is None:
+                        end_duration = 3600
+
+                    end_date = start_date + timedelta(seconds=end_duration)
                     try:
                         date = end_date.strftime('%d/%m/%Y')
                         time_str = end_date.strftime('%H:%M')
@@ -413,6 +418,8 @@ class CalendarModal(ModelFormModal):
                 o.save()
         return self.command_response('')
 
+
+
     def post_save(self, created, form):
         if created:
             self.modal_redirect(self.request.resolver_match.view_name, slug=f'pk-{self.object.id}-new-True')
@@ -428,6 +435,23 @@ class CalendarDataSetForm(QueryBuilderModelForm):
 
     class DurationWidget(NumberInput):
         crispy_kwargs = {'appended_text': 'Seconds', 'input_size': 'input-group-sm'}
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date_field = cleaned_data['start_date_field']
+        if start_date_field is None:
+            self.add_error('start_date_field', 'Please select a start period')
+        end_date_type = cleaned_data['end_date_type']
+        if (end_date_type == CalendarReportDataSet.END_DATE_TYPE_FIELD and
+                cleaned_data['end_date_field'] is None):
+            self.add_error('end_date_field', 'Please select a end period')
+        elif (end_date_type == CalendarReportDataSet.END_DATE_TYPE_DURATION_FIELD and
+              cleaned_data['end_duration_field'] is None):
+            self.add_error('end_duration_field', 'Please select a end period')
+        elif (end_date_type == CalendarReportDataSet.END_DATE_TYPE_DURATION_FIXED and
+              (cleaned_data['end_duration'] is None or cleaned_data['end_duration'] == '')):
+            self.add_error('end_duration', 'Please select a end period')
+        return cleaned_data
 
     class Meta:
         model = CalendarReportDataSet
@@ -451,7 +475,7 @@ class CalendarDataSetForm(QueryBuilderModelForm):
             'end_date_type': Select2,
         }
 
-    end_duration = CharField(widget=DurationWidget)
+    end_duration = IntegerField(widget=DurationWidget, required=False)
 
 
 class CalendarDataSetModal(QueryBuilderModalBase):
