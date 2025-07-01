@@ -111,7 +111,8 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
         table.add_columns(calendar_report_data_set.start_date_field)
         if calendar_report_data_set.end_date_type == CalendarReportDataSet.END_DATE_TYPE_FIELD:
             table.add_columns(calendar_report_data_set.end_date_field)
-        elif calendar_report_data_set.end_date_type == CalendarReportDataSet.END_DATE_TYPE_DURATION_FIELD:
+        elif (calendar_report_data_set.end_date_type == CalendarReportDataSet.END_DATE_TYPE_DURATION_FIELD and
+              calendar_report_data_set.end_duration_field is not None):
             _, _, _, start_field_col_field = self.get_field_details(
                 base_model=base_model,
                 field=calendar_report_data_set.start_date_field,
@@ -142,7 +143,7 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
 
             table.add_columns(DurationEndDateColumn(column_name='EndDate'))
 
-        elif calendar_report_data_set.end_date_type == CalendarReportDataSet.END_DATE_TYPE_DURATION_FIXED:
+        else:
             _, _, _, start_field_col_field = self.get_field_details(
                 base_model=base_model,
                 field=calendar_report_data_set.start_date_field,

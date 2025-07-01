@@ -13,7 +13,7 @@ from django_modals.form_helpers import HorizontalNoEnterHelper
 from django_modals.helper import show_modal
 from django_modals.modals import Modal, ModelFormModal
 from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
-from django_modals.widgets.select2 import Select2Multiple
+from django_modals.widgets.select2 import Select2Multiple, Select2
 from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.column_types import NUMBER_FIELDS
@@ -336,6 +336,7 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
         'prefix',
         'tile_colour',
         ('decimal_places', {'field_class': 'col-md-5 col-lg-3 input-group-sm'}),
+        ('target', {'widget': Select2}),
         'show_breakdown',
         'breakdown_fields',
     ]

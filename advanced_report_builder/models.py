@@ -324,12 +324,16 @@ class SingleValueReport(Report):
     )
     prefix = models.CharField(max_length=64, blank=True, null=True)
     decimal_places = models.IntegerField(default=0)
+
+    target = models.ForeignKey(Target, blank=True, null=True, on_delete=models.SET_NULL)
+
     show_breakdown = models.BooleanField(default=False)
     breakdown_fields = models.JSONField(null=True, blank=True)
 
     average_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES, blank=True, null=True)
     average_start_period = models.PositiveSmallIntegerField(blank=True, null=True)
     average_end_period = models.PositiveSmallIntegerField(blank=True, null=True)
+
 
     def is_percentage(self):
         return self.single_value_type in [
