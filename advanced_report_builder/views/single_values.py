@@ -3,7 +3,7 @@ import json
 from django.core.exceptions import ValidationError
 from django.db.models import Count, ExpressionWrapper, FloatField, Sum
 from django.db.models.functions import Coalesce, NullIf
-from django.forms import ChoiceField
+from django.forms import ChoiceField, ModelChoiceField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_datatables.datatables import DatatableTable
@@ -23,7 +23,7 @@ from advanced_report_builder.globals import (
     ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT,
     ANNOTATION_CHOICE_SUM,
 )
-from advanced_report_builder.models import ReportQuery, ReportType, SingleValueReport
+from advanced_report_builder.models import ReportQuery, ReportType, SingleValueReport, Target
 from advanced_report_builder.utils import get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartBaseView
@@ -317,6 +317,7 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
     permission_delete = PERMISSION_OFF
     model = SingleValueReport
     show_order_by = False
+    show_target = True
     widgets = {
         'report_tags': Select2Multiple,
         'show_breakdown': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
@@ -336,7 +337,6 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
         'prefix',
         'tile_colour',
         ('decimal_places', {'field_class': 'col-md-5 col-lg-3 input-group-sm'}),
-        ('target', {'widget': Select2}),
         'show_breakdown',
         'breakdown_fields',
     ]
@@ -530,34 +530,36 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
     def button_add_query(self, **_kwargs):
         single_value_type = _kwargs['single_value_type']
         if single_value_type == '' or int(single_value_type) not in [
-            SingleValueReport.SINGLE_VALUE_TYPE_COUNT,
+            SingleValueReport.SINGLE_VALUE_TYPE_PERCENT,
             SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT,
         ]:
             return super().button_add_query(**_kwargs)
         else:
-            report_type = self.get_report_type(**_kwargs)
-            show_order_by = 1 if self.show_order_by else 0
+            slug = self.get_query_slug(f'report_id-{self.object.id}', **_kwargs)
             url = reverse(
                 'advanced_report_builder:single_value_numerator_modal',
-                kwargs={'slug': f'report_id-{self.object.id}-report_type-{report_type}-show_order_by-{show_order_by}'},
+                kwargs={'slug':slug},
             )
             return self.command_response('show_modal', modal=url)
 
     def button_edit_query(self, **_kwargs):
         single_value_type = _kwargs['single_value_type']
         if single_value_type == '' or int(single_value_type) not in [
-            SingleValueReport.SINGLE_VALUE_TYPE_COUNT,
+            SingleValueReport.SINGLE_VALUE_TYPE_PERCENT,
             SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT,
         ]:
             return super().button_edit_query(**_kwargs)
         else:
             query_id = _kwargs['query_id'][1:]
-            report_type = self.get_report_type(**_kwargs)
+            slug = self.get_query_slug(f'pk-{query_id}', **_kwargs)
             url = reverse(
                 'advanced_report_builder:single_value_numerator_modal',
-                kwargs={'slug': f'pk-{query_id}-report_type-{report_type}'},
+                kwargs={'slug': slug},
             )
             return self.command_response('show_modal', modal=url)
+
+    def query_fields(self):
+        return ['name', ('target__name', {'title': 'Target Name'})]
 
     def form_valid(self, form):
         instance = form.save(commit=False)
@@ -619,10 +621,11 @@ class QueryNumeratorForm(QueryBuilderModelForm):
 
     class Meta:
         model = ReportQuery
-        fields = ['name', 'query', 'extra_query']
+        fields = ['name', 'query', 'extra_query', 'target']
 
     def setup_modal(self, *args, **kwargs):
         self.fields['extra_query'].label = 'Numerator'
+        self.fields['target'] = ModelChoiceField(queryset=Target.objects.all(), widget=Select2, required=False)
         super().setup_modal(*args, **kwargs)
 
 
@@ -648,8 +651,10 @@ class QueryNumeratorModal(QueryBuilderModalBaseMixin, ModelFormModal):
     def form_setup(self, form, *_args, **_kwargs):
         fields = [
             'name',
+            'target',
             FieldEx('query', template='advanced_report_builder/query_builder.html'),
             FieldEx('extra_query', template='advanced_report_builder/query_builder.html'),
+
         ]
 
         return fields

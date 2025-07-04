@@ -1,7 +1,7 @@
 import json
 
 from crispy_forms.layout import HTML, Div
-from django.forms import CharField
+from django.forms import CharField, ModelChoiceField
 from django.urls import reverse
 from django_datatables.columns import ColumnBase, MenuColumn
 from django_datatables.widgets import DataTableReorderWidget
@@ -11,8 +11,9 @@ from django_modals.form_helpers import HorizontalNoEnterHelper
 from django_modals.forms import ModelCrispyForm
 from django_modals.modals import ModelFormModal
 from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
+from django_modals.widgets.select2 import Select2
 
-from advanced_report_builder.models import ReportQuery, ReportQueryOrder, ReportType
+from advanced_report_builder.models import ReportQuery, ReportQueryOrder, ReportType, Target
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import get_query_js
 from advanced_report_builder.views.helpers import QueryBuilderModelForm
@@ -21,17 +22,28 @@ from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin
 
 class QueryForm(QueryBuilderModelForm):
     cancel_class = 'btn-secondary modal-cancel'
-
     class Meta:
         model = ReportQuery
         fields = ['name', 'query']
 
+class QueryFormWithTarget(QueryBuilderModelForm):
+    cancel_class = 'btn-secondary modal-cancel'
+    class Meta:
+        model = ReportQuery
+        fields = ['name', 'query', 'target']
 
 class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
     model = ReportQuery
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
-    form_class = QueryForm
+
+    @property
+    def form_class(self):
+        if self.slug.get('show_target') == '1':
+            return QueryFormWithTarget
+        else:
+            return QueryForm
+
     helper_class = HorizontalNoEnterHelper
     ajax_commands = ['datatable', 'button']
 
@@ -49,8 +61,12 @@ class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
     def form_setup(self, form, *_args, **_kwargs):
         fields = [
             'name',
-            FieldEx('query', template='advanced_report_builder/query_builder.html'),
         ]
+        if self.slug.get('show_target') == '1':
+            form.fields['target'] = ModelChoiceField(queryset=Target.objects.all(), widget=Select2(), required=False)
+            fields.append('target')
+
+        fields.append(FieldEx('query', template='advanced_report_builder/query_builder.html'))
 
         if self.object.id and self.slug.get('show_order_by') == '1':
             self.add_query_orders(form=form, fields=fields)

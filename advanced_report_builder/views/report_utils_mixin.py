@@ -80,8 +80,8 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                     field.__class__ = ReportBuilderCurrencyPenceColumn
                 elif isinstance(field, CurrencyColumn):
                     field.__class__ = ReportBuilderCurrencyColumn
-
             if append_annotation_query and field.annotations:
+
                 css_class = field.column_defs.get('className')
                 if css_class is None:
                     css_class = alignment_class
