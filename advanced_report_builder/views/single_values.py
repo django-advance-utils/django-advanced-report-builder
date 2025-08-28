@@ -38,6 +38,7 @@ from advanced_report_builder.views.modals_base import (
     QueryBuilderModalBaseMixin,
 )
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
+from advanced_report_builder.views.targets.utils import get_target_value
 
 
 class SingleValueView(ChartBaseView):
@@ -275,7 +276,41 @@ class SingleValueView(ChartBaseView):
         self.table.datatable_template = 'advanced_report_builder/single_values/middle.html'
         self.table.breakdown_url = self.get_breakdown_url()
         context['single_value_report'] = self.chart_report
+        context['target_data'] = self.get_target_data()
         return context
+
+    def get_target_data(self):
+        report_query = self.get_report_query(report=self.chart_report)
+        if report_query is None or report_query.target is None:
+            return None
+
+        # this query line need to be at the top otherwise get_month_period doesn't work
+        data = self.table.get_table_array(self.kwargs.get('request'), self.table.get_query())
+        if len(data) == 0 or len(data[0]) == 0:
+            return None
+        month = self.period_data.get_month_period()
+        if month is None:
+            return None # todo / week targets etc
+
+        target_value = get_target_value(
+            min_date=month[0],
+            max_date=month[1],
+            target=report_query.target,
+            month_range=True,
+        )
+        if target_value is None or target_value == 0:
+            return None
+        try:
+            value = float(data[0][0])
+        except ValueError:
+            return None
+        percentage = (value / target_value) * 100
+        bar_percentage = percentage
+        if bar_percentage > 100:
+            bar_percentage = 100
+        return {'target_value': target_value,
+                'percentage': percentage,
+                'bar_percentage': bar_percentage}
 
     def get_breakdown_slug(self):
         query_id = self.slug.get(f'query{self.report.pk}')
