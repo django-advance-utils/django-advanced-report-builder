@@ -308,6 +308,7 @@ class Person(models.Model):
             'company': {
                 'title': 'Company',
                 'model': 'report_builder_examples.Company.ReportBuilder',
+                'show_includes': False,
             }
         }
 

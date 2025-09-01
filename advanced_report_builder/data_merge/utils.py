@@ -17,6 +17,7 @@ class DataMergeUtils(ReportBuilderFieldUtils):
         next_code_prefix='__',
         previous_base_model=None,
         table=None,
+        show_includes=True,
     ):
         for report_builder_field in report_builder_class.fields:
             django_field, col_type_override, columns, _ = self.get_field_details(
@@ -27,36 +28,38 @@ class DataMergeUtils(ReportBuilderFieldUtils):
             )
             for column in columns:
                 full_id = code_prefix + column.column_name
-                if menus is not None:
-                    menus.append({'code': full_id, 'text': column.title})
-                if codes is not None:
-                    codes.add(full_id)
+                if column.title != '':
+                    if menus is not None:
+                        menus.append({'code': full_id, 'text': column.title})
+                    if codes is not None:
+                        codes.add(full_id)
+        if show_includes:
+            for include_field, include in report_builder_class.includes.items():
+                app_label, model, report_builder_fields_str = include['model'].split('.')
 
-        for include_field, include in report_builder_class.includes.items():
-            app_label, model, report_builder_fields_str = include['model'].split('.')
+                new_model = apps.get_model(app_label, model)
+                if new_model != previous_base_model:
+                    new_report_builder_class = get_report_builder_class(
+                        model=new_model, class_name=report_builder_fields_str
+                    )
 
-            new_model = apps.get_model(app_label, model)
-            if new_model != previous_base_model:
-                new_report_builder_class = get_report_builder_class(
-                    model=new_model, class_name=report_builder_fields_str
-                )
-
-                title = include.get('title')
-                if title is None or title == '':
-                    title = new_report_builder_class.title
-                menu = [] if menus is not None else None
-                self.get_menu_fields(
-                    base_model=new_model,
-                    report_builder_class=new_report_builder_class,
-                    menus=menu,
-                    codes=codes,
-                    code_prefix=f'{code_prefix}{include_field}{next_code_prefix}',
-                    next_code_prefix=next_code_prefix,
-                    previous_base_model=base_model,
-                    table=table,
-                )
-                if menus is not None:
-                    menus.append({'text': title, 'menu': menu})
+                    title = include.get('title')
+                    if title is None or title == '':
+                        title = new_report_builder_class.title
+                    menu = [] if menus is not None else None
+                    self.get_menu_fields(
+                        base_model=new_model,
+                        report_builder_class=new_report_builder_class,
+                        menus=menu,
+                        codes=codes,
+                        code_prefix=f'{code_prefix}{include_field}{next_code_prefix}',
+                        next_code_prefix=next_code_prefix,
+                        previous_base_model=base_model,
+                        table=table,
+                        show_includes=include.get('show_includes', True),
+                    )
+                    if menus is not None:
+                        menus.append({'text': title, 'menu': menu})
 
     @staticmethod
     def get_data_merge_variables(html):
