@@ -189,6 +189,7 @@ class Company(TimeStampedModel):
         @property
         def fields(self):
             return [
+                'id',
                 'company_category_column',
                 'arrow_icon_column',
                 'name',

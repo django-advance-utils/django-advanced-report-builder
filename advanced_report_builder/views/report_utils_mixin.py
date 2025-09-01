@@ -63,6 +63,8 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
 
         if int(data_attr.get('display_heading', 1)) == 0:
             title = ''
+        elif title_suffix == '':
+            title = table_field.get('title')
         elif int(data_attr.get('append_column_title', 0)) == 0:
             title = title_suffix
         else:
