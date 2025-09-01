@@ -189,6 +189,7 @@ class Company(TimeStampedModel):
         @property
         def fields(self):
             return [
+                'id',
                 'company_category_column',
                 'arrow_icon_column',
                 'name',
@@ -308,6 +309,7 @@ class Person(models.Model):
             'company': {
                 'title': 'Company',
                 'model': 'report_builder_examples.Company.ReportBuilder',
+                'show_includes': False,
             }
         }
 

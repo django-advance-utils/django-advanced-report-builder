@@ -50,6 +50,7 @@ class QueryBuilderModalBaseMixin(ReportBuilderFieldUtils):
         prefix='',
         title_prefix='',
         previous_base_model=None,
+        show_includes=True
     ):
         field_types = FieldTypes()
 
@@ -72,37 +73,40 @@ class QueryBuilderModalBaseMixin(ReportBuilderFieldUtils):
                         column=column,
                         prefix=prefix,
                     )
-        for include_field, include in report_builder_class.includes.items():
-            app_label, model, report_builder_fields_str = include['model'].split('.')
-            new_model = apps.get_model(app_label, model)
-            new_report_builder_class = get_report_builder_class(model=new_model, class_name=report_builder_fields_str)
+        if show_includes:
+            for include_field, include in report_builder_class.includes.items():
+                app_label, model, report_builder_fields_str = include['model'].split('.')
+                new_model = apps.get_model(app_label, model)
+                new_report_builder_class = get_report_builder_class(model=new_model,
+                                                                    class_name=report_builder_fields_str)
 
-            if new_model != previous_base_model:
-                _foreign_key = getattr(base_model, include_field, None)
+                if new_model != previous_base_model:
+                    _foreign_key = getattr(base_model, include_field, None)
 
-                add_null_field = _foreign_key.field.null if hasattr(_foreign_key, 'field') else True
+                    add_null_field = _foreign_key.field.null if hasattr(_foreign_key, 'field') else True
 
-                if add_null_field:
-                    field_types.get_foreign_key_null_field(
+                    if add_null_field:
+                        field_types.get_foreign_key_null_field(
+                            query_builder_filters=query_builder_filters,
+                            field=prefix + include_field,
+                            title=title_prefix + include['title'],
+                        )
+                    if isinstance(new_model(), AbstractUser):
+                        field_types.get_abstract_user_field(
+                            query_builder_filters=query_builder_filters,
+                            field=prefix + include_field,
+                            title=title_prefix + include['title'],
+                        )
+
+                    self._get_query_builder_fields(
+                        base_model=new_model,
                         query_builder_filters=query_builder_filters,
-                        field=prefix + include_field,
-                        title=title_prefix + include['title'],
+                        report_builder_class=new_report_builder_class,
+                        prefix=f'{prefix}{include_field}__',
+                        title_prefix=f'{include["title"]} --> ',
+                        previous_base_model=base_model,
+                        show_includes=include.get('show_includes', True),
                     )
-                if isinstance(new_model(), AbstractUser):
-                    field_types.get_abstract_user_field(
-                        query_builder_filters=query_builder_filters,
-                        field=prefix + include_field,
-                        title=title_prefix + include['title'],
-                    )
-
-                self._get_query_builder_fields(
-                    base_model=new_model,
-                    query_builder_filters=query_builder_filters,
-                    report_builder_class=new_report_builder_class,
-                    prefix=f'{prefix}{include_field}__',
-                    title_prefix=f'{include["title"]} --> ',
-                    previous_base_model=base_model,
-                )
 
     def ajax_get_fields(self, **kwargs):
         report_type_id = kwargs['report_type']

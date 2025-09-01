@@ -235,6 +235,9 @@ class DashboardReportModal(ModelFormModal):
                 },
             ],
         )
+        form.fields['name_override'].help_text = (f'Original report name "{self.object.report.name}".'
+                                                  f' Leave blank to keep this name.')
+
         if self.object.report.instance_type == 'calendarreport':
             view_type = self.object.report.calendarreport.get_view_type_display()
             choices = [(0, f'Default ({view_type})'), *CALENDAR_VIEW_TYPE_CHOICES]

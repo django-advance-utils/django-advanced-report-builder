@@ -219,6 +219,7 @@ class ReportBuilderFieldUtils:
         must_have_django_field=False,
         allow_pivots=True,
         include_mathematical_columns=False,
+        show_includes=True,
     ):
         if title is None:
             title = report_builder_class.title
@@ -283,38 +284,39 @@ class ReportBuilderFieldUtils:
                             'colour': colour,
                         }
                     )
+        if show_includes:
+            for include_field, include in report_builder_class.includes.items():
+                app_label, model, report_builder_fields_str = include['model'].split('.')
+                local_allow_pivots = allow_pivots
+                if local_allow_pivots and not include.get('allow_pivots', True):
+                    local_allow_pivots = False
 
-        for include_field, include in report_builder_class.includes.items():
-            app_label, model, report_builder_fields_str = include['model'].split('.')
-            local_allow_pivots = allow_pivots
-            if local_allow_pivots and not include.get('allow_pivots', True):
-                local_allow_pivots = False
-
-            new_model = apps.get_model(app_label, model)
-            if new_model != previous_base_model:
-                new_report_builder_class = get_report_builder_class(
-                    model=new_model, class_name=report_builder_fields_str
-                )
-                self._get_fields(
-                    base_model=new_model,
-                    fields=fields,
-                    report_builder_class=new_report_builder_class,
-                    tables=tables,
-                    prefix=f'{prefix}{include_field}__',
-                    title_prefix=f'{title_prefix}{include["title"]} -> ',
-                    title=include.get('title'),
-                    colour=include.get('colour'),
-                    previous_base_model=base_model,
-                    selected_field_id=selected_field_id,
-                    for_select2=for_select2,
-                    pivot_fields=pivot_fields,
-                    allow_annotations_fields=allow_annotations_fields,
-                    field_types=field_types,
-                    column_types=column_types,
-                    search_string=search_string,
-                    show_order_by_fields=show_order_by_fields,
-                    allow_pivots=local_allow_pivots,
-                )
+                new_model = apps.get_model(app_label, model)
+                if new_model != previous_base_model:
+                    new_report_builder_class = get_report_builder_class(
+                        model=new_model, class_name=report_builder_fields_str
+                    )
+                    self._get_fields(
+                        base_model=new_model,
+                        fields=fields,
+                        report_builder_class=new_report_builder_class,
+                        tables=tables,
+                        prefix=f'{prefix}{include_field}__',
+                        title_prefix=f'{title_prefix}{include["title"]} -> ',
+                        title=include.get('title'),
+                        colour=include.get('colour'),
+                        previous_base_model=base_model,
+                        selected_field_id=selected_field_id,
+                        for_select2=for_select2,
+                        pivot_fields=pivot_fields,
+                        allow_annotations_fields=allow_annotations_fields,
+                        field_types=field_types,
+                        column_types=column_types,
+                        search_string=search_string,
+                        show_order_by_fields=show_order_by_fields,
+                        allow_pivots=local_allow_pivots,
+                        show_includes=include.get('show_includes', True)
+                    )
 
         if include_mathematical_columns:
             fields.extend(
