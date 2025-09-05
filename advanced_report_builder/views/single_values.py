@@ -1,9 +1,10 @@
 import json
 
+from django.contrib.humanize.templatetags.humanize import intcomma
 from django.core.exceptions import ValidationError
 from django.db.models import Count, ExpressionWrapper, FloatField, Sum
 from django.db.models.functions import Coalesce, NullIf
-from django.forms import ChoiceField
+from django.forms import ChoiceField, ModelChoiceField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_datatables.datatables import DatatableTable
@@ -13,7 +14,7 @@ from django_modals.form_helpers import HorizontalNoEnterHelper
 from django_modals.helper import show_modal
 from django_modals.modals import Modal, ModelFormModal
 from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
-from django_modals.widgets.select2 import Select2Multiple
+from django_modals.widgets.select2 import Select2Multiple, Select2
 from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.column_types import NUMBER_FIELDS
@@ -23,7 +24,7 @@ from advanced_report_builder.globals import (
     ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT,
     ANNOTATION_CHOICE_SUM,
 )
-from advanced_report_builder.models import ReportQuery, ReportType, SingleValueReport
+from advanced_report_builder.models import ReportQuery, ReportType, SingleValueReport, Target
 from advanced_report_builder.utils import get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartBaseView
@@ -38,6 +39,7 @@ from advanced_report_builder.views.modals_base import (
     QueryBuilderModalBaseMixin,
 )
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
+from advanced_report_builder.views.targets.utils import get_target_value
 
 
 class SingleValueView(ChartBaseView):
@@ -272,10 +274,58 @@ class SingleValueView(ChartBaseView):
         self.set_prefix()
         self.table.single_value = self.chart_report
         self.table.enable_links = self.kwargs.get('enable_links')
+        self.table.target_data = self.get_target_data()
         self.table.datatable_template = 'advanced_report_builder/single_values/middle.html'
         self.table.breakdown_url = self.get_breakdown_url()
         context['single_value_report'] = self.chart_report
         return context
+
+    def get_target_data(self):
+        report_query = self.get_report_query(report=self.chart_report)
+        if report_query is None or report_query.target is None:
+            return None
+
+        # this query line need to be at the top otherwise get_month_period doesn't work
+        data = self.table.get_table_array(self.kwargs.get('request'), self.table.get_query())
+        if len(data) == 0 or len(data[0]) == 0:
+            return None
+        month = self.period_data.get_month_period()
+        if month is None:
+            return None # todo / week targets etc
+
+        target_value = get_target_value(
+            min_date=month[0],
+            max_date=month[1],
+            target=report_query.target,
+            month_range=True,
+        )
+        if target_value is None or target_value == 0:
+            return None
+        try:
+            raw_value = data[0][0]  # Safely inside the try block
+            cleaned_value = raw_value.replace(",", "")
+            value = float(cleaned_value)
+        except (ValueError, TypeError, AttributeError, IndexError):
+            return None
+        percentage = (value / float(target_value)) * 100
+        bar_percentage = min(percentage, 100)
+
+        if report_query.target.target_type == Target.TargetType.MONEY:
+            # Format as currency (with commas, and possibly prefix later)
+            prefix = self.chart_report.prefix
+            target_value = intcomma(f'{float(target_value):.2f}')
+            target_value = f'{prefix}&thinsp;' + target_value
+        else:
+            # Remove trailing .0 if it's a whole number
+            if float(target_value).is_integer():
+                target_value = str(int(float(target_value)))
+            else:
+                target_value = f"{float(target_value):.2f}"
+
+        return {'target_value': target_value,
+                'colour': report_query.target.colour,
+                'percentage': percentage,
+                'bar_percentage': bar_percentage}
 
     def get_breakdown_slug(self):
         query_id = self.slug.get(f'query{self.report.pk}')
@@ -317,6 +367,7 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
     permission_delete = PERMISSION_OFF
     model = SingleValueReport
     show_order_by = False
+    show_target = True
     widgets = {
         'report_tags': Select2Multiple,
         'show_breakdown': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
@@ -529,34 +580,36 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
     def button_add_query(self, **_kwargs):
         single_value_type = _kwargs['single_value_type']
         if single_value_type == '' or int(single_value_type) not in [
-            SingleValueReport.SINGLE_VALUE_TYPE_COUNT,
+            SingleValueReport.SINGLE_VALUE_TYPE_PERCENT,
             SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT,
         ]:
             return super().button_add_query(**_kwargs)
         else:
-            report_type = self.get_report_type(**_kwargs)
-            show_order_by = 1 if self.show_order_by else 0
+            slug = self.get_query_slug(f'report_id-{self.object.id}', **_kwargs)
             url = reverse(
                 'advanced_report_builder:single_value_numerator_modal',
-                kwargs={'slug': f'report_id-{self.object.id}-report_type-{report_type}-show_order_by-{show_order_by}'},
+                kwargs={'slug':slug},
             )
             return self.command_response('show_modal', modal=url)
 
     def button_edit_query(self, **_kwargs):
         single_value_type = _kwargs['single_value_type']
         if single_value_type == '' or int(single_value_type) not in [
-            SingleValueReport.SINGLE_VALUE_TYPE_COUNT,
+            SingleValueReport.SINGLE_VALUE_TYPE_PERCENT,
             SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT,
         ]:
             return super().button_edit_query(**_kwargs)
         else:
             query_id = _kwargs['query_id'][1:]
-            report_type = self.get_report_type(**_kwargs)
+            slug = self.get_query_slug(f'pk-{query_id}', **_kwargs)
             url = reverse(
                 'advanced_report_builder:single_value_numerator_modal',
-                kwargs={'slug': f'pk-{query_id}-report_type-{report_type}'},
+                kwargs={'slug': slug},
             )
             return self.command_response('show_modal', modal=url)
+
+    def query_fields(self):
+        return ['name', ('target__name', {'title': 'Target Name'})]
 
     def form_valid(self, form):
         instance = form.save(commit=False)
@@ -618,10 +671,11 @@ class QueryNumeratorForm(QueryBuilderModelForm):
 
     class Meta:
         model = ReportQuery
-        fields = ['name', 'query', 'extra_query']
+        fields = ['name', 'query', 'extra_query', 'target']
 
     def setup_modal(self, *args, **kwargs):
         self.fields['extra_query'].label = 'Numerator'
+        self.fields['target'] = ModelChoiceField(queryset=Target.objects.all(), widget=Select2, required=False)
         super().setup_modal(*args, **kwargs)
 
 
@@ -647,8 +701,10 @@ class QueryNumeratorModal(QueryBuilderModalBaseMixin, ModelFormModal):
     def form_setup(self, form, *_args, **_kwargs):
         fields = [
             'name',
+            'target',
             FieldEx('query', template='advanced_report_builder/query_builder.html'),
             FieldEx('extra_query', template='advanced_report_builder/query_builder.html'),
+
         ]
 
         return fields

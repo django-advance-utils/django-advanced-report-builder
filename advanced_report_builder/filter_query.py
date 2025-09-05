@@ -1,3 +1,5 @@
+import calendar
+import datetime
 import operator
 from functools import reduce
 
@@ -11,6 +13,42 @@ from advanced_report_builder.utils import get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
 
 
+class PeriodData:
+    min_date = None
+    max_date = None
+
+    def set_min_max_date(self, date_in):
+        if self.min_date is None or date_in < self.min_date:
+            self.min_date = date_in
+        if self.max_date is None or date_in > self.max_date:
+            self.max_date = date_in
+
+    import calendar
+
+    def get_month_period(self):
+        if not self.min_date or not self.max_date:
+            return None
+
+        # Normalize to date (drop time)
+        min_d = self.min_date.date()
+        max_d = self.max_date.date()
+
+        # Check if in the same year and month
+        if min_d.year != max_d.year or min_d.month != max_d.month:
+            return None
+
+        # First day of the month
+        start_of_month = min_d.replace(day=1)
+
+        # Last day of the month
+        last_day = calendar.monthrange(max_d.year, max_d.month)[1]
+        end_of_month = max_d.replace(day=last_day)
+
+        if min_d == start_of_month and max_d == end_of_month:
+            return min_d, max_d
+        return None
+
+
 class FilterQueryMixin:
     def __init__(self, *args, **kwargs):
         self.report = None
@@ -18,6 +56,8 @@ class FilterQueryMixin:
         self.enable_edit = None
         self.slug = None
         self.base_model = None
+        self.period_data = PeriodData()
+        self._held_report_query = None
         super().__init__(*args, **kwargs)
 
     def process_query_filters(self, query, search_filter_data):
@@ -162,6 +202,9 @@ class FilterQueryMixin:
 
         return query_list
 
+    def set_min_max_date(self, date_in):
+        self.period_data.set_min_max_date(date_in)
+
     def get_variable_date(self, value, query_list, display_operator, field, query_string):
         if display_operator in ['is_null', 'is_not_null']:
             query_list.append(Q((query_string, value)))
@@ -169,34 +212,62 @@ class FilterQueryMixin:
             _, range_type = value.split(':')
             variable_date = VariableDate()
             value = variable_date.get_variable_dates(range_type=int(range_type))
+
             if display_operator in ['less', 'greater_or_equal']:
                 query_list.append(Q((query_string, value[0])))
+                if display_operator == 'less':
+                    self.set_min_max_date(date_in=value[0])
+                else:
+                    self.set_min_max_date(date_in=value[0])
+                    self.set_min_max_date(date_in=value[1])
+
             elif display_operator in ['greater', 'less_or_equal']:
                 query_list.append(Q((query_string, value[1])))
+                if display_operator == 'greater':
+                    self.set_min_max_date(date_in=value[1])
+                else:
+                    self.set_min_max_date(date_in=value[0])
+                    self.set_min_max_date(date_in=value[1])
             elif display_operator in ['not_equal', 'not_in']:
                 query_list.append(~((Q((field + '__gte', value[0]))) & (Q((field + '__lte', value[1])))))
             else:
                 query_list.append((Q((field + '__gte', value[0]))) & (Q((field + '__lte', value[1]))))
+                self.set_min_max_date(date_in=value[0])
+                self.set_min_max_date(date_in=value[1])
 
-    @staticmethod
-    def get_variable_year(value, query_list, display_operator, field, query_string):
+    def get_variable_year(self, value, query_list, display_operator, field, query_string):
         if display_operator in ['is_null', 'is_not_null']:
             query_list.append(Q((query_string, value)))
         else:
             _, year = value.split(':')
             year = int(year)
+            start_date = datetime.date(year, 1, 1)
+            end_date = datetime.date(year, 12, 31)
+
             if display_operator in [
                 'less',
                 'less_or_equal',
                 'greater',
                 'greater_or_equal',
             ]:
+
                 query_string_parts = query_string.split('__')
                 query_list.append(Q((f'{field}__year__{query_string_parts[-1]}', year)))
+
+                if display_operator == 'greater':
+                    self.set_min_max_date(date_in=end_date)
+                elif display_operator == 'less':
+                    self.set_min_max_date(date_in=start_date)
+                else:
+                    self.set_min_max_date(date_in=start_date)
+                    self.set_min_max_date(date_in=end_date)
+
             elif display_operator in ['not_equal', 'not_in']:
                 query_list.append(~Q((query_string + '__year', year)))
             else:
                 query_list.append(Q((query_string + '__year', year)))
+                self.set_min_max_date(date_in=start_date)
+                self.set_min_max_date(date_in=end_date)
 
     @staticmethod
     def get_variable_month(value, query_list, display_operator, field, query_string):
@@ -258,6 +329,9 @@ class FilterQueryMixin:
             query_list.append(~Q((query_string, current_user)))
 
     def get_report_query(self, report):
+        if self._held_report_query is not None:
+            return self._held_report_query
+
         dashboard_report = self.dashboard_report
         if dashboard_report is not None:
             slug_key = self.slug.get(f'query{report.pk}_{dashboard_report.pk}')
@@ -272,7 +346,8 @@ class FilterQueryMixin:
                 report_query = dashboard_report.report_query
             else:
                 report_query = report.reportquery_set.first()
-        return report_query
+        self._held_report_query = report_query
+        return self._held_report_query
 
     @staticmethod
     def apply_order_by(query, report_query, base_model, report_type):

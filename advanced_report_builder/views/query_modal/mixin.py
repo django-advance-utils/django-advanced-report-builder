@@ -12,6 +12,7 @@ from advanced_report_builder.utils import get_query_js
 
 class MultiQueryModalMixin:
     show_order_by = True
+    show_target = False
 
     ajax_commands = ['datatable', 'button', 'ajax']
 
@@ -26,6 +27,15 @@ class MultiQueryModalMixin:
                 o.order = s[0]
                 o.save()
         return self.command_response('null')
+
+    def get_query_slug(self, slug, **_kwargs):
+        report_type = self.get_report_type(**_kwargs)
+        show_order_by = 1 if self.show_order_by else 0
+        show_target = 1 if self.show_target else 0
+        slug += (f'-report_type-{report_type}'
+                 f'-show_order_by-{show_order_by}'
+                 f'-show_target-{show_target}')
+        return slug
 
     def get_report_type(self, **_kwargs):
         return _kwargs['report_type']
@@ -52,21 +62,19 @@ class MultiQueryModalMixin:
         return self.command_response('show_modal', modal=url)
 
     def button_add_query(self, **_kwargs):
-        report_type = self.get_report_type(**_kwargs)
-        show_order_by = 1 if self.show_order_by else 0
+        slug = self.get_query_slug(f'report_id-{self.object.id}', **_kwargs)
         url = reverse(
             'advanced_report_builder:query_modal',
-            kwargs={'slug': f'report_id-{self.object.id}-report_type-{report_type}-show_order_by-{show_order_by}'},
+            kwargs={'slug': slug},
         )
         return self.command_response('show_modal', modal=url)
 
     def button_edit_query(self, **_kwargs):
         query_id = _kwargs['query_id'][1:]
-        report_type = self.get_report_type(**_kwargs)
-        show_order_by = 1 if self.show_order_by else 0
+        slug = self.get_query_slug(f'pk-{query_id}', **_kwargs)
         url = reverse(
             'advanced_report_builder:query_modal',
-            kwargs={'slug': f'pk-{query_id}-report_type-{report_type}-show_order_by-{show_order_by}'},
+            kwargs={'slug': slug},
         )
         return self.command_response('show_modal', modal=url)
 
@@ -123,7 +131,7 @@ class MultiQueryModalMixin:
                 fields=[
                     '_.index',
                     '.id',
-                    'name',
+                    *self.query_fields(),
                     MenuColumn(
                         column_name='menu',
                         field='id',
@@ -138,6 +146,9 @@ class MultiQueryModalMixin:
             ),
         )
         fields.append('queries')
+
+    def query_fields(self):
+        return ['name']
 
     def post_save(self, created, form):
         if created:

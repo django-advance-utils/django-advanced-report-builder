@@ -27,19 +27,21 @@ from advanced_report_builder.signals import model_report_save
 
 
 class Target(TimeStampedModel):
-    TARGET_TYPE_COUNT = 1
-    TARGET_TYPE_MONEY = 2
-    TARGET_TYPE_PERCENTAGE = 3
+    class TargetType(models.IntegerChoices):
+        COUNT = 1, 'Count'
+        MONEY = 2, 'Money'
+        PERCENTAGE = 3, 'Percentage'
 
-    TARGET_TYPE_CHOICES = (
-        (TARGET_TYPE_COUNT, 'Count'),
-        (TARGET_TYPE_MONEY, 'Money'),
-        (TARGET_TYPE_PERCENTAGE, 'Percentage'),
-    )
+    class PeriodType(models.IntegerChoices):
+        DAILY = 1, 'Daily'
+        WEEKLY = 2, 'Weekly'
+        MONTHLY = 3, 'Monthly'
+        QUARTER = 4, 'Quarterly'
 
     slug = models.SlugField(unique=True)
     name = models.CharField(max_length=64)
-    target_type = models.PositiveSmallIntegerField(choices=TARGET_TYPE_CHOICES)
+    target_type = models.PositiveSmallIntegerField(choices=TargetType.choices)
+    period_type = models.PositiveSmallIntegerField(choices=PeriodType.choices, default=PeriodType.MONTHLY)
     colour = ColourField(null=True, blank=True, help_text='The colour when it gets displayed on a report')
     default_value = models.IntegerField(blank=True, null=True)
     default_percentage = models.FloatField(blank=True, null=True)
@@ -47,7 +49,7 @@ class Target(TimeStampedModel):
     override_data = models.JSONField(null=True, blank=True)
 
     def get_value(self):
-        if self.target_type == self.TARGET_TYPE_PERCENTAGE:
+        if self.target_type == self.TargetType.PERCENTAGE:
             return self.default_percentage
         return self.default_value
 
@@ -246,6 +248,7 @@ class ReportQuery(TimeStampedModel):
     name = models.CharField(max_length=256, default='Standard')
     query = models.JSONField(null=True, blank=True)
     extra_query = models.JSONField(null=True, blank=True)  # used for single value Numerator
+    target = models.ForeignKey(Target, blank=True, null=True, on_delete=models.SET_NULL)
     order = models.PositiveSmallIntegerField()
 
     def save(self, *args, **kwargs):
@@ -324,6 +327,7 @@ class SingleValueReport(Report):
     )
     prefix = models.CharField(max_length=64, blank=True, null=True)
     decimal_places = models.IntegerField(default=0)
+
     show_breakdown = models.BooleanField(default=False)
     breakdown_fields = models.JSONField(null=True, blank=True)
 

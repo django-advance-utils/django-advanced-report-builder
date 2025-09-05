@@ -3,7 +3,7 @@ import json
 import operator
 from functools import reduce
 
-from django.db.models import ExpressionWrapper, FloatField
+from django.db.models import ExpressionWrapper, FloatField, Sum, Case, When, Value, IntegerField, Q, Count
 from django.db.models.functions import NullIf
 from django_datatables.columns import CurrencyColumn, CurrencyPenceColumn
 
@@ -12,7 +12,6 @@ from advanced_report_builder.columns import (
     ReportBuilderCurrencyPenceColumn,
     ReportBuilderNumberColumn,
 )
-from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import (
@@ -21,6 +20,7 @@ from advanced_report_builder.globals import (
     ANNOTATION_CHOICE_COUNT,
     ANNOTATION_CHOICE_NA,
     ANNOTATION_FUNCTIONS,
+    AGGREGATE_CLASSES,
 )
 from advanced_report_builder.utils import decode_attribute
 
@@ -82,8 +82,8 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                     field.__class__ = ReportBuilderCurrencyPenceColumn
                 elif isinstance(field, CurrencyColumn):
                     field.__class__ = ReportBuilderCurrencyColumn
-
             if append_annotation_query and field.annotations:
+
                 css_class = field.column_defs.get('className')
                 if css_class is None:
                     css_class = alignment_class
@@ -96,15 +96,53 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                 field = copy.deepcopy(field)
 
                 current_annotations = getattr(field.annotations[field_name], 'filter', None)
+                new_field_name = f'{field_name}_{index}'
                 # assert False, field.annotations[field_name]
                 if current_annotations is None:
-                    raise ReportError(f'Sorry unable to annotate {field_name}. The query is to complex to modify.')
-                    # field.annotations[field_name].expression is where the query is!
+                    new_annotations = {}
+                    for key, value in field.annotations.items():
+                        if isinstance(value, AGGREGATE_CLASSES):
+                            # Extract the original expression from the aggregate
+                            original_expression = value.source_expressions[0]
+
+                            # Build the conditional When clause
+                            if isinstance(annotation_filter, Q):
+                                condition = When(annotation_filter, then=original_expression)
+                            else:
+                                condition = When(**annotation_filter, then=original_expression)
+
+                            # Determine appropriate output field
+                            if isinstance(value, Count):
+                                output_field = IntegerField()
+                            elif isinstance(value, Sum):
+                                output_field = IntegerField()
+                            else:  # Avg, Max, Min — typically float-based
+                                output_field = FloatField()
+
+                            # Reconstruct the aggregate class with Case wrapped expression
+                            aggregate_class = type(value)
+                            kwargs = {}
+
+                            # Preserve flags like `distinct=True`
+                            if hasattr(value, 'distinct') and value.distinct:
+                                kwargs['distinct'] = True
+
+                            new_annotations[new_field_name] = aggregate_class(
+                                Case(
+                                    condition,
+                                    default=Value(0),
+                                    output_field=output_field
+                                ),
+                                **kwargs
+                            )
+                    field.annotations = new_annotations
+                    field.column_name = new_field_name
                 elif annotation_filter is not None and len(annotation_filter) > 0:
                     new_annotations = current_annotations & annotation_filter
                     field.annotations[field_name].filter = new_annotations
-                new_field_name = f'{field_name}_{index}'
-                field.annotations[new_field_name] = field.annotations.pop(field_name)
+                    field.annotations[new_field_name] = field.annotations.pop(field_name)
+                else:
+                    field.annotations[new_field_name] = field.annotations.pop(field_name)
                 field.field = new_field_name
                 field_name = new_field_name
 
@@ -153,8 +191,10 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                 field.column_defs['className'] = css_class
                 if title:
                     field.title = title
+                new_annotations = {}
                 if field.annotations:
-                    if not self.use_annotations:
+
+                    if not self.use_annotations and annotation_filter is None and not append_annotation_query:
                         field.options['calculated'] = True
                         field.aggregations = col_type_override.annotations
                         field.annotations = []
