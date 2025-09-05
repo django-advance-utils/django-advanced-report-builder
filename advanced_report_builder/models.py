@@ -301,29 +301,27 @@ class TableReport(Report):
 
 
 class SingleValueReport(Report):
-    SINGLE_VALUE_TYPE_COUNT = 1
-    SINGLE_VALUE_TYPE_SUM = 2
-    SINGLE_VALUE_TYPE_COUNT_AND_SUM = 3
-    SINGLE_VALUE_TYPE_PERCENT = 4
-    SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT = 5
-    SINGLE_VALUE_TYPE_AVERAGE_SUM_FROM_COUNT = 6
-    SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME = 7
+    class SingleValueType(models.IntegerChoices):
+        COUNT = 1, 'Count'
+        SUM = 2, 'Sum'
+        COUNT_AND_SUM = 3, 'Count & Sum'
+        PERCENT = 4, 'Percent'
+        PERCENT_FROM_COUNT = 5, 'Percent from Count'
+        AVERAGE_SUM_FROM_COUNT = 6, 'Average Sum from Count'
+        AVERAGE_SUM_OVER_TIME = 7, 'Average Sum over Time'
 
-    SINGLE_VALUE_TYPE_CHOICES = (
-        (SINGLE_VALUE_TYPE_COUNT, 'Count'),
-        (SINGLE_VALUE_TYPE_SUM, 'Sum'),
-        (SINGLE_VALUE_TYPE_COUNT_AND_SUM, 'Count & Sum'),
-        (SINGLE_VALUE_TYPE_PERCENT, 'Percent'),
-        (SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT, 'Percent from Count'),
-        (SINGLE_VALUE_TYPE_AVERAGE_SUM_FROM_COUNT, 'Average Sum from Count'),
-        (SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME, 'Average Sum over Time'),
-    )
+        @classmethod
+        def is_percentage(cls, value):
+            return value in {
+                cls.PERCENT,
+                cls.PERCENT_FROM_COUNT,
+            }
 
     tile_colour = ColourField(blank=True, null=True)
     field = models.CharField(max_length=200, blank=True, null=True)  # denominator
     numerator = models.CharField(max_length=200, blank=True, null=True)
     single_value_type = models.PositiveSmallIntegerField(
-        choices=SINGLE_VALUE_TYPE_CHOICES, default=SINGLE_VALUE_TYPE_COUNT
+        choices=SingleValueType.choices, default=SingleValueType.COUNT
     )
     prefix = models.CharField(max_length=64, blank=True, null=True)
     decimal_places = models.IntegerField(default=0)
@@ -336,20 +334,12 @@ class SingleValueReport(Report):
     average_end_period = models.PositiveSmallIntegerField(blank=True, null=True)
 
     def is_percentage(self):
-        return self.single_value_type in [
-            self.SINGLE_VALUE_TYPE_PERCENT,
-            self.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT,
-        ]
-
+        return self.SingleValueType.is_percentage(self.single_value_type)
 
 class BarChartReport(Report):
-    BAR_CHART_ORIENTATION_VERTICAL = 1
-    BAR_CHART_ORIENTATION_HORIZONTAL = 2
-
-    BAR_CHART_ORIENTATION_CHOICES = (
-        (BAR_CHART_ORIENTATION_VERTICAL, 'Vertical'),
-        (BAR_CHART_ORIENTATION_HORIZONTAL, 'Horizontal'),
-    )
+    class BarChartOrientation(models.IntegerChoices):
+        VERTICAL = 1, 'Vertical'
+        HORIZONTAL = 2, 'Horizontal'
 
     DATE_FIELD_SINGLE = 1
     DATE_FIELD_RANGE = 2
@@ -374,7 +364,7 @@ class BarChartReport(Report):
     y_label = models.CharField(max_length=200, blank=True, null=True)
 
     bar_chart_orientation = models.PositiveSmallIntegerField(
-        choices=BAR_CHART_ORIENTATION_CHOICES, default=BAR_CHART_ORIENTATION_VERTICAL
+        choices=BarChartOrientation.choices, default=BarChartOrientation.VERTICAL
     )
     stacked = models.BooleanField(default=False)
     show_totals = models.BooleanField(default=False)
@@ -384,7 +374,7 @@ class BarChartReport(Report):
     breakdown_fields = models.JSONField(null=True, blank=True)
 
     def is_orientation_vertical(self):
-        return self.bar_chart_orientation == self.BAR_CHART_ORIENTATION_VERTICAL
+        return self.bar_chart_orientation == self.BarChartOrientation.VERTICAL
 
     def get_chart_scale(self):
         return ANNOTATION_CHART_SCALE[self.axis_scale]
@@ -412,13 +402,9 @@ class LineChartReport(Report):
 
 
 class PieChartReport(Report):
-    PIE_CHART_STYLE_PIE = 1
-    PIE_CHART_STYLE_DOUGHNUT = 2
-
-    PIE_CHART_STYLE_CHOICES = (
-        (PIE_CHART_STYLE_PIE, 'Pie'),
-        (PIE_CHART_STYLE_DOUGHNUT, 'Doughnut'),
-    )
+    class PieChartStyle(models.IntegerChoices):
+        PIE = 1, 'Pie'
+        DOUGHNUT = 2, 'Doughnut'
 
     axis_value_type = models.PositiveSmallIntegerField(
         choices=ANNOTATIONS_CHOICES,
@@ -427,10 +413,10 @@ class PieChartReport(Report):
         blank=True,
     )
     fields = models.JSONField(null=True, blank=True)
-    style = models.PositiveSmallIntegerField(choices=PIE_CHART_STYLE_CHOICES, default=PIE_CHART_STYLE_PIE)
+    style = models.PositiveSmallIntegerField(choices=PieChartStyle.choices, default=PieChartStyle.PIE)
 
     def is_pie_chart(self):
-        return self.style == self.PIE_CHART_STYLE_PIE
+        return self.style == self.PieChartStyle.PIE
 
 
 class FunnelChartReport(Report):
@@ -469,6 +455,53 @@ class KanbanReportDescription(TimeStampedModel):
 
     class Meta:
         ordering = ('order',)
+
+
+class MultiValueReport(Report):
+    rows = models.PositiveSmallIntegerField()
+    columns = models.PositiveSmallIntegerField()
+
+
+class MultiValueReportCell(TimeStampedModel):
+    class MultiValueType(models.IntegerChoices):
+        STATIC_TEXT = 0, 'Static Text'
+        COUNT = 1, 'Count'
+        SUM = 2, 'Sum'
+        PERCENT = 4, 'Percent'
+        PERCENT_FROM_COUNT = 5, 'Percent from Count'
+        AVERAGE_SUM_FROM_COUNT = 6, 'Average Sum from Count'
+        AVERAGE_SUM_OVER_TIME = 7, 'Average Sum over Time'
+
+        @classmethod
+        def is_percentage(cls, value):
+            return value in {
+                cls.PERCENT,
+                cls.PERCENT_FROM_COUNT,
+            }
+
+    report = models.ForeignKey(Report, on_delete=models.CASCADE)
+    row = models.PositiveSmallIntegerField()
+    column = models.PositiveSmallIntegerField()
+    multi_value_type = models.IntegerField(choices=MultiValueType.choices, default=MultiValueType.STATIC_TEXT)
+    text = models.TextField(blank=True, null=True)
+
+    field = models.CharField(max_length=200, blank=True, null=True)  # denominator
+    numerator = models.CharField(max_length=200, blank=True, null=True)
+    prefix = models.CharField(max_length=64, blank=True, null=True)
+    decimal_places = models.IntegerField(default=0)
+
+    show_breakdown = models.BooleanField(default=False)
+    breakdown_fields = models.JSONField(null=True, blank=True)
+
+    average_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES, blank=True, null=True)
+    average_start_period = models.PositiveSmallIntegerField(blank=True, null=True)
+    average_end_period = models.PositiveSmallIntegerField(blank=True, null=True)
+
+    query = models.JSONField(null=True, blank=True)
+    extra_query = models.JSONField(null=True, blank=True)  # used for single value Numerator
+
+    class Meta:
+        models.UniqueConstraint(fields=['report', 'row', 'column'], name='multi_value_report_cell_unique')
 
 
 class CalendarReport(Report):

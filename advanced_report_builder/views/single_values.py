@@ -239,28 +239,28 @@ class SingleValueView(ChartBaseView):
     def process_query_results(self, base_model, table):
         single_value_type = self.chart_report.single_value_type
         fields = []
-        if single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_COUNT:
+        if single_value_type == SingleValueReport.SingleValueType.COUNT:
             self._get_count(fields=fields)
-        elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_SUM:
+        elif single_value_type == SingleValueReport.SingleValueType.SUM:
             self._process_aggregations(fields=fields, aggregations_type=ANNOTATION_CHOICE_SUM)
-        elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_COUNT_AND_SUM:
+        elif single_value_type == SingleValueReport.SingleValueType.COUNT_AND_SUM:
             self._get_count(fields=fields)
             self._process_aggregations(fields=fields, aggregations_type=ANNOTATION_CHOICE_SUM)
-        elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE_SUM_FROM_COUNT:
+        elif single_value_type == SingleValueReport.SingleValueType.AVERAGE_SUM_FROM_COUNT:
             self._process_aggregations(
                 fields=fields,
                 aggregations_type=ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT,
             )
-        elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME:
+        elif single_value_type == SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME:
             divider = self.get_period_divider(
                 annotation_value_choice=self.chart_report.average_scale,
                 start_date_type=self.chart_report.average_start_period,
                 end_date_type=self.chart_report.average_end_period,
             )
             self._process_aggregations(fields=fields, aggregations_type=ANNOTATION_CHOICE_SUM, divider=divider)
-        elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_PERCENT:
+        elif single_value_type == SingleValueReport.SingleValueType.PERCENT:
             self._process_percentage(fields=fields)
-        elif single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT:
+        elif single_value_type == SingleValueReport.SingleValueType.PERCENT_FROM_COUNT:
             self._process_percentage_from_count(fields=fields)
         return fields
 
@@ -399,28 +399,28 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
                 {
                     'selector': '#div_id_field',
                     'values': {
-                        SingleValueReport.SINGLE_VALUE_TYPE_COUNT: 'hide',
-                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'hide',
+                        SingleValueReport.SingleValueType.COUNT: 'hide',
+                        SingleValueReport.SingleValueType.PERCENT_FROM_COUNT: 'hide',
                     },
                     'default': 'show',
                 },
                 {
                     'selector': '#div_id_prefix',
                     'values': {
-                        SingleValueReport.SINGLE_VALUE_TYPE_COUNT: 'hide',
-                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT: 'hide',
+                        SingleValueReport.SingleValueType.COUNT: 'hide',
+                        SingleValueReport.SingleValueType.PERCENT_FROM_COUNT: 'hide',
                     },
                     'default': 'show',
                 },
                 {
                     'selector': '#div_id_numerator',
-                    'values': {SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: 'show'},
+                    'values': {SingleValueReport.SingleValueType.PERCENT: 'show'},
                     'default': 'hide',
                 },
                 {
                     'selector': 'label[for=id_field]',
                     'values': {
-                        SingleValueReport.SINGLE_VALUE_TYPE_PERCENT: (
+                        SingleValueReport.SingleValueType.PERCENT: (
                             'html',
                             'Denominator field',
                         )
@@ -429,17 +429,17 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
                 },
                 {
                     'selector': '#div_id_average_scale',
-                    'values': {SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME: 'show'},
+                    'values': {SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME: 'show'},
                     'default': 'hide',
                 },
                 {
                     'selector': '#div_id_average_start_period',
-                    'values': {SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME: 'show'},
+                    'values': {SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME: 'show'},
                     'default': 'hide',
                 },
                 {
                     'selector': '#div_id_average_end_period',
-                    'values': {SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME: 'show'},
+                    'values': {SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME: 'show'},
                     'default': 'hide',
                 },
             ],
@@ -516,8 +516,8 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
         if self.object.id:
             self.add_extra_queries(form=form, fields=fields)
             if self.object.single_value_type in [
-                SingleValueReport.SINGLE_VALUE_TYPE_PERCENT,
-                SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT,
+                SingleValueReport.SingleValueType.PERCENT,
+                SingleValueReport.SingleValueType.PERCENT_FROM_COUNT,
             ]:
                 self.add_page_command('set_css', selector='.btn-query-edit', prop='display', val='none')
             else:
@@ -549,14 +549,14 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
         if (
             single_value_type
             not in [
-                SingleValueReport.SINGLE_VALUE_TYPE_COUNT,
-                SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT,
+                SingleValueReport.SingleValueType.COUNT,
+                SingleValueReport.SingleValueType.PERCENT_FROM_COUNT,
             ]
             and not cleaned_data['field']
         ):
             raise ValidationError('Please select a field')
 
-        if single_value_type == SingleValueReport.SINGLE_VALUE_TYPE_AVERAGE_SUM_OVER_TIME:
+        if single_value_type == SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME:
             if cleaned_data['average_scale'] is None:
                 form.add_error('average_scale', 'Please select a time scale')
             if cleaned_data['average_start_period'] is None:
@@ -580,8 +580,8 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
     def button_add_query(self, **_kwargs):
         single_value_type = _kwargs['single_value_type']
         if single_value_type == '' or int(single_value_type) not in [
-            SingleValueReport.SINGLE_VALUE_TYPE_PERCENT,
-            SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT,
+            SingleValueReport.SingleValueType.PERCENT,
+            SingleValueReport.SingleValueType.PERCENT_FROM_COUNT,
         ]:
             return super().button_add_query(**_kwargs)
         else:
@@ -595,8 +595,8 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
     def button_edit_query(self, **_kwargs):
         single_value_type = _kwargs['single_value_type']
         if single_value_type == '' or int(single_value_type) not in [
-            SingleValueReport.SINGLE_VALUE_TYPE_PERCENT,
-            SingleValueReport.SINGLE_VALUE_TYPE_PERCENT_FROM_COUNT,
+            SingleValueReport.SingleValueType.PERCENT,
+            SingleValueReport.SingleValueType.PERCENT_FROM_COUNT,
         ]:
             return super().button_edit_query(**_kwargs)
         else:
