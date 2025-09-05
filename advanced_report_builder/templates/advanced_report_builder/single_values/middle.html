@@ -2,14 +2,22 @@
 <div>
     {% if datatable.breakdown_url %}
         <a class="single_value_link" href="{{ datatable.breakdown_url }}"><h1 id="{{ datatable.table_id }}"></h1></a>{% else %} <h1 id="{{ datatable.table_id }}"></h1>{% endif %}
+        {% if datatable.target_data %}
+<div class="d-flex align-items-center" style="gap: 0.5rem;">
+  <div style="min-width: 100px; text-align: right; font-weight: bold;">
 
-        123 {{ target_data }}
-
-
-        {% if target_data %}
-            <div class="progress">
-              <div class="progress-bar" role="progressbar" style="width: {{ target_data.bar_percentage }}%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
-            </div>
+    {{ datatable.target_data.percentage|floatformat }}% of {{ datatable.target_data.target_value|safe}}
+</div>
+<div class="flex-grow-1">
+  <div class="progress" style="height: 24px;">
+    <div class="progress-bar"
+         role="progressbar"
+         style="
+           width: {{ datatable.target_data.bar_percentage }}%;
+           background-color: {% if datatable.target_data.colour %}#{{ datatable.target_data.colour }}{% else %}#28a745{% endif %};">
+    </div>
+  </div>
+</div>
         {% endif %}
 
 </div>

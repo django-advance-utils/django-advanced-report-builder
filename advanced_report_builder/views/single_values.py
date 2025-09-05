@@ -1,5 +1,6 @@
 import json
 
+from django.contrib.humanize.templatetags.humanize import intcomma
 from django.core.exceptions import ValidationError
 from django.db.models import Count, ExpressionWrapper, FloatField, Sum
 from django.db.models.functions import Coalesce, NullIf
@@ -273,10 +274,10 @@ class SingleValueView(ChartBaseView):
         self.set_prefix()
         self.table.single_value = self.chart_report
         self.table.enable_links = self.kwargs.get('enable_links')
+        self.table.target_data = self.get_target_data()
         self.table.datatable_template = 'advanced_report_builder/single_values/middle.html'
         self.table.breakdown_url = self.get_breakdown_url()
         context['single_value_report'] = self.chart_report
-        context['target_data'] = self.get_target_data()
         return context
 
     def get_target_data(self):
@@ -301,14 +302,28 @@ class SingleValueView(ChartBaseView):
         if target_value is None or target_value == 0:
             return None
         try:
-            value = float(data[0][0])
-        except ValueError:
+            raw_value = data[0][0]  # Safely inside the try block
+            cleaned_value = raw_value.replace(",", "")
+            value = float(cleaned_value)
+        except (ValueError, TypeError, AttributeError, IndexError):
             return None
-        percentage = (value / target_value) * 100
-        bar_percentage = percentage
-        if bar_percentage > 100:
-            bar_percentage = 100
+        percentage = (value / float(target_value)) * 100
+        bar_percentage = min(percentage, 100)
+
+        if report_query.target.target_type == Target.TargetType.MONEY:
+            # Format as currency (with commas, and possibly prefix later)
+            prefix = self.chart_report.prefix
+            target_value = intcomma(f'{float(target_value):.2f}')
+            target_value = f'{prefix}&thinsp;' + target_value
+        else:
+            # Remove trailing .0 if it's a whole number
+            if float(target_value).is_integer():
+                target_value = str(int(float(target_value)))
+            else:
+                target_value = f"{float(target_value):.2f}"
+
         return {'target_value': target_value,
+                'colour': report_query.target.colour,
                 'percentage': percentage,
                 'bar_percentage': bar_percentage}
 
