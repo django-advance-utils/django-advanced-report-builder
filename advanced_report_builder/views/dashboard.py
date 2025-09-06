@@ -237,24 +237,16 @@ class DashboardReportModal(ModelFormModal):
         )
         form.fields['name_override'].help_text = (f'Original report name "{self.object.report.name}".'
                                                   f' Leave blank to keep this name.')
-
-        if self.object.report.instance_type == 'calendarreport':
-            view_type = self.object.report.calendarreport.get_view_type_display()
-            choices = [(0, f'Default ({view_type})'), *CALENDAR_VIEW_TYPE_CHOICES]
-            calendar_view_type = self.object.options.get('calendar_view_type') if self.object.options else None
-            form.fields['calendar_view_type'] = ChoiceField(
-                choices=choices, required=False, widget=Select2(), initial=calendar_view_type
-            )
-        else:
+        report_obj = getattr(self.object.report, self.object.report.instance_type)
+        if report_obj.dashboard_fields(form=form, dashboard_report=self.object):
             report_queries = ReportQuery.objects.filter(report=form.instance.report)
             form.fields['report_query'] = ModelChoiceField(queryset=report_queries, widget=Select2, required=False)
 
     def form_valid(self, form):
         instance = form.save(commit=False)
         instance._current_user = self.request.user
-        if instance.report.instance_type == 'calendarreport':
-            options = {'calendar_view_type': form.cleaned_data['calendar_view_type']}
-            instance.options = options
+        report_obj = getattr(self.object.report, self.object.report.instance_type)
+        report_obj.save_extra_dashboard_fields(form=form, dashboard_report=instance)
         instance.save()
         return self.command_response('reload')
 

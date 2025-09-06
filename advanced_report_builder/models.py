@@ -1,10 +1,12 @@
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.forms import ChoiceField
 from django.utils.dates import MONTHS
 from django_datatables.columns import DatatableColumn, ManyToManyColumn, NoHeadingColumn
 from django_datatables.model_def import DatatableModel
 from django_modals.model_fields.colour import ColourField
+from django_modals.widgets.select2 import Select2
 from time_stamped_model.models import TimeStampedModel
 
 from advanced_report_builder.globals import (
@@ -188,6 +190,12 @@ class Report(TimeStampedModel):
 
     def get_base_model(self):
         return self.report_type.content_type.model_class()
+
+    def dashboard_fields(self, form, dashboard_report):
+        return True  # show queries if true
+
+    def save_extra_dashboard_fields(self, form, dashboard_report):
+        pass
 
     class Datatable(DatatableModel):
         class OutputType(DatatableColumn):
@@ -460,48 +468,60 @@ class KanbanReportDescription(TimeStampedModel):
 class MultiValueReport(Report):
     rows = models.PositiveSmallIntegerField()
     columns = models.PositiveSmallIntegerField()
+    default_multi_cell_style = models.ForeignKey('MultiCellStyle', on_delete=models.PROTECT, null=True, blank=True)
 
 
-class MultiValueReportCell(TimeStampedModel):
-    class MultiValueType(models.IntegerChoices):
-        STATIC_TEXT = 0, 'Static Text'
-        COUNT = 1, 'Count'
-        SUM = 2, 'Sum'
-        PERCENT = 4, 'Percent'
-        PERCENT_FROM_COUNT = 5, 'Percent from Count'
-        AVERAGE_SUM_FROM_COUNT = 6, 'Average Sum from Count'
-        AVERAGE_SUM_OVER_TIME = 7, 'Average Sum over Time'
+class MultiCellStyle(TimeStampedModel):
+    multi_value_report = models.ForeignKey(MultiValueReport, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200)
+    bold = models.BooleanField(default=False)
+    italic = models.BooleanField(default=False)
+    font_size = models.PositiveSmallIntegerField()
+    font_colour = ColourField(null=True, blank=True)
+    background_colour = ColourField(null=True, blank=True)
 
-        @classmethod
-        def is_percentage(cls, value):
-            return value in {
-                cls.PERCENT,
-                cls.PERCENT_FROM_COUNT,
-            }
-
-    report = models.ForeignKey(Report, on_delete=models.CASCADE)
-    row = models.PositiveSmallIntegerField()
-    column = models.PositiveSmallIntegerField()
-    multi_value_type = models.IntegerField(choices=MultiValueType.choices, default=MultiValueType.STATIC_TEXT)
-    text = models.TextField(blank=True, null=True)
-
-    field = models.CharField(max_length=200, blank=True, null=True)  # denominator
-    numerator = models.CharField(max_length=200, blank=True, null=True)
-    prefix = models.CharField(max_length=64, blank=True, null=True)
-    decimal_places = models.IntegerField(default=0)
-
-    show_breakdown = models.BooleanField(default=False)
-    breakdown_fields = models.JSONField(null=True, blank=True)
-
-    average_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES, blank=True, null=True)
-    average_start_period = models.PositiveSmallIntegerField(blank=True, null=True)
-    average_end_period = models.PositiveSmallIntegerField(blank=True, null=True)
-
-    query = models.JSONField(null=True, blank=True)
-    extra_query = models.JSONField(null=True, blank=True)  # used for single value Numerator
-
-    class Meta:
-        models.UniqueConstraint(fields=['report', 'row', 'column'], name='multi_value_report_cell_unique')
+#
+# class MultiValueReportCell(TimeStampedModel):
+#     class MultiValueType(models.IntegerChoices):
+#         STATIC_TEXT = 0, 'Static Text'
+#         COUNT = 1, 'Count'
+#         SUM = 2, 'Sum'
+#         PERCENT = 4, 'Percent'
+#         PERCENT_FROM_COUNT = 5, 'Percent from Count'
+#         AVERAGE_SUM_FROM_COUNT = 6, 'Average Sum from Count'
+#         AVERAGE_SUM_OVER_TIME = 7, 'Average Sum over Time'
+#         EQUATION = 8, 'Equation'
+#
+#         @classmethod
+#         def is_percentage(cls, value):
+#             return value in {
+#                 cls.PERCENT,
+#                 cls.PERCENT_FROM_COUNT,
+#             }
+#
+#     report = models.ForeignKey(Report, on_delete=models.CASCADE)
+#     row = models.PositiveSmallIntegerField()
+#     column = models.PositiveSmallIntegerField()
+#     multi_value_type = models.IntegerField(choices=MultiValueType.choices, default=MultiValueType.STATIC_TEXT)
+#     text = models.TextField(blank=True, null=True)
+#
+#     field = models.CharField(max_length=200, blank=True, null=True)  # denominator
+#     numerator = models.CharField(max_length=200, blank=True, null=True)
+#     prefix = models.CharField(max_length=64, blank=True, null=True)
+#     decimal_places = models.IntegerField(default=0)
+#
+#     show_breakdown = models.BooleanField(default=False)
+#     breakdown_fields = models.JSONField(null=True, blank=True)
+#
+#     average_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES, blank=True, null=True)
+#     average_start_period = models.PositiveSmallIntegerField(blank=True, null=True)
+#     average_end_period = models.PositiveSmallIntegerField(blank=True, null=True)
+#
+#     query = models.JSONField(null=True, blank=True)
+#     extra_query = models.JSONField(null=True, blank=True)  # used for single value Numerator
+#
+#     class Meta:
+#         models.UniqueConstraint(fields=['report', 'row', 'column'], name='multi_value_report_cell_unique')
 
 
 class CalendarReport(Report):
@@ -523,6 +543,18 @@ class CalendarReport(Report):
         if view_type is None:
             view_type = self.view_type
         return self.VIEW_TYPE_CODES.get(view_type)
+
+    def dashboard_fields(self, form, dashboard_report):
+        choices = [(0, f'Default ({self.view_type})'), *CALENDAR_VIEW_TYPE_CHOICES]
+        calendar_view_type = dashboard_report.options.get('calendar_view_type') if dashboard_report.options else None
+        form.fields['calendar_view_type'] = ChoiceField(
+            choices=choices, required=False, widget=Select2(), initial=calendar_view_type
+        )
+        return False
+
+    def save_extra_dashboard_fields(self, form, dashboard_report):
+        options = {'calendar_view_type': form.cleaned_data['calendar_view_type']}
+        dashboard_report.options = options
 
 
 class CalendarReportDescription(TimeStampedModel):
