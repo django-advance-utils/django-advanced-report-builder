@@ -211,7 +211,8 @@ class DashboardReportModal(ModelFormModal):
     @property
     def form_fields(self):
         fields = ['name_override', 'top', 'display_option']
-        if self.object.report.instance_type != 'calendarreport':
+        report_obj = getattr(self.object.report, self.object.report.instance_type)
+        if report_obj.show_dashboard_query():
             fields += [
                 'show_versions',
                 'report_query',
@@ -238,7 +239,8 @@ class DashboardReportModal(ModelFormModal):
         form.fields['name_override'].help_text = (f'Original report name "{self.object.report.name}".'
                                                   f' Leave blank to keep this name.')
         report_obj = getattr(self.object.report, self.object.report.instance_type)
-        if report_obj.dashboard_fields(form=form, dashboard_report=self.object):
+        report_obj.dashboard_fields(form=form, dashboard_report=self.object)
+        if report_obj.show_dashboard_query():
             report_queries = ReportQuery.objects.filter(report=form.instance.report)
             form.fields['report_query'] = ModelChoiceField(queryset=report_queries, widget=Select2, required=False)
 
@@ -251,17 +253,24 @@ class DashboardReportModal(ModelFormModal):
         return self.command_response('reload')
 
 
-class DashboardAddReportForm(CrispyForm):
-    report = ModelChoiceField(queryset=Report.objects.all(), widget=Select2)
-
-
 class DashboardAddReportModal(FormModal):
-    form_class = DashboardAddReportForm
+    form_class = CrispyForm
     modal_title = 'Add Report'
+
+    def form_setup(self, form, *_args, **_kwargs):
+
+        grouped_choices = {}
+        for report in Report.objects.all():
+            group_name = report.get_output_type_name()
+            grouped_choices.setdefault(group_name, []).append((report.pk, report.name))
+
+        form.fields['report'] = ChoiceField(choices=[
+            (group_name, choices) for group_name, choices in grouped_choices.items()
+        ], widget=Select2)
 
     def form_valid(self, form):
         dashboard = get_object_or_404(Dashboard, id=self.slug['pk'])
         dashboard_report = DashboardReport(dashboard=dashboard)
-        dashboard_report.report = form.cleaned_data['report']
+        dashboard_report.report_id = form.cleaned_data['report']
         dashboard_report.save()
         return self.command_response('reload')

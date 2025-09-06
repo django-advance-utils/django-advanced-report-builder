@@ -134,6 +134,30 @@ class ReportType(TimeStampedModel):
 
 
 class Report(TimeStampedModel):
+    output_types = {
+        'tablereport': 'Table',
+        'singlevaluereport': 'Single Value',
+        'barchartreport': 'Bar Chart',
+        'linechartreport': 'Line Chart',
+        'piechartreport': 'Pie Chart',
+        'funnelchartreport': 'Funnel Chart',
+        'kanbanreport': 'Kanban',
+        'customreport': 'Custom',
+        'calendarreport': 'Calendar',
+    }
+
+    output_types_icons = {
+        'tablereport': '<i class="fas fa-table"></i>',
+        'singlevaluereport': '<i class="fas fa-box-open"></i>',
+        'barchartreport': '<i class="fas fa-chart-bar"></i>',
+        'linechartreport': '<i class="fas fa-chart-line"></i>',
+        'piechartreport': '<i class="fas fa-chart-pie"></i>',
+        'funnelchartreport': '<i class="fas fa-filter"></i>',
+        'kanbanreport': '<i class="fas fa-chart-bar fa-flip-vertical"></i>',
+        'customreport': '<i class="fas fa-file"></i>',
+        'calendarreport': '<i class="fas fa-calendar"></i>',
+    }
+
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
     slug_alias = models.SlugField(blank=True, null=True)  # used if the slug changes
@@ -169,6 +193,9 @@ class Report(TimeStampedModel):
     def get_title(self):
         return self.name
 
+    def get_output_type_name(self):
+        return self.output_types[self.instance_type]
+
     def save(self, *args, **kwargs):
         current_user = getattr(self, '_current_user', None)
         if current_user is not None and current_user.is_authenticated:
@@ -191,26 +218,17 @@ class Report(TimeStampedModel):
     def get_base_model(self):
         return self.report_type.content_type.model_class()
 
+    def show_dashboard_query(self):
+        return True
+
     def dashboard_fields(self, form, dashboard_report):
-        return True  # show queries if true
+        pass
 
     def save_extra_dashboard_fields(self, form, dashboard_report):
         pass
 
     class Datatable(DatatableModel):
         class OutputType(DatatableColumn):
-            output_types = {
-                'tablereport': 'Table',
-                'singlevaluereport': 'Single Value',
-                'barchartreport': 'Bar Chart',
-                'linechartreport': 'Line Chart',
-                'piechartreport': 'Pie Chart',
-                'funnelchartreport': 'Funnel Chart',
-                'kanbanreport': 'Kanban',
-                'customreport': 'Custom',
-                'calendarreport': 'Calendar',
-            }
-
             def col_setup(self):
                 self.field = ['instance_type', 'customreport__output_type']
 
@@ -221,20 +239,9 @@ class Report(TimeStampedModel):
                     output_type = data[self.model_path + 'customreport__output_type']
                     if output_type:
                         return output_type
-                return self.output_types.get(instance_type, '')
+                return Report.output_types.get(instance_type, '')
 
         class OutputTypeIcon(NoHeadingColumn):
-            output_types = {
-                'tablereport': '<i class="fas fa-table"></i>',
-                'singlevaluereport': '<i class="fas fa-box-open"></i>',
-                'barchartreport': '<i class="fas fa-chart-bar"></i>',
-                'linechartreport': '<i class="fas fa-chart-line"></i>',
-                'piechartreport': '<i class="fas fa-chart-pie"></i>',
-                'funnelchartreport': '<i class="fas fa-filter"></i>',
-                'kanbanreport': '<i class="fas fa-chart-bar fa-flip-vertical"></i>',
-                'customreport': '<i class="fas fa-file"></i>',
-                'calendarreport': '<i class="fas fa-calendar"></i>',
-            }
 
             def col_setup(self):
                 self.field = ['instance_type']
@@ -242,7 +249,7 @@ class Report(TimeStampedModel):
             # noinspection PyMethodMayBeStatic
             def row_result(self, data, _page_data):
                 instance_type = data[self.model_path + 'instance_type']
-                return self.output_types.get(instance_type, '')
+                return Report.output_types_icons.get(instance_type, '')
 
         report_tags_badge = ManyToManyColumn(
             field='report_tags__name',
@@ -438,7 +445,8 @@ class FunnelChartReport(Report):
 
 
 class KanbanReport(Report):
-    pass
+    def show_dashboard_query(self):
+        return False  # show queries if true
 
 
 class KanbanReportDescription(TimeStampedModel):
@@ -544,13 +552,15 @@ class CalendarReport(Report):
             view_type = self.view_type
         return self.VIEW_TYPE_CODES.get(view_type)
 
+    def show_dashboard_query(self):
+        return False
+
     def dashboard_fields(self, form, dashboard_report):
         choices = [(0, f'Default ({self.view_type})'), *CALENDAR_VIEW_TYPE_CHOICES]
         calendar_view_type = dashboard_report.options.get('calendar_view_type') if dashboard_report.options else None
         form.fields['calendar_view_type'] = ChoiceField(
             choices=choices, required=False, widget=Select2(), initial=calendar_view_type
         )
-        return False
 
     def save_extra_dashboard_fields(self, form, dashboard_report):
         options = {'calendar_view_type': form.cleaned_data['calendar_view_type']}
