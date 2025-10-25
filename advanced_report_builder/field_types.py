@@ -40,6 +40,12 @@ class FieldTypes(ReportBuilderFieldUtils):
         ABSTRACT_USER = 7
         PART_DATE = 8
 
+        COMPARE_STRING = 9
+        COMPARE_NUMBER = 10
+        COMPARE_DATE = 11
+        COMPARE_BOOLEAN = 12
+
+
     def get_operator(self, field_type):
         operators = {
             self.OperatorFieldType.STRING: [
@@ -75,11 +81,29 @@ class FieldTypes(ReportBuilderFieldUtils):
             self.OperatorFieldType.MULTIPLE_CHOICE: ['in', 'not_in'],
             self.OperatorFieldType.FOREIGN_KEY: ['is_null', 'is_not_null'],
             self.OperatorFieldType.ABSTRACT_USER: ['equal', 'not_equal'],
+            self.OperatorFieldType.COMPARE_STRING: ['equal', 'not_equal'],
+            self.OperatorFieldType.COMPARE_NUMBER: [
+                'equal',
+                'not_equal',
+                'less',
+                'less_or_equal',
+                'greater',
+                'greater_or_equal',
+            ],
+            self.OperatorFieldType.COMPARE_DATE: [
+                'equal',
+                'not_equal',
+                'less',
+                'less_or_equal',
+                'greater',
+                'greater_or_equal',
+            ],
+            self.OperatorFieldType.COMPARE_BOOLEAN: ['equal', 'not_equal']
         }
         return operators.get(field_type)
 
 
-    def get_filters(self, fields, query_builder_filters):
+    def get_filters(self, fields, query_builder_filters, field_results_types):
         for field_detail in fields:
             field_type = field_detail.field_type
 
@@ -114,22 +138,42 @@ class FieldTypes(ReportBuilderFieldUtils):
                 query_builder_filters.append(
                     {
                         'id': field_detail.column_id,
-                        'label': field_detail.title,
+                        'label': f'{field_detail.title} (Field vs Value)',
                         'field': field_detail.full_field_name,
                         'type': 'string',
                         'operators': self.get_operator(self.OperatorFieldType.STRING),
                         'validation': {'allow_empty_value': True},
                     }
                 )
+                query_builder_filters.append(
+                    {
+                        'id': f'{field_detail.column_id}__field_vs_field',
+                        'label': f'{field_detail.title} (Field vs Field)',
+                        'field': field_detail.full_field_name,
+                        'input': 'select',
+                        'operators': self.get_operator(self.OperatorFieldType.COMPARE_STRING),
+                        'values': field_results_types[FieldType.STRING],
+                    }
+                )
             elif field_type == FieldType.NUMBER:
                 if field_detail.django_field.choices is None:
                     query_builder_filter = {
                         'id': field_detail.column_id,
-                        'label': field_detail.title,
+                        'label': f'{field_detail.title} (Field vs Value)',
                         'field': field_detail.full_field_name,
                         'type': 'integer',
                         'operators': self.get_operator(self.OperatorFieldType.NUMBER),
                     }
+                    query_builder_filters.append(
+                        {
+                            'id': f'{field_detail.column_id}__field_vs_field',
+                            'label': f'{field_detail.title} (Field vs Field)',
+                            'field': field_detail.full_field_name,
+                            'input': 'select',
+                            'operators': self.get_operator(self.OperatorFieldType.COMPARE_NUMBER),
+                            'values': field_results_types[FieldType.NUMBER],
+                        }
+                    )
                 else:
                     query_builder_filter = {
                         'id': field_detail.column_id,
@@ -146,15 +190,27 @@ class FieldTypes(ReportBuilderFieldUtils):
                 query_builder_filters.append(
                     {
                         'id': field_detail.column_id,
-                        'label': field_detail.title,
+                        'label': f'{field_detail.title} (Field vs Value)',
                         'field': field_detail.full_field_name,
                         'input': 'select',
                         'operators': self.get_operator(self.OperatorFieldType.BOOLEAN),
                         'values': {'0': 'False', '1': 'True'},
                     }
                 )
+                query_builder_filters.append(
+                    {
+                        'id': f'{field_detail.column_id}__field_vs_field',
+                        'label': f'{field_detail.title} (Field vs Field)',
+                        'field': field_detail.full_field_name,
+                        'input': 'select',
+                        'operators': self.get_operator(self.OperatorFieldType.COMPARE_BOOLEAN),
+                        'values': field_results_types[FieldType.BOOLEAN],
+                    }
+                )
+
             elif field_type == FieldType.DATE:
                 self.get_date_field(
+                    field_results_types=field_results_types,
                     column_id=field_detail.column_id,
                     query_builder_filters=query_builder_filters,
                     field=field_detail.full_field_name,
@@ -186,7 +242,7 @@ class FieldTypes(ReportBuilderFieldUtils):
             }
         )
 
-    def get_date_field(self, column_id, query_builder_filters, field, title):
+    def get_date_field(self, field_results_types, column_id, query_builder_filters, field, title):
         variable_date = VariableDate()
         query_builder_filter = {
             'id': f'{column_id}__variable_date',
@@ -225,6 +281,18 @@ class FieldTypes(ReportBuilderFieldUtils):
             'values': variable_date.get_date_filter_quarters(),
         }
         query_builder_filters.append(query_builder_filter)
+        query_builder_filters.append(
+            {
+                'id': f'{column_id}__field_vs_field',
+                'label': f'{title} (Field vs Field)',
+                'field': field,
+                'input': 'select',
+                'operators': self.get_operator(self.OperatorFieldType.COMPARE_NUMBER),
+                'values': field_results_types[FieldType.NUMBER],
+            }
+        )
+
+
 
     def get_abstract_user_field(self, query_builder_filters, field, title):
         query_builder_filters.append(
@@ -293,7 +361,7 @@ class FieldTypes(ReportBuilderFieldUtils):
 
                     if selected_field_type is not None:
                         title = title_prefix + column.title
-                        field_results_types[selected_field_type].append([column_id, title])
+                        field_results_types[selected_field_type][column_id] = title
                         field_results.append(FieldDetail(django_field=django_field,
                                                          column=column,
                                                          title=title,
@@ -318,14 +386,14 @@ class FieldTypes(ReportBuilderFieldUtils):
                     if add_null_field:
                         field = prefix + include_field
                         title = title_prefix + include['title']
-                        field_results_types[FieldType.NULL_FIELD].append([field, title])
+                        field_results_types[FieldType.NULL_FIELD][field] = title
                         field_results.append(FieldDetail(field=field,
                                                          title=title,
                                                          field_type=FieldType.NULL_FIELD))
                     if isinstance(new_model(), AbstractUser):
                         field = prefix + include_field
                         title = title_prefix + include['title']
-                        field_results_types[FieldType.NULL_FIELD].append([field, title])
+                        field_results_types[FieldType.NULL_FIELD][field] = title
                         field_results.append(FieldDetail(field=field,
                                                          title=title,
                                                          field_type=FieldType.ABSTRACT_USER))

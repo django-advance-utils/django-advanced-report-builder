@@ -55,14 +55,14 @@ class QueryBuilderModalBaseMixin(ReportBuilderFieldUtils):
         field_types = FieldTypes()
         field_results = []
         field_results_types = {
-            FieldType.NULL_FIELD: [],
-            FieldType.ABSTRACT_USER: [],
-            FieldType.FILTER_FOREIGN_KEY: [],
-            FieldType.STRING: [],
-            FieldType.NUMBER: [],
-            FieldType.BOOLEAN: [],
-            FieldType.DATE: [],
-            FieldType.MANY_TO_MANY: []
+            FieldType.NULL_FIELD: {},
+            FieldType.ABSTRACT_USER: {},
+            FieldType.FILTER_FOREIGN_KEY: {},
+            FieldType.STRING: {},
+            FieldType.NUMBER: {},
+            FieldType.BOOLEAN: {},
+            FieldType.DATE: {},
+            FieldType.MANY_TO_MANY: {}
         }
         field_types.get_field_types(field_results=field_results,
                                     field_results_types=field_results_types,
@@ -70,7 +70,8 @@ class QueryBuilderModalBaseMixin(ReportBuilderFieldUtils):
                                     report_builder_class=report_builder_class)
 
         field_types.get_filters(fields=field_results,
-                                query_builder_filters=query_builder_filters)
+                                query_builder_filters=query_builder_filters,
+                                field_results_types=field_results_types)
 
 
     def ajax_get_fields(self, **kwargs):
