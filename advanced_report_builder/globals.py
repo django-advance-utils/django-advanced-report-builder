@@ -268,7 +268,7 @@ class FieldType(Enum):
     ABSTRACT_USER = 2
     FILTER_FOREIGN_KEY = 3
     STRING = 4
-    INTEGER = 5
+    NUMBER = 5
     BOOLEAN = 6
     DATE = 7
     MANY_TO_MANY = 8

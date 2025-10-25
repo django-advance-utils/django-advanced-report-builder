@@ -54,7 +54,18 @@ class QueryBuilderModalBaseMixin(ReportBuilderFieldUtils):
     ):
         field_types = FieldTypes()
         field_results = []
+        field_results_types = {
+            FieldType.NULL_FIELD: [],
+            FieldType.ABSTRACT_USER: [],
+            FieldType.FILTER_FOREIGN_KEY: [],
+            FieldType.STRING: [],
+            FieldType.NUMBER: [],
+            FieldType.BOOLEAN: [],
+            FieldType.DATE: [],
+            FieldType.MANY_TO_MANY: []
+        }
         field_types.get_field_types(field_results=field_results,
+                                    field_results_types=field_results_types,
                                     base_model=base_model,
                                     report_builder_class=report_builder_class)
 

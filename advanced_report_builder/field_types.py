@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 from typing import Optional
 
 from django.apps import apps
@@ -29,18 +30,19 @@ class FieldDetail:
         return self.__dict__
 
 class FieldTypes(ReportBuilderFieldUtils):
-    FIELD_TYPE_STRING = 1
-    FIELD_TYPE_NUMBER = 2
-    FIELD_TYPE_DATE = 3
-    FIELD_TYPE_BOOLEAN = 4
-    FIELD_TYPE_MULTIPLE_CHOICE = 5
-    FIELD_TYPE_FOREIGN_KEY = 6
-    FIELD_TYPE_ABSTRACT_USER = 7
-    FIELD_TYPE_PART_DATE = 8
+    class OperatorFieldType(Enum):
+        STRING = 1
+        NUMBER = 2
+        DATE = 3
+        BOOLEAN = 4
+        MULTIPLE_CHOICE = 5
+        FOREIGN_KEY = 6
+        ABSTRACT_USER = 7
+        PART_DATE = 8
 
     def get_operator(self, field_type):
         operators = {
-            self.FIELD_TYPE_STRING: [
+            self.OperatorFieldType.STRING: [
                 'equal',
                 'not_equal',
                 'contains',
@@ -50,7 +52,7 @@ class FieldTypes(ReportBuilderFieldUtils):
                 'ends_with',
                 'not_ends_with',
             ],
-            self.FIELD_TYPE_NUMBER: [
+            self.OperatorFieldType.NUMBER: [
                 'equal',
                 'not_equal',
                 'less',
@@ -58,7 +60,7 @@ class FieldTypes(ReportBuilderFieldUtils):
                 'greater',
                 'greater_or_equal',
             ],
-            self.FIELD_TYPE_DATE: [
+            self.OperatorFieldType.DATE: [
                 'equal',
                 'not_equal',
                 'less',
@@ -68,11 +70,11 @@ class FieldTypes(ReportBuilderFieldUtils):
                 'is_null',
                 'is_not_null',
             ],
-            self.FIELD_TYPE_PART_DATE: ['equal', 'not_equal', 'is_null', 'is_not_null'],
-            self.FIELD_TYPE_BOOLEAN: ['equal', 'not_equal'],
-            self.FIELD_TYPE_MULTIPLE_CHOICE: ['in', 'not_in'],
-            self.FIELD_TYPE_FOREIGN_KEY: ['is_null', 'is_not_null'],
-            self.FIELD_TYPE_ABSTRACT_USER: ['equal', 'not_equal'],
+            self.OperatorFieldType.PART_DATE: ['equal', 'not_equal', 'is_null', 'is_not_null'],
+            self.OperatorFieldType.BOOLEAN: ['equal', 'not_equal'],
+            self.OperatorFieldType.MULTIPLE_CHOICE: ['in', 'not_in'],
+            self.OperatorFieldType.FOREIGN_KEY: ['is_null', 'is_not_null'],
+            self.OperatorFieldType.ABSTRACT_USER: ['equal', 'not_equal'],
         }
         return operators.get(field_type)
 
@@ -105,7 +107,7 @@ class FieldTypes(ReportBuilderFieldUtils):
                         'input': 'select',
                         'multiple': True,
                         'values': field_detail.column.get_query_options(),
-                        'operators': self.get_operator(self.FIELD_TYPE_MULTIPLE_CHOICE),
+                        'operators': self.get_operator(self.OperatorFieldType.MULTIPLE_CHOICE),
                     }
                 )
             elif field_type == FieldType.STRING:
@@ -115,18 +117,18 @@ class FieldTypes(ReportBuilderFieldUtils):
                         'label': field_detail.title,
                         'field': field_detail.full_field_name,
                         'type': 'string',
-                        'operators': self.get_operator(self.FIELD_TYPE_STRING),
+                        'operators': self.get_operator(self.OperatorFieldType.STRING),
                         'validation': {'allow_empty_value': True},
                     }
                 )
-            elif field_type == FieldType.INTEGER:
+            elif field_type == FieldType.NUMBER:
                 if field_detail.django_field.choices is None:
                     query_builder_filter = {
                         'id': field_detail.column_id,
                         'label': field_detail.title,
                         'field': field_detail.full_field_name,
                         'type': 'integer',
-                        'operators': self.get_operator(self.FIELD_TYPE_NUMBER),
+                        'operators': self.get_operator(self.OperatorFieldType.NUMBER),
                     }
                 else:
                     query_builder_filter = {
@@ -137,7 +139,7 @@ class FieldTypes(ReportBuilderFieldUtils):
                         'input': 'select',
                         'multiple': True,
                         'values': dict(field_detail.django_field.choices),
-                        'operators': self.get_operator(self.FIELD_TYPE_MULTIPLE_CHOICE),
+                        'operators': self.get_operator(self.OperatorFieldType.MULTIPLE_CHOICE),
                     }
                 query_builder_filters.append(query_builder_filter)
             elif field_type == FieldType.BOOLEAN:
@@ -147,7 +149,7 @@ class FieldTypes(ReportBuilderFieldUtils):
                         'label': field_detail.title,
                         'field': field_detail.full_field_name,
                         'input': 'select',
-                        'operators': self.get_operator(self.FIELD_TYPE_BOOLEAN),
+                        'operators': self.get_operator(self.OperatorFieldType.BOOLEAN),
                         'values': {'0': 'False', '1': 'True'},
                     }
                 )
@@ -168,7 +170,7 @@ class FieldTypes(ReportBuilderFieldUtils):
                     'input': 'select',
                     'multiple': True,
                     'values': choices,
-                    'operators': self.get_operator(self.FIELD_TYPE_MULTIPLE_CHOICE),
+                    'operators': self.get_operator(self.OperatorFieldType.MULTIPLE_CHOICE),
                 }
                 query_builder_filters.append(query_builder_filter)
 
@@ -179,7 +181,7 @@ class FieldTypes(ReportBuilderFieldUtils):
                 'label': title,
                 'field': field,
                 'type': 'integer',
-                'operators': self.get_operator(self.FIELD_TYPE_FOREIGN_KEY),
+                'operators': self.get_operator(self.OperatorFieldType.FOREIGN_KEY),
                 'validation': {'allow_empty_value': True},
             }
         )
@@ -190,7 +192,7 @@ class FieldTypes(ReportBuilderFieldUtils):
             'id': f'{column_id}__variable_date',
             'label': f'{title} (Variable)',
             'field': field,
-            'operators': self.get_operator(self.FIELD_TYPE_DATE),
+            'operators': self.get_operator(self.OperatorFieldType.DATE),
             'input': 'select',
             'values': variable_date.get_variable_date_filter_values(),
         }
@@ -199,7 +201,7 @@ class FieldTypes(ReportBuilderFieldUtils):
             'id': f'{column_id}__variable_year',
             'label': f'{title} (Year)',
             'field': field,
-            'operators': self.get_operator(self.FIELD_TYPE_DATE),
+            'operators': self.get_operator(self.OperatorFieldType.DATE),
             'input': 'select',
             'values': variable_date.get_date_filter_years(),
         }
@@ -208,7 +210,7 @@ class FieldTypes(ReportBuilderFieldUtils):
             'id': f'{column_id}__variable_month',
             'label': f'{title} (Month)',
             'field': field,
-            'operators': self.get_operator(self.FIELD_TYPE_DATE),
+            'operators': self.get_operator(self.OperatorFieldType.DATE),
             'input': 'select',
             'values': variable_date.get_date_filter_months(),
         }
@@ -218,7 +220,7 @@ class FieldTypes(ReportBuilderFieldUtils):
             'id': f'{column_id}__variable_quarter',
             'label': f'{title} (Quarter)',
             'field': field,
-            'operators': self.get_operator(self.FIELD_TYPE_PART_DATE),
+            'operators': self.get_operator(self.OperatorFieldType.PART_DATE),
             'input': 'select',
             'values': variable_date.get_date_filter_quarters(),
         }
@@ -231,13 +233,14 @@ class FieldTypes(ReportBuilderFieldUtils):
                 'label': f'{title} (Logged in user)',
                 'field': field,
                 'input': 'select',
-                'operators': self.get_operator(self.FIELD_TYPE_ABSTRACT_USER),
+                'operators': self.get_operator(self.OperatorFieldType.ABSTRACT_USER),
                 'values': {'0': 'False', '1': 'True'},
             }
         )
 
     def get_field_types(self,
                         field_results,
+                        field_results_types,
                         base_model,
                         report_builder_class,
                         prefix='',
@@ -267,9 +270,12 @@ class FieldTypes(ReportBuilderFieldUtils):
                             selected_field_type = FieldType.STRING
                         elif isinstance(
                                 django_field,
-                                models.IntegerField | models.PositiveSmallIntegerField | models.PositiveIntegerField,
+                                models.IntegerField |
+                                models.PositiveSmallIntegerField |
+                                models.PositiveIntegerField |
+                                models.FloatField
                         ):
-                            selected_field_type = FieldType.INTEGER
+                            selected_field_type = FieldType.NUMBER
                         elif isinstance(django_field, models.BooleanField):
                             selected_field_type = FieldType.BOOLEAN
                         elif isinstance(django_field, DATE_FIELDS):
@@ -286,9 +292,11 @@ class FieldTypes(ReportBuilderFieldUtils):
                     column_id = prefix + field
 
                     if selected_field_type is not None:
+                        title = title_prefix + column.title
+                        field_results_types[selected_field_type].append([column_id, title])
                         field_results.append(FieldDetail(django_field=django_field,
                                                          column=column,
-                                                         title=title_prefix + column.title,
+                                                         title=title,
                                                          field=column.column_name,
                                                          prefix=prefix,
                                                          field_type=selected_field_type,
@@ -308,15 +316,22 @@ class FieldTypes(ReportBuilderFieldUtils):
                     add_null_field = _foreign_key.field.null if hasattr(_foreign_key, 'field') else True
 
                     if add_null_field:
-                        field_results.append(FieldDetail(field=prefix + include_field,
-                                                         title=title_prefix + include['title'],
+                        field = prefix + include_field
+                        title = title_prefix + include['title']
+                        field_results_types[FieldType.NULL_FIELD].append([field, title])
+                        field_results.append(FieldDetail(field=field,
+                                                         title=title,
                                                          field_type=FieldType.NULL_FIELD))
                     if isinstance(new_model(), AbstractUser):
-                        field_results.append(FieldDetail(field=prefix + include_field,
-                                                         title=title_prefix + include['title'],
+                        field = prefix + include_field
+                        title = title_prefix + include['title']
+                        field_results_types[FieldType.NULL_FIELD].append([field, title])
+                        field_results.append(FieldDetail(field=field,
+                                                         title=title,
                                                          field_type=FieldType.ABSTRACT_USER))
                     self.get_field_types(
                         field_results=field_results,
+                        field_results_types=field_results_types,
                         base_model=new_model,
                         report_builder_class=new_report_builder_class,
                         prefix=f'{prefix}{include_field}__',
