@@ -1,3 +1,5 @@
+from enum import Enum
+
 from django.db.models import Avg, Count, Max, Min, Sum
 from django.db.models.functions import (
     TruncDay,
@@ -259,3 +261,14 @@ CALENDAR_VIEW_TYPE_CHOICES = (
     (CALENDAR_VIEW_TYPE_DAY, 'Day'),
     (CALENDAR_VIEW_TYPE_YEAR, 'Year'),
 )
+
+
+class FieldType(Enum):
+    NULL_FIELD = 1
+    ABSTRACT_USER = 2
+    FILTER_FOREIGN_KEY = 3
+    STRING = 4
+    INTEGER = 5
+    BOOLEAN = 6
+    DATE = 7
+    MANY_TO_MANY = 8
