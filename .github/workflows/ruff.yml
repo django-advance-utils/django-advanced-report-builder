@@ -1,0 +1,75 @@
+name: Lint with Ruff
+
+on:
+  push:
+    branches:
+      - '**'  # Trigger on all branches
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install GitHub CLI
+        run: sudo apt-get install gh -y
+
+      - name: Authenticate GitHub CLI
+        uses: cli/gh-action@v2
+        with:
+          token: ${{ secrets.GITHUB }}
+
+      - name: Run Ruff (check + fix)
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: "check --fix --unsafe-fixes --exit-zero"
+
+      - name: Run Ruff (format)
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: "format"
+
+      - name: Commit or Create Pull Request
+        run: |
+          git config --global user.name "tomturner"
+          git config --global user.email "tom@twt.me.uk"
+
+          if git diff-index --quiet HEAD; then
+            echo "No changes detected."
+            exit 0
+          fi
+
+          git add .
+          git commit -m "Auto-fix lint issues with Ruff"
+
+          if [ "${{ github.ref_name }}" = "master" ]; then
+            echo "Handling pull request for master branch."
+            BRANCH_NAME="auto-fix-ruff"
+
+            git fetch origin
+            git checkout -B $BRANCH_NAME
+            git push -f origin $BRANCH_NAME
+
+            EXISTING_PR=$(gh pr list --base master --head $BRANCH_NAME --json number --jq '.[].number')
+
+            if [ -n "$EXISTING_PR" ]; then
+              echo "Closing existing pull request #$EXISTING_PR."
+              gh pr close $EXISTING_PR --delete-branch
+            fi
+
+            gh pr create \
+              --base master \
+              --head $BRANCH_NAME \
+              --title "Auto-fix: Lint issues with Ruff" \
+              --body "This pull request contains automated fixes for linting issues detected by Ruff."
+          else
+            echo "Pushing changes directly to branch: ${{ github.ref_name }}"
+            git push origin ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB }}
