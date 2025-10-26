@@ -3,12 +3,12 @@ from datetime import timedelta
 
 from ajax_helpers.utils import random_string
 from django.conf import settings
-from django.forms import CharField, ModelChoiceField, NumberInput, IntegerField
+from django.forms import CharField, IntegerField, ModelChoiceField, NumberInput
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.views.generic import TemplateView
-from django_datatables.columns import DateColumn, MenuColumn, DateTimeColumn
+from django_datatables.columns import DateColumn, DateTimeColumn, MenuColumn
 from django_datatables.datatables import DatatableExcludedRow
 from django_datatables.helpers import DUMMY_ID, row_link
 from django_datatables.widgets import DataTableReorderWidget
@@ -111,8 +111,10 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
         table.add_columns(calendar_report_data_set.start_date_field)
         if calendar_report_data_set.end_date_type == CalendarReportDataSet.END_DATE_TYPE_FIELD:
             table.add_columns(calendar_report_data_set.end_date_field)
-        elif (calendar_report_data_set.end_date_type == CalendarReportDataSet.END_DATE_TYPE_DURATION_FIELD and
-              calendar_report_data_set.end_duration_field is not None):
+        elif (
+            calendar_report_data_set.end_date_type == CalendarReportDataSet.END_DATE_TYPE_DURATION_FIELD
+            and calendar_report_data_set.end_duration_field is not None
+        ):
             _, _, _, start_field_col_field = self.get_field_details(
                 base_model=base_model,
                 field=calendar_report_data_set.start_date_field,
@@ -152,7 +154,6 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
 
             class FixedDurationEndDateColumn(DateColumn):
                 def row_result(self, data, _page_result):
-
                     start_date = data.get(self.model_path + start_field_col_field)
                     end_duration = calendar_report_data_set.end_duration
                     if end_duration is None:
@@ -419,8 +420,6 @@ class CalendarModal(ModelFormModal):
                 o.save()
         return self.command_response('')
 
-
-
     def post_save(self, created, form):
         if created:
             self.modal_redirect(self.request.resolver_match.view_name, slug=f'pk-{self.object.id}-new-True')
@@ -443,14 +442,16 @@ class CalendarDataSetForm(QueryBuilderModelForm):
         if start_date_field is None:
             self.add_error('start_date_field', 'Please select a start period')
         end_date_type = cleaned_data['end_date_type']
-        if (end_date_type == CalendarReportDataSet.END_DATE_TYPE_FIELD and
-                cleaned_data['end_date_field'] is None):
+        if end_date_type == CalendarReportDataSet.END_DATE_TYPE_FIELD and cleaned_data['end_date_field'] is None:
             self.add_error('end_date_field', 'Please select a end period')
-        elif (end_date_type == CalendarReportDataSet.END_DATE_TYPE_DURATION_FIELD and
-              cleaned_data['end_duration_field'] is None):
+        elif (
+            end_date_type == CalendarReportDataSet.END_DATE_TYPE_DURATION_FIELD
+            and cleaned_data['end_duration_field'] is None
+        ):
             self.add_error('end_duration_field', 'Please select a end period')
-        elif (end_date_type == CalendarReportDataSet.END_DATE_TYPE_DURATION_FIXED and
-              (cleaned_data['end_duration'] is None or cleaned_data['end_duration'] == '')):
+        elif end_date_type == CalendarReportDataSet.END_DATE_TYPE_DURATION_FIXED and (
+            cleaned_data['end_duration'] is None or cleaned_data['end_duration'] == ''
+        ):
             self.add_error('end_duration', 'Please select a end period')
         return cleaned_data
 

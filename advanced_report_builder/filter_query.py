@@ -250,7 +250,6 @@ class FilterQueryMixin:
                 'greater',
                 'greater_or_equal',
             ]:
-
                 query_string_parts = query_string.split('__')
                 query_list.append(Q((f'{field}__year__{query_string_parts[-1]}', year)))
 

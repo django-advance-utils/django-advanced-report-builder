@@ -32,9 +32,7 @@ class MultiQueryModalMixin:
         report_type = self.get_report_type(**_kwargs)
         show_order_by = 1 if self.show_order_by else 0
         show_target = 1 if self.show_target else 0
-        slug += (f'-report_type-{report_type}'
-                 f'-show_order_by-{show_order_by}'
-                 f'-show_target-{show_target}')
+        slug += f'-report_type-{report_type}-show_order_by-{show_order_by}-show_target-{show_target}'
         return slug
 
     def get_report_type(self, **_kwargs):

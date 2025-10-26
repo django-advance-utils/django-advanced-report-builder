@@ -22,15 +22,19 @@ from advanced_report_builder.views.modals_base import QueryBuilderModalBaseMixin
 
 class QueryForm(QueryBuilderModelForm):
     cancel_class = 'btn-secondary modal-cancel'
+
     class Meta:
         model = ReportQuery
         fields = ['name', 'query']
 
+
 class QueryFormWithTarget(QueryBuilderModelForm):
     cancel_class = 'btn-secondary modal-cancel'
+
     class Meta:
         model = ReportQuery
         fields = ['name', 'query', 'target']
+
 
 class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
     model = ReportQuery

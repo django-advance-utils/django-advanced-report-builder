@@ -50,7 +50,7 @@ class QueryBuilderModalBaseMixin(ReportBuilderFieldUtils):
         prefix='',
         title_prefix='',
         previous_base_model=None,
-        show_includes=True
+        show_includes=True,
     ):
         field_types = FieldTypes()
 
@@ -77,8 +77,9 @@ class QueryBuilderModalBaseMixin(ReportBuilderFieldUtils):
             for include_field, include in report_builder_class.includes.items():
                 app_label, model, report_builder_fields_str = include['model'].split('.')
                 new_model = apps.get_model(app_label, model)
-                new_report_builder_class = get_report_builder_class(model=new_model,
-                                                                    class_name=report_builder_fields_str)
+                new_report_builder_class = get_report_builder_class(
+                    model=new_model, class_name=report_builder_fields_str
+                )
 
                 if new_model != previous_base_model:
                     _foreign_key = getattr(base_model, include_field, None)
