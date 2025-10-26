@@ -3,7 +3,7 @@ name: Lint with Ruff
 on:
   push:
     branches:
-      - '**'  # Trigger on all branches
+      - '**'  # Run on all branches
 
 permissions:
   contents: write
@@ -17,24 +17,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Install GitHub CLI (gh)
       - name: Install GitHub CLI
-        run: sudo apt-get install gh -y
+        run: sudo apt-get update && sudo apt-get install -y gh
 
+      # Authenticate GitHub CLI using your PAT secret
       - name: Authenticate GitHub CLI
-        uses: cli/gh-action@v2
-        with:
-          token: ${{ secrets.GITHUB }}
+        run: |
+          echo "${{ secrets.GITHUB }}" | gh auth login --with-token
+          gh auth status
 
+      # Run Ruff linting and auto-fix
       - name: Run Ruff (check + fix)
         uses: astral-sh/ruff-action@v3
         with:
           args: "check --fix --unsafe-fixes --exit-zero"
 
+      # Run Ruff formatting
       - name: Run Ruff (format)
         uses: astral-sh/ruff-action@v3
         with:
           args: "format"
 
+      # Commit or create PR depending on branch
       - name: Commit or Create Pull Request
         run: |
           git config --global user.name "tomturner"
