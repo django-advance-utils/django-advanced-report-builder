@@ -315,7 +315,7 @@ class ReportBuilderFieldUtils:
                         search_string=search_string,
                         show_order_by_fields=show_order_by_fields,
                         allow_pivots=local_allow_pivots,
-                        show_includes=include.get('show_includes', True)
+                        show_includes=include.get('show_includes', True),
                     )
 
         if include_mathematical_columns:

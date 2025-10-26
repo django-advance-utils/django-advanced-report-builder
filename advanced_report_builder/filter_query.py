@@ -4,7 +4,7 @@ import operator
 from functools import reduce
 
 from django.apps import apps
-from django.db.models import Q, F
+from django.db.models import F, Q
 from django.shortcuts import get_object_or_404
 
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
@@ -149,10 +149,7 @@ class FilterQueryMixin:
 
             if _id.endswith('__field_vs_field'):
                 self.field_vs_field(
-                    value=value,
-                    query_list=query_list,
-                    display_operator=display_operator,
-                    query_string=query_string
+                    value=value, query_list=query_list, display_operator=display_operator, query_string=query_string
                 )
             elif data_type == 'string' and _id.endswith('__variable_date'):
                 self.get_variable_date(
@@ -216,7 +213,6 @@ class FilterQueryMixin:
         else:
             query_list.append(Q(**{query_string: F(value)}))
 
-
     def set_min_max_date(self, date_in):
         self.period_data.set_min_max_date(date_in)
 
@@ -265,7 +261,6 @@ class FilterQueryMixin:
                 'greater',
                 'greater_or_equal',
             ]:
-
                 query_string_parts = query_string.split('__')
                 query_list.append(Q((f'{field}__year__{query_string_parts[-1]}', year)))
 

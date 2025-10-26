@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
 from django.apps import apps
 from django.contrib.auth.models import AbstractUser
@@ -20,14 +19,15 @@ class FieldDetail:
     field_type: FieldType
     field: str
     title: str
-    django_field: Optional[models.Field] = None
-    column: Optional[str] = None
-    prefix: Optional[str] = None
-    full_field_name: Optional[str] = None
-    column_id: Optional[int] = None
+    django_field: models.Field | None = None
+    column: str | None = None
+    prefix: str | None = None
+    full_field_name: str | None = None
+    column_id: int | None = None
 
     def to_dict(self):
         return self.__dict__
+
 
 class FieldTypes(ReportBuilderFieldUtils):
     class OperatorFieldType(Enum):
@@ -44,7 +44,6 @@ class FieldTypes(ReportBuilderFieldUtils):
         COMPARE_NUMBER = 10
         COMPARE_DATE = 11
         COMPARE_BOOLEAN = 12
-
 
     def get_operator(self, field_type):
         operators = {
@@ -98,10 +97,9 @@ class FieldTypes(ReportBuilderFieldUtils):
                 'greater',
                 'greater_or_equal',
             ],
-            self.OperatorFieldType.COMPARE_BOOLEAN: ['equal', 'not_equal']
+            self.OperatorFieldType.COMPARE_BOOLEAN: ['equal', 'not_equal'],
         }
         return operators.get(field_type)
-
 
     def get_filters(self, fields, query_builder_filters, field_results_types):
         for field_detail in fields:
@@ -292,8 +290,6 @@ class FieldTypes(ReportBuilderFieldUtils):
             }
         )
 
-
-
     def get_abstract_user_field(self, query_builder_filters, field, title):
         query_builder_filters.append(
             {
@@ -306,21 +302,21 @@ class FieldTypes(ReportBuilderFieldUtils):
             }
         )
 
-    def get_field_types(self,
-                        field_results,
-                        field_results_types,
-                        base_model,
-                        report_builder_class,
-                        prefix='',
-                        title_prefix='',
-                        previous_base_model=None,
-                        show_includes=True
-                        ):
-
+    def get_field_types(
+        self,
+        field_results,
+        field_results_types,
+        base_model,
+        report_builder_class,
+        prefix='',
+        title_prefix='',
+        previous_base_model=None,
+        show_includes=True,
+    ):
         for report_builder_field in report_builder_class.fields:
             if (
-                    not isinstance(report_builder_field, str)
-                    or report_builder_field not in report_builder_class.exclude_search_fields
+                not isinstance(report_builder_field, str)
+                or report_builder_field not in report_builder_class.exclude_search_fields
             ):
                 django_field, _, columns, _ = self.get_field_details(
                     base_model=base_model,
@@ -337,11 +333,11 @@ class FieldTypes(ReportBuilderFieldUtils):
                         elif isinstance(django_field, models.CharField | models.TextField | models.EmailField):
                             selected_field_type = FieldType.STRING
                         elif isinstance(
-                                django_field,
-                                models.IntegerField |
-                                models.PositiveSmallIntegerField |
-                                models.PositiveIntegerField |
-                                models.FloatField
+                            django_field,
+                            models.IntegerField
+                            | models.PositiveSmallIntegerField
+                            | models.PositiveIntegerField
+                            | models.FloatField,
                         ):
                             selected_field_type = FieldType.NUMBER
                         elif isinstance(django_field, models.BooleanField):
@@ -362,21 +358,26 @@ class FieldTypes(ReportBuilderFieldUtils):
                     if selected_field_type is not None:
                         title = title_prefix + column.title
                         field_results_types[selected_field_type][column_id] = title
-                        field_results.append(FieldDetail(django_field=django_field,
-                                                         column=column,
-                                                         title=title,
-                                                         field=column.column_name,
-                                                         prefix=prefix,
-                                                         field_type=selected_field_type,
-                                                         full_field_name=full_field_name,
-                                                         column_id=column_id))
+                        field_results.append(
+                            FieldDetail(
+                                django_field=django_field,
+                                column=column,
+                                title=title,
+                                field=column.column_name,
+                                prefix=prefix,
+                                field_type=selected_field_type,
+                                full_field_name=full_field_name,
+                                column_id=column_id,
+                            )
+                        )
 
         if show_includes:
             for include_field, include in report_builder_class.includes.items():
                 app_label, model, report_builder_fields_str = include['model'].split('.')
                 new_model = apps.get_model(app_label, model)
-                new_report_builder_class = get_report_builder_class(model=new_model,
-                                                                    class_name=report_builder_fields_str)
+                new_report_builder_class = get_report_builder_class(
+                    model=new_model, class_name=report_builder_fields_str
+                )
 
                 if new_model != previous_base_model:
                     _foreign_key = getattr(base_model, include_field, None)
@@ -387,16 +388,12 @@ class FieldTypes(ReportBuilderFieldUtils):
                         field = prefix + include_field
                         title = title_prefix + include['title']
                         field_results_types[FieldType.NULL_FIELD][field] = title
-                        field_results.append(FieldDetail(field=field,
-                                                         title=title,
-                                                         field_type=FieldType.NULL_FIELD))
+                        field_results.append(FieldDetail(field=field, title=title, field_type=FieldType.NULL_FIELD))
                     if isinstance(new_model(), AbstractUser):
                         field = prefix + include_field
                         title = title_prefix + include['title']
                         field_results_types[FieldType.NULL_FIELD][field] = title
-                        field_results.append(FieldDetail(field=field,
-                                                         title=title,
-                                                         field_type=FieldType.ABSTRACT_USER))
+                        field_results.append(FieldDetail(field=field, title=title, field_type=FieldType.ABSTRACT_USER))
                     self.get_field_types(
                         field_results=field_results,
                         field_results_types=field_results_types,

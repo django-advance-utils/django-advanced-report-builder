@@ -18,7 +18,6 @@ from django_modals.processes import (
 from django_modals.widgets.select2 import Select2
 from django_modals.widgets.widgets import Toggle
 
-from advanced_report_builder.globals import CALENDAR_VIEW_TYPE_CHOICES
 from advanced_report_builder.models import (
     Dashboard,
     DashboardReport,
@@ -236,8 +235,9 @@ class DashboardReportModal(ModelFormModal):
                 },
             ],
         )
-        form.fields['name_override'].help_text = (f'Original report name "{self.object.report.name}".'
-                                                  f' Leave blank to keep this name.')
+        form.fields['name_override'].help_text = (
+            f'Original report name "{self.object.report.name}". Leave blank to keep this name.'
+        )
         report_obj = getattr(self.object.report, self.object.report.instance_type)
         report_obj.dashboard_fields(form=form, dashboard_report=self.object)
         if report_obj.show_dashboard_query():
@@ -258,15 +258,14 @@ class DashboardAddReportModal(FormModal):
     modal_title = 'Add Report'
 
     def form_setup(self, form, *_args, **_kwargs):
-
         grouped_choices = {}
         for report in Report.objects.all():
             group_name = report.get_output_type_name()
             grouped_choices.setdefault(group_name, []).append((report.pk, report.name))
 
-        form.fields['report'] = ChoiceField(choices=[
-            (group_name, choices) for group_name, choices in grouped_choices.items()
-        ], widget=Select2)
+        form.fields['report'] = ChoiceField(
+            choices=[(group_name, choices) for group_name, choices in grouped_choices.items()], widget=Select2
+        )
 
     def form_valid(self, form):
         dashboard = get_object_or_404(Dashboard, id=self.slug['pk'])

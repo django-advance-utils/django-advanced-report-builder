@@ -14,7 +14,7 @@ from django_modals.form_helpers import HorizontalNoEnterHelper
 from django_modals.helper import show_modal
 from django_modals.modals import Modal, ModelFormModal
 from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
-from django_modals.widgets.select2 import Select2Multiple, Select2
+from django_modals.widgets.select2 import Select2, Select2Multiple
 from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.column_types import NUMBER_FIELDS
@@ -291,7 +291,7 @@ class SingleValueView(ChartBaseView):
             return None
         month = self.period_data.get_month_period()
         if month is None:
-            return None # todo / week targets etc
+            return None  # todo / week targets etc
 
         target_value = get_target_value(
             min_date=month[0],
@@ -303,7 +303,7 @@ class SingleValueView(ChartBaseView):
             return None
         try:
             raw_value = data[0][0]  # Safely inside the try block
-            cleaned_value = raw_value.replace(",", "")
+            cleaned_value = raw_value.replace(',', '')
             value = float(cleaned_value)
         except (ValueError, TypeError, AttributeError, IndexError):
             return None
@@ -320,12 +320,14 @@ class SingleValueView(ChartBaseView):
             if float(target_value).is_integer():
                 target_value = str(int(float(target_value)))
             else:
-                target_value = f"{float(target_value):.2f}"
+                target_value = f'{float(target_value):.2f}'
 
-        return {'target_value': target_value,
-                'colour': report_query.target.colour,
-                'percentage': percentage,
-                'bar_percentage': bar_percentage}
+        return {
+            'target_value': target_value,
+            'colour': report_query.target.colour,
+            'percentage': percentage,
+            'bar_percentage': bar_percentage,
+        }
 
     def get_breakdown_slug(self):
         query_id = self.slug.get(f'query{self.report.pk}')
@@ -588,7 +590,7 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
             slug = self.get_query_slug(f'report_id-{self.object.id}', **_kwargs)
             url = reverse(
                 'advanced_report_builder:single_value_numerator_modal',
-                kwargs={'slug':slug},
+                kwargs={'slug': slug},
             )
             return self.command_response('show_modal', modal=url)
 
@@ -704,7 +706,6 @@ class QueryNumeratorModal(QueryBuilderModalBaseMixin, ModelFormModal):
             'target',
             FieldEx('query', template='advanced_report_builder/query_builder.html'),
             FieldEx('extra_query', template='advanced_report_builder/query_builder.html'),
-
         ]
 
         return fields

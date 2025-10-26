@@ -242,7 +242,6 @@ class Report(TimeStampedModel):
                 return Report.output_types.get(instance_type, '')
 
         class OutputTypeIcon(NoHeadingColumn):
-
             def col_setup(self):
                 self.field = ['instance_type']
 
@@ -335,9 +334,7 @@ class SingleValueReport(Report):
     tile_colour = ColourField(blank=True, null=True)
     field = models.CharField(max_length=200, blank=True, null=True)  # denominator
     numerator = models.CharField(max_length=200, blank=True, null=True)
-    single_value_type = models.PositiveSmallIntegerField(
-        choices=SingleValueType.choices, default=SingleValueType.COUNT
-    )
+    single_value_type = models.PositiveSmallIntegerField(choices=SingleValueType.choices, default=SingleValueType.COUNT)
     prefix = models.CharField(max_length=64, blank=True, null=True)
     decimal_places = models.IntegerField(default=0)
 
@@ -350,6 +347,7 @@ class SingleValueReport(Report):
 
     def is_percentage(self):
         return self.SingleValueType.is_percentage(self.single_value_type)
+
 
 class BarChartReport(Report):
     class BarChartOrientation(models.IntegerChoices):
@@ -487,6 +485,7 @@ class MultiCellStyle(TimeStampedModel):
     font_size = models.PositiveSmallIntegerField()
     font_colour = ColourField(null=True, blank=True)
     background_colour = ColourField(null=True, blank=True)
+
 
 #
 # class MultiValueReportCell(TimeStampedModel):

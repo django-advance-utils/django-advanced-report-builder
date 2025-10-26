@@ -1,19 +1,14 @@
 import json
 
-from django.apps import apps
 from django.conf import settings
-from django.contrib.auth.models import AbstractUser
-from django.db.models.expressions import field_types
 from django.forms import JSONField
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
-from django_datatables.columns import ManyToManyColumn
 from django_modals.modals import ModelFormModal
 from django_modals.widgets.select2 import Select2
 
 from advanced_report_builder.column_types import NUMBER_FIELDS
-from advanced_report_builder.columns import FilterForeignKeyColumn
 from advanced_report_builder.field_types import FieldTypes
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.globals import FieldType
@@ -62,17 +57,18 @@ class QueryBuilderModalBaseMixin(ReportBuilderFieldUtils):
             FieldType.NUMBER: {},
             FieldType.BOOLEAN: {},
             FieldType.DATE: {},
-            FieldType.MANY_TO_MANY: {}
+            FieldType.MANY_TO_MANY: {},
         }
-        field_types.get_field_types(field_results=field_results,
-                                    field_results_types=field_results_types,
-                                    base_model=base_model,
-                                    report_builder_class=report_builder_class)
+        field_types.get_field_types(
+            field_results=field_results,
+            field_results_types=field_results_types,
+            base_model=base_model,
+            report_builder_class=report_builder_class,
+        )
 
-        field_types.get_filters(fields=field_results,
-                                query_builder_filters=query_builder_filters,
-                                field_results_types=field_results_types)
-
+        field_types.get_filters(
+            fields=field_results, query_builder_filters=query_builder_filters, field_results_types=field_results_types
+        )
 
     def ajax_get_fields(self, **kwargs):
         report_type_id = kwargs['report_type']
