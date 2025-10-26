@@ -1,0 +1,81 @@
+name: Lint with Ruff
+
+on:
+  push:
+    branches:
+      - '**'  # Run on all branches
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Install GitHub CLI (gh)
+      - name: Install GitHub CLI
+        run: sudo apt-get update && sudo apt-get install -y gh
+
+      # Authenticate GitHub CLI using your PAT secret
+      - name: Authenticate GitHub CLI
+        run: |
+          echo "${{ secrets.GITHUB }}" | gh auth login --with-token
+          gh auth status
+
+      # Run Ruff linting and auto-fix
+      - name: Run Ruff (check + fix)
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: "check --fix --unsafe-fixes --exit-zero"
+
+      # Run Ruff formatting
+      - name: Run Ruff (format)
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: "format"
+
+      # Commit or create PR depending on branch
+      - name: Commit or Create Pull Request
+        run: |
+          git config --global user.name "tomturner"
+          git config --global user.email "tom@twt.me.uk"
+
+          if git diff-index --quiet HEAD; then
+            echo "No changes detected."
+            exit 0
+          fi
+
+          git add .
+          git commit -m "Auto-fix lint issues with Ruff"
+
+          if [ "${{ github.ref_name }}" = "master" ]; then
+            echo "Handling pull request for master branch."
+            BRANCH_NAME="auto-fix-ruff"
+
+            git fetch origin
+            git checkout -B $BRANCH_NAME
+            git push -f origin $BRANCH_NAME
+
+            EXISTING_PR=$(gh pr list --base master --head $BRANCH_NAME --json number --jq '.[].number')
+
+            if [ -n "$EXISTING_PR" ]; then
+              echo "Closing existing pull request #$EXISTING_PR."
+              gh pr close $EXISTING_PR --delete-branch
+            fi
+
+            gh pr create \
+              --base master \
+              --head $BRANCH_NAME \
+              --title "Auto-fix: Lint issues with Ruff" \
+              --body "This pull request contains automated fixes for linting issues detected by Ruff."
+          else
+            echo "Pushing changes directly to branch: ${{ github.ref_name }}"
+            git push origin ${{ github.ref_name }}
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB }}
