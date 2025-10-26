@@ -287,8 +287,8 @@ class FieldTypes(ReportBuilderFieldUtils):
                 'label': f'{title} (Field vs Field)',
                 'field': field,
                 'input': 'select',
-                'operators': self.get_operator(self.OperatorFieldType.COMPARE_NUMBER),
-                'values': field_results_types[FieldType.NUMBER],
+                'operators': self.get_operator(self.OperatorFieldType.COMPARE_DATE),
+                'values': field_results_types[FieldType.DATE],
             }
         )
 
