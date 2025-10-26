@@ -76,5 +76,6 @@ jobs:
           else
             echo "Pushing changes directly to branch: ${{ github.ref_name }}"
             git push origin ${{ github.ref_name }}
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB }}
