@@ -235,9 +235,9 @@ class DashboardReportModal(ModelFormModal):
                 },
             ],
         )
-        form.fields['name_override'].help_text = (
-            f'Original report name "{self.object.report.name}". Leave blank to keep this name.'
-        )
+        form.fields[
+            'name_override'
+        ].help_text = f'Original report name "{self.object.report.name}". Leave blank to keep this name.'
         report_obj = getattr(self.object.report, self.object.report.instance_type)
         report_obj.dashboard_fields(form=form, dashboard_report=self.object)
         if report_obj.show_dashboard_query():
