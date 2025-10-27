@@ -144,6 +144,7 @@ class Report(TimeStampedModel):
         'kanbanreport': 'Kanban',
         'customreport': 'Custom',
         'calendarreport': 'Calendar',
+        'multivaluereport': 'Multi Values',
     }
 
     output_types_icons = {
@@ -156,6 +157,7 @@ class Report(TimeStampedModel):
         'kanbanreport': '<i class="fas fa-chart-bar fa-flip-vertical"></i>',
         'customreport': '<i class="fas fa-file"></i>',
         'calendarreport': '<i class="fas fa-calendar"></i>',
+        'multivaluereport': '<i class="fas fa-grip-horizontal"></i>',
     }
 
     name = models.CharField(max_length=200)
@@ -487,48 +489,49 @@ class MultiCellStyle(TimeStampedModel):
     background_colour = ColourField(null=True, blank=True)
 
 
-#
-# class MultiValueReportCell(TimeStampedModel):
-#     class MultiValueType(models.IntegerChoices):
-#         STATIC_TEXT = 0, 'Static Text'
-#         COUNT = 1, 'Count'
-#         SUM = 2, 'Sum'
-#         PERCENT = 4, 'Percent'
-#         PERCENT_FROM_COUNT = 5, 'Percent from Count'
-#         AVERAGE_SUM_FROM_COUNT = 6, 'Average Sum from Count'
-#         AVERAGE_SUM_OVER_TIME = 7, 'Average Sum over Time'
-#         EQUATION = 8, 'Equation'
-#
-#         @classmethod
-#         def is_percentage(cls, value):
-#             return value in {
-#                 cls.PERCENT,
-#                 cls.PERCENT_FROM_COUNT,
-#             }
-#
-#     report = models.ForeignKey(Report, on_delete=models.CASCADE)
-#     row = models.PositiveSmallIntegerField()
-#     column = models.PositiveSmallIntegerField()
-#     multi_value_type = models.IntegerField(choices=MultiValueType.choices, default=MultiValueType.STATIC_TEXT)
-#     text = models.TextField(blank=True, null=True)
-#
-#     field = models.CharField(max_length=200, blank=True, null=True)  # denominator
-#     numerator = models.CharField(max_length=200, blank=True, null=True)
-#     prefix = models.CharField(max_length=64, blank=True, null=True)
-#     decimal_places = models.IntegerField(default=0)
-#
-#     show_breakdown = models.BooleanField(default=False)
-#     breakdown_fields = models.JSONField(null=True, blank=True)
-#
-#     average_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES, blank=True, null=True)
-#     average_start_period = models.PositiveSmallIntegerField(blank=True, null=True)
-#     average_end_period = models.PositiveSmallIntegerField(blank=True, null=True)
-#
-#     query = models.JSONField(null=True, blank=True)
-#     extra_query = models.JSONField(null=True, blank=True)  # used for single value Numerator
-#
-#     class Meta:
-#         models.UniqueConstraint(fields=['report', 'row', 'column'], name='multi_value_report_cell_unique')
+class MultiValueReportCell(TimeStampedModel):
+    class MultiValueType(models.IntegerChoices):
+        STATIC_TEXT = 0, 'Static Text'
+        COUNT = 1, 'Count'
+        SUM = 2, 'Sum'
+        PERCENT = 4, 'Percent'
+        PERCENT_FROM_COUNT = 5, 'Percent from Count'
+        AVERAGE_SUM_FROM_COUNT = 6, 'Average Sum from Count'
+        AVERAGE_SUM_OVER_TIME = 7, 'Average Sum over Time'
+        EQUATION = 8, 'Equation'
+
+        @classmethod
+        def is_percentage(cls, value):
+            return value in {
+                cls.PERCENT,
+                cls.PERCENT_FROM_COUNT,
+            }
+
+    report = models.ForeignKey(Report, on_delete=models.CASCADE)
+    row = models.PositiveSmallIntegerField()
+    column = models.PositiveSmallIntegerField()
+    col_span = models.PositiveSmallIntegerField(default=1)
+    row_span = models.PositiveSmallIntegerField(default=1)
+    multi_value_type = models.IntegerField(choices=MultiValueType.choices, default=MultiValueType.STATIC_TEXT)
+    text = models.TextField(blank=True, null=True)
+
+    field = models.CharField(max_length=200, blank=True, null=True)  # denominator
+    numerator = models.CharField(max_length=200, blank=True, null=True)
+    prefix = models.CharField(max_length=64, blank=True, null=True)
+    decimal_places = models.IntegerField(default=0)
+
+    show_breakdown = models.BooleanField(default=False)
+    breakdown_fields = models.JSONField(null=True, blank=True)
+
+    average_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES, blank=True, null=True)
+    average_start_period = models.PositiveSmallIntegerField(blank=True, null=True)
+    average_end_period = models.PositiveSmallIntegerField(blank=True, null=True)
+
+    query = models.JSONField(null=True, blank=True)
+    extra_query = models.JSONField(null=True, blank=True)  # used for single value Numerator
+
+    class Meta:
+        models.UniqueConstraint(fields=['report', 'row', 'column'], name='multi_value_report_cell_unique')
 
 
 class CalendarReport(Report):

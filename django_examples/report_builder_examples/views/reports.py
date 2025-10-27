@@ -71,6 +71,11 @@ class ViewReports(MainIndices):
                         'Calendar',
                         font_awesome='fas fa-calendar fa-flip-vertical',
                     ),
+                    MenuItem(
+                        'advanced_report_builder:multi_value_modal,-',
+                        'Multiple Values',
+                        font_awesome='fas fa-grip-horizontal',
+                    ),
                 ],
             ),
         )
