@@ -1,7 +1,7 @@
 from django.views.generic import TemplateView
 from django_menus.menu import MenuItem
 from django_modals.modals import ModelFormModal
-from django_modals.processes import PROCESS_EDIT_DELETE, PERMISSION_OFF
+from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
 from django_modals.widgets.select2 import Select2Multiple
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
@@ -16,16 +16,14 @@ class MultiValueModal(ModelFormModal):
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
     model = MultiValueReport
-    widgets = {'report_tags': Select2Multiple,
-               'rows': SmallNumberInputWidget,
-               'columns': SmallNumberInputWidget,}
+    widgets = {
+        'report_tags': Select2Multiple,
+        'rows': SmallNumberInputWidget,
+        'columns': SmallNumberInputWidget,
+    }
     ajax_commands = ['datatable', 'button']
 
-    form_fields = ['name',
-                   'notes',
-                   'report_tags',
-                   'rows',
-                   'columns']
+    form_fields = ['name', 'notes', 'report_tags', 'rows', 'columns']
 
 
 class MultiValueView(ReportBase, FilterQueryMixin, TemplateView):

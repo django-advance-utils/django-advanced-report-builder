@@ -134,9 +134,7 @@ urlpatterns = [
         FunnelChartFieldModal.as_view(),
         name='funnel_chart_field_modal',
     ),
-
     path('multi-value/modal/<str:slug>/', MultiValueModal.as_view(), name='multi_value_modal'),
-
     path('kanban/modal/<str:slug>/', KanbanModal.as_view(), name='kanban_modal'),
     path(
         'kanban/modal/lane/<str:slug>/',
