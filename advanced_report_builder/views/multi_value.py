@@ -1,17 +1,16 @@
-from crispy_forms.layout import HTML
 from django.forms import CharField
 from django.views.generic import TemplateView
 from django_datatables.columns import MenuColumn
 from django_datatables.helpers import DUMMY_ID
-from django_datatables.widgets import DataTableReorderWidget, DataTableWidget
-from django_menus.menu import MenuItem, HtmlMenu
+from django_datatables.widgets import DataTableWidget
+from django_menus.menu import HtmlMenu, MenuItem
 from django_modals.modals import ModelFormModal
 from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
 from django_modals.widgets.select2 import Select2Multiple
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.filter_query import FilterQueryMixin
-from advanced_report_builder.models import MultiValueReport, MultiCellStyle
+from advanced_report_builder.models import MultiCellStyle, MultiValueReport
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import crispy_modal_link_args
 from advanced_report_builder.views.report import ReportBase
@@ -31,7 +30,6 @@ class MultiValueModal(ModelFormModal):
     ajax_commands = ['datatable', 'button']
 
     form_fields = ['name', 'notes', 'report_tags', 'rows', 'columns']
-
 
     def form_setup(self, form, *_args, **_kwargs):
         org_id = self.object.id if hasattr(self, 'object') else None
@@ -78,7 +76,8 @@ class MultiValueModal(ModelFormModal):
                     font_awesome='fa fa-plus',
                 ),
                 'cell_styles',
-                ]
+            ]
+
 
 class MultiValueCellStyleModal(ModelFormModal):
     size = 'xl'
@@ -92,11 +91,7 @@ class MultiValueCellStyleModal(ModelFormModal):
         'font_size': SmallNumberInputWidget,
     }
 
-    form_fields = ['name',
-                   'bold',
-                   'italic',
-                   'font_size',
-                   'background_colour']
+    form_fields = ['name', 'bold', 'italic', 'font_size', 'background_colour']
 
 
 class MultiValueView(ReportBase, FilterQueryMixin, TemplateView):
