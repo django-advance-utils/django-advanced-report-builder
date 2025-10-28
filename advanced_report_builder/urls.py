@@ -39,7 +39,7 @@ from advanced_report_builder.views.line_charts import (
     LineChartFieldModal,
     LineChartModal,
 )
-from advanced_report_builder.views.multi_value import MultiValueModal
+from advanced_report_builder.views.multi_value import MultiValueModal, MultiValueCellStyleModal
 from advanced_report_builder.views.pie_charts import PieChartFieldModal, PieChartModal
 from advanced_report_builder.views.query_modal.modal import QueryModal, QueryOrderModal
 from advanced_report_builder.views.reports import DuplicateReportModal
@@ -135,6 +135,8 @@ urlpatterns = [
         name='funnel_chart_field_modal',
     ),
     path('multi-value/modal/<str:slug>/', MultiValueModal.as_view(), name='multi_value_modal'),
+    path('multi-value/cell-style/modal/<str:slug>/',
+         MultiValueCellStyleModal.as_view(), name='multi_value_cell_style_modal'),
     path('kanban/modal/<str:slug>/', KanbanModal.as_view(), name='kanban_modal'),
     path(
         'kanban/modal/lane/<str:slug>/',
