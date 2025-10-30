@@ -514,6 +514,8 @@ class MultiValueReportCell(TimeStampedModel):
     row_span = models.PositiveSmallIntegerField(default=1)
     multi_value_type = models.IntegerField(choices=MultiValueType.choices, default=MultiValueType.STATIC_TEXT)
     text = models.TextField(blank=True, null=True)
+    multi_cell_style = models.ForeignKey('MultiCellStyle', on_delete=models.PROTECT, null=True, blank=True)
+    report_type = models.ForeignKey(ReportType, null=True, blank=True, on_delete=models.PROTECT)
 
     field = models.CharField(max_length=200, blank=True, null=True)  # denominator
     numerator = models.CharField(max_length=200, blank=True, null=True)
