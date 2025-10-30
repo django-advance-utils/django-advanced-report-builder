@@ -533,8 +533,12 @@ class MultiValueReportCell(TimeStampedModel):
     extra_query = models.JSONField(null=True, blank=True)  # used for single value Numerator
 
     class Meta:
-        models.UniqueConstraint(fields=['report', 'row', 'column'], name='multi_value_report_cell_unique')
-
+        constraints = [
+            models.UniqueConstraint(
+                fields=['report', 'row', 'column'],
+                name='multi_value_report_cell_unique'
+            ),
+        ]
 
 class CalendarReport(Report):
     VIEW_TYPE_CODES = {
