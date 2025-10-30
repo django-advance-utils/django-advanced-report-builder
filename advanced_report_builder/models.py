@@ -534,11 +534,9 @@ class MultiValueReportCell(TimeStampedModel):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(
-                fields=['report', 'row', 'column'],
-                name='multi_value_report_cell_unique'
-            ),
+            models.UniqueConstraint(fields=['report', 'row', 'column'], name='multi_value_report_cell_unique'),
         ]
+
 
 class CalendarReport(Report):
     VIEW_TYPE_CODES = {
