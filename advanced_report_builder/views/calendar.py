@@ -249,6 +249,8 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
             view_type = self.dashboard_report.options.get('calendar_view_type')
             if view_type is not None:
                 view_type = int(view_type)
+                if view_type == 0:
+                    view_type = None
 
         context['view_type'] = self.chart_report.get_view_type_for_calendar(view_type=view_type)
         context['calendar_report'] = self.chart_report

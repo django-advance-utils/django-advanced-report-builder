@@ -1,8 +1,6 @@
 import json
 
-from django.apps import apps
 from django.conf import settings
-from django.contrib.auth.models import AbstractUser
 from django.forms import JSONField
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -13,6 +11,7 @@ from django_modals.widgets.select2 import Select2
 from advanced_report_builder.column_types import NUMBER_FIELDS
 from advanced_report_builder.field_types import FieldTypes
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
+from advanced_report_builder.globals import FieldType
 from advanced_report_builder.models import ReportQuery, ReportType
 from advanced_report_builder.utils import get_report_builder_class
 
@@ -47,67 +46,29 @@ class QueryBuilderModalBaseMixin(ReportBuilderFieldUtils):
         base_model,
         query_builder_filters,
         report_builder_class,
-        prefix='',
-        title_prefix='',
-        previous_base_model=None,
-        show_includes=True,
     ):
         field_types = FieldTypes()
+        field_results = []
+        field_results_types = {
+            FieldType.NULL_FIELD: {},
+            FieldType.ABSTRACT_USER: {},
+            FieldType.FILTER_FOREIGN_KEY: {},
+            FieldType.STRING: {},
+            FieldType.NUMBER: {},
+            FieldType.BOOLEAN: {},
+            FieldType.DATE: {},
+            FieldType.MANY_TO_MANY: {},
+        }
+        field_types.get_field_types(
+            field_results=field_results,
+            field_results_types=field_results_types,
+            base_model=base_model,
+            report_builder_class=report_builder_class,
+        )
 
-        for report_builder_field in report_builder_class.fields:
-            if (
-                not isinstance(report_builder_field, str)
-                or report_builder_field not in report_builder_class.exclude_search_fields
-            ):
-                django_field, _, columns, _ = self.get_field_details(
-                    base_model=base_model,
-                    field=report_builder_field,
-                    report_builder_class=report_builder_class,
-                )
-                for column in columns:
-                    field_types.get_filter(
-                        query_builder_filters=query_builder_filters,
-                        django_field=django_field,
-                        field=column.column_name,
-                        title=title_prefix + column.title,
-                        column=column,
-                        prefix=prefix,
-                    )
-        if show_includes:
-            for include_field, include in report_builder_class.includes.items():
-                app_label, model, report_builder_fields_str = include['model'].split('.')
-                new_model = apps.get_model(app_label, model)
-                new_report_builder_class = get_report_builder_class(
-                    model=new_model, class_name=report_builder_fields_str
-                )
-
-                if new_model != previous_base_model:
-                    _foreign_key = getattr(base_model, include_field, None)
-
-                    add_null_field = _foreign_key.field.null if hasattr(_foreign_key, 'field') else True
-
-                    if add_null_field:
-                        field_types.get_foreign_key_null_field(
-                            query_builder_filters=query_builder_filters,
-                            field=prefix + include_field,
-                            title=title_prefix + include['title'],
-                        )
-                    if isinstance(new_model(), AbstractUser):
-                        field_types.get_abstract_user_field(
-                            query_builder_filters=query_builder_filters,
-                            field=prefix + include_field,
-                            title=title_prefix + include['title'],
-                        )
-
-                    self._get_query_builder_fields(
-                        base_model=new_model,
-                        query_builder_filters=query_builder_filters,
-                        report_builder_class=new_report_builder_class,
-                        prefix=f'{prefix}{include_field}__',
-                        title_prefix=f'{include["title"]} --> ',
-                        previous_base_model=base_model,
-                        show_includes=include.get('show_includes', True),
-                    )
+        field_types.get_filters(
+            fields=field_results, query_builder_filters=query_builder_filters, field_results_types=field_results_types
+        )
 
     def ajax_get_fields(self, **kwargs):
         report_type_id = kwargs['report_type']

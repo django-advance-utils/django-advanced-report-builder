@@ -299,12 +299,13 @@ class Person(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
     first_name = models.CharField(max_length=80)
     surname = models.CharField(max_length=80)
+    weight = models.FloatField(default=0)
     date_entered = models.DateField(auto_now_add=True)
 
     class ReportBuilder(ReportBuilderFields):
         colour = '#FF0000'
         title = 'Person'
-        fields = ['id', 'title', 'first_name', 'surname', 'date_entered']
+        fields = ['id', 'title', 'first_name', 'surname', 'date_entered', 'weight']
         includes = {
             'company': {
                 'title': 'Company',
