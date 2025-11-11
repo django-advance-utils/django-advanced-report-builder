@@ -5,6 +5,7 @@ from functools import reduce
 
 from django.apps import apps
 from django.db.models import F, Q
+from django.db.models.functions import ExtractWeekDay
 from django.shortcuts import get_object_or_404
 
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
@@ -61,18 +62,21 @@ class FilterQueryMixin:
         super().__init__(*args, **kwargs)
 
     def process_query_filters(self, query, search_filter_data):
-        result = self.process_filters(search_filter_data=search_filter_data)
+        annotations = {}
+        result = self.process_filters(search_filter_data=search_filter_data, annotations=annotations)
+        if annotations:
+            query = query.annotate(**annotations)
         if result:
             return query.filter(result)
-        # query.order_by('name')
-
         return query
 
-    def process_filters(self, search_filter_data, extra_filter=None, prefix_field_name=None):
+    def process_filters(self, search_filter_data, annotations=None, extra_filter=None, prefix_field_name=None):
         if not search_filter_data:
             return []
 
-        query_list = self._process_group(query_data=search_filter_data, prefix_field_name=prefix_field_name)
+        query_list = self._process_group(query_data=search_filter_data,
+                                         prefix_field_name=prefix_field_name,
+                                         annotations=annotations)
         if extra_filter:
             query_list.append(extra_filter)
 
@@ -123,13 +127,15 @@ class FilterQueryMixin:
 
         return reduce_by
 
-    def _process_group(self, query_data, prefix_field_name):
+    def _process_group(self, query_data, prefix_field_name, annotations):
         query_list = []
 
         for rule in query_data['rules']:
             if condition := rule.get('condition'):
                 reduce_by = self._format_group_conditions(display_condition=condition)
-                sub_query_list = self._process_group(query_data=rule, prefix_field_name=prefix_field_name)
+                sub_query_list = self._process_group(query_data=rule,
+                                                     prefix_field_name=prefix_field_name,
+                                                     annotations=annotations)
                 if sub_query_list:
                     query_list.append(reduce(reduce_by, sub_query_list))
                 continue
@@ -183,12 +189,19 @@ class FilterQueryMixin:
                     field=field,
                     query_string=query_string,
                 )
+            elif data_type == 'string' and _id.endswith('__variable_day'):
+                self.get_variable_day(
+                    value=value,
+                    query_list=query_list,
+                    display_operator=display_operator,
+                    field=field,
+                    annotations=annotations,
+                )
             elif data_type == 'string' and _id.endswith('__logged_in_user'):
                 self.get_logged_in_user(
                     value=value,
                     query_list=query_list,
                     display_operator=display_operator,
-                    field=field,
                     query_string=query_string,
                 )
             else:
@@ -329,7 +342,20 @@ class FilterQueryMixin:
                         | (Q((field + '__month', months[2])))
                     )
 
-    def get_logged_in_user(self, value, query_list, display_operator, field, query_string):
+    @staticmethod
+    def get_variable_day(value, query_list, display_operator, field, annotations):
+        if annotations is None:
+            # maybe create a warning.  As this won't work with sub queries
+            return
+
+        annotate_name = f'{field}_weekday'
+        annotations[annotate_name] = ExtractWeekDay(field)
+        if display_operator == 'not_equal':
+            query_list.append(~Q(**{f"{annotate_name}": value}))
+        else:
+            query_list.append(Q(**{f"{annotate_name}": value}))
+
+    def get_logged_in_user(self, value, query_list, display_operator, query_string):
         # noinspection PyUnresolvedReferences
         current_user = self.request.user
         value = value == '1'

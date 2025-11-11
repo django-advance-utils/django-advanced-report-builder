@@ -44,6 +44,7 @@ class FieldTypes(ReportBuilderFieldUtils):
         COMPARE_NUMBER = 10
         COMPARE_DATE = 11
         COMPARE_BOOLEAN = 12
+        WEEKDAYS = 13
 
     def get_operator(self, field_type):
         operators = {
@@ -80,6 +81,7 @@ class FieldTypes(ReportBuilderFieldUtils):
             self.OperatorFieldType.MULTIPLE_CHOICE: ['in', 'not_in'],
             self.OperatorFieldType.FOREIGN_KEY: ['is_null', 'is_not_null'],
             self.OperatorFieldType.ABSTRACT_USER: ['equal', 'not_equal'],
+            self.OperatorFieldType.WEEKDAYS: ['equal', 'not_equal'],
             self.OperatorFieldType.COMPARE_STRING: ['equal', 'not_equal'],
             self.OperatorFieldType.COMPARE_NUMBER: [
                 'equal',
@@ -279,6 +281,25 @@ class FieldTypes(ReportBuilderFieldUtils):
             'values': variable_date.get_date_filter_quarters(),
         }
         query_builder_filters.append(query_builder_filter)
+
+        query_builder_filter = {
+            'id': f'{column_id}__variable_day',
+            'label': f'{title} (Day)',
+            'field': field,
+            'operators': self.get_operator(self.OperatorFieldType.WEEKDAYS),
+            'input': 'select',
+            'values': {
+                1: 'Sunday',
+                2: 'Monday',
+                3: 'Tuesday',
+                4: 'Wednesday',
+                5: 'Thursday',
+                6: 'Friday',
+                7: 'Saturday'
+            },
+        }
+        query_builder_filters.append(query_builder_filter)
+
         query_builder_filters.append(
             {
                 'id': f'{column_id}__field_vs_field',

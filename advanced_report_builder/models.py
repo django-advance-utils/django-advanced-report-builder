@@ -325,6 +325,7 @@ class SingleValueReport(Report):
         PERCENT_FROM_COUNT = 5, 'Percent from Count'
         AVERAGE_SUM_FROM_COUNT = 6, 'Average Sum from Count'
         AVERAGE_SUM_OVER_TIME = 7, 'Average Sum over Time'
+        AVERAGE_SUM_OVER_TIME_EXCLUDING_WEEKENDS = 8, 'Average Sum over Time (Excluding Weekends)'
 
         @classmethod
         def is_percentage(cls, value):
@@ -759,3 +760,4 @@ class DashboardReport(TimeStampedModel):
 
     class Meta:
         ordering = ['order']
+
