@@ -7,7 +7,7 @@ from django.views.generic import TemplateView
 from django_datatables.columns import MenuColumn
 from django_datatables.helpers import DUMMY_ID
 from django_datatables.widgets import DataTableWidget
-from django_menus.menu import MenuItem, HtmlMenu
+from django_menus.menu import HtmlMenu, MenuItem
 from django_modals.fields import FieldEx
 from django_modals.modals import ModelFormModal
 from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
@@ -16,7 +16,7 @@ from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.filter_query import FilterQueryMixin
-from advanced_report_builder.models import MultiValueReport, MultiCellStyle, MultiValueReportCell, ReportType
+from advanced_report_builder.models import MultiCellStyle, MultiValueReport, MultiValueReportCell, ReportType
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import crispy_modal_link_args
 from advanced_report_builder.variable_date import VariableDate
@@ -39,7 +39,6 @@ class MultiValueModal(ModelFormModal):
     ajax_commands = ['datatable', 'button']
 
     form_fields = ['name', 'notes', 'report_tags', 'rows', 'columns']
-
 
     def form_setup(self, form, *_args, **_kwargs):
         org_id = self.object.id if hasattr(self, 'object') else None
@@ -103,7 +102,6 @@ class MultiValueModal(ModelFormModal):
                 ),
             )
 
-
             return [
                 *self.form_fields,
                 crispy_modal_link_args(
@@ -128,7 +126,8 @@ class MultiValueModal(ModelFormModal):
                     font_awesome='fa fa-plus',
                 ),
                 'cells',
-                ]
+            ]
+
 
 class MultiValueCellStyleModal(ModelFormModal):
     size = 'xl'
@@ -142,12 +141,7 @@ class MultiValueCellStyleModal(ModelFormModal):
         'font_size': SmallNumberInputWidget,
     }
 
-    form_fields = ['name',
-                   'bold',
-                   'italic',
-                   'font_size',
-                   'background_colour']
-
+    form_fields = ['name', 'bold', 'italic', 'font_size', 'background_colour']
 
 
 class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
@@ -156,23 +150,24 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
     permission_delete = PERMISSION_OFF
     model = MultiValueReportCell
 
-    form_fields = ['multi_value_type',
-                   'text',
-                   'row',
-                   'column',
-                   'col_span',
-                   'row_span',
-                   'report_type',
-                   'field',
-                   'numerator',
-                   'prefix',
-                   'decimal_places',
-                   'show_breakdown',
-                   'breakdown_fields',
-                   'average_scale',
-                   'average_start_period',
-                   'average_end_period'
-                   ]
+    form_fields = [
+        'multi_value_type',
+        'text',
+        'row',
+        'column',
+        'col_span',
+        'row_span',
+        'report_type',
+        'field',
+        'numerator',
+        'prefix',
+        'decimal_places',
+        'show_breakdown',
+        'breakdown_fields',
+        'average_scale',
+        'average_start_period',
+        'average_end_period',
+    ]
 
     widgets = {
         'report_tags': Select2Multiple,
@@ -181,7 +176,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
         'column': SmallNumberInputWidget,
         'col_span': SmallNumberInputWidget,
         'row_span': SmallNumberInputWidget,
-        'decimal_places': SmallNumberInputWidget
+        'decimal_places': SmallNumberInputWidget,
     }
 
     def form_setup(self, form, *_args, **_kwargs):
@@ -216,9 +211,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                 },
                 {
                     'selector': '#div_id_numerator',
-                    'values': {
-                        MultiValueReportCell.MultiValueType.PERCENT: 'show'
-                    },
+                    'values': {MultiValueReportCell.MultiValueType.PERCENT: 'show'},
                     'default': 'hide',
                 },
                 {
@@ -233,23 +226,17 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                 },
                 {
                     'selector': '#div_id_average_scale',
-                    'values': {
-                        MultiValueReportCell.MultiValueType.AVERAGE_SUM_OVER_TIME: 'show'
-                    },
+                    'values': {MultiValueReportCell.MultiValueType.AVERAGE_SUM_OVER_TIME: 'show'},
                     'default': 'hide',
                 },
                 {
                     'selector': '#div_id_average_start_period',
-                    'values': {
-                        MultiValueReportCell.MultiValueType.AVERAGE_SUM_OVER_TIME: 'show'
-                    },
+                    'values': {MultiValueReportCell.MultiValueType.AVERAGE_SUM_OVER_TIME: 'show'},
                     'default': 'hide',
                 },
                 {
                     'selector': '#div_id_average_end_period',
-                    'values': {
-                        MultiValueReportCell.MultiValueType.AVERAGE_SUM_OVER_TIME: 'show'
-                    },
+                    'values': {MultiValueReportCell.MultiValueType.AVERAGE_SUM_OVER_TIME: 'show'},
                     'default': 'hide',
                 },
                 {
@@ -273,8 +260,6 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     },
                     'default': 'show',
                 },
-
-
             ],
         )
 
