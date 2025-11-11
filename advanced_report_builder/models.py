@@ -760,4 +760,3 @@ class DashboardReport(TimeStampedModel):
 
     class Meta:
         ordering = ['order']
-

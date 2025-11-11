@@ -1,9 +1,9 @@
 import base64
 import copy
 import json
+import math
 from datetime import datetime, timedelta
 
-import math
 from date_offset.date_offset import DateOffset
 from dateutil.relativedelta import relativedelta
 from django.apps import apps
@@ -24,19 +24,19 @@ from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.globals import (
     ANNOTATION_VALUE_DAY,
+    ANNOTATION_VALUE_FINANCIAL_QUARTER,
     ANNOTATION_VALUE_FUNCTIONS,
     ANNOTATION_VALUE_MONTH,
     ANNOTATION_VALUE_QUARTER,
     ANNOTATION_VALUE_WEEK,
     ANNOTATION_VALUE_YEAR,
-    ANNOTATION_VALUE_FINANCIAL_QUARTER,
 )
 from advanced_report_builder.models import ReportType
 from advanced_report_builder.utils import (
+    count_days,
     get_report_builder_class,
     split_attr,
     split_slug,
-    count_days,
 )
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.helpers import QueryBuilderForm
@@ -399,12 +399,12 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
 
     @staticmethod
     def get_period_divider(
-            annotation_value_choice,
-            start_date_type,
-            end_date_type,
-            exclude_weekdays=None,
-            exclude_dates=None,
-            financial_year_start_month: int = 4,  # April default
+        annotation_value_choice,
+        start_date_type,
+        end_date_type,
+        exclude_weekdays=None,
+        exclude_dates=None,
+        financial_year_start_month: int = 4,  # April default
     ):
         """
         Calculates the number of periods (year, quarter, month, week, day)
@@ -440,8 +440,8 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         elif annotation_value_choice == ANNOTATION_VALUE_FINANCIAL_QUARTER:
             # Adjust start/end to align with the financial year offset
             fy_offset = financial_year_start_month - 1
-            start_fy = (start_date.year, ((start_date.month - fy_offset - 1) % 12) + 1)
-            end_fy = (end_date.year, ((end_date.month - fy_offset - 1) % 12) + 1)
+            (start_date.year, ((start_date.month - fy_offset - 1) % 12) + 1)
+            (end_date.year, ((end_date.month - fy_offset - 1) % 12) + 1)
 
             delta = relativedelta(end_date, start_date)
             total_months = delta.years * 12 + delta.months + (1 if delta.days > 0 else 0)
@@ -512,7 +512,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
             )
 
         else:
-            raise ReportError("unknown annotation_value_choice")
+            raise ReportError('unknown annotation_value_choice')
 
         return divider
 

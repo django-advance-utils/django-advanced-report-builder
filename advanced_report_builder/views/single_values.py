@@ -1,8 +1,5 @@
 import json
-from datetime import timedelta
 
-import math
-from dateutil.relativedelta import relativedelta
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.core.exceptions import ValidationError
 from django.db.models import Count, ExpressionWrapper, FloatField, Sum
@@ -25,11 +22,10 @@ from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import (
     ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT,
-    ANNOTATION_CHOICE_SUM, ANNOTATION_VALUE_YEAR, ANNOTATION_VALUE_FINANCIAL_QUARTER, ANNOTATION_VALUE_QUARTER,
-    ANNOTATION_VALUE_MONTH, ANNOTATION_VALUE_WEEK, ANNOTATION_VALUE_DAY,
+    ANNOTATION_CHOICE_SUM,
 )
 from advanced_report_builder.models import ReportQuery, ReportType, SingleValueReport, Target
-from advanced_report_builder.utils import get_report_builder_class, count_days
+from advanced_report_builder.utils import get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartBaseView
 from advanced_report_builder.views.datatables.modal import (
@@ -255,8 +251,10 @@ class SingleValueView(ChartBaseView):
                 fields=fields,
                 aggregations_type=ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT,
             )
-        elif single_value_type in [SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME,
-                                   SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME_EXCLUDING_WEEKENDS]:
+        elif single_value_type in [
+            SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME,
+            SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME_EXCLUDING_WEEKENDS,
+        ]:
             exclude_weekdays = None
             if single_value_type == SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME_EXCLUDING_WEEKENDS:
                 exclude_weekdays = [1, 7]
@@ -441,20 +439,26 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
                 },
                 {
                     'selector': '#div_id_average_scale',
-                    'values': {SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME: 'show',
-                               SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME_EXCLUDING_WEEKENDS: 'show'},
+                    'values': {
+                        SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME: 'show',
+                        SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME_EXCLUDING_WEEKENDS: 'show',
+                    },
                     'default': 'hide',
                 },
                 {
                     'selector': '#div_id_average_start_period',
-                    'values': {SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME: 'show',
-                               SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME_EXCLUDING_WEEKENDS: 'show'},
+                    'values': {
+                        SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME: 'show',
+                        SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME_EXCLUDING_WEEKENDS: 'show',
+                    },
                     'default': 'hide',
                 },
                 {
                     'selector': '#div_id_average_end_period',
-                    'values': {SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME: 'show',
-                               SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME_EXCLUDING_WEEKENDS: 'show'},
+                    'values': {
+                        SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME: 'show',
+                        SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME_EXCLUDING_WEEKENDS: 'show',
+                    },
                     'default': 'hide',
                 },
             ],

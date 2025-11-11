@@ -295,7 +295,7 @@ class FieldTypes(ReportBuilderFieldUtils):
                 4: 'Wednesday',
                 5: 'Thursday',
                 6: 'Friday',
-                7: 'Saturday'
+                7: 'Saturday',
             },
         }
         query_builder_filters.append(query_builder_filter)

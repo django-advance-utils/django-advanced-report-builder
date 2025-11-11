@@ -74,9 +74,9 @@ class FilterQueryMixin:
         if not search_filter_data:
             return []
 
-        query_list = self._process_group(query_data=search_filter_data,
-                                         prefix_field_name=prefix_field_name,
-                                         annotations=annotations)
+        query_list = self._process_group(
+            query_data=search_filter_data, prefix_field_name=prefix_field_name, annotations=annotations
+        )
         if extra_filter:
             query_list.append(extra_filter)
 
@@ -133,9 +133,9 @@ class FilterQueryMixin:
         for rule in query_data['rules']:
             if condition := rule.get('condition'):
                 reduce_by = self._format_group_conditions(display_condition=condition)
-                sub_query_list = self._process_group(query_data=rule,
-                                                     prefix_field_name=prefix_field_name,
-                                                     annotations=annotations)
+                sub_query_list = self._process_group(
+                    query_data=rule, prefix_field_name=prefix_field_name, annotations=annotations
+                )
                 if sub_query_list:
                     query_list.append(reduce(reduce_by, sub_query_list))
                 continue
@@ -351,9 +351,9 @@ class FilterQueryMixin:
         annotate_name = f'{field}_weekday'
         annotations[annotate_name] = ExtractWeekDay(field)
         if display_operator == 'not_equal':
-            query_list.append(~Q(**{f"{annotate_name}": value}))
+            query_list.append(~Q(**{f'{annotate_name}': value}))
         else:
-            query_list.append(Q(**{f"{annotate_name}": value}))
+            query_list.append(Q(**{f'{annotate_name}': value}))
 
     def get_logged_in_user(self, value, query_list, display_operator, query_string):
         # noinspection PyUnresolvedReferences

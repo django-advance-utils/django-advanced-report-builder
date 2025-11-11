@@ -110,10 +110,7 @@ def get_query_js(button_name, field_id):
 
 
 def count_days(
-        start_date: date,
-        end_date: date,
-        exclude_weekdays: list[int] = None,
-        exclude_dates: list[date] = None
+    start_date: date, end_date: date, exclude_weekdays: list[int] = None, exclude_dates: list[date] = None
 ) -> int:
     if start_date > end_date:
         start_date, end_date = end_date, start_date
@@ -129,5 +126,3 @@ def count_days(
             count += 1
         current += timedelta(days=1)
     return count
-
-
