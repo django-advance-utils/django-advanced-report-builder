@@ -11,7 +11,7 @@ class DataMergeWidget(TextInput):
         'field_class': 'col-12 input-group-sm',
     }
 
-    def __init__(self, data_merge_data=None, height=150,  *args, **kwargs):
+    def __init__(self, data_merge_data=None, height=150, *args, **kwargs):
         self.height = height
         super().__init__(*args, **kwargs)
         self.data_merge_data = data_merge_data
