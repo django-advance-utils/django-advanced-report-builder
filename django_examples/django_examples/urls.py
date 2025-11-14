@@ -13,12 +13,12 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-
+from debug_toolbar.toolbar import debug_toolbar_urls
 from django.contrib import admin
 from django.urls import include, path
 from django.views.generic import RedirectView, TemplateView
 
-urlpatterns = [
+urlpatterns = ([
     path('admin/', admin.site.urls),
     path(
         'favicon.ico',
@@ -34,5 +34,6 @@ urlpatterns = [
         name='test',
     ),
     path('', include('report_builder_examples.urls', namespace='report_builder_examples')),
-    path('__debug__/', include('debug_toolbar.urls')),
 ]
+
+) + debug_toolbar_urls()

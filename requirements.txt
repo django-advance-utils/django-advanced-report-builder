@@ -16,6 +16,6 @@ git+https://github.com/jonesim/ajax-helpers.git@7ea2d695e93c14a7bc37bf7a1f5c951c
 
 time-stamped-model==0.2.12
 date-offset==0.0.2
-django-debug-toolbar==4.3.0
+django-debug-toolbar==6.1.0
 
 python-dateutil==2.8.2
