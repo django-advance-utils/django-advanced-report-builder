@@ -214,8 +214,9 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                     else:
                         function = function_type(raw_field_name)
                     if divider:
-                        function = ExpressionWrapper(function / NullIf(float(divider), Value(0)),
-                                                     output_field=FloatField())
+                        function = ExpressionWrapper(
+                            function / NullIf(float(divider), Value(0)), output_field=FloatField()
+                        )
                         if decimal_places is not None:
                             function = Round(function, decimal_places)
 

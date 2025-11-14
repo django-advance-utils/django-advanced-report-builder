@@ -144,5 +144,5 @@ REPORT_BUILDER_DASHBOARD_URL_NAME = 'report_builder_examples:view_dashboard'
 
 
 DEBUG_TOOLBAR_CONFIG = {
-    "SHOW_TOOLBAR_CALLBACK": "django_examples.toolbar.show_toolbar",
+    'SHOW_TOOLBAR_CALLBACK': 'django_examples.toolbar.show_toolbar',
 }
