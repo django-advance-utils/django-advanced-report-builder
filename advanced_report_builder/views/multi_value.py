@@ -1,6 +1,6 @@
 import json
 
-from django.forms import CharField, ChoiceField
+from django.forms import CharField, ChoiceField, ModelChoiceField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_datatables.columns import ColumnBase, MenuColumn
@@ -11,7 +11,7 @@ from django_modals.fields import FieldEx
 from django_modals.helper import show_modal
 from django_modals.modals import Modal, ModelFormModal
 from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
-from django_modals.widgets.select2 import Select2Multiple
+from django_modals.widgets.select2 import Select2Multiple, Select2
 from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
@@ -108,10 +108,10 @@ class MultiValueCellStyleModal(ModelFormModal):
         'bold': RBToggle,
         'italic': RBToggle,
         'font_size': SmallNumberInputWidget,
+        'align_type': Select2,
     }
 
-    form_fields = ['name', 'bold', 'italic', 'font_size', 'background_colour']
-
+    form_fields = ['name', 'align_type', 'bold', 'italic', 'font_size', 'background_colour']
 
 class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
     size = 'xl'
@@ -122,6 +122,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
     form_fields = [
         'multi_value_type',
         'text',
+        'multi_cell_style',
         'sample_text',
         'row',
         'column',
@@ -151,6 +152,10 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
 
     def form_setup(self, form, *_args, **_kwargs):
         form.fields['sample_text'].help_text = 'Only used in setting the table up'
+        form.fields['multi_cell_style'] = ModelChoiceField(
+            queryset=MultiCellStyle.objects.filter(multi_value_report_id=self.object.report_id),
+            widget=Select2(),
+            required=False)
         form.add_trigger(
             'multi_value_type',
             'onchange',
@@ -289,10 +294,13 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
         range_type_choices = VariableDate.RANGE_TYPE_CHOICES
         form.fields['average_start_period'] = ChoiceField(required=False, choices=range_type_choices)
         form.fields['average_end_period'] = ChoiceField(required=False, choices=range_type_choices)
+
+
         fields = [
             'multi_value_type',
             'text',
             'sample_text',
+            'multi_cell_style',
             'row',
             'column',
             'col_span',

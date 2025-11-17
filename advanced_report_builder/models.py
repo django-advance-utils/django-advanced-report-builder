@@ -483,13 +483,22 @@ class MultiValueReport(Report):
 
 
 class MultiCellStyle(TimeStampedModel):
+    class AlignType(models.IntegerChoices):
+        LEFT = 0, 'left'
+        CENTRE = 1, 'Centre'
+        RIGHT = 2, 'Right'
+
     multi_value_report = models.ForeignKey(MultiValueReport, on_delete=models.CASCADE)
     name = models.CharField(max_length=200)
+    align_type = models.IntegerField(choices=AlignType.choices, default=AlignType.LEFT)
     bold = models.BooleanField(default=False)
     italic = models.BooleanField(default=False)
     font_size = models.PositiveSmallIntegerField()
     font_colour = ColourField(null=True, blank=True)
     background_colour = ColourField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name
 
 
 class MultiValueReportCell(TimeStampedModel):
