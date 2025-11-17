@@ -162,7 +162,6 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     },
                     'default': 'hide',
                 },
-
                 {
                     'selector': '#div_id_sample_text',
                     'values': {
@@ -170,7 +169,6 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     },
                     'default': 'show',
                 },
-
                 {
                     'selector': '#div_id_field',
                     'values': {
