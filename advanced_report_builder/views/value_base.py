@@ -57,14 +57,14 @@ class ValueBaseView(ChartBaseView):
             raise ReportError('not a number field')
 
     def get_percentage_field(
-            self,
-            fields,
-            numerator_field_name,
-            numerator_col_type_override,
-            denominator_field_name,
-            denominator_col_type_override,
-            numerator_filter,
-            decimal_places=0,
+        self,
+        fields,
+        numerator_field_name,
+        numerator_col_type_override,
+        denominator_field_name,
+        denominator_col_type_override,
+        numerator_filter,
+        decimal_places=0,
     ):
         if numerator_col_type_override:
             actual_numerator_field_name = numerator_col_type_override.field
@@ -131,9 +131,9 @@ class ValueBaseView(ChartBaseView):
 
         return field_name
 
-    def _process_percentage(self, denominator_field, numerator_field,
-                            base_model, report_builder_class, decimal_places, fields):
-
+    def _process_percentage(
+        self, denominator_field, numerator_field, base_model, report_builder_class, decimal_places, fields
+    ):
         deno_django_field, denominator_col_type_override, _, _ = self.get_field_details(
             base_model=base_model,
             field=denominator_field,
@@ -169,7 +169,6 @@ class ValueBaseView(ChartBaseView):
             numerator_filter=numerator_filter,
             decimal_places=decimal_places,
         )
-
 
     def _process_percentage_from_count(self, numerator_filter, decimal_places, fields):
         if numerator_filter:
