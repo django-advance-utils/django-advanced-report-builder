@@ -46,14 +46,12 @@ class SingleValueView(ValueBaseView):
     number_field = ReportBuilderNumberColumn
     template_name = 'advanced_report_builder/single_values/report.html'
 
-
     def dispatch(self, request, *args, **kwargs):
         self.report = kwargs.get('report')
         self.chart_report = self.report.singlevaluereport
         return super().dispatch(request, *args, **kwargs)
 
     def report_builder_class(self, base_model):
-
         report_builder_class = get_report_builder_class(model=base_model, report_type=self.chart_report.report_type)
         return report_builder_class
 
@@ -210,28 +208,33 @@ class SingleValueView(ValueBaseView):
         if single_value_type == SingleValueReport.SingleValueType.COUNT:
             self._get_count(fields=fields)
         elif single_value_type == SingleValueReport.SingleValueType.SUM:
-            self._process_aggregations(field=self.chart_report.field,
-                                       report_builder_class=report_builder_class,
-                                       base_model=base_model,
-                                       decimal_places=self.chart_report.decimal_places,
-                                       fields=fields,
-                                       aggregations_type=ANNOTATION_CHOICE_SUM)
+            self._process_aggregations(
+                field=self.chart_report.field,
+                report_builder_class=report_builder_class,
+                base_model=base_model,
+                decimal_places=self.chart_report.decimal_places,
+                fields=fields,
+                aggregations_type=ANNOTATION_CHOICE_SUM,
+            )
         elif single_value_type == SingleValueReport.SingleValueType.COUNT_AND_SUM:
             self._get_count(fields=fields)
-            self._process_aggregations(field=self.chart_report.field,
-                                       report_builder_class=report_builder_class,
-                                       base_model=base_model,
-                                       decimal_places=self.chart_report.decimal_places,
-                                       fields=fields,
-                                       aggregations_type=ANNOTATION_CHOICE_SUM)
+            self._process_aggregations(
+                field=self.chart_report.field,
+                report_builder_class=report_builder_class,
+                base_model=base_model,
+                decimal_places=self.chart_report.decimal_places,
+                fields=fields,
+                aggregations_type=ANNOTATION_CHOICE_SUM,
+            )
         elif single_value_type == SingleValueReport.SingleValueType.AVERAGE_SUM_FROM_COUNT:
-            self._process_aggregations(field=self.chart_report.field,
-                                       report_builder_class=report_builder_class,
-                                       base_model=base_model,
-                                       decimal_places=self.chart_report.decimal_places,
-                                       fields=fields,
-                                       aggregations_type=ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT,
-                                       )
+            self._process_aggregations(
+                field=self.chart_report.field,
+                report_builder_class=report_builder_class,
+                base_model=base_model,
+                decimal_places=self.chart_report.decimal_places,
+                fields=fields,
+                aggregations_type=ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT,
+            )
         elif single_value_type in [
             SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME,
             SingleValueReport.SingleValueType.AVERAGE_SUM_OVER_TIME_EXCLUDING_WEEKENDS,
@@ -246,13 +249,15 @@ class SingleValueView(ValueBaseView):
                 end_date_type=self.chart_report.average_end_period,
                 exclude_weekdays=exclude_weekdays,
             )
-            self._process_aggregations(field=self.chart_report.field,
-                                       report_builder_class=report_builder_class,
-                                       base_model=base_model,
-                                       decimal_places=self.chart_report.decimal_places,
-                                       fields=fields,
-                                       aggregations_type=ANNOTATION_CHOICE_SUM,
-                                       divider=divider)
+            self._process_aggregations(
+                field=self.chart_report.field,
+                report_builder_class=report_builder_class,
+                base_model=base_model,
+                decimal_places=self.chart_report.decimal_places,
+                fields=fields,
+                aggregations_type=ANNOTATION_CHOICE_SUM,
+                divider=divider,
+            )
         elif single_value_type == SingleValueReport.SingleValueType.PERCENT:
             self._process_percentage(fields=fields)
         elif single_value_type == SingleValueReport.SingleValueType.PERCENT_FROM_COUNT:
