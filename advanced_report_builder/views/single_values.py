@@ -2,8 +2,6 @@ import json
 
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.core.exceptions import ValidationError
-from django.db.models import Count
-from django.db.models.functions import Coalesce
 from django.forms import ChoiceField, ModelChoiceField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -112,12 +110,14 @@ class SingleValueView(ValueBaseView):
                 divider=divider,
             )
         elif single_value_type == SingleValueReport.SingleValueType.PERCENT:
-            self._process_percentage(denominator_field=self.chart_report.field,
-                                     numerator_field=self.chart_report.numerator,
-                                     report_builder_class=report_builder_class,
-                                     decimal_places=self.chart_report.decimal_places,
-                                     base_model=base_model,
-                                     fields=fields)
+            self._process_percentage(
+                denominator_field=self.chart_report.field,
+                numerator_field=self.chart_report.numerator,
+                report_builder_class=report_builder_class,
+                decimal_places=self.chart_report.decimal_places,
+                base_model=base_model,
+                fields=fields,
+            )
         elif single_value_type == SingleValueReport.SingleValueType.PERCENT_FROM_COUNT:
             report_query = self.get_report_query(report=self.chart_report)
 
@@ -125,10 +125,9 @@ class SingleValueView(ValueBaseView):
             if report_query:
                 numerator_filter = self.process_filters(search_filter_data=report_query.extra_query)
 
-
-            self._process_percentage_from_count(numerator_filter=numerator_filter,
-                                                decimal_places=self.chart_report.decimal_places,
-                                                fields=fields)
+            self._process_percentage_from_count(
+                numerator_filter=numerator_filter, decimal_places=self.chart_report.decimal_places, fields=fields
+            )
         return fields
 
     def set_prefix(self):
