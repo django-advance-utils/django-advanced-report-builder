@@ -8,6 +8,7 @@ from advanced_report_builder.views.charts_base import ChartBaseView
 
 class ValueBaseView(ChartBaseView):
     use_annotations = False
+
     def _get_count(self, fields):
         number_function_kwargs = {
             'aggregations': {'count': Count(1)},
@@ -20,10 +21,16 @@ class ValueBaseView(ChartBaseView):
         field = self.number_field(**number_function_kwargs)
         fields.append(field)
 
-
-    def _process_aggregations(self, field, base_model, report_builder_class, decimal_places,
-                              fields, aggregations_type=ANNOTATION_CHOICE_SUM, divider=None):
-
+    def _process_aggregations(
+        self,
+        field,
+        base_model,
+        report_builder_class,
+        decimal_places,
+        fields,
+        aggregations_type=ANNOTATION_CHOICE_SUM,
+        divider=None,
+    ):
         django_field, col_type_override, _, _ = self.get_field_details(
             base_model=base_model,
             field=field,
