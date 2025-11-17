@@ -10,7 +10,8 @@ from django_datatables.helpers import DUMMY_ID
 from django_datatables.widgets import DataTableWidget
 from django_menus.menu import HtmlMenu, MenuItem
 from django_modals.fields import FieldEx
-from django_modals.modals import ModelFormModal
+from django_modals.helper import show_modal
+from django_modals.modals import ModelFormModal, Modal
 from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
 from django_modals.widgets.select2 import Select2Multiple
 from django_modals.widgets.widgets import Toggle
@@ -75,37 +76,6 @@ class MultiValueModal(ModelFormModal):
                     attrs={'filter': {'multi_value_report__id': self.object.id}},
                 ),
             )
-            cells_menu_items = [
-                MenuItem(
-                    f'advanced_report_builder:multi_value_cell_modal,pk-{DUMMY_ID}',
-                    menu_display='Edit',
-                    css_classes='btn btn-sm btn-outline-dark',
-                    font_awesome='fas fa-pencil',
-                ),
-            ]
-
-            form.fields['cells'] = CharField(
-                required=False,
-                label='Cell Styles',
-                widget=DataTableWidget(
-                    model=MultiValueReportCell,
-                    fields=[
-                        '_.index',
-                        '.id',
-                        # 'multi_value_type',
-                        'row',
-                        'column',
-                        MenuColumn(
-                            column_name='menu',
-                            field='id',
-                            column_defs={'orderable': False, 'className': 'dt-right'},
-                            menu=HtmlMenu(self.request, 'button_group').add_items(*cells_menu_items),
-                        ),
-                    ],
-                    attrs={'filter': {'report__id': self.object.id}},
-                ),
-            )
-
             return [
                 *self.form_fields,
                 crispy_modal_link_args(
@@ -120,16 +90,15 @@ class MultiValueModal(ModelFormModal):
                 ),
                 'cell_styles',
                 crispy_modal_link_args(
-                    'advanced_report_builder:multi_value_cell_modal',
-                    'Add Cell Data',
-                    'report_id-',
+                    'advanced_report_builder:multi_value_cells_modal',
+                    'Edit Cells',
+                    'multi_value_report_id-',
                     self.object.id,
                     div=True,
                     div_classes='form-buttons',
                     button_classes='btn btn-primary',
-                    font_awesome='fa fa-plus',
+                    font_awesome='fas fa-edit',
                 ),
-                'cells',
             ]
 
 
@@ -373,6 +342,94 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
         return self.command_response('reload')
 
 
+class MultiValueReportCellsModal(Modal):
+    button_container_class = 'text-center'
+    modal_title = 'Edit Cells'
+    size = 'xl'
+
+
+    @staticmethod
+    def render_html(table_data, multi_value_report):
+        html = '<table class="table table-bordered kanban_summary">'
+        for row_index, row in enumerate(table_data, start=1):
+            html += '<tr>'
+            for cols_index, cell in enumerate(row, start=1):
+                if cell is None:
+
+                    link = show_modal(
+                        'advanced_report_builder:multi_value_cell_modal',
+                        '',
+                        f'report_id-{multi_value_report.id}-row-{row_index}-column-{cols_index}',
+                        href=True,
+                        font_awesome='fas fa-edit',
+                    )
+
+                    html += f'<td><div class="d-flex align-items-center"><a href="{link}" class="ml-auto"><i class="fas fa-plus ml-auto"></i></a></div</td>'
+                elif cell['value'] is not None:
+                    attrs = ''
+                    multi_value_report_cell = cell['cell']
+                    col_span = multi_value_report_cell.col_span
+                    row_span = multi_value_report_cell.row_span
+                    if col_span > 1:
+                        attrs += f' colspan="{col_span}"'
+                    if row_span > 1:
+                        attrs += f' colspan="{row_span}"'
+                    value = cell['value']
+
+                    link = show_modal(
+                        'advanced_report_builder:multi_value_cell_modal',
+                        '',
+                        'pk-',
+                        cell['cell'].id,
+                        href=True,
+                        font_awesome='fas fa-edit',
+                    )
+                    html += (f'<td{attrs}><div class="d-flex align-items-center">'
+                             f'{value}'
+                             f'<a href="{link}" class="ml-auto"><i class="fas fa-edit"></i></a>'
+                             f'</div></td>')
+            html += '</tr>'
+
+        html += '</table>'
+        return html
+
+    def get_table_data(self, multi_value_report):
+        table_data = [[None for _ in range(multi_value_report.columns)] for _ in range(multi_value_report.rows)]
+        multi_value_report_cells = (MultiValueReportCell.objects.filter(report=multi_value_report)
+                                    .order_by('row', 'column'))
+        for multi_value_report_cell in multi_value_report_cells:
+
+            row = multi_value_report_cell.row - 1
+            column = multi_value_report_cell.column -  1
+            if table_data[row][column] is not None:
+                continue
+            multi_value_type = multi_value_report_cell.multi_value_type
+            if multi_value_type == MultiValueReportCell.MultiValueType.STATIC_TEXT:
+                value = multi_value_report_cell.text
+            else:
+                value = '123'
+
+            table_data[row][column] = {'value': value, 'cell': multi_value_report_cell}
+
+            if multi_value_report_cell.row_span > 1 or multi_value_report_cell.col_span > 1:
+                for row_offset in range(multi_value_report_cell.row_span):
+                    for col_offset in range(multi_value_report_cell.col_span):
+                        # skip the main (top-left) cell
+                        if row_offset == 0 and col_offset == 0:
+                            continue
+                        if len(table_data) > row + row_offset and len(table_data[row + row_offset]) > column + col_offset:
+                            table_data[row + row_offset][column + col_offset] = {'value': None}
+
+        return table_data
+
+    def modal_content(self):
+        multi_value_report = MultiValueReport.objects.get(pk=self.slug['multi_value_report_id'])
+        table_data = self.get_table_data(multi_value_report)
+
+        return self.render_html(table_data=table_data,
+                                multi_value_report=multi_value_report)
+
+
 class MultiValueView(ValueBaseView):
     number_field = ReportBuilderNumberColumn
     template_name = 'advanced_report_builder/multi_values/report.html'
@@ -500,7 +557,6 @@ class MultiValueView(ValueBaseView):
                 css_classes=['btn-primary'],
             )
         ]
-
 
     def render_value(self, base_model, fields):
         table = self.chart_js_table(model=base_model)
