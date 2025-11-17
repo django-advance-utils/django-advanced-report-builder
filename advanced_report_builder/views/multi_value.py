@@ -1,10 +1,11 @@
 import json
 
+from django.db.models import Count
 from django.forms import CharField, ChoiceField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.views.generic import TemplateView
-from django_datatables.columns import MenuColumn
+from django_datatables.columns import MenuColumn, ColumnBase
 from django_datatables.helpers import DUMMY_ID
 from django_datatables.widgets import DataTableWidget
 from django_menus.menu import HtmlMenu, MenuItem
@@ -16,13 +17,16 @@ from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.filter_query import FilterQueryMixin
+from advanced_report_builder.globals import ANNOTATION_CHOICE_SUM
 from advanced_report_builder.models import MultiCellStyle, MultiValueReport, MultiValueReportCell, ReportType
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import crispy_modal_link_args
+from advanced_report_builder.utils import crispy_modal_link_args, get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
+from advanced_report_builder.views.charts_base import ChartJSTable, ChartBaseView
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 from advanced_report_builder.views.report import ReportBase
+from advanced_report_builder.views.value_base import ValueBaseView
 from advanced_report_builder.widgets import SmallNumberInputWidget
 
 
@@ -60,7 +64,7 @@ class MultiValueModal(ModelFormModal):
                     fields=[
                         '_.index',
                         '.id',
-                        'name',
+                        ColumnBase(column_name='cell_style_name', field='name', title='Name'),
                         MenuColumn(
                             column_name='menu',
                             field='id',
@@ -369,14 +373,10 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
         return self.command_response('reload')
 
 
-class MultiValueView(ReportBase, FilterQueryMixin, TemplateView):
+class MultiValueView(ValueBaseView):
     number_field = ReportBuilderNumberColumn
     template_name = 'advanced_report_builder/multi_values/report.html'
-    chart_js_table = MultiValueReport
-
-    def __init__(self, *args, **kwargs):
-        self.chart_report = None
-        super().__init__(*args, **kwargs)
+    chart_js_table = ChartJSTable
 
     def setup_menu(self):
         super().setup_menu()
@@ -414,9 +414,82 @@ class MultiValueView(ReportBase, FilterQueryMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs) if hasattr(super(), 'get_context_data') else {}
-        table_data = [[0 for _ in range(self.chart_report.columns)] for _ in range(self.chart_report.rows)]
-        context['table_data'] = table_data
+
+        multi_value_report_cells = (MultiValueReportCell.objects.filter(report=self.chart_report)
+                                    .order_by('row', 'column'))
+
+        table_data = [[None for _ in range(self.chart_report.columns)] for _ in range(self.chart_report.rows)]
+
+        for multi_value_report_cell in multi_value_report_cells:
+            base_model = multi_value_report_cell.get_base_model()
+            value = ''
+            report_builder_class = None
+
+            row = multi_value_report_cell.row - 1
+            column = multi_value_report_cell.column -  1
+            if table_data[row][column] is not None:
+                continue
+
+            multi_value_type = multi_value_report_cell.multi_value_type
+            if base_model is not None:
+                report_builder_class = get_report_builder_class(model=base_model,
+                                                                report_type=multi_value_report_cell.report_type)
+
+            fields = []
+            if multi_value_type == MultiValueReportCell.MultiValueType.STATIC_TEXT:
+                value =  multi_value_report_cell.text
+            elif multi_value_type == MultiValueReportCell.MultiValueType.COUNT:
+                self._get_count(fields=fields)
+            elif multi_value_type == MultiValueReportCell.MultiValueType.SUM:
+                self._process_aggregations(field=multi_value_report_cell.field,
+                                           report_builder_class=report_builder_class,
+                                           base_model=base_model,
+                                           decimal_places=multi_value_report_cell.decimal_places,
+                                           fields=fields,
+                                           aggregations_type=ANNOTATION_CHOICE_SUM)
+
+            if fields:
+                value = self.render_value(base_model=base_model,
+                                          fields=fields)
+
+            table_data[row][column] = {'value': value, 'cell': multi_value_report_cell}
+
+            if multi_value_report_cell.row_span > 1 or multi_value_report_cell.col_span > 1:
+                for row_offset in range(multi_value_report_cell.row_span):
+                    for col_offset in range(multi_value_report_cell.col_span):
+                        # skip the main (top-left) cell
+                        if row_offset == 0 and col_offset == 0:
+                            continue
+
+                        table_data[row + row_offset][column + col_offset] = {'value': None}
+
+
+        context['html'] = self.render_html(table_data=table_data)
         return context
+
+    @staticmethod
+    def render_html(table_data):
+        html = '<table class="table table-bordered kanban_summary">'
+        for row in table_data:
+            html += '<tr>'
+            for cell in row:
+                if cell is None:
+                    html += '<td></td>'
+                elif cell['value'] is not None:
+                    attrs = ''
+                    multi_value_report_cell = cell['cell']
+                    col_span = multi_value_report_cell.col_span
+                    row_span = multi_value_report_cell.row_span
+                    if col_span > 1:
+                        attrs += f' colspan="{col_span}"'
+                    if row_span > 1:
+                        attrs += f' colspan="{row_span}"'
+                    value = cell['value']
+                    html += f'<td{attrs}>{value}</td>'
+            html += '</tr>'
+
+        html += '</table>'
+        return html
 
     def pod_dashboard_edit_menu(self):
         return [
@@ -427,3 +500,14 @@ class MultiValueView(ReportBase, FilterQueryMixin, TemplateView):
                 css_classes=['btn-primary'],
             )
         ]
+
+
+    def render_value(self, base_model, fields):
+        table = self.chart_js_table(model=base_model)
+        table.add_columns(*fields)
+        table.single_value = self.chart_report
+        table.enable_links = self.kwargs.get('enable_links')
+        table.datatable_template = 'advanced_report_builder/multi_values/middle.html'
+        value = table.render()
+        return value
+

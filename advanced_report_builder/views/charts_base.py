@@ -340,15 +340,15 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
         base_model = self.chart_report.get_base_model()
-
-        self.setup_table(base_model=base_model)
-        self.table.extra_filters = self.extra_filters
-        fields = self.process_query_results(base_model=base_model, table=self.table)
-        self.table.add_columns(*fields)
-
+        if base_model:
+            self.setup_table(base_model=base_model)
+            self.table.extra_filters = self.extra_filters
+            fields = self.process_query_results(base_model=base_model, table=self.table)
+            self.table.add_columns(*fields)
+            context['datatable'] = self.table
         context['show_toolbar'] = self.show_toolbar
-        context['datatable'] = self.table
         context['title'] = self.get_title()
         return context
 

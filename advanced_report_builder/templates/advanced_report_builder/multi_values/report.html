@@ -16,13 +16,7 @@
         <div class="content" style="padding: 2px;">
 
             <div class="col-xs-12" style="overflow: auto;">
-                <table class="table table-bordered kanban_summary">
-                    {% for row in table_data %}
-                        <tr>
-                            {% for column in row %}<td>hello</td>{% endfor %}
-                        </tr>
-                    {% endfor %}
-                </table>
+                {{ html|safe }}
             </div>
         </div>
     </div>

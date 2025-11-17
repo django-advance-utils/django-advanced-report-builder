@@ -218,6 +218,8 @@ class Report(TimeStampedModel):
         return result
 
     def get_base_model(self):
+        if self.report_type is None:
+            return None
         return self.report_type.content_type.model_class()
 
     def show_dashboard_query(self):
@@ -537,6 +539,11 @@ class MultiValueReportCell(TimeStampedModel):
         constraints = [
             models.UniqueConstraint(fields=['report', 'row', 'column'], name='multi_value_report_cell_unique'),
         ]
+
+    def get_base_model(self):
+        if self.report_type is None:
+            return None
+        return self.report_type.content_type.model_class()
 
 
 class CalendarReport(Report):
