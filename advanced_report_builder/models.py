@@ -501,7 +501,8 @@ class MultiValueReportCell(TimeStampedModel):
         PERCENT_FROM_COUNT = 5, 'Percent from Count'
         AVERAGE_SUM_FROM_COUNT = 6, 'Average Sum from Count'
         AVERAGE_SUM_OVER_TIME = 7, 'Average Sum over Time'
-        EQUATION = 8, 'Equation'
+        AVERAGE_SUM_OVER_TIME_EXCLUDING_WEEKENDS = 8, 'Average Sum over Time (Excluding Weekends)'
+        EQUATION = 9, 'Equation'
 
         @classmethod
         def is_percentage(cls, value):

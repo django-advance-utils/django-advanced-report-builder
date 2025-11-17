@@ -15,7 +15,7 @@ from django_modals.widgets.select2 import Select2Multiple
 from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
-from advanced_report_builder.globals import ANNOTATION_CHOICE_SUM
+from advanced_report_builder.globals import ANNOTATION_CHOICE_SUM, ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT
 from advanced_report_builder.models import MultiCellStyle, MultiValueReport, MultiValueReportCell, ReportType
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import crispy_modal_link_args, get_report_builder_class
@@ -506,6 +506,53 @@ class MultiValueView(ValueBaseView):
                     fields=fields,
                     aggregations_type=ANNOTATION_CHOICE_SUM,
                 )
+            elif multi_value_type ==  MultiValueReportCell.MultiValueType.AVERAGE_SUM_FROM_COUNT:
+                self._process_aggregations(
+                    field=multi_value_report_cell.field,
+                    report_builder_class=report_builder_class,
+                    base_model=base_model,
+                    decimal_places=multi_value_report_cell.decimal_places,
+                    fields=fields,
+                    aggregations_type=ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT,
+                )
+
+
+            elif multi_value_type in [
+                MultiValueReportCell.MultiValueType.AVERAGE_SUM_OVER_TIME,
+                MultiValueReportCell.MultiValueType.AVERAGE_SUM_OVER_TIME_EXCLUDING_WEEKENDS,
+            ]:
+                exclude_weekdays = None
+                if multi_value_type == MultiValueReportCell.MultiValueType.AVERAGE_SUM_OVER_TIME_EXCLUDING_WEEKENDS:
+                    exclude_weekdays = [1, 7]
+
+                divider = self.get_period_divider(
+                    annotation_value_choice=multi_value_report_cell.average_scale,
+                    start_date_type=multi_value_report_cell.average_start_period,
+                    end_date_type=multi_value_report_cell.average_end_period,
+                    exclude_weekdays=exclude_weekdays,
+                )
+                self._process_aggregations(
+                    field=multi_value_report_cell.field,
+                    report_builder_class=report_builder_class,
+                    base_model=base_model,
+                    decimal_places=multi_value_report_cell.decimal_places,
+                    fields=fields,
+                    aggregations_type=ANNOTATION_CHOICE_SUM,
+                    divider=divider,
+                )
+
+            elif multi_value_type == MultiValueReportCell.MultiValueType.PERCENT:
+                self._process_percentage(denominator_field=multi_value_report_cell.field,
+                                         numerator_field=multi_value_report_cell.numerator,
+                                         report_builder_class=report_builder_class,
+                                         decimal_places=multi_value_report_cell.decimal_places,
+                                         base_model=base_model,
+                                         fields=fields)
+            elif multi_value_type == MultiValueReportCell.MultiValueType.PERCENT_FROM_COUNT:
+                numerator_filter = self.process_filters(search_filter_data=multi_value_report_cell.extra_query)
+                self._process_percentage_from_count(numerator_filter=numerator_filter,
+                                                    decimal_places=multi_value_report_cell.decimal_places,
+                                                    fields=fields)
 
             if fields:
                 value = self.render_value(base_model=base_model, fields=fields)
