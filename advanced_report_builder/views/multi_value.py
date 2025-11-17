@@ -122,6 +122,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
     form_fields = [
         'multi_value_type',
         'text',
+        'sample_text',
         'row',
         'column',
         'col_span',
@@ -149,6 +150,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
     }
 
     def form_setup(self, form, *_args, **_kwargs):
+        form.fields['sample_text'].help_text = 'Only used in setting the table up'
         form.add_trigger(
             'multi_value_type',
             'onchange',
@@ -160,6 +162,15 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     },
                     'default': 'hide',
                 },
+
+                {
+                    'selector': '#div_id_sample_text',
+                    'values': {
+                        MultiValueReportCell.MultiValueType.STATIC_TEXT: 'hide',
+                    },
+                    'default': 'show',
+                },
+
                 {
                     'selector': '#div_id_field',
                     'values': {
@@ -283,6 +294,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
         fields = [
             'multi_value_type',
             'text',
+            'sample_text',
             'row',
             'column',
             'col_span',
@@ -402,6 +414,8 @@ class MultiValueReportCellsModal(Modal):
             multi_value_type = multi_value_report_cell.multi_value_type
             if multi_value_type == MultiValueReportCell.MultiValueType.STATIC_TEXT:
                 value = multi_value_report_cell.text
+            elif multi_value_report_cell.sample_text:
+                value = multi_value_report_cell.sample_text
             else:
                 value = '123'
 
