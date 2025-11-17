@@ -9,7 +9,7 @@ from django_datatables.widgets import DataTableWidget
 from django_menus.menu import HtmlMenu, MenuItem
 from django_modals.fields import FieldEx
 from django_modals.helper import show_modal
-from django_modals.modals import ModelFormModal, Modal
+from django_modals.modals import Modal, ModelFormModal
 from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
 from django_modals.widgets.select2 import Select2Multiple
 from django_modals.widgets.widgets import Toggle
@@ -343,7 +343,6 @@ class MultiValueReportCellsModal(Modal):
     modal_title = 'Edit Cells'
     size = 'xl'
 
-
     @staticmethod
     def render_html(table_data, multi_value_report):
         html = '<table class="table table-bordered kanban_summary">'
@@ -351,7 +350,6 @@ class MultiValueReportCellsModal(Modal):
             html += '<tr>'
             for cols_index, cell in enumerate(row, start=1):
                 if cell is None:
-
                     link = show_modal(
                         'advanced_report_builder:multi_value_cell_modal',
                         '',
@@ -380,10 +378,12 @@ class MultiValueReportCellsModal(Modal):
                         href=True,
                         font_awesome='fas fa-edit',
                     )
-                    html += (f'<td{attrs}><div class="d-flex align-items-center">'
-                             f'{value}'
-                             f'<a href="{link}" class="ml-auto"><i class="fas fa-edit"></i></a>'
-                             f'</div></td>')
+                    html += (
+                        f'<td{attrs}><div class="d-flex align-items-center">'
+                        f'{value}'
+                        f'<a href="{link}" class="ml-auto"><i class="fas fa-edit"></i></a>'
+                        f'</div></td>'
+                    )
             html += '</tr>'
 
         html += '</table>'
@@ -391,12 +391,12 @@ class MultiValueReportCellsModal(Modal):
 
     def get_table_data(self, multi_value_report):
         table_data = [[None for _ in range(multi_value_report.columns)] for _ in range(multi_value_report.rows)]
-        multi_value_report_cells = (MultiValueReportCell.objects.filter(report=multi_value_report)
-                                    .order_by('row', 'column'))
+        multi_value_report_cells = MultiValueReportCell.objects.filter(report=multi_value_report).order_by(
+            'row', 'column'
+        )
         for multi_value_report_cell in multi_value_report_cells:
-
             row = multi_value_report_cell.row - 1
-            column = multi_value_report_cell.column -  1
+            column = multi_value_report_cell.column - 1
             if table_data[row][column] is not None:
                 continue
             multi_value_type = multi_value_report_cell.multi_value_type
@@ -413,7 +413,10 @@ class MultiValueReportCellsModal(Modal):
                         # skip the main (top-left) cell
                         if row_offset == 0 and col_offset == 0:
                             continue
-                        if len(table_data) > row + row_offset and len(table_data[row + row_offset]) > column + col_offset:
+                        if (
+                            len(table_data) > row + row_offset
+                            and len(table_data[row + row_offset]) > column + col_offset
+                        ):
                             table_data[row + row_offset][column + col_offset] = {'value': None}
 
         return table_data
@@ -422,8 +425,7 @@ class MultiValueReportCellsModal(Modal):
         multi_value_report = MultiValueReport.objects.get(pk=self.slug['multi_value_report_id'])
         table_data = self.get_table_data(multi_value_report)
 
-        return self.render_html(table_data=table_data,
-                                multi_value_report=multi_value_report)
+        return self.render_html(table_data=table_data, multi_value_report=multi_value_report)
 
 
 class MultiValueView(ValueBaseView):
