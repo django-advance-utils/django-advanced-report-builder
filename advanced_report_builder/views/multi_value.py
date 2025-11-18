@@ -18,7 +18,7 @@ from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.globals import ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT, ANNOTATION_CHOICE_SUM
 from advanced_report_builder.models import MultiCellStyle, MultiValueReport, MultiValueReportCell, ReportType
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import crispy_modal_link_args, get_report_builder_class
+from advanced_report_builder.utils import crispy_modal_link_args, get_report_builder_class, excel_column_name
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartJSTable
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
@@ -118,6 +118,16 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
     model = MultiValueReportCell
+
+    @property
+    def modal_title(self):
+
+        if self.object.row and self.object.column:
+            title = excel_column_name(int(self.object.column), row=int(self.object.row))
+        else:
+            title = ' value'
+
+        return [f'Add {title}', f'Edit {title}']
 
     form_fields = [
         'multi_value_type',
@@ -363,9 +373,14 @@ class MultiValueReportCellsModal(Modal):
 
     @staticmethod
     def render_html(table_data, multi_value_report):
-        html = '<table class="table table-bordered kanban_summary">'
+        html = ('<table class="table table-bordered kanban_summary">'
+                '<tr><td></td>')
+        for cols_index, cell in enumerate(table_data[0], start=1):
+            letter = excel_column_name(cols_index)
+            html += f'<td>{letter}</td>'
+        html += '</tr>'
         for row_index, row in enumerate(table_data, start=1):
-            html += '<tr>'
+            html += f'<tr><td>{row_index}</td>'
             for cols_index, cell in enumerate(row, start=1):
                 if cell is None:
                     link = show_modal(
@@ -378,14 +393,14 @@ class MultiValueReportCellsModal(Modal):
 
                     html += f'<td><div class="d-flex align-items-center"><a href="{link}" class="ml-auto"><i class="fas fa-plus ml-auto"></i></a></div</td>'
                 elif cell['value'] is not None:
-                    attrs = ''
+                    attrs = []
                     multi_value_report_cell = cell['cell']
                     col_span = multi_value_report_cell.col_span
                     row_span = multi_value_report_cell.row_span
                     if col_span > 1:
-                        attrs += f' colspan="{col_span}"'
+                        attrs.append(f'colspan="{col_span}"')
                     if row_span > 1:
-                        attrs += f' colspan="{row_span}"'
+                        attrs.append(f'rowspan="{row_span}"')
                     value = cell['value']
 
                     link = show_modal(
@@ -396,8 +411,15 @@ class MultiValueReportCellsModal(Modal):
                         href=True,
                         font_awesome='fas fa-edit',
                     )
+                    if multi_value_report_cell.multi_cell_style is not None:
+                        attrs.append('style="' + multi_value_report_cell.multi_cell_style.get_td_style() + '"')
+                        attrs.append('class="' + multi_value_report_cell.multi_cell_style.get_td_class() + '"')
+                    attrs_html = ''
+                    if len(attrs) > 0:
+                        attrs_html = ' ' + ' '.join(attrs)
+
                     html += (
-                        f'<td{attrs}><div class="d-flex align-items-center">'
+                        f'<td{attrs_html}><div class="d-flex align-items-center">'
                         f'{value}'
                         f'<a href="{link}" class="ml-auto"><i class="fas fa-edit"></i></a>'
                         f'</div></td>'
@@ -603,16 +625,24 @@ class MultiValueView(ValueBaseView):
                 if cell is None:
                     html += '<td></td>'
                 elif cell['value'] is not None:
-                    attrs = ''
+                    attrs = []
                     multi_value_report_cell = cell['cell']
                     col_span = multi_value_report_cell.col_span
                     row_span = multi_value_report_cell.row_span
                     if col_span > 1:
-                        attrs += f' colspan="{col_span}"'
+                        attrs.append(f'colspan="{col_span}"')
                     if row_span > 1:
-                        attrs += f' colspan="{row_span}"'
+                        attrs.append(f'rowspan="{row_span}"')
                     value = cell['value']
-                    html += f'<td{attrs}>{value}</td>'
+
+                    if multi_value_report_cell.multi_cell_style is not None:
+                        attrs.append('style="' + multi_value_report_cell.multi_cell_style.get_td_style() + '"')
+                        attrs.append('class="' + multi_value_report_cell.multi_cell_style.get_td_class() + '"')
+                    attrs_html = ''
+                    if len(attrs) > 0:
+                        attrs_html = ' ' + ' '.join(attrs)
+
+                    html += f'<td{attrs_html}>{value}</td>'
             html += '</tr>'
 
         html += '</table>'

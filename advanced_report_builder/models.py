@@ -500,6 +500,27 @@ class MultiCellStyle(TimeStampedModel):
     def __str__(self):
         return self.name
 
+    def get_td_class(self):
+        results = []
+        if self.align_type == self.AlignType.CENTRE:
+            results.append('text-center')
+        elif self.align_type == self.AlignType.RIGHT:
+            results.append('text-right')
+        if self.bold:
+            results.append('font-weight-bold')
+        if self.italic:
+            results.append('font-italic')
+        return ' '.join(results)
+
+    def get_td_style(self):
+        results = []
+        results.append(f'font-size: {self.font_size}px;')
+        if self.font_colour:
+            results.append(f'color: #{self.font_colour};')
+        if self.background_colour:
+            results.append(f'background-color: #{self.background_colour};')
+        return ' '.join(results)
+
 
 class MultiValueReportCell(TimeStampedModel):
     class MultiValueType(models.IntegerChoices):
@@ -527,7 +548,7 @@ class MultiValueReportCell(TimeStampedModel):
     row_span = models.PositiveSmallIntegerField(default=1)
     multi_value_type = models.IntegerField(choices=MultiValueType.choices, default=MultiValueType.STATIC_TEXT)
     text = models.TextField(blank=True, null=True)
-    multi_cell_style = models.ForeignKey('MultiCellStyle', on_delete=models.PROTECT, null=True, blank=True)
+    multi_cell_style = models.ForeignKey('MultiCellStyle', on_delete=models.SET_NULL, null=True, blank=True)
     report_type = models.ForeignKey(ReportType, null=True, blank=True, on_delete=models.PROTECT)
 
     field = models.CharField(max_length=200, blank=True, null=True)  # denominator

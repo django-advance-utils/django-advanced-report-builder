@@ -126,3 +126,18 @@ def count_days(
             count += 1
         current += timedelta(days=1)
     return count
+
+
+def excel_column_name(n: int, row: int | None = None) -> str:
+    """Convert a 1-based column index to an Excel column name, with optional row."""
+    col = []
+    c = n
+    while c > 0:
+        c -= 1
+        col.append(chr((c % 26) + ord('A')))
+        c //= 26
+    col = ''.join(reversed(col))
+
+    if row is not None:
+        return f"{col}{row}"
+    return col
