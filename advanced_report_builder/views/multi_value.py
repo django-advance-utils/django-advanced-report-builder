@@ -11,7 +11,7 @@ from django_modals.fields import FieldEx
 from django_modals.helper import show_modal
 from django_modals.modals import Modal, ModelFormModal
 from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
-from django_modals.widgets.select2 import Select2Multiple, Select2
+from django_modals.widgets.select2 import Select2, Select2Multiple
 from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
@@ -113,6 +113,7 @@ class MultiValueCellStyleModal(ModelFormModal):
 
     form_fields = ['name', 'align_type', 'bold', 'italic', 'font_size', 'background_colour']
 
+
 class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
     size = 'xl'
     process = PROCESS_EDIT_DELETE
@@ -165,7 +166,8 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
         form.fields['multi_cell_style'] = ModelChoiceField(
             queryset=MultiCellStyle.objects.filter(multi_value_report_id=self.object.report_id),
             widget=Select2(),
-            required=False)
+            required=False,
+        )
         form.add_trigger(
             'multi_value_type',
             'onchange',
@@ -304,7 +306,6 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
         range_type_choices = VariableDate.RANGE_TYPE_CHOICES
         form.fields['average_start_period'] = ChoiceField(required=False, choices=range_type_choices)
         form.fields['average_end_period'] = ChoiceField(required=False, choices=range_type_choices)
-
 
         fields = [
             'multi_value_type',
