@@ -18,7 +18,7 @@ from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.globals import ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT, ANNOTATION_CHOICE_SUM
 from advanced_report_builder.models import MultiCellStyle, MultiValueReport, MultiValueReportCell, ReportType
 from advanced_report_builder.toggle import RBToggle
-from advanced_report_builder.utils import crispy_modal_link_args, get_report_builder_class, excel_column_name
+from advanced_report_builder.utils import crispy_modal_link_args, excel_column_name, get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartJSTable
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
@@ -122,7 +122,6 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
 
     @property
     def modal_title(self):
-
         if self.object.row and self.object.column:
             title = excel_column_name(int(self.object.column), row=int(self.object.row))
         else:
@@ -374,8 +373,7 @@ class MultiValueReportCellsModal(Modal):
 
     @staticmethod
     def render_html(table_data, multi_value_report):
-        html = ('<table class="table table-bordered kanban_summary">'
-                '<tr><td></td>')
+        html = '<table class="table table-bordered kanban_summary"><tr><td></td>'
         for cols_index, cell in enumerate(table_data[0], start=1):
             letter = excel_column_name(cols_index)
             html += f'<td>{letter}</td>'
