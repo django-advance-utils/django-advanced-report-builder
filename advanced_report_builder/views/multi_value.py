@@ -19,8 +19,13 @@ from expression_builder.expression_builder import ExpressionBuilder
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.globals import ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT, ANNOTATION_CHOICE_SUM
-from advanced_report_builder.models import MultiCellStyle, MultiValueReport, MultiValueReportCell, ReportType, \
-    MultiValueReportColumn
+from advanced_report_builder.models import (
+    MultiCellStyle,
+    MultiValueReport,
+    MultiValueReportCell,
+    MultiValueReportColumn,
+    ReportType,
+)
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import crispy_modal_link_args, excel_column_name, get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
@@ -407,8 +412,10 @@ class MultiValueReportCellsModal(Modal):
                     href=True,
                 )
                 style = multi_value_report_column.get_td_style()
-                html += (f'<td style="{style}"><div class="d-flex align-items-center">{letter}'
-                         f'<a href="{link}" class="ml-auto"><i class="fas fa-edit ml-auto"></i></a></div></td>')
+                html += (
+                    f'<td style="{style}"><div class="d-flex align-items-center">{letter}'
+                    f'<a href="{link}" class="ml-auto"><i class="fas fa-edit ml-auto"></i></a></div></td>'
+                )
             else:
                 link = show_modal(
                     'advanced_report_builder:multi_value_column_modal',
@@ -416,8 +423,10 @@ class MultiValueReportCellsModal(Modal):
                     f'report_id-{multi_value_report.id}-column-{cols_index}',
                     href=True,
                 )
-                html += (f'<td><div class="d-flex align-items-center">{letter}'
-                         f'<a href="{link}" class="ml-auto"><i class="fas fa-plus ml-auto"></i></a></div></td>')
+                html += (
+                    f'<td><div class="d-flex align-items-center">{letter}'
+                    f'<a href="{link}" class="ml-auto"><i class="fas fa-plus ml-auto"></i></a></div></td>'
+                )
         html += '</tr>'
         for row_index, row in enumerate(table_data, start=1):
             html += f'<tr><td>{row_index}</td>'
@@ -429,8 +438,10 @@ class MultiValueReportCellsModal(Modal):
                         f'report_id-{multi_value_report.id}-row-{row_index}-column-{cols_index}',
                         href=True,
                     )
-                    html += (f'<td><div class="d-flex align-items-center">'
-                             f'<a href="{link}" class="ml-auto"><i class="fas fa-plus ml-auto"></i></a></div></td>')
+                    html += (
+                        f'<td><div class="d-flex align-items-center">'
+                        f'<a href="{link}" class="ml-auto"><i class="fas fa-plus ml-auto"></i></a></div></td>'
+                    )
                 elif cell['value'] is not None:
                     attrs = []
                     multi_value_report_cell = cell['cell']
