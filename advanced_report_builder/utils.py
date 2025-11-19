@@ -139,5 +139,5 @@ def excel_column_name(n: int, row: int | None = None) -> str:
     col = ''.join(reversed(col))
 
     if row is not None:
-        return f"{col}{row}"
+        return f'{col}{row}'
     return col
