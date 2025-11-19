@@ -137,7 +137,6 @@ class MultiValueReportColumnModal(ModelFormModal):
     form_fields = ['width', 'width_type']
 
 
-
 class MultiValueReportCellForm(QueryBuilderModelForm):
     cancel_class = 'btn-secondary modal-cancel'
 
@@ -191,8 +190,6 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
             title = ' value'
 
         return [f'Add {title}', f'Edit {title}']
-
-
 
     def form_setup(self, form, *_args, **_kwargs):
         form.fields['sample_text'].help_text = 'Only used in setting the table up'
@@ -670,9 +667,9 @@ class MultiValueView(ValueBaseView):
                 multi_value_report_equations.append((cell_name, multi_value_report_cell))
 
             if fields:
-                value, raw_value = self.render_value(base_model=base_model,
-                                                     fields=fields,
-                                                     multi_value_report_cell=multi_value_report_cell)
+                value, raw_value = self.render_value(
+                    base_model=base_model, fields=fields, multi_value_report_cell=multi_value_report_cell
+                )
                 if raw_value is not None:
                     with contextlib.suppress(ValueError):
                         raw_value = float(raw_value)
@@ -770,7 +767,7 @@ class MultiValueView(ValueBaseView):
         ]
 
     def extra_filters(self, query):
-        query_data =  self.current_multi_value_report_cell.query_data
+        query_data = self.current_multi_value_report_cell.query_data
         if query_data:
             query = self.process_query_filters(query=query, search_filter_data=query_data)
         return query
