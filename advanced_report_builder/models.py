@@ -532,6 +532,13 @@ class MultiValueReportColumn(TimeStampedModel):
     width_type = models.PositiveSmallIntegerField(choices=WidthType.choices, default=WidthType.PERCENTAGE)
     width = models.PositiveSmallIntegerField()
 
+    def get_td_style(self):
+        if self.width_type == self.WidthType.PERCENTAGE:
+            return f'width: {self.width}%'
+        elif self.width_type == self.WidthType.PIXELS:
+            return f'width: {self.width}px'
+        return ''
+
 
 class MultiValueReportCell(TimeStampedModel):
     class MultiValueType(models.IntegerChoices):

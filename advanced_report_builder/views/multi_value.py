@@ -19,7 +19,8 @@ from expression_builder.expression_builder import ExpressionBuilder
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.globals import ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT, ANNOTATION_CHOICE_SUM
-from advanced_report_builder.models import MultiCellStyle, MultiValueReport, MultiValueReportCell, ReportType
+from advanced_report_builder.models import MultiCellStyle, MultiValueReport, MultiValueReportCell, ReportType, \
+    MultiValueReportColumn
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import crispy_modal_link_args, excel_column_name, get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
@@ -115,6 +116,19 @@ class MultiValueCellStyleModal(ModelFormModal):
     }
 
     form_fields = ['name', 'align_type', 'bold', 'italic', 'font_size', 'background_colour']
+
+
+class MultiValueReportColumnModal(ModelFormModal):
+    process = PROCESS_EDIT_DELETE
+    permission_delete = PERMISSION_OFF
+    model = MultiValueReportColumn
+
+    widgets = {
+        'width': SmallNumberInputWidget,
+        'width_type': Select2,
+    }
+
+    form_fields = ['width', 'width_type']
 
 
 class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
@@ -378,9 +392,32 @@ class MultiValueReportCellsModal(Modal):
     @staticmethod
     def render_html(table_data, multi_value_report):
         html = '<table class="table table-bordered kanban_summary"><tr><td></td>'
+        columns_data = {}
+        for multi_value_report_column in multi_value_report.multivaluereportcolumn_set.all():
+            columns_data[multi_value_report_column.column] = multi_value_report_column
+
         for cols_index, cell in enumerate(table_data[0], start=1):
             letter = excel_column_name(cols_index)
-            html += f'<td>{letter}</td>'
+            if cols_index in columns_data:
+                multi_value_report_column = columns_data[cols_index]
+                link = show_modal(
+                    'advanced_report_builder:multi_value_column_modal',
+                    '',
+                    f'pk-{multi_value_report_column.id}',
+                    href=True,
+                )
+                style = multi_value_report_column.get_td_style()
+                html += (f'<td style="{style}"><div class="d-flex align-items-center">{letter}'
+                         f'<a href="{link}" class="ml-auto"><i class="fas fa-edit ml-auto"></i></a></div></td>')
+            else:
+                link = show_modal(
+                    'advanced_report_builder:multi_value_column_modal',
+                    '',
+                    f'report_id-{multi_value_report.id}-column-{cols_index}',
+                    href=True,
+                )
+                html += (f'<td><div class="d-flex align-items-center">{letter}'
+                         f'<a href="{link}" class="ml-auto"><i class="fas fa-plus ml-auto"></i></a></div></td>')
         html += '</tr>'
         for row_index, row in enumerate(table_data, start=1):
             html += f'<tr><td>{row_index}</td>'
@@ -391,10 +428,9 @@ class MultiValueReportCellsModal(Modal):
                         '',
                         f'report_id-{multi_value_report.id}-row-{row_index}-column-{cols_index}',
                         href=True,
-                        font_awesome='fas fa-edit',
                     )
-
-                    html += f'<td><div class="d-flex align-items-center"><a href="{link}" class="ml-auto"><i class="fas fa-plus ml-auto"></i></a></div</td>'
+                    html += (f'<td><div class="d-flex align-items-center">'
+                             f'<a href="{link}" class="ml-auto"><i class="fas fa-plus ml-auto"></i></a></div></td>')
                 elif cell['value'] is not None:
                     attrs = []
                     multi_value_report_cell = cell['cell']
@@ -412,7 +448,6 @@ class MultiValueReportCellsModal(Modal):
                         'pk-',
                         cell['cell'].id,
                         href=True,
-                        font_awesome='fas fa-edit',
                     )
                     if multi_value_report_cell.multi_cell_style is not None:
                         attrs.append('style="' + multi_value_report_cell.multi_cell_style.get_td_style() + '"')
@@ -650,12 +685,16 @@ class MultiValueView(ValueBaseView):
         context['html'] = self.render_html(table_data=table_data)
         return context
 
-    @staticmethod
-    def render_html(table_data):
+    def render_html(self, table_data):
         html = '<table class="table table-bordered kanban_summary">'
+
+        columns_data = {}
+        for multi_value_report_column in self.chart_report.multivaluereportcolumn_set.all():
+            columns_data[multi_value_report_column.column] = multi_value_report_column.get_td_style()
+
         for row in table_data:
             html += '<tr>'
-            for cell in row:
+            for cols_index, cell in enumerate(row, start=1):
                 if cell is None:
                     html += '<td></td>'
                 elif cell['value'] is not None:
@@ -668,10 +707,18 @@ class MultiValueView(ValueBaseView):
                     if row_span > 1:
                         attrs.append(f'rowspan="{row_span}"')
                     value = cell['value']
+                    styles = []
+
+                    if col_span == 1 and cols_index in columns_data:
+                        styles.append(columns_data[cols_index])
 
                     if multi_value_report_cell.multi_cell_style is not None:
-                        attrs.append('style="' + multi_value_report_cell.multi_cell_style.get_td_style() + '"')
                         attrs.append('class="' + multi_value_report_cell.multi_cell_style.get_td_class() + '"')
+                        styles.append(multi_value_report_cell.multi_cell_style.get_td_style())
+
+                    if len(styles) > 0:
+                        attrs.append('style="' + ' '.join(styles) + '"')
+
                     attrs_html = ''
                     if len(attrs) > 0:
                         attrs_html = ' ' + ' '.join(attrs)
