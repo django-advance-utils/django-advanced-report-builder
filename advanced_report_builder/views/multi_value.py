@@ -1,4 +1,4 @@
-import copy
+import contextlib
 import json
 
 from django.forms import CharField, ChoiceField, ModelChoiceField
@@ -609,10 +609,8 @@ class MultiValueView(ValueBaseView):
             if fields:
                 value, raw_value = self.render_value(base_model=base_model, fields=fields)
                 if raw_value is not None:
-                    try:
+                    with contextlib.suppress(ValueError):
                         raw_value = float(raw_value)
-                    except ValueError:
-                        pass
                     exp.add_to_global(name=cell_name, value=raw_value)
 
             table_data[row][column] = {'value': value, 'cell': multi_value_report_cell}
