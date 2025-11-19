@@ -25,6 +25,7 @@ from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import crispy_modal_link_args, excel_column_name, get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartJSTable
+from advanced_report_builder.views.helpers import QueryBuilderModelForm
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 from advanced_report_builder.views.value_base import ValueBaseView
@@ -131,11 +132,51 @@ class MultiValueReportColumnModal(ModelFormModal):
     form_fields = ['width', 'width_type']
 
 
+
+class MultiValueReportCellForm(QueryBuilderModelForm):
+    cancel_class = 'btn-secondary modal-cancel'
+
+    class Meta:
+        model = MultiValueReportCell
+        fields = [
+            'multi_value_type',
+            'text',
+            'multi_cell_style',
+            'sample_text',
+            'row',
+            'column',
+            'col_span',
+            'row_span',
+            'report_type',
+            'field',
+            'numerator',
+            'prefix',
+            'decimal_places',
+            'show_breakdown',
+            'breakdown_fields',
+            'average_scale',
+            'average_start_period',
+            'average_end_period',
+            'query_data',
+        ]
+        widgets = {
+            'report_tags': Select2Multiple,
+            'show_breakdown': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
+            'row': SmallNumberInputWidget,
+            'column': SmallNumberInputWidget,
+            'col_span': SmallNumberInputWidget,
+            'row_span': SmallNumberInputWidget,
+            'decimal_places': SmallNumberInputWidget,
+        }
+
+
 class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
+    template_name = 'advanced_report_builder/multi_values/modal.html'
     size = 'xl'
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
     model = MultiValueReportCell
+    form_class = MultiValueReportCellForm
 
     @property
     def modal_title(self):
@@ -146,36 +187,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
 
         return [f'Add {title}', f'Edit {title}']
 
-    form_fields = [
-        'multi_value_type',
-        'text',
-        'multi_cell_style',
-        'sample_text',
-        'row',
-        'column',
-        'col_span',
-        'row_span',
-        'report_type',
-        'field',
-        'numerator',
-        'prefix',
-        'decimal_places',
-        'show_breakdown',
-        'breakdown_fields',
-        'average_scale',
-        'average_start_period',
-        'average_end_period',
-    ]
 
-    widgets = {
-        'report_tags': Select2Multiple,
-        'show_breakdown': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
-        'row': SmallNumberInputWidget,
-        'column': SmallNumberInputWidget,
-        'col_span': SmallNumberInputWidget,
-        'row_span': SmallNumberInputWidget,
-        'decimal_places': SmallNumberInputWidget,
-    }
 
     def form_setup(self, form, *_args, **_kwargs):
         form.fields['sample_text'].help_text = 'Only used in setting the table up'
@@ -347,6 +359,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                 template='advanced_report_builder/select_column.html',
                 extra_context={'select_column_url': url, 'command_prefix': ''},
             ),
+            FieldEx('query_data', template='advanced_report_builder/query_builder.html'),
         ]
         return fields
 
@@ -513,6 +526,10 @@ class MultiValueView(ValueBaseView):
     template_name = 'advanced_report_builder/multi_values/report.html'
     chart_js_table = ChartJSTable
 
+    def __init__(self, *args, **kwargs):
+        self.current_multi_value_report_cell = None
+        super().__init__(*args, **kwargs)
+
     def setup_menu(self):
         super().setup_menu()
         if self.dashboard_report and self.enable_edit:
@@ -632,7 +649,7 @@ class MultiValueView(ValueBaseView):
                     fields=fields,
                 )
             elif multi_value_type == MultiValueReportCell.MultiValueType.PERCENT_FROM_COUNT:
-                numerator_filter = self.process_filters(search_filter_data=multi_value_report_cell.extra_query)
+                numerator_filter = self.process_filters(search_filter_data=multi_value_report_cell.extra_query_data)
                 self._process_percentage_from_count(
                     numerator_filter=numerator_filter,
                     decimal_places=multi_value_report_cell.decimal_places,
@@ -642,7 +659,9 @@ class MultiValueView(ValueBaseView):
                 multi_value_report_equations.append((cell_name, multi_value_report_cell))
 
             if fields:
-                value, raw_value = self.render_value(base_model=base_model, fields=fields)
+                value, raw_value = self.render_value(base_model=base_model,
+                                                     fields=fields,
+                                                     multi_value_report_cell=multi_value_report_cell)
                 if raw_value is not None:
                     with contextlib.suppress(ValueError):
                         raw_value = float(raw_value)
@@ -739,10 +758,20 @@ class MultiValueView(ValueBaseView):
             )
         ]
 
-    def render_value(self, base_model, fields):
+    def extra_filters(self, query):
+        query_data =  self.current_multi_value_report_cell.query_data
+        if query_data:
+            query = self.process_query_filters(query=query, search_filter_data=query_data)
+        return query
+
+    def render_value(self, base_model, fields, multi_value_report_cell):
         table = self.chart_js_table(model=base_model)
         table.add_columns(*fields)
         table.single_value = self.chart_report
+
+        self.current_multi_value_report_cell = multi_value_report_cell
+
+        table.extra_filters = self.extra_filters
         table.enable_links = self.kwargs.get('enable_links')
         table.datatable_template = 'advanced_report_builder/multi_values/middle.html'
         value = table.render()
