@@ -50,6 +50,8 @@ class ChartJSTable(DatatableTable):
         pk = kwargs.pop('pk', None)
         self.axis_scale = kwargs.pop('axis_scale', None)
         self.targets = kwargs.pop('targets', None)
+        self.raw_data = None
+
         super().__init__(*args, **kwargs)
         if pk:
             self.filter['pk'] = pk
@@ -59,6 +61,7 @@ class ChartJSTable(DatatableTable):
             targets = []
             try:
                 data = self.get_table_array(self.kwargs.get('request'), self.get_query())
+                self.raw_data = data
             except (DataError, FieldError):
                 data = [['N/A']]
             if self.targets is not None:

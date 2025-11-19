@@ -522,6 +522,17 @@ class MultiCellStyle(TimeStampedModel):
         return ' '.join(results)
 
 
+class MultiValueReportColumn(TimeStampedModel):
+    class WidthType(models.IntegerChoices):
+        PERCENTAGE = 0, '%'
+        PIXELS = 1, 'Pixels'
+
+    report = models.ForeignKey(Report, on_delete=models.CASCADE)
+    column = models.PositiveSmallIntegerField()
+    width_type = models.PositiveSmallIntegerField(choices=WidthType.choices, default=WidthType.PERCENTAGE)
+    width = models.PositiveSmallIntegerField()
+
+
 class MultiValueReportCell(TimeStampedModel):
     class MultiValueType(models.IntegerChoices):
         STATIC_TEXT = 0, 'Static Text'

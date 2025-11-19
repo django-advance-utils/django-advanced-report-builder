@@ -1,3 +1,4 @@
+import copy
 import json
 
 from django.forms import CharField, ChoiceField, ModelChoiceField
@@ -13,6 +14,8 @@ from django_modals.modals import Modal, ModelFormModal
 from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
 from django_modals.widgets.select2 import Select2, Select2Multiple
 from django_modals.widgets.widgets import Toggle
+from expression_builder.exceptions import ExpressionVariableError
+from expression_builder.expression_builder import ExpressionBuilder
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.globals import ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT, ANNOTATION_CHOICE_SUM
@@ -176,6 +179,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     'selector': '#div_id_text',
                     'values': {
                         MultiValueReportCell.MultiValueType.STATIC_TEXT: 'show',
+                        MultiValueReportCell.MultiValueType.EQUATION: 'show',
                     },
                     'default': 'hide',
                 },
@@ -518,8 +522,10 @@ class MultiValueView(ValueBaseView):
         )
 
         table_data = [[None for _ in range(self.chart_report.columns)] for _ in range(self.chart_report.rows)]
-
+        exp = ExpressionBuilder()
+        multi_value_report_equations = []
         for multi_value_report_cell in multi_value_report_cells:
+            cell_name = excel_column_name(multi_value_report_cell.column, row=multi_value_report_cell.row)
             base_model = multi_value_report_cell.get_base_model()
             value = ''
             report_builder_class = None
@@ -599,9 +605,17 @@ class MultiValueView(ValueBaseView):
                     decimal_places=multi_value_report_cell.decimal_places,
                     fields=fields,
                 )
+            elif multi_value_type == MultiValueReportCell.MultiValueType.EQUATION:
+                multi_value_report_equations.append((cell_name, multi_value_report_cell))
 
             if fields:
-                value = self.render_value(base_model=base_model, fields=fields)
+                value, raw_value = self.render_value(base_model=base_model, fields=fields)
+                if raw_value is not None:
+                    try:
+                        raw_value = float(raw_value)
+                    except ValueError:
+                        pass
+                    exp.add_to_global(name=cell_name, value=raw_value)
 
             table_data[row][column] = {'value': value, 'cell': multi_value_report_cell}
 
@@ -613,6 +627,29 @@ class MultiValueView(ValueBaseView):
                             continue
 
                         table_data[row + row_offset][column + col_offset] = {'value': None}
+
+        unresolved = multi_value_report_equations[:]  # initial list
+        previous_count = None
+
+        while previous_count is None or len(unresolved) < previous_count:
+            previous_count = len(unresolved)
+            next_unresolved = []
+
+            for cell_name, equation in unresolved:
+                row = equation.row - 1
+                column = equation.column - 1
+
+                try:
+                    value = exp.run_statement(equation.text)
+                    exp.add_to_global(name=cell_name, value=value)
+                except ExpressionVariableError as e:
+                    # Could not evaluate yet — keep it for later
+                    next_unresolved.append((cell_name, equation))
+                    value = e.value
+
+                table_data[row][column]['value'] = value
+
+            unresolved = next_unresolved
 
         context['html'] = self.render_html(table_data=table_data)
         return context
@@ -666,4 +703,6 @@ class MultiValueView(ValueBaseView):
         table.enable_links = self.kwargs.get('enable_links')
         table.datatable_template = 'advanced_report_builder/multi_values/middle.html'
         value = table.render()
-        return value
+        if len(table.raw_data) > 0 and len(table.raw_data[0]) > 0:
+            return value, table.raw_data[0][0]
+        return value, None

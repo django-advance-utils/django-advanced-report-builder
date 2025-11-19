@@ -26,5 +26,6 @@ setuptools.setup(
         'django-nested-modals >= 0.0.21',
         'time-stamped-model >= 0.2.3',
         'date-offset >= 0.0.2',
+        'expression-builder >= 0.0.12',
     ],
 )
