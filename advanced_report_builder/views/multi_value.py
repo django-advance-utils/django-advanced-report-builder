@@ -162,6 +162,7 @@ class MultiValueReportCellForm(QueryBuilderModelForm):
             'average_start_period',
             'average_end_period',
             'query_data',
+            'extra_query_data',
         ]
         widgets = {
             'report_tags': Select2Multiple,
@@ -198,6 +199,9 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
             widget=Select2(),
             required=False,
         )
+
+        form.fields['extra_query_data'].label = 'Numerator'
+
         form.add_trigger(
             'multi_value_type',
             'onchange',
@@ -286,6 +290,23 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     },
                     'default': 'show',
                 },
+
+                {
+                    'selector': '#iv_id_query_data',
+                    'values': {
+                        MultiValueReportCell.MultiValueType.STATIC_TEXT: 'hide',
+                    },
+                    'default': 'show',
+                },
+
+                {
+                    'selector': '#div_id_extra_query_data',
+                    'values': {
+                        MultiValueReportCell.MultiValueType.PERCENT: 'show',
+                    },
+                    'default': 'hide',
+                },
+
             ],
         )
 
@@ -362,6 +383,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                 extra_context={'select_column_url': url, 'command_prefix': ''},
             ),
             FieldEx('query_data', template='advanced_report_builder/query_builder.html'),
+            FieldEx('extra_query_data', template='advanced_report_builder/query_builder.html'),
         ]
         return fields
 
