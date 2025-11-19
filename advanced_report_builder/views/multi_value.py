@@ -290,7 +290,6 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     },
                     'default': 'show',
                 },
-
                 {
                     'selector': '#iv_id_query_data',
                     'values': {
@@ -298,7 +297,6 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     },
                     'default': 'show',
                 },
-
                 {
                     'selector': '#div_id_extra_query_data',
                     'values': {
@@ -306,7 +304,6 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     },
                     'default': 'hide',
                 },
-
             ],
         )
 
