@@ -540,11 +540,11 @@ class MultiValueReportCellsModal(Modal):
 
     def get_table_data(self, multi_value_report):
         table_data = [[None for _ in range(multi_value_report.columns)] for _ in range(multi_value_report.rows)]
-        multi_value_report_cells = MultiValueReportCell.objects.filter(multi_value_report=multi_value_report,
-                                                                       row__lte=multi_value_report.rows,
-                                                                       column__lte=multi_value_report.columns).order_by(
-            'row', 'column'
-        )
+        multi_value_report_cells = MultiValueReportCell.objects.filter(
+            multi_value_report=multi_value_report,
+            row__lte=multi_value_report.rows,
+            column__lte=multi_value_report.columns,
+        ).order_by('row', 'column')
         for multi_value_report_cell in multi_value_report_cells:
             row = multi_value_report_cell.row - 1
             column = multi_value_report_cell.column - 1
@@ -627,11 +627,9 @@ class MultiValueView(ValueBaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs) if hasattr(super(), 'get_context_data') else {}
 
-        multi_value_report_cells = MultiValueReportCell.objects.filter(multi_value_report=self.chart_report,
-                                                                       row__lte=self.chart_report.rows,
-                                                                       column__lte=self.chart_report.columns).order_by(
-            'row', 'column'
-        )
+        multi_value_report_cells = MultiValueReportCell.objects.filter(
+            multi_value_report=self.chart_report, row__lte=self.chart_report.rows, column__lte=self.chart_report.columns
+        ).order_by('row', 'column')
 
         table_data = [[None for _ in range(self.chart_report.columns)] for _ in range(self.chart_report.rows)]
         exp = ExpressionBuilder()
