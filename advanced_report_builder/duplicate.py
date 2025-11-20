@@ -26,7 +26,7 @@ class DuplicateReport:
             'funnelchartreport': self._duplicate_funnel_chart_report,
             'kanbanreport': self._duplicate_kanban_report,
             'customreport': self._duplicate_custom_report,
-            'multivaluereport': self._duplicate_multi_value_report_report,
+            'multivaluereport': self._duplicate_multi_value_report,
         }
         new_report = duplicate_methods[report.instance_type](report_id=report.id)
         return new_report
@@ -136,7 +136,7 @@ class DuplicateReport:
             new_multi_value_report_column = deepcopy(multi_value_report_cell)
             new_multi_value_report_column.id = None
             new_multi_value_report_column.pk = None
-            new_multi_value_report_column.multi_value_report = multi_value_report
+            new_multi_value_report_column.multi_value_report = new_multi_value_report
             new_multi_cell_style_id = multi_value_report_cell.multi_cell_style_id
             new_multi_value_report_column.multi_cell_style = multi_cell_styles_map[new_multi_cell_style_id]
             new_multi_value_report_column.save()
@@ -146,9 +146,9 @@ class DuplicateReport:
             new_multi_value_report_column = deepcopy(multi_value_report_column)
             new_multi_value_report_column.id = None
             new_multi_value_report_column.pk = None
-            new_multi_value_report_column.multi_value_report = multi_value_report
+            new_multi_value_report_column.multi_value_report = new_multi_value_report
             new_multi_value_report_column.save()
-        return multi_value_report
+        return new_multi_value_report
 
     def _duplicate_custom_report(self, report_id):
         custom_report = get_object_or_404(CustomReport, pk=report_id)

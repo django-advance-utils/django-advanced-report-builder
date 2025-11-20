@@ -146,7 +146,7 @@ class MultiValueCellStyleModal(ModelFormModal):
         'align_type': Select2,
     }
 
-    form_fields = ['name', 'align_type', 'bold', 'italic', 'font_size', 'background_colour']
+    form_fields = ['name', 'align_type', 'bold', 'italic', 'font_size', 'font_colour', 'background_colour']
 
 
 class MultiValueReportColumnModal(ModelFormModal):
