@@ -8,9 +8,10 @@ from advanced_report_builder.models import (
     FunnelChartReport,
     KanbanReport,
     LineChartReport,
+    MultiValueReport,
     PieChartReport,
     SingleValueReport,
-    TableReport, MultiValueReport,
+    TableReport,
 )
 
 
@@ -116,7 +117,6 @@ class DuplicateReport:
             new_kanban_report_lane.kanban_report_description = descriptions_map[kanban_report_description_id]
             new_kanban_report_lane.save()
         return new_kanban_report
-
 
     def _duplicate_multi_value_report(self, report_id):
         multi_value_report = get_object_or_404(MultiValueReport, pk=report_id)
