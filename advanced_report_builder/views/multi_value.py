@@ -730,9 +730,10 @@ class MultiValueView(ValueBaseView):
                         raw_value = float(raw_value)
                     exp.add_to_global(name=cell_name, value=raw_value)
             elif value is not None:
+                expression_value = value
                 with contextlib.suppress(ValueError):
-                    raw_value = float(value)
-                exp.add_to_global(name=cell_name, value=raw_value)
+                    expression_value = float(expression_value)
+                exp.add_to_global(name=cell_name, value=expression_value)
 
             table_data[row][column] = {'value': value, 'cell': multi_value_report_cell}
 
