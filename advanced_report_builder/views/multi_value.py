@@ -635,7 +635,8 @@ class MultiValueView(ValueBaseView):
                         base_model=base_model,
                         decimal_places=multi_value_report_cell.decimal_places,
                         fields=fields,
-                        aggregations_type=ANNOTATION_CHOICE_SUM)
+                        aggregations_type=ANNOTATION_CHOICE_SUM,
+                    )
             elif multi_value_type == MultiValueReportCell.MultiValueType.AVERAGE_SUM_FROM_COUNT:
                 self._process_aggregations(
                     field=multi_value_report_cell.field,
@@ -773,7 +774,6 @@ class MultiValueView(ValueBaseView):
                             'advanced_report_builder:multi_value_breakdown_modal',
                             '',
                             f'pk-{multi_value_report_cell.id}-enable_links-{enable_links}',
-
                             href=True,
                         )
                         attrs.append(f'onclick="{link}"')
@@ -835,8 +835,7 @@ class MultiValueShowBreakdownModal(TableUtilsMixin, Modal):
         multi_value_report_cell = self.get_multi_value_report_cell()
         title = multi_value_report_cell.label
         if title is None:
-            title = excel_column_name(multi_value_report_cell.column,
-                                      row=multi_value_report_cell.row)
+            title = excel_column_name(multi_value_report_cell.column, row=multi_value_report_cell.row)
         return f'{self.table_report.report.name} - {title}'
 
     def add_table(self, base_model):
@@ -876,13 +875,10 @@ class MultiValueShowBreakdownModal(TableUtilsMixin, Modal):
         table = self.setup_table()
         return table.render()
 
-
     def extra_filters(self, query):
         multi_value_report_cell = self.get_multi_value_report_cell()
-        query = self.process_query_filters(query=query,
-                                           search_filter_data=multi_value_report_cell.query_data)
+        query = self.process_query_filters(query=query, search_filter_data=multi_value_report_cell.query_data)
         return query
-
 
     def get_report_query(self, report):
         return self.get_multi_value_report_cell()
