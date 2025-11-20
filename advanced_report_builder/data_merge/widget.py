@@ -1,17 +1,19 @@
-from django.forms.widgets import Input
+from django.forms.widgets import TextInput
+from django_modals.fields import FieldEx
 
 
-class DataMergeWidget(Input):
+class DataMergeWidget(TextInput):
     template_name = 'advanced_report_builder/data_merge/data_merge.html'
+    crispy_field_class = FieldEx
     input_type = 'textarea'
     crispy_kwargs = {
         'label_class': 'col-3 col-form-label-sm',
         'field_class': 'col-12 input-group-sm',
     }
 
-    def __init__(self, data_merge_data=None, height=150):
+    def __init__(self, data_merge_data=None, height=150, *args, **kwargs):
         self.height = height
-        super().__init__()
+        super().__init__(*args, **kwargs)
         self.data_merge_data = data_merge_data
 
     def get_context(self, name, value, attrs=None):

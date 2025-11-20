@@ -1,3 +1,5 @@
+from enum import Enum
+
 from django.db.models import Avg, Count, Max, Min, Sum
 from django.db.models.functions import (
     TruncDay,
@@ -34,10 +36,12 @@ ANNOTATION_VALUE_QUARTER = 2
 ANNOTATION_VALUE_MONTH = 3
 ANNOTATION_VALUE_WEEK = 4
 ANNOTATION_VALUE_DAY = 5
+ANNOTATION_VALUE_FINANCIAL_QUARTER = 6  # not used yet
 
 ANNOTATION_VALUE_CHOICES = [
     (ANNOTATION_VALUE_YEAR, 'Year'),
     (ANNOTATION_VALUE_QUARTER, 'Quarter'),
+    # (ANNOTATION_VALUE_FINANCIAL_QUARTER, 'Financial Quarter'),
     (ANNOTATION_VALUE_MONTH, 'Month'),
     (ANNOTATION_VALUE_WEEK, 'Week'),
     (ANNOTATION_VALUE_DAY, 'Day'),
@@ -259,3 +263,14 @@ CALENDAR_VIEW_TYPE_CHOICES = (
     (CALENDAR_VIEW_TYPE_DAY, 'Day'),
     (CALENDAR_VIEW_TYPE_YEAR, 'Year'),
 )
+
+
+class FieldType(Enum):
+    NULL_FIELD = 1
+    ABSTRACT_USER = 2
+    FILTER_FOREIGN_KEY = 3
+    STRING = 4
+    NUMBER = 5
+    BOOLEAN = 6
+    DATE = 7
+    MANY_TO_MANY = 8

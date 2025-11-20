@@ -24,7 +24,7 @@ SECRET_KEY = '$j30f^wzfr!4_f)d8fv=5rdk*b1_lzekppye*7o6(ru2j53l-2'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-SHOW_DEBUG_TOOLBAR = True
+SHOW_DEBUG_TOOLBAR = False
 
 
 ALLOWED_HOSTS = []
@@ -142,8 +142,7 @@ STATIC_URL = '/static/'
 REPORT_BUILDER_DETAIL_URL_NAME = 'report_builder_examples:view_report'
 REPORT_BUILDER_DASHBOARD_URL_NAME = 'report_builder_examples:view_dashboard'
 
-if SHOW_DEBUG_TOOLBAR:
-    import socket  # only if you haven't already imported this
 
-    hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
-    INTERNAL_IPS = [ip[:-1] + '1' for ip in ips] + ['127.0.0.1', '10.0.2.2']
+DEBUG_TOOLBAR_CONFIG = {
+    'SHOW_TOOLBAR_CALLBACK': 'django_examples.toolbar.show_toolbar',
+}

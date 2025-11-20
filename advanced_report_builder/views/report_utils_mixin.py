@@ -4,7 +4,7 @@ import operator
 from functools import reduce
 
 from django.db.models import Case, Count, ExpressionWrapper, FloatField, IntegerField, Q, Sum, Value, When
-from django.db.models.functions import NullIf
+from django.db.models.functions import NullIf, Round
 from django_datatables.columns import CurrencyColumn, CurrencyPenceColumn
 
 from advanced_report_builder.columns import (
@@ -50,6 +50,10 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
         field_name = table_field['field']
         alignment_class = ALIGNMENT_CLASS.get(int(data_attr.get('alignment', ALIGNMENT_CHOICE_RIGHT)))
         new_field_name = field_name
+
+        if decimal_places is None:
+            decimal_places = 0
+
         css_class = None
         annotation_filter = None
         if annotations_type != ANNOTATION_CHOICE_NA or append_annotation_query:
@@ -183,7 +187,6 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                 field.column_defs['className'] = css_class
                 if title:
                     field.title = title
-                new_annotations = {}
                 if field.annotations:
                     if not self.use_annotations and annotation_filter is None and not append_annotation_query:
                         field.options['calculated'] = True
@@ -211,7 +214,9 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                     else:
                         function = function_type(raw_field_name)
                     if divider:
-                        function = ExpressionWrapper(function / NullIf(divider, 0), output_field=FloatField())
+                        function = ExpressionWrapper(function / NullIf(float(divider), 0.0), output_field=FloatField())
+                    function = Round(function, decimal_places)
+
                     if self.use_annotations:
                         field.annotations = {new_field_name: function}
                     else:

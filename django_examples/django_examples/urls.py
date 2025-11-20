@@ -14,25 +14,27 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from debug_toolbar.toolbar import debug_toolbar_urls
 from django.contrib import admin
 from django.urls import include, path
 from django.views.generic import RedirectView, TemplateView
 
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    path(
-        'favicon.ico',
-        RedirectView.as_view(url='/static/report_builder_examples/favicon.ico', permanent=True),
-    ),
-    path(
-        'advanced-report-builder/',
-        include('advanced_report_builder.urls', namespace='advanced_report_builder'),
-    ),
-    path(
-        'test/',
-        TemplateView.as_view(template_name='report_builder_examples/test.html'),
-        name='test',
-    ),
-    path('', include('report_builder_examples.urls', namespace='report_builder_examples')),
-    path('__debug__/', include('debug_toolbar.urls')),
-]
+urlpatterns = (
+    [
+        path('admin/', admin.site.urls),
+        path(
+            'favicon.ico',
+            RedirectView.as_view(url='/static/report_builder_examples/favicon.ico', permanent=True),
+        ),
+        path(
+            'advanced-report-builder/',
+            include('advanced_report_builder.urls', namespace='advanced_report_builder'),
+        ),
+        path(
+            'test/',
+            TemplateView.as_view(template_name='report_builder_examples/test.html'),
+            name='test',
+        ),
+        path('', include('report_builder_examples.urls', namespace='report_builder_examples')),
+    ]
+) + debug_toolbar_urls()

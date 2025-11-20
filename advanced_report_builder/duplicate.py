@@ -8,6 +8,7 @@ from advanced_report_builder.models import (
     FunnelChartReport,
     KanbanReport,
     LineChartReport,
+    MultiValueReport,
     PieChartReport,
     SingleValueReport,
     TableReport,
@@ -25,6 +26,7 @@ class DuplicateReport:
             'funnelchartreport': self._duplicate_funnel_chart_report,
             'kanbanreport': self._duplicate_kanban_report,
             'customreport': self._duplicate_custom_report,
+            'multivaluereport': self._duplicate_multi_value_report,
         }
         new_report = duplicate_methods[report.instance_type](report_id=report.id)
         return new_report
@@ -115,6 +117,38 @@ class DuplicateReport:
             new_kanban_report_lane.kanban_report_description = descriptions_map[kanban_report_description_id]
             new_kanban_report_lane.save()
         return new_kanban_report
+
+    def _duplicate_multi_value_report(self, report_id):
+        multi_value_report = get_object_or_404(MultiValueReport, pk=report_id)
+        new_multi_value_report = self._duplicate_report(report=multi_value_report, copy_queries=False)
+        multi_cell_styles = multi_value_report.multicellstyle_set.all()
+        multi_cell_styles_map = {}
+        for multi_cell_style in multi_cell_styles:
+            new_multi_cell_style = deepcopy(multi_cell_style)
+            new_multi_cell_style.id = None
+            new_multi_cell_style.pk = None
+            new_multi_cell_style.multi_value_report = new_multi_value_report
+            new_multi_cell_style.save()
+            multi_cell_styles_map[multi_cell_style.id] = new_multi_cell_style
+
+        multi_value_report_cells = multi_value_report.multivaluereportcell_set.all()
+        for multi_value_report_cell in multi_value_report_cells:
+            new_multi_value_report_column = deepcopy(multi_value_report_cell)
+            new_multi_value_report_column.id = None
+            new_multi_value_report_column.pk = None
+            new_multi_value_report_column.multi_value_report = new_multi_value_report
+            new_multi_cell_style_id = multi_value_report_cell.multi_cell_style_id
+            new_multi_value_report_column.multi_cell_style = multi_cell_styles_map[new_multi_cell_style_id]
+            new_multi_value_report_column.save()
+
+        multi_value_report_columns = multi_value_report.multivaluereportcolumn_set.all()
+        for multi_value_report_column in multi_value_report_columns:
+            new_multi_value_report_column = deepcopy(multi_value_report_column)
+            new_multi_value_report_column.id = None
+            new_multi_value_report_column.pk = None
+            new_multi_value_report_column.multi_value_report = new_multi_value_report
+            new_multi_value_report_column.save()
+        return new_multi_value_report
 
     def _duplicate_custom_report(self, report_id):
         custom_report = get_object_or_404(CustomReport, pk=report_id)

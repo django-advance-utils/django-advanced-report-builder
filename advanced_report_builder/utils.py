@@ -1,4 +1,5 @@
 import base64
+from datetime import date, timedelta
 
 from crispy_forms.layout import HTML, Div
 from django.conf import settings
@@ -106,3 +107,37 @@ def get_query_js(button_name, field_id):
         + field_id
         + "\": $(this).closest('tr').attr('id')}}])"
     )
+
+
+def count_days(
+    start_date: date, end_date: date, exclude_weekdays: list[int] = None, exclude_dates: list[date] = None
+) -> int:
+    if start_date > end_date:
+        start_date, end_date = end_date, start_date
+
+    exclude_weekdays = set(exclude_weekdays or [])
+    exclude_dates = set(exclude_dates or [])
+
+    current = start_date
+    count = 0
+    while current < end_date:
+        weekday = ((current.weekday() + 1) % 7) + 1  # Django-style Sunday=1
+        if weekday not in exclude_weekdays and current not in exclude_dates:
+            count += 1
+        current += timedelta(days=1)
+    return count
+
+
+def excel_column_name(n: int, row: int | None = None) -> str:
+    """Convert a 1-based column index to an Excel column name, with optional row."""
+    col = []
+    c = n
+    while c > 0:
+        c -= 1
+        col.append(chr((c % 26) + ord('A')))
+        c //= 26
+    col = ''.join(reversed(col))
+
+    if row is not None:
+        return f'{col}{row}'
+    return col

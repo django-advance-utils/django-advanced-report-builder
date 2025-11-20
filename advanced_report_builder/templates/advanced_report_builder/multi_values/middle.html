@@ -1,0 +1,61 @@
+{% load modal_tags %}
+    {% if datatable.breakdown_url %}
+        <a class="single_value_link" href="{{ datatable.breakdown_url }}"><span id="{{ datatable.table_id }}"></span></a>{% else %} <span id="{{ datatable.table_id }}"></span>{% endif %}
+        {% if datatable.target_data %}
+<div class="d-flex align-items-center" style="gap: 0.5rem;">
+  <div style="min-width: 100px; text-align: right; font-weight: bold;">
+
+    {{ datatable.target_data.percentage|floatformat }}% of {{ datatable.target_data.target_value|safe}}
+</div>
+<div class="flex-grow-1">
+  <div class="progress" style="height: 24px;">
+    <div class="progress-bar"
+         role="progressbar"
+         style="
+           width: {{ datatable.target_data.bar_percentage }}%;
+           background-color: {% if datatable.target_data.colour %}#{{ datatable.target_data.colour }}{% else %}#28a745{% endif %};">
+    </div>
+  </div>
+</div>
+        {% endif %}
+
+<script>
+    (function () {
+
+        var cell_data, row_class;
+        var table = {{ datatable.model_table_setup }};
+        table.find_column = django_datatables.PythonTable.prototype.find_column
+        for (var i = 0; i < table.initsetup.colOptions.length; i++) {
+            var row = '';
+            var prefix = '';
+            var suffix = '';
+            if(i === table.initsetup.colOptions.length-1) {
+                prefix = '{{ datatable.prefix|default_if_none:"" }}';
+                {% if datatable.single_value.is_percentage %}suffix = '%';{% endif %}
+            }
+
+            if(i > 0) {
+                row += '<span class="single_value_separator"> | </span>';
+            }
+            if (table.initsetup.colOptions[i].row_class !== undefined){
+                row_class = ' class="' + table.initsetup.colOptions[i].row_class + '"'
+            } else {
+                row_class = ' class="single_value"'
+            }
+
+            for (var j = 0; j < table.data.length; j++) {
+                if (table.initsetup.colOptions[i]['render'] != undefined) {
+                    render = new django_datatables.column_render(i, table.initsetup.colOptions[i]['render'], table);
+                    cell_data = render(table.data[j][i], null, table.data[j]);
+                } else {
+                    cell_data = table.data[j][i];
+                }
+                if (cell_data == null) {
+                    cell_data = '';
+                }
+                row += '<span' + row_class + '>' + prefix + cell_data + suffix + '</span>';
+            }
+            $('#' + table.table_id).append(row);
+        }
+    })();
+</script>

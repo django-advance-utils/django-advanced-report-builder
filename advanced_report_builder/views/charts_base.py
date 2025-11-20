@@ -1,6 +1,7 @@
 import base64
 import copy
 import json
+import math
 from datetime import datetime, timedelta
 
 from date_offset.date_offset import DateOffset
@@ -23,6 +24,7 @@ from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.globals import (
     ANNOTATION_VALUE_DAY,
+    ANNOTATION_VALUE_FINANCIAL_QUARTER,
     ANNOTATION_VALUE_FUNCTIONS,
     ANNOTATION_VALUE_MONTH,
     ANNOTATION_VALUE_QUARTER,
@@ -31,6 +33,7 @@ from advanced_report_builder.globals import (
 )
 from advanced_report_builder.models import ReportType
 from advanced_report_builder.utils import (
+    count_days,
     get_report_builder_class,
     split_attr,
     split_slug,
@@ -47,6 +50,8 @@ class ChartJSTable(DatatableTable):
         pk = kwargs.pop('pk', None)
         self.axis_scale = kwargs.pop('axis_scale', None)
         self.targets = kwargs.pop('targets', None)
+        self.raw_data = None
+
         super().__init__(*args, **kwargs)
         if pk:
             self.filter['pk'] = pk
@@ -56,6 +61,7 @@ class ChartJSTable(DatatableTable):
             targets = []
             try:
                 data = self.get_table_array(self.kwargs.get('request'), self.get_query())
+                self.raw_data = data
             except (DataError, FieldError):
                 data = [['N/A']]
             if self.targets is not None:
@@ -337,15 +343,15 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
         base_model = self.chart_report.get_base_model()
-
-        self.setup_table(base_model=base_model)
-        self.table.extra_filters = self.extra_filters
-        fields = self.process_query_results(base_model=base_model, table=self.table)
-        self.table.add_columns(*fields)
-
+        if base_model:
+            self.setup_table(base_model=base_model)
+            self.table.extra_filters = self.extra_filters
+            fields = self.process_query_results(base_model=base_model, table=self.table)
+            self.table.add_columns(*fields)
+            context['datatable'] = self.table
         context['show_toolbar'] = self.show_toolbar
-        context['datatable'] = self.table
         context['title'] = self.get_title()
         return context
 
@@ -395,32 +401,128 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         return []
 
     @staticmethod
-    def get_period_divider(annotation_value_choice, start_date_type, end_date_type):
+    def get_period_divider(
+        annotation_value_choice,
+        start_date_type,
+        end_date_type,
+        exclude_weekdays=None,
+        exclude_dates=None,
+        financial_year_start_month: int = 4,  # April default
+    ):
+        """
+        Calculates the number of periods (year, quarter, month, week, day)
+        between two variable dates.
+        Supports working-day exclusions and financial quarters.
+
+        financial_year_start_month:
+            1 = Jan (default calendar year)
+            4 = Apr (UK fiscal year)
+            7 = Jul (AU fiscal year)
+        """
         variable_date = VariableDate()
         start_date_and_time, _, _ = variable_date.get_variable_dates(start_date_type)
         _, end_date_and_time, _ = variable_date.get_variable_dates(end_date_type)
+
+        start_date = start_date_and_time.date()
+        end_date = end_date_and_time.date()
+
+        # YEAR
         if annotation_value_choice == ANNOTATION_VALUE_YEAR:
-            divider = abs(end_date_and_time.year - start_date_and_time.year) + 1
+            if exclude_weekdays or exclude_dates:
+                total_working_days = count_days(
+                    start_date,
+                    end_date,
+                    exclude_weekdays=exclude_weekdays,
+                    exclude_dates=exclude_dates,
+                )
+                divider = max(1, math.ceil(total_working_days / 260))
+            else:
+                divider = abs(end_date.year - start_date.year) + 1
+
+        # FINANCIAL QUARTER
+        elif annotation_value_choice == ANNOTATION_VALUE_FINANCIAL_QUARTER:
+            # Financial year offset (e.g. 4 → April)
+            fy_offset = financial_year_start_month - 1
+
+            # Convert actual months to financial-year-relative months (0–11)
+            start_fm = (start_date.year * 12) + (start_date.month - 1) - fy_offset
+            end_fm = (end_date.year * 12) + (end_date.month - 1) - fy_offset
+
+            # Month difference (inclusive of partial months if days > 0)
+            delta = relativedelta(end_date, start_date)
+
+            # Adjust using financial-year-relative absolute month numbers
+            adjusted_months = (end_fm - start_fm) + (1 if delta.days > 0 else 0)
+
+            # Number of financial quarters (3-month blocks)
+            divider = max(1, math.ceil(adjusted_months / 3))
+
+            # If working-day exclusions apply, switch to day-based quarter calculation
+            if exclude_weekdays or exclude_dates:
+                total_working_days = count_days(
+                    start_date,
+                    end_date,
+                    exclude_weekdays=exclude_weekdays,
+                    exclude_dates=exclude_dates,
+                )
+                # Approx. 65 working days per quarter
+                divider = max(1, math.ceil(total_working_days / 65))
+
+        # CALENDAR QUARTER
         elif annotation_value_choice == ANNOTATION_VALUE_QUARTER:
-            delta = relativedelta(end_date_and_time, start_date_and_time)
-            divider = delta.years * 4 + delta.months // 3
+            if exclude_weekdays or exclude_dates:
+                total_working_days = count_days(
+                    start_date,
+                    end_date,
+                    exclude_weekdays=exclude_weekdays,
+                    exclude_dates=exclude_dates,
+                )
+                divider = max(1, math.ceil(total_working_days / 65))
+            else:
+                delta = relativedelta(end_date, start_date)
+                divider = delta.years * 4 + math.ceil(delta.months / 3)
+                if delta.days > 0 and delta.months % 3 == 0:
+                    divider += 1
+                divider = max(1, divider)
+        # MONTH
         elif annotation_value_choice == ANNOTATION_VALUE_MONTH:
-            rdate = relativedelta(end_date_and_time, start_date_and_time)
-            divider = 0
-            if rdate.years is not None and abs(rdate.years) > 0:
-                divider += abs(rdate.years) * 12
-            if rdate.months is not None and abs(rdate.months) > 0:
-                divider += rdate.months
-            if rdate.days is not None and abs(rdate.days) > 0:
+            rdate = relativedelta(end_date, start_date)
+            divider = rdate.years * 12 + rdate.months
+            if rdate.days > 0:
                 divider += 1
+            divider = divider or 1
+
+        # WEEK
         elif annotation_value_choice == ANNOTATION_VALUE_WEEK:
-            monday1 = start_date_and_time - timedelta(days=start_date_and_time.weekday())
-            monday2 = end_date_and_time - timedelta(days=end_date_and_time.weekday())
-            divider = int((monday2 - monday1).days / 7)
+            if exclude_weekdays or exclude_dates:
+                total_working_days = count_days(
+                    start_date,
+                    end_date,
+                    exclude_weekdays=exclude_weekdays,
+                    exclude_dates=exclude_dates,
+                )
+                ex = {d for d in (exclude_weekdays or []) if 1 <= d <= 7}
+                workdays_per_week = 7 - len(ex) if ex else 7
+                if workdays_per_week == 0:
+                    raise ReportError('All days are excluded from the week; cannot calculate number of weeks.')
+                divider = math.ceil(total_working_days / workdays_per_week)
+            else:
+                monday1 = start_date - timedelta(days=start_date.weekday())
+                monday2 = end_date - timedelta(days=end_date.weekday())
+                divider = max(1, int((monday2 - monday1).days / 7))
+
+        # DAY
         elif annotation_value_choice == ANNOTATION_VALUE_DAY:
-            divider = (end_date_and_time - start_date_and_time).days
+            divider = count_days(
+                start_date,
+                end_date,
+                exclude_weekdays=exclude_weekdays,
+                exclude_dates=exclude_dates,
+            )
+
         else:
             raise ReportError('unknown annotation_value_choice')
+
         return divider
 
 
