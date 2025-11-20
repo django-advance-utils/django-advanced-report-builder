@@ -504,7 +504,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
                 ex = {d for d in (exclude_weekdays or []) if 1 <= d <= 7}
                 workdays_per_week = 7 - len(ex) if ex else 7
                 if workdays_per_week == 0:
-                    raise ReportError("All days are excluded from the week; cannot calculate number of weeks.")
+                    raise ReportError('All days are excluded from the week; cannot calculate number of weeks.')
                 divider = math.ceil(total_working_days / workdays_per_week)
             else:
                 monday1 = start_date - timedelta(days=start_date.weekday())
