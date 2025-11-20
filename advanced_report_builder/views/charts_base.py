@@ -480,10 +480,10 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
                 divider = max(1, math.ceil(total_working_days / 65))
             else:
                 delta = relativedelta(end_date, start_date)
-                divider = delta.years * 4 + delta.months // 3
-                if divider == 0:
-                    divider = 1
-
+                divider = delta.years * 4 + math.ceil(delta.months / 3)
+                if delta.days > 0 and delta.months % 3 == 0:
+                    divider += 1
+                divider = max(1, divider)
         # MONTH
         elif annotation_value_choice == ANNOTATION_VALUE_MONTH:
             rdate = relativedelta(end_date, start_date)
