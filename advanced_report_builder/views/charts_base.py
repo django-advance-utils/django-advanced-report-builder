@@ -441,20 +441,25 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
 
         # FINANCIAL QUARTER
         elif annotation_value_choice == ANNOTATION_VALUE_FINANCIAL_QUARTER:
-            # Adjust start/end to align with the financial year offset
+            # Financial year offset (e.g. 4 → April)
             fy_offset = financial_year_start_month - 1
-            (start_date.year, ((start_date.month - fy_offset - 1) % 12) + 1)
-            (end_date.year, ((end_date.month - fy_offset - 1) % 12) + 1)
 
+            # Convert actual months to financial-year-relative months (0–11)
+            start_fm = (start_date.year * 12) + (start_date.month - 1) - fy_offset
+            end_fm = (end_date.year * 12) + (end_date.month - 1) - fy_offset
+
+            # Month difference (inclusive of partial months if days > 0)
             delta = relativedelta(end_date, start_date)
-            total_months = delta.years * 12 + delta.months + (1 if delta.days > 0 else 0)
+            base_months = delta.years * 12 + delta.months
+            total_months = base_months + (1 if delta.days > 0 else 0)
 
-            # Adjust month count based on offset
-            quarter_offset = (start_date.month - financial_year_start_month) % 12
-            adjusted_months = total_months + quarter_offset
+            # Adjust using financial-year-relative absolute month numbers
+            adjusted_months = (end_fm - start_fm) + (1 if delta.days > 0 else 0)
+
+            # Number of financial quarters (3-month blocks)
             divider = max(1, math.ceil(adjusted_months / 3))
 
-            # If working-day exclusions are active, base it on working days instead
+            # If working-day exclusions apply, switch to day-based quarter calculation
             if exclude_weekdays or exclude_dates:
                 total_working_days = count_days(
                     start_date,
@@ -462,6 +467,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
                     exclude_weekdays=exclude_weekdays,
                     exclude_dates=exclude_dates,
                 )
+                # Approx. 65 working days per quarter
                 divider = max(1, math.ceil(total_working_days / 65))
 
         # CALENDAR QUARTER
