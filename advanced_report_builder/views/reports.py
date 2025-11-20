@@ -6,16 +6,19 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.views.generic import TemplateView
+from django_datatables.columns import ColumnNameError
 from django_menus.menu import MenuItemDisplay, MenuMixin
 from django_modals.helper import modal_button, modal_button_method
 from django_modals.modals import Modal
 
 from advanced_report_builder.duplicate import DuplicateReport
+from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.models import Report
 from advanced_report_builder.utils import split_slug
 from advanced_report_builder.views.bar_charts import BarChartView
 from advanced_report_builder.views.calendar import CalendarView
 from advanced_report_builder.views.datatables.datatables import TableView
+from advanced_report_builder.views.error_pod import ErrorPodView
 from advanced_report_builder.views.funnel_charts import FunnelChartView
 from advanced_report_builder.views.kanban import KanbanView
 from advanced_report_builder.views.line_charts import LineChartView
@@ -36,6 +39,7 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         'kanbanreport': KanbanView,
         'calendarreport': CalendarView,
         'multivaluereport': MultiValueView,
+        'error': ErrorPodView,
     }
     enable_links = True
 
@@ -85,9 +89,25 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         view = self.get_view(report=self.report)
         self.kwargs['report'] = self.report
         self.kwargs['enable_links'] = self.enable_links
-        report_data = view.as_view()(self.request, *self.args, **self.kwargs).rendered_content
+        try:
+            report_data = view.as_view()(self.request, *self.args, **self.kwargs).rendered_content
+        except (ReportError, ColumnNameError) as e:
+            report_data = self.call_error_view(error_message=e.value)
         context['report'] = report_data
         return context
+
+    def call_error_view(self, error_message):
+        if 'error' in self.views_overrides:
+            error_view = self.views_overrides.get('error')
+        else:
+            error_view = self.views.get('error')
+        report_cls = self.get_view(self.report)
+
+        return error_view.as_view()(self.request,
+                                    *self.args,
+                                    extra_kwargs={'error_message': error_message,
+                                                  'report_cls': report_cls},
+                                    **self.kwargs).rendered_content
 
     def get_view(self, report):
         if report.instance_type == 'customreport':

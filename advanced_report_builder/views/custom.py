@@ -22,6 +22,7 @@ class CustomBaseView(ReportBase, FilterQueryMixin, TemplateView):
         self.show_toolbar = False
         self.enable_queries = True
         self._report_type = None
+        self.extra_kwargs = None
         super().__init__(**kwargs)
 
     def dispatch(self, request, *args, **kwargs):
@@ -31,6 +32,7 @@ class CustomBaseView(ReportBase, FilterQueryMixin, TemplateView):
         self.dashboard_report = kwargs.get('dashboard_report')
         if self.enable_edit or (self.dashboard_report and not self.dashboard_report.top) or not self.dashboard_report:
             self.show_toolbar = True
+        self.extra_kwargs = kwargs.get('extra_kwargs', {})
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -49,13 +51,19 @@ class CustomBaseView(ReportBase, FilterQueryMixin, TemplateView):
             report_menu = self.pod_dashboard_edit_menu()
         elif self.dashboard_report and not self.enable_edit:
             report_menu = self.pod_dashboard_view_menu()
-        else:
+        elif self.enable_queries:
             report_menu = self.pod_report_menu()
-
-        self.add_menu('button_menu', 'button_group').add_items(
-            *report_menu,
-            *self.queries_menu(report=self.report, dashboard_report=self.dashboard_report),
-        )
+        else:
+            report_menu = []
+        if self.enable_queries:
+            self.add_menu('button_menu', 'button_group').add_items(
+                *report_menu,
+                *self.queries_menu(report=self.report, dashboard_report=self.dashboard_report),
+            )
+        else:
+            self.add_menu('button_menu', 'button_group').add_items(
+                *report_menu,
+            )
 
     def pod_dashboard_edit_menu(self):
         return [

@@ -28,7 +28,7 @@ class ReportBuilderFieldUtils:
 
         try:
             columns = original_column_initialisor.get_columns()
-        except ColumnNameError as e:
+        except (AttributeError, ColumnNameError) as e:
             raise ReportError(e)
         django_field = original_column_initialisor.django_field
         col_type_override = None

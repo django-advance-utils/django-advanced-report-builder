@@ -19,10 +19,17 @@ class PeriodData:
     max_date = None
 
     def set_min_max_date(self, date_in):
-        if self.min_date is None or date_in < self.min_date:
-            self.min_date = date_in
-        if self.max_date is None or date_in > self.max_date:
-            self.max_date = date_in
+        dt = (
+            datetime.datetime.combine(date_in, datetime.datetime.min.time())
+            if isinstance(date_in, datetime.date) and not isinstance(date_in, datetime.datetime)
+            else date_in
+        )
+
+        if self.min_date is None or dt < self.min_date:
+            self.min_date = dt
+
+        if self.max_date is None or dt > self.max_date:
+            self.max_date = dt
 
     import calendar
 

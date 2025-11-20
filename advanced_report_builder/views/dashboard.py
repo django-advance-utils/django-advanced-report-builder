@@ -5,8 +5,10 @@ from django.conf import settings
 from django.forms import ChoiceField, ModelChoiceField
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.views.generic import TemplateView
+from django_datatables.columns import ColumnNameError
 from django_menus.menu import MenuMixin
 from django_modals.forms import CrispyForm
 from django_modals.modals import FormModal, ModelFormModal
@@ -18,6 +20,7 @@ from django_modals.processes import (
 from django_modals.widgets.select2 import Select2
 from django_modals.widgets.widgets import Toggle
 
+from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.models import (
     Dashboard,
     DashboardReport,
@@ -28,6 +31,7 @@ from advanced_report_builder.utils import split_slug
 from advanced_report_builder.views.bar_charts import BarChartView
 from advanced_report_builder.views.calendar import CalendarView
 from advanced_report_builder.views.datatables.datatables import TableView
+from advanced_report_builder.views.error_pod import ErrorPodView
 from advanced_report_builder.views.funnel_charts import FunnelChartView
 from advanced_report_builder.views.kanban import KanbanView
 from advanced_report_builder.views.line_charts import LineChartView
@@ -50,6 +54,7 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         'kanbanreport': KanbanView,
         'calendarreport': CalendarView,
         'multivaluereport': MultiValueView,
+        'error': ErrorPodView
     }
 
     custom_views = {}
@@ -121,30 +126,56 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         top_reports = []
         reports = []
         for dashboard_report in self.dashboard.dashboardreport_set.all():
+
             if self.has_report_got_permission(report=dashboard_report.report):
                 report_view = self.get_view(report=dashboard_report.report)
                 extra_class_name = report_view().get_dashboard_class(report=dashboard_report.report)
-                report_data = self.call_view(
-                    dashboard_report=dashboard_report, report_view=report_view
-                ).rendered_content
-                report = {
-                    'render': report_data,
-                    'name': dashboard_report.report.name,
-                    'id': dashboard_report.id,
-                    'class': dashboard_report.get_class(extra_class_name=extra_class_name),
-                }
+                try:
+                    report_data = self.call_view(
+                        dashboard_report=dashboard_report, report_view=report_view
+                    ).rendered_content
+                    report = {
+                        'render': report_data,
+                        'name': dashboard_report.report.name,
+                        'id': dashboard_report.id,
+                        'class': dashboard_report.get_class(extra_class_name=extra_class_name),
+                    }
+                except (ReportError, ColumnNameError) as e:
+                    report = self.call_error_view(dashboard_report=dashboard_report,
+                                                  extra_class_name=extra_class_name,
+                                                  error_message=e.value)
                 if dashboard_report.top:
                     top_reports.append(report)
                 else:
                     reports.append(report)
+
             else:
                 self.report_no_permission(dashboard_report=dashboard_report, reports=reports)
+
         context['top_reports'] = top_reports
         context['top_reports_class'] = self.get_top_report_class(top_reports)
 
         context['reports'] = reports
         context['enable_edit'] = self.enable_edit
         return context
+
+    def call_error_view(self, dashboard_report, extra_class_name, error_message):
+        if 'error' in self.views_overrides:
+            error_view = self.views_overrides.get('error')
+        else:
+            error_view = self.views.get('error')
+        report_data = self.call_view(
+            dashboard_report=dashboard_report,
+            report_view=error_view,
+            extra_kwargs={'error_message': error_message}
+        ).rendered_content
+        report = {
+            'render': report_data,
+            'name': dashboard_report.report.name,
+            'id': dashboard_report.id,
+            'class': dashboard_report.get_class(extra_class_name=extra_class_name),
+        }
+        return report
 
     def get_view(self, report):
         if report.instance_type == 'customreport':
@@ -154,7 +185,7 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
             return self.views_overrides.get(report.instance_type)
         return self.views.get(report.instance_type)
 
-    def call_view(self, dashboard_report, report_view=None):
+    def call_view(self, dashboard_report, report_view=None, extra_kwargs=None):
         if report_view is None:
             report_view = self.get_view(report=dashboard_report.report)
         view_kwargs = copy.deepcopy(self.kwargs)
@@ -162,6 +193,7 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         view_kwargs['dashboard_report'] = dashboard_report
         view_kwargs['enable_edit'] = self.enable_edit
         view_kwargs['enable_links'] = self.enable_links
+        view_kwargs['extra_kwargs'] = extra_kwargs
 
         return report_view.as_view()(self.request, *self.args, **view_kwargs)
 
