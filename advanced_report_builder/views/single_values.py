@@ -14,6 +14,7 @@ from django_modals.modals import Modal, ModelFormModal
 from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
 from django_modals.widgets.select2 import Select2, Select2Multiple
 from django_modals.widgets.widgets import Toggle
+from django.conf import settings
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.globals import (
@@ -489,10 +490,27 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
         return ['name', ('target__name', {'title': 'Target Name'})]
 
     def form_valid(self, form):
+        org_id = self.object.pk if hasattr(self, 'object') else None
+        created = org_id is None
         instance = form.save(commit=False)
         instance._current_user = self.request.user
         instance.save()
-        return self.command_response('reload')
+
+        if created:
+            self.modal_redirect(
+                self.request.resolver_match.view_name,
+                slug=f'pk-{self.object.id}-new-True',
+            )
+        else:
+            url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME', '')
+            if url_name and self.slug.get('new'):
+                url = reverse(url_name, kwargs={'slug': self.object.slug})
+                self.add_command('redirect', url=url)
+        if not self.response_commands:
+            self.add_command('reload')
+
+        return self.command_response()
+
 
 
 class SingleValueShowBreakdownModal(TableUtilsMixin, Modal):

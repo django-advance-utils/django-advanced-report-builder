@@ -112,8 +112,11 @@ class MultiValueModal(ModelFormModal):
 
     def form_valid(self, form):
         org_id = self.object.pk if hasattr(self, 'object') else None
-        form.save()
         created = org_id is None
+        instance = form.save(commit=False)
+        instance._current_user = self.request.user
+        instance.save()
+
         if created:
             self.modal_redirect(
                 self.request.resolver_match.view_name,
