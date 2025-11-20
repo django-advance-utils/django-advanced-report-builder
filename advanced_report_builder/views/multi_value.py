@@ -1,6 +1,7 @@
 import contextlib
 import json
 
+from django.conf import settings
 from django.forms import CharField, ChoiceField, ModelChoiceField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -37,7 +38,7 @@ from advanced_report_builder.views.modals_base import QueryBuilderModalBase
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 from advanced_report_builder.views.value_base import ValueBaseView
 from advanced_report_builder.widgets import SmallNumberInputWidget
-from django.conf import settings
+
 
 class MultiValueModal(ModelFormModal):
     size = 'xl'
@@ -108,7 +109,6 @@ class MultiValueModal(ModelFormModal):
                     font_awesome='fas fa-edit',
                 ),
             ]
-
 
     def form_valid(self, form):
         org_id = self.object.pk if hasattr(self, 'object') else None
