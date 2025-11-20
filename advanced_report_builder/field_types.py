@@ -410,7 +410,7 @@ class FieldTypes(ReportBuilderFieldUtils):
                         title = title_prefix + include['title']
                         field_results_types[FieldType.NULL_FIELD][field] = title
                         field_results.append(FieldDetail(field=field, title=title, field_type=FieldType.NULL_FIELD))
-                    if isinstance(new_model(), AbstractUser):
+                    if issubclass(new_model, AbstractUser):
                         field = prefix + include_field
                         title = title_prefix + include['title']
                         field_results_types[FieldType.NULL_FIELD][field] = title
