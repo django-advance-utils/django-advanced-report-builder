@@ -5,7 +5,6 @@ from django.conf import settings
 from django.forms import ChoiceField, ModelChoiceField
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from django.template.loader import render_to_string
 from django.urls import reverse
 from django.views.generic import TemplateView
 from django_datatables.columns import ColumnNameError
@@ -54,7 +53,7 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         'kanbanreport': KanbanView,
         'calendarreport': CalendarView,
         'multivaluereport': MultiValueView,
-        'error': ErrorPodView
+        'error': ErrorPodView,
     }
 
     custom_views = {}
@@ -126,7 +125,6 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         top_reports = []
         reports = []
         for dashboard_report in self.dashboard.dashboardreport_set.all():
-
             if self.has_report_got_permission(report=dashboard_report.report):
                 report_view = self.get_view(report=dashboard_report.report)
                 extra_class_name = report_view().get_dashboard_class(report=dashboard_report.report)
@@ -141,9 +139,9 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
                         'class': dashboard_report.get_class(extra_class_name=extra_class_name),
                     }
                 except (ReportError, ColumnNameError) as e:
-                    report = self.call_error_view(dashboard_report=dashboard_report,
-                                                  extra_class_name=extra_class_name,
-                                                  error_message=e.value)
+                    report = self.call_error_view(
+                        dashboard_report=dashboard_report, extra_class_name=extra_class_name, error_message=e.value
+                    )
                 if dashboard_report.top:
                     top_reports.append(report)
                 else:
@@ -160,14 +158,9 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         return context
 
     def call_error_view(self, dashboard_report, extra_class_name, error_message):
-        if 'error' in self.views_overrides:
-            error_view = self.views_overrides.get('error')
-        else:
-            error_view = self.views.get('error')
+        error_view = self.views_overrides.get('error') if 'error' in self.views_overrides else self.views.get('error')
         report_data = self.call_view(
-            dashboard_report=dashboard_report,
-            report_view=error_view,
-            extra_kwargs={'error_message': error_message}
+            dashboard_report=dashboard_report, report_view=error_view, extra_kwargs={'error_message': error_message}
         ).rendered_content
         report = {
             'render': report_data,

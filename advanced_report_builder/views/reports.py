@@ -97,17 +97,15 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         return context
 
     def call_error_view(self, error_message):
-        if 'error' in self.views_overrides:
-            error_view = self.views_overrides.get('error')
-        else:
-            error_view = self.views.get('error')
+        error_view = self.views_overrides.get('error') if 'error' in self.views_overrides else self.views.get('error')
         report_cls = self.get_view(self.report)
 
-        return error_view.as_view()(self.request,
-                                    *self.args,
-                                    extra_kwargs={'error_message': error_message,
-                                                  'report_cls': report_cls},
-                                    **self.kwargs).rendered_content
+        return error_view.as_view()(
+            self.request,
+            *self.args,
+            extra_kwargs={'error_message': error_message, 'report_cls': report_cls},
+            **self.kwargs,
+        ).rendered_content
 
     def get_view(self, report):
         if report.instance_type == 'customreport':
