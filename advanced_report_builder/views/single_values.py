@@ -1,5 +1,6 @@
 import json
 
+from django.conf import settings
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.core.exceptions import ValidationError
 from django.forms import ChoiceField, ModelChoiceField
@@ -14,7 +15,6 @@ from django_modals.modals import Modal, ModelFormModal
 from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
 from django_modals.widgets.select2 import Select2, Select2Multiple
 from django_modals.widgets.widgets import Toggle
-from django.conf import settings
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.globals import (
@@ -510,7 +510,6 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
             self.add_command('reload')
 
         return self.command_response()
-
 
 
 class SingleValueShowBreakdownModal(TableUtilsMixin, Modal):
