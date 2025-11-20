@@ -484,7 +484,7 @@ class MultiValueReport(Report):
 
 class MultiCellStyle(TimeStampedModel):
     class AlignType(models.IntegerChoices):
-        LEFT = 0, 'left'
+        LEFT = 0, 'Left'
         CENTRE = 1, 'Centre'
         RIGHT = 2, 'Right'
 
