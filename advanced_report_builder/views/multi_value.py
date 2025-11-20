@@ -747,9 +747,12 @@ class MultiValueView(ValueBaseView):
 
         unresolved = multi_value_report_equations[:]  # initial list
         previous_count = None
+        max_iterations = max(100, len(multi_value_report_equations) * 2)
+        iteration = 0
 
-        while previous_count is None or len(unresolved) < previous_count:
+        while (previous_count is None or len(unresolved) < previous_count) and iteration < max_iterations:
             previous_count = len(unresolved)
+            iteration += 1
             next_unresolved = []
 
             for cell_name, equation in unresolved:
