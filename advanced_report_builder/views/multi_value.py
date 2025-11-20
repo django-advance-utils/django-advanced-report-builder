@@ -37,7 +37,7 @@ from advanced_report_builder.views.modals_base import QueryBuilderModalBase
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 from advanced_report_builder.views.value_base import ValueBaseView
 from advanced_report_builder.widgets import SmallNumberInputWidget
-
+from django.conf import settings
 
 class MultiValueModal(ModelFormModal):
     size = 'xl'
@@ -108,6 +108,26 @@ class MultiValueModal(ModelFormModal):
                     font_awesome='fas fa-edit',
                 ),
             ]
+
+
+    def form_valid(self, form):
+        org_id = self.object.pk if hasattr(self, 'object') else None
+        form.save()
+        created = org_id is None
+        if created:
+            self.modal_redirect(
+                self.request.resolver_match.view_name,
+                slug=f'pk-{self.object.id}-new-True',
+            )
+        else:
+            url_name = getattr(settings, 'REPORT_BUILDER_DETAIL_URL_NAME', '')
+            if url_name and self.slug.get('new'):
+                url = reverse(url_name, kwargs={'slug': self.object.slug})
+                self.add_command('redirect', url=url)
+        if not self.response_commands:
+            self.add_command('reload')
+
+        return self.command_response()
 
 
 class MultiValueCellStyleModal(ModelFormModal):
@@ -227,6 +247,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     'selector': '#div_id_field',
                     'values': {
                         MultiValueReportCell.MultiValueType.STATIC_TEXT: 'hide',
+                        MultiValueReportCell.MultiValueType.EQUATION: 'hide',
                         MultiValueReportCell.MultiValueType.COUNT: 'hide',
                         MultiValueReportCell.MultiValueType.PERCENT_FROM_COUNT: 'hide',
                     },
@@ -236,6 +257,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     'selector': '#div_id_prefix',
                     'values': {
                         MultiValueReportCell.MultiValueType.STATIC_TEXT: 'hide',
+                        MultiValueReportCell.MultiValueType.EQUATION: 'hide',
                         MultiValueReportCell.MultiValueType.COUNT: 'hide',
                         MultiValueReportCell.MultiValueType.PERCENT_FROM_COUNT: 'hide',
                     },
@@ -275,6 +297,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     'selector': '#div_id_report_type',
                     'values': {
                         MultiValueReportCell.MultiValueType.STATIC_TEXT: 'hide',
+                        MultiValueReportCell.MultiValueType.EQUATION: 'hide',
                     },
                     'default': 'show',
                 },
@@ -282,6 +305,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     'selector': '#div_id_decimal_places',
                     'values': {
                         MultiValueReportCell.MultiValueType.STATIC_TEXT: 'hide',
+                        MultiValueReportCell.MultiValueType.EQUATION: 'hide',
                     },
                     'default': 'show',
                 },
@@ -289,13 +313,15 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     'selector': '#div_id_show_breakdown',
                     'values': {
                         MultiValueReportCell.MultiValueType.STATIC_TEXT: 'hide',
+                        MultiValueReportCell.MultiValueType.EQUATION: 'hide',
                     },
                     'default': 'show',
                 },
                 {
-                    'selector': '#iv_id_query_data',
+                    'selector': '#div_id_query_data',
                     'values': {
                         MultiValueReportCell.MultiValueType.STATIC_TEXT: 'hide',
+                        MultiValueReportCell.MultiValueType.EQUATION: 'hide',
                     },
                     'default': 'show',
                 },

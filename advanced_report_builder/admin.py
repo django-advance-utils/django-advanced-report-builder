@@ -17,7 +17,7 @@ from advanced_report_builder.models import (
     ReportType,
     SingleValueReport,
     TableReport,
-    Target,
+    Target, MultiCellStyle, MultiValueReportColumn, MultiValueReportCell, MultiValueReport,
 )
 
 
@@ -171,3 +171,75 @@ class ReportTagAdmin(admin.ModelAdmin):
 @admin.register(Target)
 class TargetAdmin(admin.ModelAdmin):
     list_display = ('pk', 'name', 'target_type', 'default_value')
+
+
+class MultiCellStyleInline(admin.TabularInline):
+    model = MultiCellStyle
+    extra = 0
+
+
+class MultiValueReportColumnInline(admin.TabularInline):
+    model = MultiValueReportColumn
+    extra = 0
+    fields = ("column", "width_type", "width")
+    ordering = ("column",)
+
+
+class MultiValueReportCellInline(admin.TabularInline):
+    model = MultiValueReportCell
+    extra = 0
+    fields = (
+        "row",
+        "column",
+        "col_span",
+        "row_span",
+        "multi_value_type",
+        "text",
+        "multi_cell_style",
+        "report_type",
+        "field",
+        "numerator",
+        "prefix",
+        "decimal_places",
+        "show_breakdown",
+        "breakdown_fields",
+        "average_scale",
+        "average_start_period",
+        "average_end_period",
+        "label",
+        "query_data",
+        "extra_query_data",
+    )
+    ordering = ("row", "column")
+
+
+@admin.register(MultiValueReport)
+class MultiValueReportAdmin(admin.ModelAdmin):
+    list_display = ("id", "rows", "columns", "default_multi_cell_style")
+    inlines = [
+        MultiCellStyleInline,
+        MultiValueReportColumnInline,
+        MultiValueReportCellInline,
+    ]
+
+
+@admin.register(MultiCellStyle)
+class MultiCellStyleAdmin(admin.ModelAdmin):
+    list_display = ("name", "multi_value_report", "align_type", "bold", "italic", "font_size")
+    list_filter = ("multi_value_report", "align_type", "bold", "italic")
+    search_fields = ("name",)
+
+
+@admin.register(MultiValueReportColumn)
+class MultiValueReportColumnAdmin(admin.ModelAdmin):
+    list_display = ("report", "column", "width_type", "width")
+    list_filter = ("report", "width_type")
+    ordering = ("report", "column")
+
+
+@admin.register(MultiValueReportCell)
+class MultiValueReportCellAdmin(admin.ModelAdmin):
+    list_display = ("report", "row", "column", "multi_value_type", "multi_cell_style")
+    list_filter = ("report", "multi_value_type")
+    search_fields = ("text", "label")
+    ordering = ("report", "row", "column")
