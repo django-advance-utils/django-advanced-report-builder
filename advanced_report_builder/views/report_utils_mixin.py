@@ -217,8 +217,7 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                         function = ExpressionWrapper(
                             function / NullIf(float(divider), Value(0)), output_field=FloatField()
                         )
-                        if decimal_places is not None:
-                            function = Round(function, decimal_places)
+                    function = Round(function, decimal_places)
 
                     if self.use_annotations:
                         field.annotations = {new_field_name: function}
