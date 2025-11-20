@@ -5,6 +5,7 @@ from django.forms import CharField, ChoiceField, ModelChoiceField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_datatables.columns import ColumnBase, MenuColumn
+from django_datatables.datatables import DatatableTable
 from django_datatables.helpers import DUMMY_ID
 from django_datatables.widgets import DataTableWidget
 from django_menus.menu import HtmlMenu, MenuItem
@@ -30,6 +31,7 @@ from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import crispy_modal_link_args, excel_column_name, get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartJSTable
+from advanced_report_builder.views.datatables.utils import TableUtilsMixin
 from advanced_report_builder.views.helpers import QueryBuilderModelForm
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
@@ -146,7 +148,7 @@ class MultiValueReportCellForm(QueryBuilderModelForm):
             'multi_value_type',
             'text',
             'multi_cell_style',
-            'sample_text',
+            'label',
             'row',
             'column',
             'col_span',
@@ -193,7 +195,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
         return [f'Add {title}', f'Edit {title}']
 
     def form_setup(self, form, *_args, **_kwargs):
-        form.fields['sample_text'].help_text = 'Only used in setting the table up'
+        form.fields['label'].help_text = 'Used when setting up the table and for the show breakdown title.'
         form.fields['multi_cell_style'] = ModelChoiceField(
             queryset=MultiCellStyle.objects.filter(multi_value_report_id=self.object.report_id),
             widget=Select2(),
@@ -215,7 +217,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     'default': 'hide',
                 },
                 {
-                    'selector': '#div_id_sample_text',
+                    'selector': '#div_id_label_text',
                     'values': {
                         MultiValueReportCell.MultiValueType.STATIC_TEXT: 'hide',
                     },
@@ -362,7 +364,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
         fields = [
             'multi_value_type',
             'text',
-            'sample_text',
+            'label',
             'multi_cell_style',
             'row',
             'column',
@@ -523,8 +525,8 @@ class MultiValueReportCellsModal(Modal):
             multi_value_type = multi_value_report_cell.multi_value_type
             if multi_value_type == MultiValueReportCell.MultiValueType.STATIC_TEXT:
                 value = multi_value_report_cell.text
-            elif multi_value_report_cell.sample_text:
-                value = multi_value_report_cell.sample_text
+            elif multi_value_report_cell.label:
+                value = multi_value_report_cell.label
             else:
                 value = '123'
 
@@ -627,14 +629,16 @@ class MultiValueView(ValueBaseView):
             elif multi_value_type == MultiValueReportCell.MultiValueType.COUNT:
                 self._get_count(fields=fields)
             elif multi_value_type == MultiValueReportCell.MultiValueType.SUM:
-                self._process_aggregations(
-                    field=multi_value_report_cell.field,
-                    report_builder_class=report_builder_class,
-                    base_model=base_model,
-                    decimal_places=multi_value_report_cell.decimal_places,
-                    fields=fields,
-                    aggregations_type=ANNOTATION_CHOICE_SUM,
-                )
+                if multi_value_report_cell.field is None:
+                    value = 'Error no field selected'
+                else:
+                    self._process_aggregations(
+                        field=multi_value_report_cell.field,
+                        report_builder_class=report_builder_class,
+                        base_model=base_model,
+                        decimal_places=multi_value_report_cell.decimal_places,
+                        fields=fields,
+                        aggregations_type=ANNOTATION_CHOICE_SUM)
             elif multi_value_type == MultiValueReportCell.MultiValueType.AVERAGE_SUM_FROM_COUNT:
                 self._process_aggregations(
                     field=multi_value_report_cell.field,
@@ -765,8 +769,20 @@ class MultiValueView(ValueBaseView):
                         attrs.append('class="' + multi_value_report_cell.multi_cell_style.get_td_class() + '"')
                         styles.append(multi_value_report_cell.multi_cell_style.get_td_style())
 
+                    if multi_value_report_cell.show_breakdown:
+                        styles.append('cursor:pointer')
+                        enable_links = self.kwargs.get('enable_links')
+                        link = show_modal(
+                            'advanced_report_builder:multi_value_breakdown_modal',
+                            '',
+                            f'pk-{multi_value_report_cell.id}-enable_links-{enable_links}',
+
+                            href=True,
+                        )
+                        attrs.append(f'onclick="{link}"')
+
                     if len(styles) > 0:
-                        attrs.append('style="' + ' '.join(styles) + '"')
+                        attrs.append('style="' + ';'.join(styles) + '"')
 
                     attrs_html = ''
                     if len(attrs) > 0:
@@ -808,3 +824,68 @@ class MultiValueView(ValueBaseView):
         if len(table.raw_data) > 0 and len(table.raw_data[0]) > 0:
             return value, table.raw_data[0][0]
         return value, None
+
+
+class MultiValueShowBreakdownModal(TableUtilsMixin, Modal):
+    button_container_class = 'text-center'
+    size = 'xl'
+
+    def __init__(self, *args, **kwargs):
+        self._held_multi_value_report_cell = None
+        super().__init__(*args, **kwargs)
+
+    def modal_title(self):
+        multi_value_report_cell = self.get_multi_value_report_cell()
+        title = multi_value_report_cell.label
+        if title is None:
+            title = excel_column_name(multi_value_report_cell.column,
+                                      row=multi_value_report_cell.row)
+        return f'{self.table_report.report.name} - {title}'
+
+    def add_table(self, base_model):
+        return DatatableTable(view=self, model=base_model)
+
+    def get_multi_value_report_cell(self):
+        if self._held_multi_value_report_cell is None:
+            self._held_multi_value_report_cell = get_object_or_404(MultiValueReportCell, pk=self.slug['pk'])
+        return self._held_multi_value_report_cell
+
+    def setup_table(self):
+        multi_value_report_cell = self.get_multi_value_report_cell()
+        self.kwargs['enable_links'] = self.slug['enable_links'] == 'True'
+        self.table_report = multi_value_report_cell
+        base_model = multi_value_report_cell.get_base_model()
+        table = self.add_table(base_model=base_model)
+        table.extra_filters = self.extra_filters
+        table_fields = multi_value_report_cell.breakdown_fields
+        report_builder_class = get_report_builder_class(model=base_model, report_type=self.table_report.report_type)
+        fields_used = set()
+        fields_map = {}
+        self.process_query_results(
+            report_builder_class=report_builder_class,
+            table=table,
+            base_model=base_model,
+            fields_used=fields_used,
+            fields_map=fields_map,
+            table_fields=table_fields,
+        )
+
+        table.ajax_data = False
+        table.table_options['pageLength'] = 25
+        table.table_options['bStateSave'] = False
+        return table
+
+    def modal_content(self):
+        table = self.setup_table()
+        return table.render()
+
+
+    def extra_filters(self, query):
+        multi_value_report_cell = self.get_multi_value_report_cell()
+        query = self.process_query_filters(query=query,
+                                           search_filter_data=multi_value_report_cell.query_data)
+        return query
+
+
+    def get_report_query(self, report):
+        return self.get_multi_value_report_cell()
