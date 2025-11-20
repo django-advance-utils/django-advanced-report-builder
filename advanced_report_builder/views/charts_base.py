@@ -450,8 +450,6 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
 
             # Month difference (inclusive of partial months if days > 0)
             delta = relativedelta(end_date, start_date)
-            base_months = delta.years * 12 + delta.months
-            total_months = base_months + (1 if delta.days > 0 else 0)
 
             # Adjust using financial-year-relative absolute month numbers
             adjusted_months = (end_fm - start_fm) + (1 if delta.days > 0 else 0)
