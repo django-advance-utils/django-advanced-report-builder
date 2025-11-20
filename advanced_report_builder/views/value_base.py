@@ -146,7 +146,7 @@ class ValueBaseView(ChartBaseView):
 
         num_django_field, numerator_col_type_override, _, _ = self.get_field_details(
             base_model=base_model,
-            field=denominator_field,
+            field=numerator_field,
             report_builder_class=report_builder_class,
         )
 
