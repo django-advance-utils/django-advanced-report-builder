@@ -540,7 +540,9 @@ class MultiValueReportCellsModal(Modal):
 
     def get_table_data(self, multi_value_report):
         table_data = [[None for _ in range(multi_value_report.columns)] for _ in range(multi_value_report.rows)]
-        multi_value_report_cells = MultiValueReportCell.objects.filter(multi_value_report=multi_value_report).order_by(
+        multi_value_report_cells = MultiValueReportCell.objects.filter(multi_value_report=multi_value_report,
+                                                                       row__lte=multi_value_report.rows,
+                                                                       column__lte=multi_value_report.columns).order_by(
             'row', 'column'
         )
         for multi_value_report_cell in multi_value_report_cells:
@@ -625,7 +627,9 @@ class MultiValueView(ValueBaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs) if hasattr(super(), 'get_context_data') else {}
 
-        multi_value_report_cells = MultiValueReportCell.objects.filter(multi_value_report=self.chart_report).order_by(
+        multi_value_report_cells = MultiValueReportCell.objects.filter(multi_value_report=self.chart_report,
+                                                                       row__lte=self.chart_report.rows,
+                                                                       column__lte=self.chart_report.columns).order_by(
             'row', 'column'
         )
 
@@ -727,6 +731,10 @@ class MultiValueView(ValueBaseView):
                     with contextlib.suppress(ValueError):
                         raw_value = float(raw_value)
                     exp.add_to_global(name=cell_name, value=raw_value)
+            elif value is not None:
+                with contextlib.suppress(ValueError):
+                    raw_value = float(value)
+                exp.add_to_global(name=cell_name, value=raw_value)
 
             table_data[row][column] = {'value': value, 'cell': multi_value_report_cell}
 
