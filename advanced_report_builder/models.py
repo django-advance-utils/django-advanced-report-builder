@@ -527,7 +527,7 @@ class MultiValueReportColumn(TimeStampedModel):
         PERCENTAGE = 0, '%'
         PIXELS = 1, 'Pixels'
 
-    report = models.ForeignKey(Report, on_delete=models.CASCADE)
+    multi_value_report = models.ForeignKey(MultiValueReport, on_delete=models.CASCADE)
     column = models.PositiveSmallIntegerField()
     width_type = models.PositiveSmallIntegerField(choices=WidthType.choices, default=WidthType.PERCENTAGE)
     width = models.PositiveSmallIntegerField()
@@ -559,7 +559,7 @@ class MultiValueReportCell(TimeStampedModel):
                 cls.PERCENT_FROM_COUNT,
             }
 
-    report = models.ForeignKey(Report, on_delete=models.CASCADE)
+    multi_value_report = models.ForeignKey(MultiValueReport, on_delete=models.CASCADE)
     row = models.PositiveSmallIntegerField()
     column = models.PositiveSmallIntegerField()
     col_span = models.PositiveSmallIntegerField(default=1)
@@ -587,7 +587,7 @@ class MultiValueReportCell(TimeStampedModel):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['report', 'row', 'column'], name='multi_value_report_cell_unique'),
+            models.UniqueConstraint(fields=['multi_value_report', 'row', 'column'], name='multi_value_report_cell_unique'),
         ]
 
     def get_base_model(self):

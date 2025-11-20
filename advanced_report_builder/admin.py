@@ -232,14 +232,13 @@ class MultiCellStyleAdmin(admin.ModelAdmin):
 
 @admin.register(MultiValueReportColumn)
 class MultiValueReportColumnAdmin(admin.ModelAdmin):
-    list_display = ("report", "column", "width_type", "width")
-    list_filter = ("report", "width_type")
-    ordering = ("report", "column")
+    list_display = ("multi_value_report", "column", "width_type", "width")
+    list_filter = ("multi_value_report", "width_type")
+    ordering = ("multi_value_report", "column")
 
 
 @admin.register(MultiValueReportCell)
 class MultiValueReportCellAdmin(admin.ModelAdmin):
-    list_display = ("report", "row", "column", "multi_value_type", "multi_cell_style")
-    list_filter = ("report", "multi_value_type")
+    list_display = ("multi_value_report", "row", "column", "multi_value_type", "multi_cell_style")
+    list_filter = ("multi_value_report", "multi_value_type")
     search_fields = ("text", "label")
-    ordering = ("report", "row", "column")

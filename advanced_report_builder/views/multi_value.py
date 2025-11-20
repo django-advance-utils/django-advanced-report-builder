@@ -217,7 +217,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
     def form_setup(self, form, *_args, **_kwargs):
         form.fields['label'].help_text = 'Used when setting up the table and for the show breakdown title.'
         form.fields['multi_cell_style'] = ModelChoiceField(
-            queryset=MultiCellStyle.objects.filter(multi_value_report_id=self.object.report_id),
+            queryset=MultiCellStyle.objects.filter(multi_value_report_id=self.object.multi_value_report_id),
             widget=Select2(),
             required=False,
         )
@@ -477,7 +477,7 @@ class MultiValueReportCellsModal(Modal):
                 link = show_modal(
                     'advanced_report_builder:multi_value_column_modal',
                     '',
-                    f'report_id-{multi_value_report.id}-column-{cols_index}',
+                    f'multi_value_report_id-{multi_value_report.id}-column-{cols_index}',
                     href=True,
                 )
                 html += (
@@ -492,7 +492,7 @@ class MultiValueReportCellsModal(Modal):
                     link = show_modal(
                         'advanced_report_builder:multi_value_cell_modal',
                         '',
-                        f'report_id-{multi_value_report.id}-row-{row_index}-column-{cols_index}',
+                        f'multi_value_report_id-{multi_value_report.id}-row-{row_index}-column-{cols_index}',
                         href=True,
                     )
                     html += (
@@ -537,7 +537,7 @@ class MultiValueReportCellsModal(Modal):
 
     def get_table_data(self, multi_value_report):
         table_data = [[None for _ in range(multi_value_report.columns)] for _ in range(multi_value_report.rows)]
-        multi_value_report_cells = MultiValueReportCell.objects.filter(report=multi_value_report).order_by(
+        multi_value_report_cells = MultiValueReportCell.objects.filter(multi_value_report=multi_value_report).order_by(
             'row', 'column'
         )
         for multi_value_report_cell in multi_value_report_cells:
@@ -622,7 +622,7 @@ class MultiValueView(ValueBaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs) if hasattr(super(), 'get_context_data') else {}
 
-        multi_value_report_cells = MultiValueReportCell.objects.filter(report=self.chart_report).order_by(
+        multi_value_report_cells = MultiValueReportCell.objects.filter(multi_value_report=self.chart_report).order_by(
             'row', 'column'
         )
 
@@ -862,7 +862,7 @@ class MultiValueShowBreakdownModal(TableUtilsMixin, Modal):
         title = multi_value_report_cell.label
         if title is None:
             title = excel_column_name(multi_value_report_cell.column, row=multi_value_report_cell.row)
-        return f'{self.table_report.report.name} - {title}'
+        return f'{self.table_report.multi_value_report.name} - {title}'
 
     def add_table(self, base_model):
         return DatatableTable(view=self, model=base_model)
