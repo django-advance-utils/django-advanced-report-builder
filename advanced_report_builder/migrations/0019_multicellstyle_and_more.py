@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 ('created', time_stamped_model.models.CreationDateTimeField(auto_now_add=True)),
                 ('modified', time_stamped_model.models.ModificationDateTimeField(auto_now=True)),
                 ('name', models.CharField(max_length=200)),
-                ('align_type', models.IntegerField(choices=[(0, 'left'), (1, 'Centre'), (2, 'Right')], default=0)),
+                ('align_type', models.IntegerField(choices=[(0, 'Left'), (1, 'Centre'), (2, 'Right')], default=0)),
                 ('bold', models.BooleanField(default=False)),
                 ('italic', models.BooleanField(default=False)),
                 ('font_size', models.PositiveSmallIntegerField()),
