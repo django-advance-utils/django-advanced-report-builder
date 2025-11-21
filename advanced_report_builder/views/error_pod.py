@@ -48,4 +48,3 @@ class ErrorPodView(CustomBaseView):
             self.add_menu('button_menu', 'button_group').add_items(
                 *report_menu,
             )
-
