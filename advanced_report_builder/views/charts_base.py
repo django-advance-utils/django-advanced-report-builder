@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from date_offset.date_offset import DateOffset
 from dateutil.relativedelta import relativedelta
 from django.apps import apps
-from django.core.exceptions import FieldError
+from django.core.exceptions import FieldError, FieldDoesNotExist
 from django.db import DataError, ProgrammingError
 from django.db.models import Q
 from django.forms import ChoiceField
@@ -81,7 +81,7 @@ class ChartJSTable(DatatableTable):
                     }
                 )
             )
-        except (ProgrammingError, TypeError, ValueError) as e:
+        except (ProgrammingError, TypeError, ValueError, KeyError) as e:
             raise ReportError(e)
 
     def process_data_structure_target(self, targets, data):
@@ -350,7 +350,10 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         if base_model:
             self.setup_table(base_model=base_model)
             self.table.extra_filters = self.extra_filters
-            fields = self.process_query_results(base_model=base_model, table=self.table)
+            try:
+                fields = self.process_query_results(base_model=base_model, table=self.table)
+            except (FieldError, FieldDoesNotExist) as e:
+                raise ReportError(e)
             self.table.add_columns(*fields)
             context['datatable'] = self.table
         context['show_toolbar'] = self.show_toolbar

@@ -2,6 +2,7 @@ import contextlib
 import json
 
 from django.conf import settings
+from django.core.exceptions import FieldError, FieldDoesNotExist
 from django.forms import CharField, ChoiceField, ModelChoiceField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -20,6 +21,7 @@ from expression_builder.exceptions import ExpressionVariableError
 from expression_builder.expression_builder import ExpressionBuilder
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
+from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT, ANNOTATION_CHOICE_SUM
 from advanced_report_builder.models import (
     MultiCellStyle,
@@ -896,15 +898,17 @@ class MultiValueShowBreakdownModal(TableUtilsMixin, Modal):
         report_builder_class = get_report_builder_class(model=base_model, report_type=self.table_report.report_type)
         fields_used = set()
         fields_map = {}
-        self.process_query_results(
-            report_builder_class=report_builder_class,
-            table=table,
-            base_model=base_model,
-            fields_used=fields_used,
-            fields_map=fields_map,
-            table_fields=table_fields,
-        )
-
+        try:
+            self.process_query_results(
+                report_builder_class=report_builder_class,
+                table=table,
+                base_model=base_model,
+                fields_used=fields_used,
+                fields_map=fields_map,
+                table_fields=table_fields,
+            )
+        except (FieldError, FieldDoesNotExist) as e:
+            raise ReportError(e)
         table.ajax_data = False
         table.table_options['pageLength'] = 25
         table.table_options['bStateSave'] = False

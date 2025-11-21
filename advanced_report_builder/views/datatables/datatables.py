@@ -1,3 +1,4 @@
+from django.core.exceptions import FieldError, FieldDoesNotExist
 from django.db import ProgrammingError
 from django_datatables.datatables import DatatableError, DatatableView
 from django_datatables.helpers import row_link
@@ -50,16 +51,18 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
         fields_used = set()
         fields_map = {}
         report_builder_class = get_report_builder_class(model=base_model, report_type=self.table_report.report_type)
-        self.process_query_results(
-            report_builder_class=report_builder_class,
-            table=table,
-            base_model=base_model,
-            fields_used=fields_used,
-            fields_map=fields_map,
-            table_fields=table_fields,
-            pivot_fields=pivot_fields,
-        )
-
+        try:
+            self.process_query_results(
+                report_builder_class=report_builder_class,
+                table=table,
+                base_model=base_model,
+                fields_used=fields_used,
+                fields_map=fields_map,
+                table_fields=table_fields,
+                pivot_fields=pivot_fields,
+            )
+        except (FieldError, FieldDoesNotExist) as e:
+            raise ReportError(e)
         if self.table_report.order_by_field:
             order_by_field = self.table_report.order_by_field
             if order_by_field not in fields_used:
