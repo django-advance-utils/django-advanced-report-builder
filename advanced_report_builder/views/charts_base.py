@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from date_offset.date_offset import DateOffset
 from dateutil.relativedelta import relativedelta
 from django.apps import apps
-from django.core.exceptions import FieldError, FieldDoesNotExist
+from django.core.exceptions import FieldDoesNotExist, FieldError
 from django.db import DataError, ProgrammingError
 from django.db.models import Q
 from django.forms import ChoiceField

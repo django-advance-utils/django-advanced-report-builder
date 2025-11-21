@@ -2,7 +2,7 @@ import json
 
 from django.conf import settings
 from django.contrib.humanize.templatetags.humanize import intcomma
-from django.core.exceptions import ValidationError, FieldError, FieldDoesNotExist
+from django.core.exceptions import FieldDoesNotExist, FieldError, ValidationError
 from django.forms import ChoiceField, ModelChoiceField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse

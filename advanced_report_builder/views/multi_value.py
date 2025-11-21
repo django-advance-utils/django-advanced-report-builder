@@ -2,7 +2,7 @@ import contextlib
 import json
 
 from django.conf import settings
-from django.core.exceptions import FieldError, FieldDoesNotExist
+from django.core.exceptions import FieldDoesNotExist, FieldError
 from django.forms import CharField, ChoiceField, ModelChoiceField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse

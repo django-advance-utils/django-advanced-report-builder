@@ -1,4 +1,4 @@
-from django.core.exceptions import FieldError, FieldDoesNotExist
+from django.core.exceptions import FieldDoesNotExist, FieldError
 from django.db import ProgrammingError
 from django_datatables.datatables import DatatableError, DatatableView
 from django_datatables.helpers import row_link
