@@ -58,28 +58,30 @@ class ChartJSTable(DatatableTable):
 
     def model_table_setup(self):
         try:
-            targets = []
+            targets_data = []
+            error = False
             try:
                 data = self.get_table_array(self.kwargs.get('request'), self.get_query())
                 self.raw_data = data
             except (DataError, FieldError):
                 data = [['N/A']]
-            if self.targets is not None:
+                error = True
+            if self.targets is not None and not error:
                 targets = self.targets.all()
                 if targets and len(data) > 0:
-                    targets = self.process_data_structure_target(targets=targets, data=data)
+                    targets_data = self.process_data_structure_target(targets=targets, data=data)
             return mark_safe(
                 json.dumps(
                     {
                         'initsetup': json.loads(self.col_def_str()),
                         'data': data,
-                        'targets': targets,
+                        'targets': targets_data,
                         'row_titles': self.all_titles(),
                         'table_id': self.table_id,
                     }
                 )
             )
-        except ProgrammingError as e:
+        except (ProgrammingError, TypeError, ValueError) as e:
             raise ReportError(e)
 
     def process_data_structure_target(self, targets, data):

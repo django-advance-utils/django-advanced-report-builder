@@ -226,7 +226,7 @@ class SingleValueView(ValueBaseView):
                 font_awesome='fas fa-pencil-alt',
                 css_classes=['btn-primary'],
             ),
-            *self.duplicate_menu(request=self.request, report_id=chart_report_id),
+            *self.duplicate_menu(request=request, report_id=chart_report_id),
         ]
 
 

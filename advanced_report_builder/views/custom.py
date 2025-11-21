@@ -27,6 +27,7 @@ class CustomBaseView(ReportBase, FilterQueryMixin, TemplateView):
 
     def dispatch(self, request, *args, **kwargs):
         self.report = kwargs.get('report')
+        self.request = request
         self.slug = split_slug(kwargs.get('slug'))
         self.enable_edit = kwargs.get('enable_edit')
         self.dashboard_report = kwargs.get('dashboard_report')

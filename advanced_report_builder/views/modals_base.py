@@ -193,6 +193,7 @@ class QueryBuilderModalBase(QueryBuilderModalBaseMixin, ModelFormModal):
         chart_report = form.save(commit=False)
         chart_report._current_user = self.request.user
         chart_report.save()
+        form.save_m2m()
 
         self.post_save(created=org_id is None, form=form)
         if not self.response_commands:
