@@ -493,7 +493,7 @@ class MultiCellStyle(TimeStampedModel):
     align_type = models.IntegerField(choices=AlignType.choices, default=AlignType.LEFT)
     bold = models.BooleanField(default=False)
     italic = models.BooleanField(default=False)
-    font_size = models.PositiveSmallIntegerField()
+    font_size = models.PositiveSmallIntegerField(null=True, blank=True)
     font_colour = ColourField(null=True, blank=True)
     background_colour = ColourField(null=True, blank=True)
 
@@ -514,12 +514,13 @@ class MultiCellStyle(TimeStampedModel):
 
     def get_td_style(self):
         results = []
-        results.append(f'font-size: {self.font_size}px;')
+        if self.font_size:
+            results.append(f'font-size: {self.font_size}px;')
         if self.font_colour:
             results.append(f'color: #{self.font_colour};')
         if self.background_colour:
             results.append(f'background-color: #{self.background_colour};')
-        return ' '.join(results)
+        return ';'.join(results)
 
 
 class MultiValueReportColumn(TimeStampedModel):
