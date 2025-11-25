@@ -368,14 +368,20 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
         return []
 
     def pod_report_menu(self):
+        return self.edit_report_menu(
+            request=self.request,
+            chart_report_id=self.chart_report.id
+        )
+
+    def edit_report_menu(self, request, chart_report_id):
         return [
             MenuItem(
-                f'advanced_report_builder:kanban_modal,pk-{self.chart_report.id}',
+                f'advanced_report_builder:kanban_modal,pk-{chart_report_id}',
                 menu_display='Edit',
                 font_awesome='fas fa-pencil-alt',
                 css_classes=['btn-primary'],
             ),
-            *self.duplicate_menu(request=self.request, report_id=self.chart_report.id),
+            *self.duplicate_menu(request=request, report_id=chart_report_id),
         ]
 
     def pod_dashboard_edit_menu(self):

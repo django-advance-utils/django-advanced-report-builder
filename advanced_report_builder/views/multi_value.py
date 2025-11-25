@@ -616,14 +616,20 @@ class MultiValueView(ValueBaseView):
         return []
 
     def pod_report_menu(self):
+        return self.edit_report_menu(
+            request=self.request,
+            chart_report_id=self.chart_report.id
+        )
+
+    def edit_report_menu(self, request, chart_report_id):
         return [
             MenuItem(
-                f'advanced_report_builder:multi_value_modal,pk-{self.chart_report.id}',
+                f'advanced_report_builder:multi_value_modal,pk-{chart_report_id}',
                 menu_display='Edit',
                 font_awesome='fas fa-pencil-alt',
                 css_classes=['btn-primary'],
             ),
-            *self.duplicate_menu(request=self.request, report_id=self.chart_report.id),
+            *self.duplicate_menu(request=self.request, report_id=chart_report_id),
         ]
 
     def get_context_data(self, **kwargs):
@@ -810,16 +816,9 @@ class MultiValueView(ValueBaseView):
                     if multi_value_report_cell.multi_cell_style is not None:
                         attrs.append('class="' + multi_value_report_cell.multi_cell_style.get_td_class() + '"')
                         styles.append(multi_value_report_cell.multi_cell_style.get_td_style())
-
-                    if multi_value_report_cell.show_breakdown:
+                    link = self.get_breakdown_url(multi_value_report_cell=multi_value_report_cell)
+                    if link is None:
                         styles.append('cursor:pointer')
-                        enable_links = self.kwargs.get('enable_links')
-                        link = show_modal(
-                            'advanced_report_builder:multi_value_breakdown_modal',
-                            '',
-                            f'pk-{multi_value_report_cell.id}-enable_links-{enable_links}',
-                            href=True,
-                        )
                         attrs.append(f'onclick="{link}"')
 
                     if len(styles) > 0:
@@ -834,6 +833,18 @@ class MultiValueView(ValueBaseView):
 
         html += '</table>'
         return html
+
+    def get_breakdown_url(self, multi_value_report_cell):
+        if multi_value_report_cell.show_breakdown:
+            enable_links = self.kwargs.get('enable_links')
+            link = show_modal(
+                'advanced_report_builder:multi_value_breakdown_modal',
+                '',
+                f'pk-{multi_value_report_cell.id}-enable_links-{enable_links}',
+                href=True,
+            )
+            return link
+        return None
 
     def pod_dashboard_edit_menu(self):
         return [
