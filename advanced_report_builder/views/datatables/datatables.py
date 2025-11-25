@@ -90,14 +90,6 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
                 table.add_columns(f'.{field}')
             table.table_options['row_href'] = row_link(col_type_override.url, field)
 
-    def get_title(self):
-        title = super().get_title()
-        report_queries_count = self.table_report.reportquery_set.all().count()
-        if report_queries_count > 1:
-            version_name = self.get_report_query(report=self.table_report).name
-            title += f' ({version_name})'
-        return title
-
     def add_to_context(self, **kwargs):
         return {'title': self.get_title(), 'table_report': self.table_report}
 
