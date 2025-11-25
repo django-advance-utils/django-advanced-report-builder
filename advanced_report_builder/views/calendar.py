@@ -270,10 +270,7 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
         return []
 
     def pod_report_menu(self):
-        return self.edit_report_menu(
-            request=self.request,
-            chart_report_id=self.chart_report.id
-        )
+        return self.edit_report_menu(request=self.request, chart_report_id=self.chart_report.id)
 
     def edit_report_menu(self, request, chart_report_id):
         return [
@@ -295,8 +292,6 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
                 css_classes=['btn-primary'],
             )
         ]
-
-
 
     # noinspection PyMethodMayBeStatic
     def queries_menu(self, report, dashboard_report):
