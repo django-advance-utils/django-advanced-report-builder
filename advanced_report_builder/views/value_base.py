@@ -134,6 +134,10 @@ class ValueBaseView(ChartBaseView):
     def _process_percentage(
         self, denominator_field, numerator_field, base_model, report_builder_class, decimal_places, fields
     ):
+        if denominator_field is None:
+            raise ReportError('denominator field is None')
+        if numerator_field is None:
+            raise ReportError('numerator field is None')
         deno_django_field, denominator_col_type_override, _, _ = self.get_field_details(
             base_model=base_model,
             field=denominator_field,
