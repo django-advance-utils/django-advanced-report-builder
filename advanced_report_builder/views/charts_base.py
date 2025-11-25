@@ -405,8 +405,8 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
     def edit_report_menu(request, chart_report_id, slug_str):
         return []
 
-    @staticmethod
     def get_period_divider(
+        self,
         annotation_value_choice,
         start_date_type,
         end_date_type,
@@ -425,8 +425,15 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
             7 = Jul (AU fiscal year)
         """
         variable_date = VariableDate()
-        start_date_and_time, _, _ = variable_date.get_variable_dates(start_date_type)
-        _, end_date_and_time, _ = variable_date.get_variable_dates(end_date_type)
+
+        financial_year_start_month = self.get_financial_month()
+
+        start_date_and_time, _, _ = variable_date.get_variable_dates(
+            range_type=start_date_type,
+            financial_year_start_month=financial_year_start_month)
+        _, end_date_and_time, _ = variable_date.get_variable_dates(
+            range_type=end_date_type,
+            financial_year_start_month=financial_year_start_month)
 
         start_date = start_date_and_time.date()
         end_date = end_date_and_time.date()

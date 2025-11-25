@@ -7,6 +7,7 @@ from django.apps import apps
 from django.db.models import F, Q
 from django.db.models.functions import ExtractWeekDay
 from django.shortcuts import get_object_or_404
+from django.conf import settings
 
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.models import ReportQuery
@@ -242,7 +243,8 @@ class FilterQueryMixin:
         else:
             _, range_type = value.split(':')
             variable_date = VariableDate()
-            value = variable_date.get_variable_dates(range_type=int(range_type))
+            value = variable_date.get_variable_dates(range_type=int(range_type),
+                                                     financial_year_start_month=self.get_financial_month())
 
             if display_operator in ['less', 'greater_or_equal']:
                 query_list.append(Q((query_string, value[0])))
@@ -317,7 +319,6 @@ class FilterQueryMixin:
         else:
             quarter_type, quarter = value.split(':')
             quarter = int(quarter)
-
             if quarter_type == '#quarter':
                 start_month = (quarter - 1) * 3
                 end_month = start_month + 3
@@ -416,7 +417,13 @@ class FilterQueryMixin:
         if self.dashboard_report and self.dashboard_report.name_override:
             return self.dashboard_report.name_override
         else:
-            return self.report.name
+            title = self.report.name
+            report_queries_count = self.report.reportquery_set.all().count()
+            if report_queries_count > 1:
+                version_name = self.get_report_query(report=self.report).name
+                title += f' ({version_name})'
+            return title
+
 
     def _get_report_builder_class(self, base_model, field_str, report_builder_class, previous_base_model=None):
         if '__' in field_str:
@@ -494,4 +501,5 @@ class FilterQueryMixin:
         return None
 
     def get_financial_month(self):
-        return 1
+        month = getattr(settings, 'FINANCIAL_YEAR_START_MONTH', 1)
+        return month if 1 <= month <= 12 else 1

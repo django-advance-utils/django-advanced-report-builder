@@ -3,6 +3,7 @@ from calendar import monthrange
 from datetime import date, datetime, timedelta
 
 from date_offset.date_offset import DateOffset
+from dateutil.relativedelta import relativedelta
 
 
 class VariableDate:
@@ -53,6 +54,61 @@ class VariableDate:
     RANGE_TYPE_5_WEEKS_AGO = 47
     RANGE_TYPE_6_WEEKS_AGO = 48
 
+    RANGE_TYPE_THIS_YEAR = 16
+    RANGE_TYPE_LAST_YEAR = 17
+
+    # Financial year ranges
+    RANGE_TYPE_LAST_FINANCIAL_YEAR = 49
+    RANGE_TYPE_THIS_FINANCIAL_YEAR = 50
+    RANGE_TYPE_NEXT_FINANCIAL_YEAR = 51
+
+    # Last FY quarters
+    RANGE_TYPE_LAST_FINANCIAL_YEAR_Q1 = 52
+    RANGE_TYPE_LAST_FINANCIAL_YEAR_Q2 = 53
+    RANGE_TYPE_LAST_FINANCIAL_YEAR_Q3 = 54
+    RANGE_TYPE_LAST_FINANCIAL_YEAR_Q4 = 55
+
+    # This FY quarters
+    RANGE_TYPE_THIS_FINANCIAL_YEAR_Q1 = 56
+    RANGE_TYPE_THIS_FINANCIAL_YEAR_Q2 = 57
+    RANGE_TYPE_THIS_FINANCIAL_YEAR_Q3 = 58
+    RANGE_TYPE_THIS_FINANCIAL_YEAR_Q4 = 59
+
+    # Next FY quarters
+    RANGE_TYPE_NEXT_FINANCIAL_YEAR_Q1 = 60
+    RANGE_TYPE_NEXT_FINANCIAL_YEAR_Q2 = 61
+    RANGE_TYPE_NEXT_FINANCIAL_YEAR_Q3 = 62
+    RANGE_TYPE_NEXT_FINANCIAL_YEAR_Q4 = 63
+
+    # Current FY quarters
+    RANGE_TYPE_LAST_FINANCIAL_QUARTER = 64
+    RANGE_TYPE_CURRENT_FINANCIAL_QUARTER = 65
+    RANGE_TYPE_NEXT_FINANCIAL_QUARTER = 66
+    RANGE_TYPE_LAST_YEAR_SAME_FINANCIAL_QUARTER = 67
+
+    # This calendar quarter
+    RANGE_TYPE_LAST_CALENDAR_QUARTER = 68
+    RANGE_TYPE_THIS_CALENDAR_QUARTER = 69
+    RANGE_TYPE_NEXT_CALENDAR_QUARTER = 70
+
+    # Last calendar quarters
+    RANGE_TYPE_LAST_CALENDAR_YEAR_Q1 = 71
+    RANGE_TYPE_LAST_CALENDAR_YEAR_Q2 = 72
+    RANGE_TYPE_LAST_CALENDAR_YEAR_Q3 = 73
+    RANGE_TYPE_LAST_CALENDAR_YEAR_Q4 = 74
+
+    # This calendar quarters
+    RANGE_TYPE_THIS_CALENDAR_YEAR_Q1 = 75
+    RANGE_TYPE_THIS_CALENDAR_YEAR_Q2 = 76
+    RANGE_TYPE_THIS_CALENDAR_YEAR_Q3 = 77
+    RANGE_TYPE_THIS_CALENDAR_YEAR_Q4 = 78
+
+    # Next calendar quarters
+    RANGE_TYPE_NEXT_CALENDAR_YEAR_Q1 = 79
+    RANGE_TYPE_NEXT_CALENDAR_YEAR_Q2 = 80
+    RANGE_TYPE_NEXT_CALENDAR_YEAR_Q3 = 81
+    RANGE_TYPE_NEXT_CALENDAR_YEAR_Q4 = 82
+
     RANGE_TYPE_CHOICES = (
         (RANGE_TYPE_LAST_36_MONTHS, 'Last 36 months'),
         (RANGE_TYPE_LAST_24_MONTHS, 'Last 24 months'),
@@ -96,11 +152,61 @@ class VariableDate:
         (RANGE_TYPE_NEXT_12_MONTHS, 'Next 12 months'),
         (RANGE_TYPE_NEXT_24_MONTHS, 'Next 24 months'),
         (RANGE_TYPE_NEXT_36_MONTHS, 'Next 36 months'),
-        (RANGE_TYPE_THIS_YEAR, 'This year'),
-        (RANGE_TYPE_LAST_YEAR, 'Last year'),
+
+        # Financial year full ranges
+        (RANGE_TYPE_LAST_FINANCIAL_YEAR, "Last financial year"),
+        (RANGE_TYPE_THIS_FINANCIAL_YEAR, "This financial year"),
+        (RANGE_TYPE_NEXT_FINANCIAL_YEAR, "Next financial year"),
+
+        # Last FY quarters
+        (RANGE_TYPE_LAST_FINANCIAL_YEAR_Q1, "Last financial year Q1"),
+        (RANGE_TYPE_LAST_FINANCIAL_YEAR_Q2, "Last financial year Q2"),
+        (RANGE_TYPE_LAST_FINANCIAL_YEAR_Q3, "Last financial year Q3"),
+        (RANGE_TYPE_LAST_FINANCIAL_YEAR_Q4, "Last financial year Q4"),
+
+        # This FY quarters
+        (RANGE_TYPE_THIS_FINANCIAL_YEAR_Q1, "This financial year Q1"),
+        (RANGE_TYPE_THIS_FINANCIAL_YEAR_Q2, "This financial year Q2"),
+        (RANGE_TYPE_THIS_FINANCIAL_YEAR_Q3, "This financial year Q3"),
+        (RANGE_TYPE_THIS_FINANCIAL_YEAR_Q4, "This financial year Q4"),
+
+        # Next FY quarters
+        (RANGE_TYPE_NEXT_FINANCIAL_YEAR_Q1, "Next financial year Q1"),
+        (RANGE_TYPE_NEXT_FINANCIAL_YEAR_Q2, "Next financial year Q2"),
+        (RANGE_TYPE_NEXT_FINANCIAL_YEAR_Q3, "Next financial year Q3"),
+        (RANGE_TYPE_NEXT_FINANCIAL_YEAR_Q4, "Next financial year Q4"),
+
+        # Current FY quarters
+        (RANGE_TYPE_LAST_FINANCIAL_QUARTER, "Last financial quarter"),
+        (RANGE_TYPE_CURRENT_FINANCIAL_QUARTER, "Current financial quarter"),
+        (RANGE_TYPE_NEXT_FINANCIAL_QUARTER, "Next financial quarter"),
+        (RANGE_TYPE_LAST_YEAR_SAME_FINANCIAL_QUARTER, "Same quarter last financial year"),
+
+        # Calendar year full ranges
+        (RANGE_TYPE_LAST_CALENDAR_QUARTER, "Last calendar quarter"),
+        (RANGE_TYPE_THIS_CALENDAR_QUARTER, "This calendar quarter"),
+        (RANGE_TYPE_NEXT_CALENDAR_QUARTER, "Next calendar quarter"),
+
+        # Last calendar year quarters
+        (RANGE_TYPE_LAST_CALENDAR_YEAR_Q1, "Last calendar year Q1"),
+        (RANGE_TYPE_LAST_CALENDAR_YEAR_Q2, "Last calendar year Q2"),
+        (RANGE_TYPE_LAST_CALENDAR_YEAR_Q3, "Last calendar year Q3"),
+        (RANGE_TYPE_LAST_CALENDAR_YEAR_Q4, "Last calendar year Q4"),
+
+        # This calendar year quarters
+        (RANGE_TYPE_THIS_CALENDAR_YEAR_Q1, "This calendar year Q1"),
+        (RANGE_TYPE_THIS_CALENDAR_YEAR_Q2, "This calendar year Q2"),
+        (RANGE_TYPE_THIS_CALENDAR_YEAR_Q3, "This calendar year Q3"),
+        (RANGE_TYPE_THIS_CALENDAR_YEAR_Q4, "This calendar year Q4"),
+
+        # Next calendar year quarters
+        (RANGE_TYPE_NEXT_CALENDAR_YEAR_Q1, "Next calendar year Q1"),
+        (RANGE_TYPE_NEXT_CALENDAR_YEAR_Q2, "Next calendar year Q2"),
+        (RANGE_TYPE_NEXT_CALENDAR_YEAR_Q3, "Next calendar year Q3"),
+        (RANGE_TYPE_NEXT_CALENDAR_YEAR_Q4, "Next calendar year Q4"),
     )
 
-    def get_variable_dates(self, range_type):
+    def get_variable_dates(self, range_type, financial_year_start_month=1):  # financial_year_start_month 1=jan
         today = date.today()
         start_of_this_week = today - timedelta(days=today.weekday())
         if range_type == self.RANGE_TYPE_TODAY:
@@ -295,6 +401,247 @@ class VariableDate:
             start_date = today
             end_date = date_offset.get_offset('36m', today)
             number_of_days = (end_date - start_date).days
+        elif range_type == self.RANGE_TYPE_LAST_FINANCIAL_YEAR:
+            fy_year = self.get_fy_start_year(today, financial_year_start_month, offset=-1)
+            start_date, end_date = self._get_financial_year_bounds(
+                fy_year, financial_year_start_month
+            )
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_THIS_FINANCIAL_YEAR:
+            fy_year = self.get_fy_start_year(today, financial_year_start_month, offset=0)
+            start_date, end_date = self._get_financial_year_bounds(
+                fy_year, financial_year_start_month
+            )
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_NEXT_FINANCIAL_YEAR:
+            fy_year = self.get_fy_start_year(today, financial_year_start_month, offset=1)
+            start_date, end_date = self._get_financial_year_bounds(
+                fy_year, financial_year_start_month
+            )
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_LAST_FINANCIAL_YEAR_Q1:
+            fy_year = self.get_fy_start_year(today, financial_year_start_month, offset=-1)
+            fy_start, _ = self._get_financial_year_bounds(fy_year, financial_year_start_month)
+            start_date, end_date = self._get_financial_quarter_bounds(fy_start, 1)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_LAST_FINANCIAL_YEAR_Q2:
+            fy_year = self.get_fy_start_year(today, financial_year_start_month, offset=-1)
+            fy_start, _ = self._get_financial_year_bounds(fy_year, financial_year_start_month)
+            start_date, end_date = self._get_financial_quarter_bounds(fy_start, 2)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_LAST_FINANCIAL_YEAR_Q3:
+            fy_year = self.get_fy_start_year(today, financial_year_start_month, offset=-1)
+            fy_start, _ = self._get_financial_year_bounds(fy_year, financial_year_start_month)
+            start_date, end_date = self._get_financial_quarter_bounds(fy_start, 3)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_LAST_FINANCIAL_YEAR_Q4:
+            fy_year = self.get_fy_start_year(today, financial_year_start_month, offset=-1)
+            fy_start, _ = self._get_financial_year_bounds(fy_year, financial_year_start_month)
+            start_date, end_date = self._get_financial_quarter_bounds(fy_start, 4)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_THIS_FINANCIAL_YEAR_Q1:
+            fy_year = self.get_fy_start_year(today, financial_year_start_month, offset=0)
+            fy_start, _ = self._get_financial_year_bounds(fy_year, financial_year_start_month)
+            start_date, end_date = self._get_financial_quarter_bounds(fy_start, 1)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_THIS_FINANCIAL_YEAR_Q2:
+            fy_year = self.get_fy_start_year(today, financial_year_start_month, offset=0)
+            fy_start, _ = self._get_financial_year_bounds(fy_year, financial_year_start_month)
+            start_date, end_date = self._get_financial_quarter_bounds(fy_start, 2)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_THIS_FINANCIAL_YEAR_Q3:
+            fy_year = self.get_fy_start_year(today, financial_year_start_month, offset=0)
+            fy_start, _ = self._get_financial_year_bounds(fy_year, financial_year_start_month)
+            start_date, end_date = self._get_financial_quarter_bounds(fy_start, 3)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_THIS_FINANCIAL_YEAR_Q4:
+            fy_year = self.get_fy_start_year(today, financial_year_start_month, offset=0)
+            fy_start, _ = self._get_financial_year_bounds(fy_year, financial_year_start_month)
+            start_date, end_date = self._get_financial_quarter_bounds(fy_start, 4)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_NEXT_FINANCIAL_YEAR_Q1:
+            fy_year = self.get_fy_start_year(today, financial_year_start_month, offset=1)
+            fy_start, _ = self._get_financial_year_bounds(fy_year, financial_year_start_month)
+            start_date, end_date = self._get_financial_quarter_bounds(fy_start, 1)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_NEXT_FINANCIAL_YEAR_Q2:
+            fy_year = self.get_fy_start_year(today, financial_year_start_month, offset=1)
+            fy_start, _ = self._get_financial_year_bounds(fy_year, financial_year_start_month)
+            start_date, end_date = self._get_financial_quarter_bounds(fy_start, 2)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_NEXT_FINANCIAL_YEAR_Q3:
+            fy_year = self.get_fy_start_year(today, financial_year_start_month, offset=1)
+            fy_start, _ = self._get_financial_year_bounds(fy_year, financial_year_start_month)
+            start_date, end_date = self._get_financial_quarter_bounds(fy_start, 3)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_NEXT_FINANCIAL_YEAR_Q4:
+            fy_year = self.get_fy_start_year(today, financial_year_start_month, offset=1)
+            fy_start, _ = self._get_financial_year_bounds(fy_year, financial_year_start_month)
+            start_date, end_date = self._get_financial_quarter_bounds(fy_start, 4)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_LAST_FINANCIAL_QUARTER:
+            fy_year, quarter = self._get_current_fy_quarter(today, financial_year_start_month)
+
+            # Move back one quarter
+            if quarter == 1:
+                quarter = 4
+                fy_year -= 1
+            else:
+                quarter -= 1
+
+            fy_start, _ = self._get_financial_year_bounds(fy_year, financial_year_start_month)
+            start_date, end_date = self._get_financial_quarter_bounds(fy_start, quarter)
+
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_CURRENT_FINANCIAL_QUARTER:
+            fy_year, quarter = self._get_current_fy_quarter(today, financial_year_start_month)
+
+            fy_start, _ = self._get_financial_year_bounds(fy_year, financial_year_start_month)
+            start_date, end_date = self._get_financial_quarter_bounds(fy_start, quarter)
+
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_NEXT_FINANCIAL_QUARTER:
+            fy_year, quarter = self._get_current_fy_quarter(today, financial_year_start_month)
+
+            # Move forward one quarter
+            if quarter == 4:
+                quarter = 1
+                fy_year += 1
+            else:
+                quarter += 1
+
+            fy_start, _ = self._get_financial_year_bounds(fy_year, financial_year_start_month)
+            start_date, end_date = self._get_financial_quarter_bounds(fy_start, quarter)
+
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_LAST_YEAR_SAME_FINANCIAL_QUARTER:
+            # Determine current quarter in THIS FY
+            this_fy_year, current_quarter = self._get_current_fy_quarter(today, financial_year_start_month)
+
+            # Move back one FY but keep same quarter number
+            fy_year = this_fy_year - 1
+
+            fy_start, _ = self._get_financial_year_bounds(fy_year, financial_year_start_month)
+            start_date, end_date = self._get_financial_quarter_bounds(fy_start, current_quarter)
+
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_LAST_CALENDAR_QUARTER:
+            # Current calendar quarter
+            quarter = self._get_calendar_quarter(today)
+            year = today.year
+
+            # Move back one quarter
+            if quarter == 1:
+                quarter = 4
+                year -= 1
+            else:
+                quarter -= 1
+
+            start_date, end_date = self._get_calendar_quarter_bounds(year, quarter)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_THIS_CALENDAR_QUARTER:
+            quarter = self._get_calendar_quarter(today)
+            year = today.year
+
+            start_date, end_date = self._get_calendar_quarter_bounds(year, quarter)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_NEXT_CALENDAR_QUARTER:
+            quarter = self._get_calendar_quarter(today)
+            year = today.year
+
+            # Move forward one quarter
+            if quarter == 4:
+                quarter = 1
+                year += 1
+            else:
+                quarter += 1
+
+            start_date, end_date = self._get_calendar_quarter_bounds(year, quarter)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_LAST_CALENDAR_YEAR_Q1:
+            year = today.year - 1
+            start_date, end_date = self._get_calendar_quarter_bounds(year, 1)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_LAST_CALENDAR_YEAR_Q2:
+            year = today.year - 1
+            start_date, end_date = self._get_calendar_quarter_bounds(year, 2)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_LAST_CALENDAR_YEAR_Q3:
+            year = today.year - 1
+            start_date, end_date = self._get_calendar_quarter_bounds(year, 3)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_LAST_CALENDAR_YEAR_Q4:
+            year = today.year - 1
+            start_date, end_date = self._get_calendar_quarter_bounds(year, 4)
+            number_of_days = (end_date - start_date).days + 1
+
+
+        elif range_type == self.RANGE_TYPE_THIS_CALENDAR_YEAR_Q1:
+            year = today.year
+            start_date, end_date = self._get_calendar_quarter_bounds(year, 1)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_THIS_CALENDAR_YEAR_Q2:
+            year = today.year
+            start_date, end_date = self._get_calendar_quarter_bounds(year, 2)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_THIS_CALENDAR_YEAR_Q3:
+            year = today.year
+            start_date, end_date = self._get_calendar_quarter_bounds(year, 3)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_THIS_CALENDAR_YEAR_Q4:
+            year = today.year
+            start_date, end_date = self._get_calendar_quarter_bounds(year, 4)
+            number_of_days = (end_date - start_date).days + 1
+
+
+        elif range_type == self.RANGE_TYPE_NEXT_CALENDAR_YEAR_Q1:
+            year = today.year + 1
+            start_date, end_date = self._get_calendar_quarter_bounds(year, 1)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_NEXT_CALENDAR_YEAR_Q2:
+            year = today.year + 1
+            start_date, end_date = self._get_calendar_quarter_bounds(year, 2)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_NEXT_CALENDAR_YEAR_Q3:
+            year = today.year + 1
+            start_date, end_date = self._get_calendar_quarter_bounds(year, 3)
+            number_of_days = (end_date - start_date).days + 1
+
+        elif range_type == self.RANGE_TYPE_NEXT_CALENDAR_YEAR_Q4:
+            year = today.year + 1
+            start_date, end_date = self._get_calendar_quarter_bounds(year, 4)
+            number_of_days = (end_date - start_date).days + 1
+
         else:
             raise AssertionError('unknown date value')
 
@@ -308,6 +655,7 @@ class VariableDate:
         for choice in self.RANGE_TYPE_CHOICES:
             values['#variable_date:%d' % choice[0]] = choice[1]
         return values
+
 
     @staticmethod
     def get_date_filter_years():
@@ -335,3 +683,65 @@ class VariableDate:
         for quarter in range(1, 5):
             values['#financial_quarter:%d' % quarter] = f'Financial Quarter {quarter}'
         return values
+
+    @staticmethod
+    def get_fy_start_year(today, fy_start_month, offset=0):
+        """
+        Returns the start year of the financial year.
+        offset = -1 (last FY), 0 (this FY), +1 (next FY)
+        """
+        this_fy_start_year = (
+            today.year
+            if today.month >= fy_start_month
+            else today.year - 1
+        )
+        return this_fy_start_year + offset
+
+    @staticmethod
+    def _get_financial_year_bounds(year, start_month):
+        """
+        Returns inclusive financial year date range:
+        start_date, end_date
+        """
+        start = date(year, start_month, 1)
+
+        # start of next FY
+        if start_month == 1:
+            next_start = date(year + 1, 1, 1)
+        else:
+            next_start = date(year + 1, start_month, 1)
+
+        end = next_start - timedelta(days=1)
+        return start, end
+
+    @staticmethod
+    def _get_financial_quarter_bounds(fy_start_date, quarter_number):
+        """
+        Returns inclusive quarter range inside a financial year.
+        """
+        q_start = fy_start_date + relativedelta(months=3 * (quarter_number - 1))
+        q_end = q_start + relativedelta(months=3) - timedelta(days=1)
+        return q_start, q_end
+
+    def _get_current_fy_quarter(self, today, fy_start_month):
+        # Get start of this FY
+        fy_year = self.get_fy_start_year(today, fy_start_month, offset=0)
+        fy_start, _ = self._get_financial_year_bounds(fy_year, fy_start_month)
+
+        # Months difference from FY start
+        delta_months = (today.year - fy_start.year) * 12 + (today.month - fy_start.month)
+
+        # Quarter index (0,1,2,3)
+        quarter = delta_months // 3 + 1
+        return fy_year, quarter
+
+    @staticmethod
+    def _get_calendar_quarter(dt):
+        return (dt.month - 1) // 3 + 1
+
+    def _get_calendar_quarter_bounds(self, year, quarter):
+        """
+        Calendar quarter is simply a financial quarter where FY starts in January.
+        """
+        fy_start_date = date(year, 1, 1)
+        return self._get_financial_quarter_bounds(fy_start_date, quarter)

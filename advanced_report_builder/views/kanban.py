@@ -280,8 +280,13 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
                 headings.append({'label': kanban_report_lane.name, 'row_span': 2, 'col_span': 1})
             else:
                 variable_date = VariableDate()
-                start_date_and_time, _, _ = variable_date.get_variable_dates(kanban_report_lane.multiple_start_period)
-                _, end_date_and_time, _ = variable_date.get_variable_dates(kanban_report_lane.multiple_end_period)
+                financial_year_start_month = self.get_financial_month()
+                start_date_and_time, _, _ = variable_date.get_variable_dates(
+                    range_type=kanban_report_lane.multiple_start_period,
+                    financial_year_start_month=financial_year_start_month)
+                _, end_date_and_time, _ = variable_date.get_variable_dates(
+                    range_type=kanban_report_lane.multiple_end_period,
+                    financial_year_start_month=financial_year_start_month)
 
                 multiple_type = kanban_report_lane.multiple_type
                 current_start_date = start_date_and_time
