@@ -152,58 +152,49 @@ class VariableDate:
         (RANGE_TYPE_NEXT_12_MONTHS, 'Next 12 months'),
         (RANGE_TYPE_NEXT_24_MONTHS, 'Next 24 months'),
         (RANGE_TYPE_NEXT_36_MONTHS, 'Next 36 months'),
-
         # Financial year full ranges
-        (RANGE_TYPE_LAST_FINANCIAL_YEAR, "Last financial year"),
-        (RANGE_TYPE_THIS_FINANCIAL_YEAR, "This financial year"),
-        (RANGE_TYPE_NEXT_FINANCIAL_YEAR, "Next financial year"),
-
+        (RANGE_TYPE_LAST_FINANCIAL_YEAR, 'Last financial year'),
+        (RANGE_TYPE_THIS_FINANCIAL_YEAR, 'This financial year'),
+        (RANGE_TYPE_NEXT_FINANCIAL_YEAR, 'Next financial year'),
         # Last FY quarters
-        (RANGE_TYPE_LAST_FINANCIAL_YEAR_Q1, "Last financial year Q1"),
-        (RANGE_TYPE_LAST_FINANCIAL_YEAR_Q2, "Last financial year Q2"),
-        (RANGE_TYPE_LAST_FINANCIAL_YEAR_Q3, "Last financial year Q3"),
-        (RANGE_TYPE_LAST_FINANCIAL_YEAR_Q4, "Last financial year Q4"),
-
+        (RANGE_TYPE_LAST_FINANCIAL_YEAR_Q1, 'Last financial year Q1'),
+        (RANGE_TYPE_LAST_FINANCIAL_YEAR_Q2, 'Last financial year Q2'),
+        (RANGE_TYPE_LAST_FINANCIAL_YEAR_Q3, 'Last financial year Q3'),
+        (RANGE_TYPE_LAST_FINANCIAL_YEAR_Q4, 'Last financial year Q4'),
         # This FY quarters
-        (RANGE_TYPE_THIS_FINANCIAL_YEAR_Q1, "This financial year Q1"),
-        (RANGE_TYPE_THIS_FINANCIAL_YEAR_Q2, "This financial year Q2"),
-        (RANGE_TYPE_THIS_FINANCIAL_YEAR_Q3, "This financial year Q3"),
-        (RANGE_TYPE_THIS_FINANCIAL_YEAR_Q4, "This financial year Q4"),
-
+        (RANGE_TYPE_THIS_FINANCIAL_YEAR_Q1, 'This financial year Q1'),
+        (RANGE_TYPE_THIS_FINANCIAL_YEAR_Q2, 'This financial year Q2'),
+        (RANGE_TYPE_THIS_FINANCIAL_YEAR_Q3, 'This financial year Q3'),
+        (RANGE_TYPE_THIS_FINANCIAL_YEAR_Q4, 'This financial year Q4'),
         # Next FY quarters
-        (RANGE_TYPE_NEXT_FINANCIAL_YEAR_Q1, "Next financial year Q1"),
-        (RANGE_TYPE_NEXT_FINANCIAL_YEAR_Q2, "Next financial year Q2"),
-        (RANGE_TYPE_NEXT_FINANCIAL_YEAR_Q3, "Next financial year Q3"),
-        (RANGE_TYPE_NEXT_FINANCIAL_YEAR_Q4, "Next financial year Q4"),
-
+        (RANGE_TYPE_NEXT_FINANCIAL_YEAR_Q1, 'Next financial year Q1'),
+        (RANGE_TYPE_NEXT_FINANCIAL_YEAR_Q2, 'Next financial year Q2'),
+        (RANGE_TYPE_NEXT_FINANCIAL_YEAR_Q3, 'Next financial year Q3'),
+        (RANGE_TYPE_NEXT_FINANCIAL_YEAR_Q4, 'Next financial year Q4'),
         # Current FY quarters
-        (RANGE_TYPE_LAST_FINANCIAL_QUARTER, "Last financial quarter"),
-        (RANGE_TYPE_CURRENT_FINANCIAL_QUARTER, "Current financial quarter"),
-        (RANGE_TYPE_NEXT_FINANCIAL_QUARTER, "Next financial quarter"),
-        (RANGE_TYPE_LAST_YEAR_SAME_FINANCIAL_QUARTER, "Same quarter last financial year"),
-
+        (RANGE_TYPE_LAST_FINANCIAL_QUARTER, 'Last financial quarter'),
+        (RANGE_TYPE_CURRENT_FINANCIAL_QUARTER, 'Current financial quarter'),
+        (RANGE_TYPE_NEXT_FINANCIAL_QUARTER, 'Next financial quarter'),
+        (RANGE_TYPE_LAST_YEAR_SAME_FINANCIAL_QUARTER, 'Same quarter last financial year'),
         # Calendar year full ranges
-        (RANGE_TYPE_LAST_CALENDAR_QUARTER, "Last calendar quarter"),
-        (RANGE_TYPE_THIS_CALENDAR_QUARTER, "This calendar quarter"),
-        (RANGE_TYPE_NEXT_CALENDAR_QUARTER, "Next calendar quarter"),
-
+        (RANGE_TYPE_LAST_CALENDAR_QUARTER, 'Last calendar quarter'),
+        (RANGE_TYPE_THIS_CALENDAR_QUARTER, 'This calendar quarter'),
+        (RANGE_TYPE_NEXT_CALENDAR_QUARTER, 'Next calendar quarter'),
         # Last calendar year quarters
-        (RANGE_TYPE_LAST_CALENDAR_YEAR_Q1, "Last calendar year Q1"),
-        (RANGE_TYPE_LAST_CALENDAR_YEAR_Q2, "Last calendar year Q2"),
-        (RANGE_TYPE_LAST_CALENDAR_YEAR_Q3, "Last calendar year Q3"),
-        (RANGE_TYPE_LAST_CALENDAR_YEAR_Q4, "Last calendar year Q4"),
-
+        (RANGE_TYPE_LAST_CALENDAR_YEAR_Q1, 'Last calendar year Q1'),
+        (RANGE_TYPE_LAST_CALENDAR_YEAR_Q2, 'Last calendar year Q2'),
+        (RANGE_TYPE_LAST_CALENDAR_YEAR_Q3, 'Last calendar year Q3'),
+        (RANGE_TYPE_LAST_CALENDAR_YEAR_Q4, 'Last calendar year Q4'),
         # This calendar year quarters
-        (RANGE_TYPE_THIS_CALENDAR_YEAR_Q1, "This calendar year Q1"),
-        (RANGE_TYPE_THIS_CALENDAR_YEAR_Q2, "This calendar year Q2"),
-        (RANGE_TYPE_THIS_CALENDAR_YEAR_Q3, "This calendar year Q3"),
-        (RANGE_TYPE_THIS_CALENDAR_YEAR_Q4, "This calendar year Q4"),
-
+        (RANGE_TYPE_THIS_CALENDAR_YEAR_Q1, 'This calendar year Q1'),
+        (RANGE_TYPE_THIS_CALENDAR_YEAR_Q2, 'This calendar year Q2'),
+        (RANGE_TYPE_THIS_CALENDAR_YEAR_Q3, 'This calendar year Q3'),
+        (RANGE_TYPE_THIS_CALENDAR_YEAR_Q4, 'This calendar year Q4'),
         # Next calendar year quarters
-        (RANGE_TYPE_NEXT_CALENDAR_YEAR_Q1, "Next calendar year Q1"),
-        (RANGE_TYPE_NEXT_CALENDAR_YEAR_Q2, "Next calendar year Q2"),
-        (RANGE_TYPE_NEXT_CALENDAR_YEAR_Q3, "Next calendar year Q3"),
-        (RANGE_TYPE_NEXT_CALENDAR_YEAR_Q4, "Next calendar year Q4"),
+        (RANGE_TYPE_NEXT_CALENDAR_YEAR_Q1, 'Next calendar year Q1'),
+        (RANGE_TYPE_NEXT_CALENDAR_YEAR_Q2, 'Next calendar year Q2'),
+        (RANGE_TYPE_NEXT_CALENDAR_YEAR_Q3, 'Next calendar year Q3'),
+        (RANGE_TYPE_NEXT_CALENDAR_YEAR_Q4, 'Next calendar year Q4'),
     )
 
     def get_variable_dates(self, range_type, financial_year_start_month=1):  # financial_year_start_month 1=jan
@@ -403,23 +394,17 @@ class VariableDate:
             number_of_days = (end_date - start_date).days
         elif range_type == self.RANGE_TYPE_LAST_FINANCIAL_YEAR:
             fy_year = self.get_fy_start_year(today, financial_year_start_month, offset=-1)
-            start_date, end_date = self._get_financial_year_bounds(
-                fy_year, financial_year_start_month
-            )
+            start_date, end_date = self._get_financial_year_bounds(fy_year, financial_year_start_month)
             number_of_days = (end_date - start_date).days + 1
 
         elif range_type == self.RANGE_TYPE_THIS_FINANCIAL_YEAR:
             fy_year = self.get_fy_start_year(today, financial_year_start_month, offset=0)
-            start_date, end_date = self._get_financial_year_bounds(
-                fy_year, financial_year_start_month
-            )
+            start_date, end_date = self._get_financial_year_bounds(fy_year, financial_year_start_month)
             number_of_days = (end_date - start_date).days + 1
 
         elif range_type == self.RANGE_TYPE_NEXT_FINANCIAL_YEAR:
             fy_year = self.get_fy_start_year(today, financial_year_start_month, offset=1)
-            start_date, end_date = self._get_financial_year_bounds(
-                fy_year, financial_year_start_month
-            )
+            start_date, end_date = self._get_financial_year_bounds(fy_year, financial_year_start_month)
             number_of_days = (end_date - start_date).days + 1
 
         elif range_type == self.RANGE_TYPE_LAST_FINANCIAL_YEAR_Q1:
@@ -600,7 +585,6 @@ class VariableDate:
             start_date, end_date = self._get_calendar_quarter_bounds(year, 4)
             number_of_days = (end_date - start_date).days + 1
 
-
         elif range_type == self.RANGE_TYPE_THIS_CALENDAR_YEAR_Q1:
             year = today.year
             start_date, end_date = self._get_calendar_quarter_bounds(year, 1)
@@ -620,7 +604,6 @@ class VariableDate:
             year = today.year
             start_date, end_date = self._get_calendar_quarter_bounds(year, 4)
             number_of_days = (end_date - start_date).days + 1
-
 
         elif range_type == self.RANGE_TYPE_NEXT_CALENDAR_YEAR_Q1:
             year = today.year + 1
@@ -656,7 +639,6 @@ class VariableDate:
             values['#variable_date:%d' % choice[0]] = choice[1]
         return values
 
-
     @staticmethod
     def get_date_filter_years():
         values = {}
@@ -690,11 +672,7 @@ class VariableDate:
         Returns the start year of the financial year.
         offset = -1 (last FY), 0 (this FY), +1 (next FY)
         """
-        this_fy_start_year = (
-            today.year
-            if today.month >= fy_start_month
-            else today.year - 1
-        )
+        this_fy_start_year = today.year if today.month >= fy_start_month else today.year - 1
         return this_fy_start_year + offset
 
     @staticmethod
@@ -706,10 +684,7 @@ class VariableDate:
         start = date(year, start_month, 1)
 
         # start of next FY
-        if start_month == 1:
-            next_start = date(year + 1, 1, 1)
-        else:
-            next_start = date(year + 1, start_month, 1)
+        next_start = date(year + 1, 1, 1) if start_month == 1 else date(year + 1, start_month, 1)
 
         end = next_start - timedelta(days=1)
         return start, end
