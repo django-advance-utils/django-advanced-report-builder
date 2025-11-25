@@ -654,14 +654,47 @@ class MultiValueView(ValueBaseView):
                 )
 
             fields = []
-            if multi_value_type == MultiValueReportCell.MultiValueType.STATIC_TEXT:
-                value = multi_value_report_cell.text
-            elif multi_value_type == MultiValueReportCell.MultiValueType.COUNT:
-                self._get_count(fields=fields)
-            elif multi_value_type == MultiValueReportCell.MultiValueType.SUM:
-                if multi_value_report_cell.field is None:
-                    value = 'Error no field selected'
-                else:
+            try:
+                if multi_value_type == MultiValueReportCell.MultiValueType.STATIC_TEXT:
+                    value = multi_value_report_cell.text
+                elif multi_value_type == MultiValueReportCell.MultiValueType.COUNT:
+                    self._get_count(fields=fields)
+                elif multi_value_type == MultiValueReportCell.MultiValueType.SUM:
+                    if multi_value_report_cell.field is None:
+                        value = 'Error no field selected'
+                    else:
+                        self._process_aggregations(
+                            field=multi_value_report_cell.field,
+                            report_builder_class=report_builder_class,
+                            base_model=base_model,
+                            decimal_places=multi_value_report_cell.decimal_places,
+                            fields=fields,
+                            aggregations_type=ANNOTATION_CHOICE_SUM,
+                        )
+                elif multi_value_type == MultiValueReportCell.MultiValueType.AVERAGE_SUM_FROM_COUNT:
+                    self._process_aggregations(
+                        field=multi_value_report_cell.field,
+                        report_builder_class=report_builder_class,
+                        base_model=base_model,
+                        decimal_places=multi_value_report_cell.decimal_places,
+                        fields=fields,
+                        aggregations_type=ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT,
+                    )
+
+                elif multi_value_type in [
+                    MultiValueReportCell.MultiValueType.AVERAGE_SUM_OVER_TIME,
+                    MultiValueReportCell.MultiValueType.AVERAGE_SUM_OVER_TIME_EXCLUDING_WEEKENDS,
+                ]:
+                    exclude_weekdays = None
+                    if multi_value_type == MultiValueReportCell.MultiValueType.AVERAGE_SUM_OVER_TIME_EXCLUDING_WEEKENDS:
+                        exclude_weekdays = [1, 7]
+
+                    divider = self.get_period_divider(
+                        annotation_value_choice=multi_value_report_cell.average_scale,
+                        start_date_type=multi_value_report_cell.average_start_period,
+                        end_date_type=multi_value_report_cell.average_end_period,
+                        exclude_weekdays=exclude_weekdays,
+                    )
                     self._process_aggregations(
                         field=multi_value_report_cell.field,
                         report_builder_class=report_builder_class,
@@ -669,59 +702,29 @@ class MultiValueView(ValueBaseView):
                         decimal_places=multi_value_report_cell.decimal_places,
                         fields=fields,
                         aggregations_type=ANNOTATION_CHOICE_SUM,
+                        divider=divider,
                     )
-            elif multi_value_type == MultiValueReportCell.MultiValueType.AVERAGE_SUM_FROM_COUNT:
-                self._process_aggregations(
-                    field=multi_value_report_cell.field,
-                    report_builder_class=report_builder_class,
-                    base_model=base_model,
-                    decimal_places=multi_value_report_cell.decimal_places,
-                    fields=fields,
-                    aggregations_type=ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT,
-                )
 
-            elif multi_value_type in [
-                MultiValueReportCell.MultiValueType.AVERAGE_SUM_OVER_TIME,
-                MultiValueReportCell.MultiValueType.AVERAGE_SUM_OVER_TIME_EXCLUDING_WEEKENDS,
-            ]:
-                exclude_weekdays = None
-                if multi_value_type == MultiValueReportCell.MultiValueType.AVERAGE_SUM_OVER_TIME_EXCLUDING_WEEKENDS:
-                    exclude_weekdays = [1, 7]
-
-                divider = self.get_period_divider(
-                    annotation_value_choice=multi_value_report_cell.average_scale,
-                    start_date_type=multi_value_report_cell.average_start_period,
-                    end_date_type=multi_value_report_cell.average_end_period,
-                    exclude_weekdays=exclude_weekdays,
-                )
-                self._process_aggregations(
-                    field=multi_value_report_cell.field,
-                    report_builder_class=report_builder_class,
-                    base_model=base_model,
-                    decimal_places=multi_value_report_cell.decimal_places,
-                    fields=fields,
-                    aggregations_type=ANNOTATION_CHOICE_SUM,
-                    divider=divider,
-                )
-
-            elif multi_value_type == MultiValueReportCell.MultiValueType.PERCENT:
-                self._process_percentage(
-                    denominator_field=multi_value_report_cell.field,
-                    numerator_field=multi_value_report_cell.numerator,
-                    report_builder_class=report_builder_class,
-                    decimal_places=multi_value_report_cell.decimal_places,
-                    base_model=base_model,
-                    fields=fields,
-                )
-            elif multi_value_type == MultiValueReportCell.MultiValueType.PERCENT_FROM_COUNT:
-                numerator_filter = self.process_filters(search_filter_data=multi_value_report_cell.extra_query_data)
-                self._process_percentage_from_count(
-                    numerator_filter=numerator_filter,
-                    decimal_places=multi_value_report_cell.decimal_places,
-                    fields=fields,
-                )
-            elif multi_value_type == MultiValueReportCell.MultiValueType.EQUATION:
-                multi_value_report_equations.append((cell_name, multi_value_report_cell))
+                elif multi_value_type == MultiValueReportCell.MultiValueType.PERCENT:
+                    self._process_percentage(
+                        denominator_field=multi_value_report_cell.field,
+                        numerator_field=multi_value_report_cell.numerator,
+                        report_builder_class=report_builder_class,
+                        decimal_places=multi_value_report_cell.decimal_places,
+                        base_model=base_model,
+                        fields=fields,
+                    )
+                elif multi_value_type == MultiValueReportCell.MultiValueType.PERCENT_FROM_COUNT:
+                    numerator_filter = self.process_filters(search_filter_data=multi_value_report_cell.extra_query_data)
+                    self._process_percentage_from_count(
+                        numerator_filter=numerator_filter,
+                        decimal_places=multi_value_report_cell.decimal_places,
+                        fields=fields,
+                    )
+                elif multi_value_type == MultiValueReportCell.MultiValueType.EQUATION:
+                    multi_value_report_equations.append((cell_name, multi_value_report_cell))
+            except ReportError as e:
+                value = e.value
 
             if fields:
                 value, raw_value = self.render_value(
