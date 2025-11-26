@@ -71,16 +71,18 @@ class FilterQueryMixin:
 
     def process_query_filters(self, query, search_filter_data, extra_filter_data=None):
         annotations = {}
-        result = self.process_filters(search_filter_data=search_filter_data,
-                                      annotations=annotations,
-                                      extra_filter_data=extra_filter_data)
+        result = self.process_filters(
+            search_filter_data=search_filter_data, annotations=annotations, extra_filter_data=extra_filter_data
+        )
         if annotations:
             query = query.annotate(**annotations)
         if result:
             return query.filter(result)
         return query
 
-    def process_filters(self, search_filter_data, extra_filter_data=None, annotations=None, extra_filter=None, prefix_field_name=None):
+    def process_filters(
+        self, search_filter_data, extra_filter_data=None, annotations=None, extra_filter=None, prefix_field_name=None
+    ):
         if not search_filter_data and not extra_filter_data:
             return []
 

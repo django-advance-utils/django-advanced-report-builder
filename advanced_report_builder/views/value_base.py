@@ -132,7 +132,8 @@ class ValueBaseView(ChartBaseView):
         return field_name
 
     def _process_percentage(
-        self, denominator_field, numerator_field, base_model, report_builder_class, decimal_places, fields):
+        self, denominator_field, numerator_field, base_model, report_builder_class, decimal_places, fields
+    ):
         if denominator_field is None:
             raise ReportError('denominator field is None')
         if numerator_field is None:
@@ -161,8 +162,9 @@ class ValueBaseView(ChartBaseView):
         numerator_filter = None
         report_query = self.get_report_query(report=self.chart_report)
         if report_query:
-            numerator_filter = self.process_filters(search_filter_data=report_query.extra_query,
-                                                    extra_filter=extra_filter)
+            numerator_filter = self.process_filters(
+                search_filter_data=report_query.extra_query, extra_filter=extra_filter
+            )
 
         self.get_percentage_field(
             fields=fields,
@@ -172,7 +174,6 @@ class ValueBaseView(ChartBaseView):
             denominator_col_type_override=denominator_col_type_override,
             numerator_filter=numerator_filter,
             decimal_places=decimal_places,
-
         )
 
     def _process_percentage_from_count(self, numerator_filter, decimal_places, fields):
