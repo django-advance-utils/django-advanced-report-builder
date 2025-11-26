@@ -725,7 +725,7 @@ class MultiValueView(ValueBaseView):
     def pod_report_menu(self):
         return self.edit_report_menu(request=self.request, chart_report_id=self.chart_report.id)
 
-    def edit_report_menu(self, request, chart_report_id):
+    def edit_report_menu(self, request, chart_report_id, slug_str=None):
         return [
             MenuItem(
                 f'advanced_report_builder:multi_value_modal,pk-{chart_report_id}',
@@ -733,7 +733,7 @@ class MultiValueView(ValueBaseView):
                 font_awesome='fas fa-pencil-alt',
                 css_classes=['btn-primary'],
             ),
-            *self.duplicate_menu(request=self.request, report_id=chart_report_id),
+            *self.duplicate_menu(request=request, report_id=chart_report_id),
         ]
 
     def get_context_data(self, **kwargs):
@@ -741,7 +741,7 @@ class MultiValueView(ValueBaseView):
 
         multi_value_report_cells = MultiValueReportCell.objects.filter(
             multi_value_report=self.chart_report, row__lte=self.chart_report.rows, column__lte=self.chart_report.columns
-        ).order_by('row', 'column')
+        ).select_related('multi_value_held_query').order_by('row', 'column')
 
         table_data = [[None for _ in range(self.chart_report.columns)] for _ in range(self.chart_report.rows)]
         exp = ExpressionBuilder()
@@ -829,7 +829,7 @@ class MultiValueView(ValueBaseView):
                     self._process_percentage_from_count(
                         numerator_filter=numerator_filter,
                         decimal_places=multi_value_report_cell.decimal_places,
-                        fields=fields,
+                        fields=fields
                     )
                 elif multi_value_type == MultiValueReportCell.MultiValueType.EQUATION:
                     multi_value_report_equations.append((cell_name, multi_value_report_cell))
@@ -837,9 +837,13 @@ class MultiValueView(ValueBaseView):
                 value = e.value
 
             if fields:
-                value, raw_value = self.render_value(
-                    base_model=base_model, fields=fields, multi_value_report_cell=multi_value_report_cell
-                )
+                try:
+                    value, raw_value = self.render_value(
+                        base_model=base_model, fields=fields, multi_value_report_cell=multi_value_report_cell
+                    )
+                except (AttributeError, TypeError) as e:
+                    value = e
+                    raw_value = None
                 if raw_value is not None:
                     with contextlib.suppress(ValueError):
                         raw_value = float(raw_value)
@@ -962,8 +966,13 @@ class MultiValueView(ValueBaseView):
 
     def extra_filters(self, query):
         query_data = self.current_multi_value_report_cell.query_data
+        extra_filter_data = None
+        if self.current_multi_value_report_cell.multi_value_held_query is not None:
+            extra_filter_data = self.current_multi_value_report_cell.multi_value_held_query.query
         if query_data:
-            query = self.process_query_filters(query=query, search_filter_data=query_data)
+            query = self.process_query_filters(query=query,
+                                               search_filter_data=query_data,
+                                               extra_filter_data=extra_filter_data)
         return query
 
     def render_value(self, base_model, fields, multi_value_report_cell):

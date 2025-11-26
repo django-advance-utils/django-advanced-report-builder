@@ -370,7 +370,7 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
     def pod_report_menu(self):
         return self.edit_report_menu(request=self.request, chart_report_id=self.chart_report.id)
 
-    def edit_report_menu(self, request, chart_report_id):
+    def edit_report_menu(self, request, chart_report_id, slug_str=None):
         return [
             MenuItem(
                 f'advanced_report_builder:kanban_modal,pk-{chart_report_id}',

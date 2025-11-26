@@ -69,22 +69,37 @@ class FilterQueryMixin:
         self._held_report_query = None
         super().__init__(*args, **kwargs)
 
-    def process_query_filters(self, query, search_filter_data):
+    def process_query_filters(self, query, search_filter_data, extra_filter_data=None):
         annotations = {}
-        result = self.process_filters(search_filter_data=search_filter_data, annotations=annotations)
+        result = self.process_filters(search_filter_data=search_filter_data,
+                                      annotations=annotations,
+                                      extra_filter_data=extra_filter_data)
         if annotations:
             query = query.annotate(**annotations)
         if result:
             return query.filter(result)
         return query
 
-    def process_filters(self, search_filter_data, annotations=None, extra_filter=None, prefix_field_name=None):
-        if not search_filter_data:
+    def process_filters(self, search_filter_data, extra_filter_data=None, annotations=None, extra_filter=None, prefix_field_name=None):
+        if not search_filter_data and not extra_filter_data:
             return []
 
-        query_list = self._process_group(
-            query_data=search_filter_data, prefix_field_name=prefix_field_name, annotations=annotations
-        )
+        query_list = None
+        extra_query_list = None
+        if search_filter_data:
+            query_list = self._process_group(
+                query_data=search_filter_data, prefix_field_name=prefix_field_name, annotations=annotations
+            )
+        if extra_filter_data:
+            extra_query_list = self._process_group(
+                query_data=extra_filter_data, prefix_field_name=prefix_field_name, annotations=annotations
+            )
+
+        if query_list is None:
+            query_list = extra_query_list
+        elif extra_query_list is not None:
+            query_list[0] = extra_query_list[0] & query_list[0]
+
         if extra_filter:
             query_list.append(extra_filter)
 
