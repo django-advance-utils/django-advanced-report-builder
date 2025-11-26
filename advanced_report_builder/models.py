@@ -651,8 +651,7 @@ class MultiValueReportCell(TimeStampedModel):
     average_end_period = models.PositiveSmallIntegerField(blank=True, null=True)
     label = models.CharField(max_length=256, blank=True, null=True)
 
-    multi_value_held_query = models.ForeignKey('MultiValueHeldQuery',
-                                               on_delete=models.SET_NULL, null=True, blank=True)
+    multi_value_held_query = models.ForeignKey('MultiValueHeldQuery', on_delete=models.SET_NULL, null=True, blank=True)
 
     query_data = models.JSONField(null=True, blank=True)
     extra_query_data = models.JSONField(null=True, blank=True)  # used for single value Numerator

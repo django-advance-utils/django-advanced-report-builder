@@ -26,10 +26,11 @@ from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT, ANNOTATION_CHOICE_SUM
 from advanced_report_builder.models import (
     MultiCellStyle,
+    MultiValueHeldQuery,
     MultiValueReport,
     MultiValueReportCell,
     MultiValueReportColumn,
-    ReportType, MultiValueHeldQuery,
+    ReportType,
 )
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import crispy_modal_link_args, excel_column_name, get_report_builder_class
@@ -37,7 +38,7 @@ from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartJSTable
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
 from advanced_report_builder.views.helpers import QueryBuilderModelForm
-from advanced_report_builder.views.modals_base import QueryBuilderModalBase, QueryBuilderModalBaseMixin
+from advanced_report_builder.views.modals_base import QueryBuilderModalBase
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 from advanced_report_builder.views.value_base import ValueBaseView
 from advanced_report_builder.widgets import SmallNumberInputWidget
@@ -68,7 +69,6 @@ class MultiValueModal(ModelFormModal):
                     font_awesome='fas fa-pencil',
                 ),
             ]
-
 
             form.fields['cell_styles'] = CharField(
                 required=False,
@@ -108,7 +108,9 @@ class MultiValueModal(ModelFormModal):
                         '_.index',
                         '.id',
                         ColumnBase(column_name='held_report_name', field='name', title='Name'),
-                        ColumnBase(column_name='held_report_report_name', field='report_type__name', title='Report Type'),
+                        ColumnBase(
+                            column_name='held_report_report_name', field='report_type__name', title='Report Type'
+                        ),
                         MenuColumn(
                             column_name='menu',
                             field='id',
@@ -133,7 +135,6 @@ class MultiValueModal(ModelFormModal):
                     font_awesome='fa fa-plus',
                 ),
                 'cell_styles',
-
                 crispy_modal_link_args(
                     'advanced_report_builder:multi_value_query_modal',
                     'Add Held Query',
@@ -145,7 +146,6 @@ class MultiValueModal(ModelFormModal):
                     font_awesome='fa fa-plus',
                 ),
                 'held_queries',
-
                 crispy_modal_link_args(
                     'advanced_report_builder:multi_value_cells_modal',
                     'Edit Cells',
@@ -156,7 +156,6 @@ class MultiValueModal(ModelFormModal):
                     button_classes='btn btn-primary',
                     font_awesome='fas fa-edit',
                 ),
-
             ]
 
     def form_valid(self, form):
@@ -232,7 +231,6 @@ class MultiValueHeldQueryModal(QueryBuilderModalBase):
             FieldEx('query', template='advanced_report_builder/query_builder.html'),
         ]
         return fields
-
 
     def form_valid(self, form):
         form.save()
@@ -421,7 +419,6 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     },
                     'default': 'show',
                 },
-
             ],
         )
 
@@ -477,8 +474,9 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
         form.fields['multi_value_held_query'].widget = Select2(attrs={'ajax': True})
 
         if self.object.multi_value_held_query is not None:
-            selected_data = [{'id': self.object.multi_value_held_query_id,
-                              'text': self.object.multi_value_held_query.name}]
+            selected_data = [
+                {'id': self.object.multi_value_held_query_id, 'text': self.object.multi_value_held_query.name}
+            ]
             form.fields['multi_value_held_query'].widget.select_data = selected_data
 
         fields = [
@@ -514,8 +512,8 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
         results = []
         if kwargs.get('report_type') != '':
             multi_value_held_queries = MultiValueHeldQuery.objects.filter(
-                report_type_id=kwargs['report_type'],
-                multi_value_report=self.object.multi_value_report)
+                report_type_id=kwargs['report_type'], multi_value_report=self.object.multi_value_report
+            )
             search = kwargs.get('search', '')
             if search != '':
                 multi_value_held_queries = multi_value_held_queries.filter(name__icontains=search)
