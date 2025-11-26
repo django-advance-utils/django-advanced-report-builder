@@ -476,6 +476,64 @@ class KanbanReportDescription(TimeStampedModel):
         ordering = ('order',)
 
 
+class KanbanReportLane(TimeStampedModel):
+    MULTIPLE_TYPE_NA = 0
+    MULTIPLE_TYPE_DAILY = 1
+    MULTIPLE_TYPE_DAILY_WITHIN = 2
+    MULTIPLE_TYPE_WEEKLY = 3
+    MULTIPLE_TYPE_WEEKLY_WITHIN = 4
+    MULTIPLE_TYPE_MONTHLY = 5
+    MULTIPLE_TYPE_MONTHLY_WITHIN = 6
+
+    MULTIPLE_TYPE_CHOICES = [
+        (MULTIPLE_TYPE_NA, 'N/A'),
+        (MULTIPLE_TYPE_DAILY, 'Daily (single date)'),
+        (MULTIPLE_TYPE_DAILY_WITHIN, 'Daily (within two date)'),
+        (MULTIPLE_TYPE_WEEKLY, 'Weekly (single date)'),
+        (MULTIPLE_TYPE_WEEKLY_WITHIN, 'Weekly (within two date)'),
+        (MULTIPLE_TYPE_MONTHLY, 'Monthly (single date)'),
+        (MULTIPLE_TYPE_MONTHLY_WITHIN, 'Monthly (within two date)'),
+    ]
+
+    kanban_report = models.ForeignKey(KanbanReport, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200)
+    order = models.PositiveSmallIntegerField()
+    report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
+    heading_field = models.CharField(max_length=200, blank=True, null=True)
+    link_field = models.CharField(max_length=200, blank=True, null=True)
+    order_by_field = models.CharField(max_length=200, blank=True, null=True)
+    order_by_ascending = models.BooleanField(default=True)
+    kanban_report_description = models.ForeignKey(
+        KanbanReportDescription, null=True, blank=False, on_delete=models.CASCADE
+    )
+
+    multiple_type = models.PositiveIntegerField(choices=MULTIPLE_TYPE_CHOICES, default=MULTIPLE_TYPE_NA)
+    multiple_type_label = models.CharField(max_length=200, blank=True, null=True)
+    multiple_type_date_field = models.CharField(max_length=200, blank=True, null=True)
+    multiple_type_end_date_field = models.CharField(max_length=200, blank=True, null=True)
+
+    # this could be choice field from RANGE_TYPE_CHOICES however if one adds a new one it creates a new migration!
+    multiple_start_period = models.PositiveSmallIntegerField(blank=True, null=True)
+    multiple_end_period = models.PositiveSmallIntegerField(blank=True, null=True)
+    background_colour_field = models.CharField(max_length=200, blank=True, null=True)
+    heading_colour_field = models.CharField(max_length=200, blank=True, null=True)
+
+    query_data = models.JSONField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        self.set_order_field(extra_filters={'kanban_report': self.kanban_report})
+        result = super().save(*args, **kwargs)
+        self.kanban_report._current_user = getattr(self, '_current_user', None)  # this is to update the users
+        self.kanban_report.save()
+        return result
+
+    def get_base_model(self):
+        return self.report_type.content_type.model_class()
+
+    class Meta:
+        ordering = ('order',)
+
+
 class MultiValueReport(Report):
     rows = models.PositiveSmallIntegerField()
     columns = models.PositiveSmallIntegerField()
@@ -521,6 +579,16 @@ class MultiCellStyle(TimeStampedModel):
         if self.background_colour:
             results.append(f'background-color: #{self.background_colour};')
         return ';'.join(results)
+
+
+class MultiValueHeldQuery(TimeStampedModel):
+    multi_value_report = models.ForeignKey(MultiValueReport, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200)
+    report_type = models.ForeignKey(ReportType, null=True, blank=True, on_delete=models.PROTECT)
+    query = models.JSONField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name
 
 
 class MultiValueReportColumn(TimeStampedModel):
@@ -582,6 +650,9 @@ class MultiValueReportCell(TimeStampedModel):
     average_start_period = models.PositiveSmallIntegerField(blank=True, null=True)
     average_end_period = models.PositiveSmallIntegerField(blank=True, null=True)
     label = models.CharField(max_length=256, blank=True, null=True)
+
+    multi_value_held_query = models.ForeignKey('MultiValueHeldQuery',
+                                               on_delete=models.SET_NULL, null=True, blank=True)
 
     query_data = models.JSONField(null=True, blank=True)
     extra_query_data = models.JSONField(null=True, blank=True)  # used for single value Numerator
@@ -703,64 +774,6 @@ class CalendarReportDataSet(TimeStampedModel):
     def save(self, *args, **kwargs):
         self.set_order_field(extra_filters={'calendar_report': self.calendar_report})
         return super().save(*args, **kwargs)
-
-    def get_base_model(self):
-        return self.report_type.content_type.model_class()
-
-    class Meta:
-        ordering = ('order',)
-
-
-class KanbanReportLane(TimeStampedModel):
-    MULTIPLE_TYPE_NA = 0
-    MULTIPLE_TYPE_DAILY = 1
-    MULTIPLE_TYPE_DAILY_WITHIN = 2
-    MULTIPLE_TYPE_WEEKLY = 3
-    MULTIPLE_TYPE_WEEKLY_WITHIN = 4
-    MULTIPLE_TYPE_MONTHLY = 5
-    MULTIPLE_TYPE_MONTHLY_WITHIN = 6
-
-    MULTIPLE_TYPE_CHOICES = [
-        (MULTIPLE_TYPE_NA, 'N/A'),
-        (MULTIPLE_TYPE_DAILY, 'Daily (single date)'),
-        (MULTIPLE_TYPE_DAILY_WITHIN, 'Daily (within two date)'),
-        (MULTIPLE_TYPE_WEEKLY, 'Weekly (single date)'),
-        (MULTIPLE_TYPE_WEEKLY_WITHIN, 'Weekly (within two date)'),
-        (MULTIPLE_TYPE_MONTHLY, 'Monthly (single date)'),
-        (MULTIPLE_TYPE_MONTHLY_WITHIN, 'Monthly (within two date)'),
-    ]
-
-    kanban_report = models.ForeignKey(KanbanReport, on_delete=models.CASCADE)
-    name = models.CharField(max_length=200)
-    order = models.PositiveSmallIntegerField()
-    report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
-    heading_field = models.CharField(max_length=200, blank=True, null=True)
-    link_field = models.CharField(max_length=200, blank=True, null=True)
-    order_by_field = models.CharField(max_length=200, blank=True, null=True)
-    order_by_ascending = models.BooleanField(default=True)
-    kanban_report_description = models.ForeignKey(
-        KanbanReportDescription, null=True, blank=False, on_delete=models.CASCADE
-    )
-
-    multiple_type = models.PositiveIntegerField(choices=MULTIPLE_TYPE_CHOICES, default=MULTIPLE_TYPE_NA)
-    multiple_type_label = models.CharField(max_length=200, blank=True, null=True)
-    multiple_type_date_field = models.CharField(max_length=200, blank=True, null=True)
-    multiple_type_end_date_field = models.CharField(max_length=200, blank=True, null=True)
-
-    # this could be choice field from RANGE_TYPE_CHOICES however if one adds a new one it creates a new migration!
-    multiple_start_period = models.PositiveSmallIntegerField(blank=True, null=True)
-    multiple_end_period = models.PositiveSmallIntegerField(blank=True, null=True)
-    background_colour_field = models.CharField(max_length=200, blank=True, null=True)
-    heading_colour_field = models.CharField(max_length=200, blank=True, null=True)
-
-    query_data = models.JSONField(null=True, blank=True)
-
-    def save(self, *args, **kwargs):
-        self.set_order_field(extra_filters={'kanban_report': self.kanban_report})
-        result = super().save(*args, **kwargs)
-        self.kanban_report._current_user = getattr(self, '_current_user', None)  # this is to update the users
-        self.kanban_report.save()
-        return result
 
     def get_base_model(self):
         return self.report_type.content_type.model_class()

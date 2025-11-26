@@ -4,6 +4,7 @@ import json
 from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist, FieldError
 from django.forms import CharField, ChoiceField, ModelChoiceField
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_datatables.columns import ColumnBase, MenuColumn
@@ -28,7 +29,7 @@ from advanced_report_builder.models import (
     MultiValueReport,
     MultiValueReportCell,
     MultiValueReportColumn,
-    ReportType,
+    ReportType, MultiValueHeldQuery,
 )
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import crispy_modal_link_args, excel_column_name, get_report_builder_class
@@ -36,7 +37,7 @@ from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartJSTable
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
 from advanced_report_builder.views.helpers import QueryBuilderModelForm
-from advanced_report_builder.views.modals_base import QueryBuilderModalBase
+from advanced_report_builder.views.modals_base import QueryBuilderModalBase, QueryBuilderModalBaseMixin
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 from advanced_report_builder.views.value_base import ValueBaseView
 from advanced_report_builder.widgets import SmallNumberInputWidget
@@ -68,6 +69,7 @@ class MultiValueModal(ModelFormModal):
                 ),
             ]
 
+
             form.fields['cell_styles'] = CharField(
                 required=False,
                 label='Cell Styles',
@@ -87,6 +89,37 @@ class MultiValueModal(ModelFormModal):
                     attrs={'filter': {'multi_value_report__id': self.object.id}},
                 ),
             )
+
+            query_menu_items = [
+                MenuItem(
+                    f'advanced_report_builder:multi_value_query_modal,pk-{DUMMY_ID}',
+                    menu_display='Edit',
+                    css_classes='btn btn-sm btn-outline-dark',
+                    font_awesome='fas fa-pencil',
+                ),
+            ]
+
+            form.fields['held_queries'] = CharField(
+                required=False,
+                label='Held Queries',
+                widget=DataTableWidget(
+                    model=MultiValueHeldQuery,
+                    fields=[
+                        '_.index',
+                        '.id',
+                        ColumnBase(column_name='held_report_name', field='name', title='Name'),
+                        ColumnBase(column_name='held_report_report_name', field='report_type__name', title='Report Type'),
+                        MenuColumn(
+                            column_name='menu',
+                            field='id',
+                            column_defs={'orderable': False, 'className': 'dt-right'},
+                            menu=HtmlMenu(self.request, 'button_group').add_items(*query_menu_items),
+                        ),
+                    ],
+                    attrs={'filter': {'multi_value_report__id': self.object.id}},
+                ),
+            )
+
             return [
                 *self.form_fields,
                 crispy_modal_link_args(
@@ -100,6 +133,19 @@ class MultiValueModal(ModelFormModal):
                     font_awesome='fa fa-plus',
                 ),
                 'cell_styles',
+
+                crispy_modal_link_args(
+                    'advanced_report_builder:multi_value_query_modal',
+                    'Add Held Query',
+                    'multi_value_report_id-',
+                    self.object.id,
+                    div=True,
+                    div_classes='form-buttons',
+                    button_classes='btn btn-primary',
+                    font_awesome='fa fa-plus',
+                ),
+                'held_queries',
+
                 crispy_modal_link_args(
                     'advanced_report_builder:multi_value_cells_modal',
                     'Edit Cells',
@@ -110,6 +156,7 @@ class MultiValueModal(ModelFormModal):
                     button_classes='btn btn-primary',
                     font_awesome='fas fa-edit',
                 ),
+
             ]
 
     def form_valid(self, form):
@@ -164,6 +211,34 @@ class MultiValueReportColumnModal(ModelFormModal):
     form_fields = ['width', 'width_type']
 
 
+class MultiValueHeldQueryForm(QueryBuilderModelForm):
+    cancel_class = 'btn-secondary modal-cancel'
+
+    class Meta:
+        model = MultiValueHeldQuery
+        fields = ['name', 'query', 'report_type']
+
+
+class MultiValueHeldQueryModal(QueryBuilderModalBase):
+    process = PROCESS_EDIT_DELETE
+    permission_delete = PERMISSION_OFF
+    form_class = MultiValueHeldQueryForm
+    template_name = 'advanced_report_builder/multi_values/held_modal.html'
+
+    def form_setup(self, form, *_args, **_kwargs):
+        fields = [
+            'name',
+            'report_type',
+            FieldEx('query', template='advanced_report_builder/query_builder.html'),
+        ]
+        return fields
+
+
+    def form_valid(self, form):
+        form.save()
+        return self.command_response('reload')
+
+
 class MultiValueReportCellForm(QueryBuilderModelForm):
     cancel_class = 'btn-secondary modal-cancel'
 
@@ -183,6 +258,7 @@ class MultiValueReportCellForm(QueryBuilderModelForm):
             'numerator',
             'prefix',
             'decimal_places',
+            'multi_value_held_query',
             'show_breakdown',
             'breakdown_fields',
             'average_scale',
@@ -337,6 +413,15 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     },
                     'default': 'hide',
                 },
+                {
+                    'selector': '#div_id_multi_value_held_query',
+                    'values': {
+                        MultiValueReportCell.MultiValueType.STATIC_TEXT: 'hide',
+                        MultiValueReportCell.MultiValueType.EQUATION: 'hide',
+                    },
+                    'default': 'show',
+                },
+
             ],
         )
 
@@ -389,6 +474,13 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
         form.fields['average_start_period'] = ChoiceField(required=False, choices=range_type_choices)
         form.fields['average_end_period'] = ChoiceField(required=False, choices=range_type_choices)
 
+        form.fields['multi_value_held_query'].widget = Select2(attrs={'ajax': True})
+
+        if self.object.multi_value_held_query is not None:
+            selected_data = [{'id': self.object.multi_value_held_query_id,
+                              'text': self.object.multi_value_held_query.name}]
+            form.fields['multi_value_held_query'].widget.select_data = selected_data
+
         fields = [
             'multi_value_type',
             'text',
@@ -403,6 +495,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
             'numerator',
             'prefix',
             'decimal_places',
+            'multi_value_held_query',
             'show_breakdown',
             'average_scale',
             'average_start_period',
@@ -416,6 +509,20 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
             FieldEx('extra_query_data', template='advanced_report_builder/query_builder.html'),
         ]
         return fields
+
+    def select2_multi_value_held_query(self, **kwargs):
+        results = []
+        if kwargs.get('report_type') != '':
+            multi_value_held_queries = MultiValueHeldQuery.objects.filter(
+                report_type_id=kwargs['report_type'],
+                multi_value_report=self.object.multi_value_report)
+            search = kwargs.get('search', '')
+            if search != '':
+                multi_value_held_queries = multi_value_held_queries.filter(name__icontains=search)
+            for multi_value_held_query in multi_value_held_queries:
+                results.append({'id': multi_value_held_query.id, 'text': multi_value_held_query.name})
+
+        return JsonResponse({'results': results})
 
     def select2_field(self, **kwargs):
         return self.get_fields_for_select2(

@@ -45,7 +45,7 @@ from advanced_report_builder.views.multi_value import (
     MultiValueReportCellModal,
     MultiValueReportCellsModal,
     MultiValueReportColumnModal,
-    MultiValueShowBreakdownModal,
+    MultiValueShowBreakdownModal, MultiValueHeldQueryModal,
 )
 from advanced_report_builder.views.pie_charts import PieChartFieldModal, PieChartModal
 from advanced_report_builder.views.query_modal.modal import QueryModal, QueryOrderModal
@@ -149,9 +149,8 @@ urlpatterns = [
     ),
     path('multi-value/cell/modal/<str:slug>/', MultiValueReportCellModal.as_view(), name='multi_value_cell_modal'),
     path('multi-value/cells/modal/<str:slug>/', MultiValueReportCellsModal.as_view(), name='multi_value_cells_modal'),
-    path(
-        'multi-value/column/modal/<str:slug>/', MultiValueReportColumnModal.as_view(), name='multi_value_column_modal'
-    ),
+    path('multi-value/column/modal/<str:slug>/', MultiValueReportColumnModal.as_view(), name='multi_value_column_modal'),
+    path('multi-value/query/modal/<str:slug>/', MultiValueHeldQueryModal.as_view(), name='multi_value_query_modal'),
     path(
         'multi-value/breakdown/modal/<str:slug>/',
         MultiValueShowBreakdownModal.as_view(),
