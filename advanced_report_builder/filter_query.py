@@ -99,9 +99,11 @@ class FilterQueryMixin:
                 query_data=extra_filter_data, prefix_field_name=prefix_field_name, annotations=annotations
             )
 
-        if query_list is None:
+        if query_list is None or len(query_list) == 0:
             query_list = extra_query_list
-        elif extra_query_list is not None:
+        elif (extra_query_list is not None
+              and len(query_list) > 0
+              and len(extra_query_list) > 0):
             query_list[0] = extra_query_list[0] & query_list[0]
 
         if extra_filter:
