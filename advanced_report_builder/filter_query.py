@@ -88,10 +88,12 @@ class FilterQueryMixin:
 
         query_list = None
         extra_query_list = None
+        reduce_by = operator.and_
         if search_filter_data:
             query_list = self._process_group(
                 query_data=search_filter_data, prefix_field_name=prefix_field_name, annotations=annotations
             )
+            reduce_by = self._format_group_conditions(display_condition=search_filter_data['condition'])
         if extra_filter_data:
             extra_query_list = self._process_group(
                 query_data=extra_filter_data, prefix_field_name=prefix_field_name, annotations=annotations
@@ -104,8 +106,6 @@ class FilterQueryMixin:
 
         if extra_filter:
             query_list.append(extra_filter)
-
-        reduce_by = self._format_group_conditions(display_condition=search_filter_data['condition'])
 
         if query_list:
             return reduce(reduce_by, query_list)
