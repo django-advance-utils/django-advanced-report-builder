@@ -47,6 +47,7 @@ from advanced_report_builder.views.multi_value import (
     MultiValueReportCellsModal,
     MultiValueReportColumnModal,
     MultiValueShowBreakdownModal,
+    MultiValueCellCopyFromModal,
 )
 from advanced_report_builder.views.pie_charts import PieChartFieldModal, PieChartModal
 from advanced_report_builder.views.query_modal.modal import QueryModal, QueryOrderModal
@@ -159,6 +160,13 @@ urlpatterns = [
         MultiValueShowBreakdownModal.as_view(),
         name='multi_value_breakdown_modal',
     ),
+
+    path(
+        'multi-value/cell/duplicate/modal/<str:slug>/',
+        MultiValueCellCopyFromModal.as_view(),
+        name='multi_value_cell_copy_from_modal',
+    ),
+
     path('kanban/modal/<str:slug>/', KanbanModal.as_view(), name='kanban_modal'),
     path(
         'kanban/modal/lane/<str:slug>/',

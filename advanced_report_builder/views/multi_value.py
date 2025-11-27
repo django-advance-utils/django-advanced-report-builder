@@ -3,7 +3,7 @@ import json
 
 from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist, FieldError
-from django.forms import CharField, ChoiceField, ModelChoiceField
+from django.forms import CharField, ChoiceField, ModelChoiceField, HiddenInput
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -13,8 +13,9 @@ from django_datatables.helpers import DUMMY_ID
 from django_datatables.widgets import DataTableWidget
 from django_menus.menu import HtmlMenu, MenuItem
 from django_modals.fields import FieldEx
+from django_modals.forms import CrispyForm
 from django_modals.helper import show_modal
-from django_modals.modals import Modal, ModelFormModal
+from django_modals.modals import Modal, ModelFormModal, FormModal
 from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
 from django_modals.widgets.select2 import Select2, Select2Multiple
 from django_modals.widgets.widgets import Toggle
@@ -599,15 +600,34 @@ class MultiValueReportCellsModal(Modal):
             html += f'<tr><td>{row_index}</td>'
             for cols_index, cell in enumerate(row, start=1):
                 if cell is None:
-                    link = show_modal(
+                    add_link = show_modal(
                         'advanced_report_builder:multi_value_cell_modal',
                         '',
                         f'multi_value_report_id-{multi_value_report.id}-row-{row_index}-column-{cols_index}',
                         href=True,
                     )
+                    copy_from_link = show_modal(
+                        'advanced_report_builder:multi_value_cell_copy_from_modal',
+                        '',
+                        f'pk-{multi_value_report.id}-row-{row_index}-column-{cols_index}',
+                        href=True,
+                    )
+
                     html += (
-                        f'<td><div class="d-flex align-items-center">'
-                        f'<a href="{link}" class="ml-auto"><i class="fas fa-plus ml-auto"></i></a></div></td>'
+                        f'''
+                            <td>
+                              <div class="d-flex align-items-center">
+                                <div class="ml-auto btn-group" role="group">
+                                  <a href="{add_link}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-plus"></i>
+                                  </a>
+                                  <a href="{copy_from_link}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-file-import"></i>
+                                  </a>
+                                </div>
+                              </div>
+                            </td>
+                            '''
                     )
                 elif cell['value'] is not None:
                     attrs = []
@@ -635,10 +655,18 @@ class MultiValueReportCellsModal(Modal):
                         attrs_html = ' ' + ' '.join(attrs)
 
                     html += (
-                        f'<td{attrs_html}><div class="d-flex align-items-center">'
-                        f'{value}'
-                        f'<a href="{link}" class="ml-auto"><i class="fas fa-edit"></i></a>'
-                        f'</div></td>'
+                        f'''
+                        <td{attrs_html}>
+                          <div class="d-flex align-items-center">
+                            {value}
+                            <div class="ml-auto btn-group" role="group">
+                              <a href="{link}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-edit"></i>
+                              </a>
+                            </div>
+                          </div>
+                        </td>
+                        '''
                     )
             html += '</tr>'
 
@@ -1056,3 +1084,37 @@ class MultiValueShowBreakdownModal(TableUtilsMixin, Modal):
 
     def get_report_query(self, report):
         return self.get_multi_value_report_cell()
+
+
+class MultiValueCellCopyFromModal(FormModal):
+    form_class = CrispyForm
+    modal_title = 'Copy Cell From'
+
+    def __init__(self, *args, **kwargs):
+        self._held_multi_value_report = None
+        super().__init__(*args, **kwargs)
+
+    def get_multi_value_report(self):
+        if self._held_multi_value_report is None:
+            self._held_multi_value_report = get_object_or_404(MultiValueReport, pk=self.slug['pk'])
+        return self._held_multi_value_report
+
+    def form_setup(self, form, *_args, **_kwargs):
+        multi_value_report = self.get_multi_value_report()
+        multi_value_report_cells = MultiValueReportCell.objects.filter(
+            multi_value_report=multi_value_report)
+        form.fields['copy_from'] = ModelChoiceField(queryset=multi_value_report_cells, widget=Select2())
+        form.fields['copy_from'].label_from_instance = self.label_from_instance
+
+    @staticmethod
+    def label_from_instance(obj):
+        return excel_column_name(obj.column,  row=obj.row)
+
+    def form_valid(self, form):
+        multi_value_report_cell = form.cleaned_data['copy_from']
+        multi_value_report_cell.pk = None
+        multi_value_report_cell.id = None
+        multi_value_report_cell.row = int(self.slug['row'])
+        multi_value_report_cell.column = int(self.slug['column'])
+        multi_value_report_cell.save()
+        return self.command_response('reload')
