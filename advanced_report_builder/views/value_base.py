@@ -162,9 +162,7 @@ class ValueBaseView(ChartBaseView):
         numerator_filter = None
         report_query = self.get_report_query(report=self.chart_report)
         if report_query:
-            numerator_filter = self.process_filters(
-                search_filter_data=report_query.extra_query
-            )
+            numerator_filter = self.process_filters(search_filter_data=report_query.extra_query)
 
         self.get_percentage_field(
             fields=fields,
