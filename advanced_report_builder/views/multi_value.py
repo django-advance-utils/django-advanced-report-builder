@@ -3,7 +3,7 @@ import json
 
 from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist, FieldError
-from django.forms import CharField, ChoiceField, ModelChoiceField, HiddenInput
+from django.forms import CharField, ChoiceField, ModelChoiceField
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -15,7 +15,7 @@ from django_menus.menu import HtmlMenu, MenuItem
 from django_modals.fields import FieldEx
 from django_modals.forms import CrispyForm
 from django_modals.helper import show_modal
-from django_modals.modals import Modal, ModelFormModal, FormModal
+from django_modals.modals import FormModal, Modal, ModelFormModal
 from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
 from django_modals.widgets.select2 import Select2, Select2Multiple
 from django_modals.widgets.widgets import Toggle
@@ -613,8 +613,7 @@ class MultiValueReportCellsModal(Modal):
                         href=True,
                     )
 
-                    html += (
-                        f'''
+                    html += f'''
                             <td>
                               <div class="d-flex align-items-center">
                                 <div class="ml-auto btn-group" role="group">
@@ -628,7 +627,6 @@ class MultiValueReportCellsModal(Modal):
                               </div>
                             </td>
                             '''
-                    )
                 elif cell['value'] is not None:
                     attrs = []
                     multi_value_report_cell = cell['cell']
@@ -654,8 +652,7 @@ class MultiValueReportCellsModal(Modal):
                     if len(attrs) > 0:
                         attrs_html = ' ' + ' '.join(attrs)
 
-                    html += (
-                        f'''
+                    html += f'''
                         <td{attrs_html}>
                           <div class="d-flex align-items-center">
                             {value}
@@ -667,7 +664,6 @@ class MultiValueReportCellsModal(Modal):
                           </div>
                         </td>
                         '''
-                    )
             html += '</tr>'
 
         html += '</table>'
@@ -1101,14 +1097,13 @@ class MultiValueCellCopyFromModal(FormModal):
 
     def form_setup(self, form, *_args, **_kwargs):
         multi_value_report = self.get_multi_value_report()
-        multi_value_report_cells = MultiValueReportCell.objects.filter(
-            multi_value_report=multi_value_report)
+        multi_value_report_cells = MultiValueReportCell.objects.filter(multi_value_report=multi_value_report)
         form.fields['copy_from'] = ModelChoiceField(queryset=multi_value_report_cells, widget=Select2())
         form.fields['copy_from'].label_from_instance = self.label_from_instance
 
     @staticmethod
     def label_from_instance(obj):
-        return excel_column_name(obj.column,  row=obj.row)
+        return excel_column_name(obj.column, row=obj.row)
 
     def form_valid(self, form):
         multi_value_report_cell = form.cleaned_data['copy_from']
