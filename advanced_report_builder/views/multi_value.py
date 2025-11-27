@@ -1,5 +1,6 @@
 import contextlib
 import json
+from copy import deepcopy
 
 from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist, FieldError
@@ -1111,7 +1112,8 @@ class MultiValueCellCopyFromModal(FormModal):
         return excel_column_name(obj.column,  row=obj.row)
 
     def form_valid(self, form):
-        multi_value_report_cell = form.cleaned_data['copy_from']
+        original_cell = form.cleaned_data['copy_from']
+        multi_value_report_cell = deepcopy(original_cell)
         multi_value_report_cell.pk = None
         multi_value_report_cell.id = None
         multi_value_report_cell.row = int(self.slug['row'])
