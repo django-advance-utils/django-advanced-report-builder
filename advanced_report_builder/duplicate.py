@@ -151,7 +151,7 @@ class DuplicateReport:
             new_multi_value_report_column.multi_cell_style = multi_cell_styles_map[new_multi_cell_style_id]
             if multi_value_report_cell.multi_value_held_query is not None:
                 multi_value_held_query_id = multi_value_report_cell.multi_value_held_query_id
-                multi_value_report_cell.multi_value_held_query = multi_value_helds_map[multi_value_held_query_id]
+                new_multi_value_report_column.multi_value_held_query = multi_value_helds_map[multi_value_held_query_id]
 
             new_multi_value_report_column.save()
 
