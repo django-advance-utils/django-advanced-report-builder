@@ -131,15 +131,29 @@ class DuplicateReport:
             new_multi_cell_style.save()
             multi_cell_styles_map[multi_cell_style.id] = new_multi_cell_style
 
+        multi_value_held_queries = multi_value_report.multivalueheldquery_set.all()
+        multi_value_helds_map = {}
+        for multi_value_held_query in multi_value_held_queries:
+            new_multi_value_held_query = deepcopy(multi_value_held_query)
+            new_multi_value_held_query.id = None
+            new_multi_value_held_query.pk = None
+            new_multi_value_held_query.multi_value_report = new_multi_value_report
+            new_multi_value_held_query.save()
+            multi_value_helds_map[multi_value_held_query.id] = new_multi_value_held_query
+
         multi_value_report_cells = multi_value_report.multivaluereportcell_set.all()
         for multi_value_report_cell in multi_value_report_cells:
-            new_multi_value_report_column = deepcopy(multi_value_report_cell)
-            new_multi_value_report_column.id = None
-            new_multi_value_report_column.pk = None
-            new_multi_value_report_column.multi_value_report = new_multi_value_report
+            new_multi_value_report_cell = deepcopy(multi_value_report_cell)
+            new_multi_value_report_cell.id = None
+            new_multi_value_report_cell.pk = None
+            new_multi_value_report_cell.multi_value_report = new_multi_value_report
             new_multi_cell_style_id = multi_value_report_cell.multi_cell_style_id
-            new_multi_value_report_column.multi_cell_style = multi_cell_styles_map[new_multi_cell_style_id]
-            new_multi_value_report_column.save()
+            new_multi_value_report_cell.multi_cell_style = multi_cell_styles_map[new_multi_cell_style_id]
+            if multi_value_report_cell.multi_value_held_query is not None:
+                multi_value_held_query_id = multi_value_report_cell.multi_value_held_query_id
+                new_multi_value_report_cell.multi_value_held_query = multi_value_helds_map[multi_value_held_query_id]
+
+            new_multi_value_report_cell.save()
 
         multi_value_report_columns = multi_value_report.multivaluereportcolumn_set.all()
         for multi_value_report_column in multi_value_report_columns:
@@ -148,6 +162,7 @@ class DuplicateReport:
             new_multi_value_report_column.pk = None
             new_multi_value_report_column.multi_value_report = new_multi_value_report
             new_multi_value_report_column.save()
+
         return new_multi_value_report
 
     def _duplicate_custom_report(self, report_id):

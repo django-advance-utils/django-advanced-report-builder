@@ -1,9 +1,11 @@
 import contextlib
 import json
+from copy import deepcopy
 
 from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist, FieldError
 from django.forms import CharField, ChoiceField, ModelChoiceField
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_datatables.columns import ColumnBase, MenuColumn
@@ -12,8 +14,9 @@ from django_datatables.helpers import DUMMY_ID
 from django_datatables.widgets import DataTableWidget
 from django_menus.menu import HtmlMenu, MenuItem
 from django_modals.fields import FieldEx
+from django_modals.forms import CrispyForm
 from django_modals.helper import show_modal
-from django_modals.modals import Modal, ModelFormModal
+from django_modals.modals import FormModal, Modal, ModelFormModal
 from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
 from django_modals.widgets.select2 import Select2, Select2Multiple
 from django_modals.widgets.widgets import Toggle
@@ -25,6 +28,7 @@ from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT, ANNOTATION_CHOICE_SUM
 from advanced_report_builder.models import (
     MultiCellStyle,
+    MultiValueHeldQuery,
     MultiValueReport,
     MultiValueReportCell,
     MultiValueReportColumn,
@@ -87,6 +91,39 @@ class MultiValueModal(ModelFormModal):
                     attrs={'filter': {'multi_value_report__id': self.object.id}},
                 ),
             )
+
+            query_menu_items = [
+                MenuItem(
+                    f'advanced_report_builder:multi_value_query_modal,pk-{DUMMY_ID}',
+                    menu_display='Edit',
+                    css_classes='btn btn-sm btn-outline-dark',
+                    font_awesome='fas fa-pencil',
+                ),
+            ]
+
+            form.fields['held_queries'] = CharField(
+                required=False,
+                label='Held Queries',
+                widget=DataTableWidget(
+                    model=MultiValueHeldQuery,
+                    fields=[
+                        '_.index',
+                        '.id',
+                        ColumnBase(column_name='held_report_name', field='name', title='Name'),
+                        ColumnBase(
+                            column_name='held_report_report_name', field='report_type__name', title='Report Type'
+                        ),
+                        MenuColumn(
+                            column_name='menu',
+                            field='id',
+                            column_defs={'orderable': False, 'className': 'dt-right'},
+                            menu=HtmlMenu(self.request, 'button_group').add_items(*query_menu_items),
+                        ),
+                    ],
+                    attrs={'filter': {'multi_value_report__id': self.object.id}},
+                ),
+            )
+
             return [
                 *self.form_fields,
                 crispy_modal_link_args(
@@ -100,6 +137,17 @@ class MultiValueModal(ModelFormModal):
                     font_awesome='fa fa-plus',
                 ),
                 'cell_styles',
+                crispy_modal_link_args(
+                    'advanced_report_builder:multi_value_query_modal',
+                    'Add Held Query',
+                    'multi_value_report_id-',
+                    self.object.id,
+                    div=True,
+                    div_classes='form-buttons',
+                    button_classes='btn btn-primary',
+                    font_awesome='fa fa-plus',
+                ),
+                'held_queries',
                 crispy_modal_link_args(
                     'advanced_report_builder:multi_value_cells_modal',
                     'Edit Cells',
@@ -164,6 +212,33 @@ class MultiValueReportColumnModal(ModelFormModal):
     form_fields = ['width', 'width_type']
 
 
+class MultiValueHeldQueryForm(QueryBuilderModelForm):
+    cancel_class = 'btn-secondary modal-cancel'
+
+    class Meta:
+        model = MultiValueHeldQuery
+        fields = ['name', 'query', 'report_type']
+
+
+class MultiValueHeldQueryModal(QueryBuilderModalBase):
+    process = PROCESS_EDIT_DELETE
+    permission_delete = PERMISSION_OFF
+    form_class = MultiValueHeldQueryForm
+    template_name = 'advanced_report_builder/multi_values/held_modal.html'
+
+    def form_setup(self, form, *_args, **_kwargs):
+        fields = [
+            'name',
+            'report_type',
+            FieldEx('query', template='advanced_report_builder/query_builder.html'),
+        ]
+        return fields
+
+    def form_valid(self, form):
+        form.save()
+        return self.command_response('reload')
+
+
 class MultiValueReportCellForm(QueryBuilderModelForm):
     cancel_class = 'btn-secondary modal-cancel'
 
@@ -183,6 +258,7 @@ class MultiValueReportCellForm(QueryBuilderModelForm):
             'numerator',
             'prefix',
             'decimal_places',
+            'multi_value_held_query',
             'show_breakdown',
             'breakdown_fields',
             'average_scale',
@@ -337,6 +413,14 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     },
                     'default': 'hide',
                 },
+                {
+                    'selector': '#div_id_multi_value_held_query',
+                    'values': {
+                        MultiValueReportCell.MultiValueType.STATIC_TEXT: 'hide',
+                        MultiValueReportCell.MultiValueType.EQUATION: 'hide',
+                    },
+                    'default': 'show',
+                },
             ],
         )
 
@@ -389,6 +473,14 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
         form.fields['average_start_period'] = ChoiceField(required=False, choices=range_type_choices)
         form.fields['average_end_period'] = ChoiceField(required=False, choices=range_type_choices)
 
+        form.fields['multi_value_held_query'].widget = Select2(attrs={'ajax': True})
+
+        if self.object.multi_value_held_query is not None:
+            selected_data = [
+                {'id': self.object.multi_value_held_query_id, 'text': self.object.multi_value_held_query.name}
+            ]
+            form.fields['multi_value_held_query'].widget.select_data = selected_data
+
         fields = [
             'multi_value_type',
             'text',
@@ -403,6 +495,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
             'numerator',
             'prefix',
             'decimal_places',
+            'multi_value_held_query',
             'show_breakdown',
             'average_scale',
             'average_start_period',
@@ -416,6 +509,20 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
             FieldEx('extra_query_data', template='advanced_report_builder/query_builder.html'),
         ]
         return fields
+
+    def select2_multi_value_held_query(self, **kwargs):
+        results = []
+        if kwargs.get('report_type') != '':
+            multi_value_held_queries = MultiValueHeldQuery.objects.filter(
+                report_type_id=kwargs['report_type'], multi_value_report=self.object.multi_value_report
+            )
+            search = kwargs.get('search', '')
+            if search != '':
+                multi_value_held_queries = multi_value_held_queries.filter(name__icontains=search)
+            for multi_value_held_query in multi_value_held_queries:
+                results.append({'id': multi_value_held_query.id, 'text': multi_value_held_query.name})
+
+        return JsonResponse({'results': results})
 
     def select2_field(self, **kwargs):
         return self.get_fields_for_select2(
@@ -494,16 +601,33 @@ class MultiValueReportCellsModal(Modal):
             html += f'<tr><td>{row_index}</td>'
             for cols_index, cell in enumerate(row, start=1):
                 if cell is None:
-                    link = show_modal(
+                    add_link = show_modal(
                         'advanced_report_builder:multi_value_cell_modal',
                         '',
                         f'multi_value_report_id-{multi_value_report.id}-row-{row_index}-column-{cols_index}',
                         href=True,
                     )
-                    html += (
-                        f'<td><div class="d-flex align-items-center">'
-                        f'<a href="{link}" class="ml-auto"><i class="fas fa-plus ml-auto"></i></a></div></td>'
+                    copy_from_link = show_modal(
+                        'advanced_report_builder:multi_value_cell_copy_from_modal',
+                        '',
+                        f'pk-{multi_value_report.id}-row-{row_index}-column-{cols_index}',
+                        href=True,
                     )
+
+                    html += f'''
+                            <td>
+                              <div class="d-flex align-items-center">
+                                <div class="ml-auto btn-group" role="group">
+                                  <a href="{add_link}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-plus"></i>
+                                  </a>
+                                  <a href="{copy_from_link}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-file-import"></i>
+                                  </a>
+                                </div>
+                              </div>
+                            </td>
+                            '''
                 elif cell['value'] is not None:
                     attrs = []
                     multi_value_report_cell = cell['cell']
@@ -529,12 +653,18 @@ class MultiValueReportCellsModal(Modal):
                     if len(attrs) > 0:
                         attrs_html = ' ' + ' '.join(attrs)
 
-                    html += (
-                        f'<td{attrs_html}><div class="d-flex align-items-center">'
-                        f'{value}'
-                        f'<a href="{link}" class="ml-auto"><i class="fas fa-edit"></i></a>'
-                        f'</div></td>'
-                    )
+                    html += f'''
+                        <td{attrs_html}>
+                          <div class="d-flex align-items-center">
+                            {value}
+                            <div class="ml-auto btn-group" role="group">
+                              <a href="{link}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-edit"></i>
+                              </a>
+                            </div>
+                          </div>
+                        </td>
+                        '''
             html += '</tr>'
 
         html += '</table>'
@@ -618,7 +748,7 @@ class MultiValueView(ValueBaseView):
     def pod_report_menu(self):
         return self.edit_report_menu(request=self.request, chart_report_id=self.chart_report.id)
 
-    def edit_report_menu(self, request, chart_report_id):
+    def edit_report_menu(self, request, chart_report_id, slug_str=None):
         return [
             MenuItem(
                 f'advanced_report_builder:multi_value_modal,pk-{chart_report_id}',
@@ -626,15 +756,21 @@ class MultiValueView(ValueBaseView):
                 font_awesome='fas fa-pencil-alt',
                 css_classes=['btn-primary'],
             ),
-            *self.duplicate_menu(request=self.request, report_id=chart_report_id),
+            *self.duplicate_menu(request=request, report_id=chart_report_id),
         ]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs) if hasattr(super(), 'get_context_data') else {}
 
-        multi_value_report_cells = MultiValueReportCell.objects.filter(
-            multi_value_report=self.chart_report, row__lte=self.chart_report.rows, column__lte=self.chart_report.columns
-        ).order_by('row', 'column')
+        multi_value_report_cells = (
+            MultiValueReportCell.objects.filter(
+                multi_value_report=self.chart_report,
+                row__lte=self.chart_report.rows,
+                column__lte=self.chart_report.columns,
+            )
+            .select_related('multi_value_held_query')
+            .order_by('row', 'column')
+        )
 
         table_data = [[None for _ in range(self.chart_report.columns)] for _ in range(self.chart_report.rows)]
         exp = ExpressionBuilder()
@@ -730,9 +866,13 @@ class MultiValueView(ValueBaseView):
                 value = e.value
 
             if fields:
-                value, raw_value = self.render_value(
-                    base_model=base_model, fields=fields, multi_value_report_cell=multi_value_report_cell
-                )
+                try:
+                    value, raw_value = self.render_value(
+                        base_model=base_model, fields=fields, multi_value_report_cell=multi_value_report_cell
+                    )
+                except (AttributeError, TypeError) as e:
+                    value = e
+                    raw_value = None
                 if raw_value is not None:
                     with contextlib.suppress(ValueError):
                         raw_value = float(raw_value)
@@ -855,8 +995,13 @@ class MultiValueView(ValueBaseView):
 
     def extra_filters(self, query):
         query_data = self.current_multi_value_report_cell.query_data
+        extra_filter_data = None
+        if self.current_multi_value_report_cell.multi_value_held_query is not None:
+            extra_filter_data = self.current_multi_value_report_cell.multi_value_held_query.query
         if query_data:
-            query = self.process_query_filters(query=query, search_filter_data=query_data)
+            query = self.process_query_filters(
+                query=query, search_filter_data=query_data, extra_filter_data=extra_filter_data
+            )
         return query
 
     def render_value(self, base_model, fields, multi_value_report_cell):
@@ -936,3 +1081,37 @@ class MultiValueShowBreakdownModal(TableUtilsMixin, Modal):
 
     def get_report_query(self, report):
         return self.get_multi_value_report_cell()
+
+
+class MultiValueCellCopyFromModal(FormModal):
+    form_class = CrispyForm
+    modal_title = 'Copy Cell From'
+
+    def __init__(self, *args, **kwargs):
+        self._held_multi_value_report = None
+        super().__init__(*args, **kwargs)
+
+    def get_multi_value_report(self):
+        if self._held_multi_value_report is None:
+            self._held_multi_value_report = get_object_or_404(MultiValueReport, pk=self.slug['pk'])
+        return self._held_multi_value_report
+
+    def form_setup(self, form, *_args, **_kwargs):
+        multi_value_report = self.get_multi_value_report()
+        multi_value_report_cells = MultiValueReportCell.objects.filter(multi_value_report=multi_value_report)
+        form.fields['copy_from'] = ModelChoiceField(queryset=multi_value_report_cells, widget=Select2())
+        form.fields['copy_from'].label_from_instance = self.label_from_instance
+
+    @staticmethod
+    def label_from_instance(obj):
+        return excel_column_name(obj.column, row=obj.row)
+
+    def form_valid(self, form):
+        original_cell = form.cleaned_data['copy_from']
+        multi_value_report_cell = deepcopy(original_cell)
+        multi_value_report_cell.pk = None
+        multi_value_report_cell.id = None
+        multi_value_report_cell.row = int(self.slug['row'])
+        multi_value_report_cell.column = int(self.slug['column'])
+        multi_value_report_cell.save()
+        return self.command_response('reload')

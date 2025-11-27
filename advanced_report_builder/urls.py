@@ -40,7 +40,9 @@ from advanced_report_builder.views.line_charts import (
     LineChartModal,
 )
 from advanced_report_builder.views.multi_value import (
+    MultiValueCellCopyFromModal,
     MultiValueCellStyleModal,
+    MultiValueHeldQueryModal,
     MultiValueModal,
     MultiValueReportCellModal,
     MultiValueReportCellsModal,
@@ -152,10 +154,16 @@ urlpatterns = [
     path(
         'multi-value/column/modal/<str:slug>/', MultiValueReportColumnModal.as_view(), name='multi_value_column_modal'
     ),
+    path('multi-value/query/modal/<str:slug>/', MultiValueHeldQueryModal.as_view(), name='multi_value_query_modal'),
     path(
         'multi-value/breakdown/modal/<str:slug>/',
         MultiValueShowBreakdownModal.as_view(),
         name='multi_value_breakdown_modal',
+    ),
+    path(
+        'multi-value/cell/duplicate/modal/<str:slug>/',
+        MultiValueCellCopyFromModal.as_view(),
+        name='multi_value_cell_copy_from_modal',
     ),
     path('kanban/modal/<str:slug>/', KanbanModal.as_view(), name='kanban_modal'),
     path(
