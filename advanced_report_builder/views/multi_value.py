@@ -888,9 +888,7 @@ class MultiValueView(ValueBaseView):
                     expression_value = float(expression_value)
                 exp.add_to_global(name=cell_name, value=expression_value)
 
-            table_data[row][column] = {'value': value,
-                                       'cell': multi_value_report_cell,
-                                       'append_str': append_str}
+            table_data[row][column] = {'value': value, 'cell': multi_value_report_cell, 'append_str': append_str}
 
             if multi_value_report_cell.row_span > 1 or multi_value_report_cell.col_span > 1:
                 for row_offset in range(multi_value_report_cell.row_span):

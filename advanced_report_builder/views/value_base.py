@@ -132,7 +132,14 @@ class ValueBaseView(ChartBaseView):
         return field_name
 
     def _process_percentage(
-        self, numerator_filter, denominator_field, numerator_field, base_model, report_builder_class, decimal_places, fields
+        self,
+        numerator_filter,
+        denominator_field,
+        numerator_field,
+        base_model,
+        report_builder_class,
+        decimal_places,
+        fields,
     ):
         if denominator_field is None:
             raise ReportError('denominator field is None')
