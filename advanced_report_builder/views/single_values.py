@@ -112,7 +112,6 @@ class SingleValueView(ValueBaseView):
                 divider=divider,
             )
         elif single_value_type == SingleValueReport.SingleValueType.PERCENT:
-
             numerator_filter = None
             report_query = self.get_report_query(report=self.chart_report)
             if report_query:
