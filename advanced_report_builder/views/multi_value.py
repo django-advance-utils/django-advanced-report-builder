@@ -960,7 +960,7 @@ class MultiValueView(ValueBaseView):
                         attrs.append('class="' + multi_value_report_cell.multi_cell_style.get_td_class() + '"')
                         styles.append(multi_value_report_cell.multi_cell_style.get_td_style())
                     link = self.get_breakdown_url(multi_value_report_cell=multi_value_report_cell)
-                    if link is None:
+                    if link is not None:
                         styles.append('cursor:pointer')
                         attrs.append(f'onclick="{link}"')
 
