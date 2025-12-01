@@ -793,6 +793,7 @@ class MultiValueView(ValueBaseView):
                 )
 
             fields = []
+            append_str = ''
             try:
                 if multi_value_type == MultiValueReportCell.MultiValueType.STATIC_TEXT:
                     value = multi_value_report_cell.text
@@ -845,7 +846,9 @@ class MultiValueView(ValueBaseView):
                     )
 
                 elif multi_value_type == MultiValueReportCell.MultiValueType.PERCENT:
+                    numerator_filter = self.process_filters(search_filter_data=multi_value_report_cell.extra_query_data)
                     self._process_percentage(
+                        numerator_filter=numerator_filter,
                         denominator_field=multi_value_report_cell.field,
                         numerator_field=multi_value_report_cell.numerator,
                         report_builder_class=report_builder_class,
@@ -853,6 +856,7 @@ class MultiValueView(ValueBaseView):
                         base_model=base_model,
                         fields=fields,
                     )
+                    append_str = '%'
                 elif multi_value_type == MultiValueReportCell.MultiValueType.PERCENT_FROM_COUNT:
                     numerator_filter = self.process_filters(search_filter_data=multi_value_report_cell.extra_query_data)
                     self._process_percentage_from_count(
@@ -860,6 +864,7 @@ class MultiValueView(ValueBaseView):
                         decimal_places=multi_value_report_cell.decimal_places,
                         fields=fields,
                     )
+                    append_str = '%'
                 elif multi_value_type == MultiValueReportCell.MultiValueType.EQUATION:
                     multi_value_report_equations.append((cell_name, multi_value_report_cell))
             except ReportError as e:
@@ -883,7 +888,9 @@ class MultiValueView(ValueBaseView):
                     expression_value = float(expression_value)
                 exp.add_to_global(name=cell_name, value=expression_value)
 
-            table_data[row][column] = {'value': value, 'cell': multi_value_report_cell}
+            table_data[row][column] = {'value': value,
+                                       'cell': multi_value_report_cell,
+                                       'append_str': append_str}
 
             if multi_value_report_cell.row_span > 1 or multi_value_report_cell.col_span > 1:
                 for row_offset in range(multi_value_report_cell.row_span):
@@ -945,6 +952,7 @@ class MultiValueView(ValueBaseView):
                     if row_span > 1:
                         attrs.append(f'rowspan="{row_span}"')
                     value = cell['value']
+                    append_str = cell['append_str']
                     styles = []
 
                     if col_span == 1 and cols_index in columns_data:
@@ -965,7 +973,7 @@ class MultiValueView(ValueBaseView):
                     if len(attrs) > 0:
                         attrs_html = ' ' + ' '.join(attrs)
 
-                    html += f'<td{attrs_html}>{value}</td>'
+                    html += f'<td{attrs_html}>{value}{append_str}</td>'
             html += '</tr>'
 
         html += '</table>'
