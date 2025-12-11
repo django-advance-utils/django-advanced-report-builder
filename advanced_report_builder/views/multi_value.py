@@ -14,6 +14,7 @@ from django_datatables.helpers import DUMMY_ID
 from django_datatables.widgets import DataTableWidget
 from django_menus.menu import HtmlMenu, MenuItem
 from django_modals.fields import FieldEx
+from django_modals.form_helpers import HorizontalNoEnterHelper
 from django_modals.forms import CrispyForm
 from django_modals.helper import show_modal
 from django_modals.modals import FormModal, Modal, ModelFormModal
@@ -284,6 +285,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
     model = MultiValueReportCell
+    helper_class = HorizontalNoEnterHelper
     form_class = MultiValueReportCellForm
 
     @property
