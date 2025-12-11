@@ -47,7 +47,8 @@ from advanced_report_builder.views.multi_value import (
     MultiValueReportCellModal,
     MultiValueReportCellsModal,
     MultiValueReportColumnModal,
-    MultiValueShowBreakdownModal, MultiValueTableFieldModal,
+    MultiValueShowBreakdownModal,
+    MultiValueTableFieldModal,
 )
 from advanced_report_builder.views.pie_charts import PieChartFieldModal, PieChartModal
 from advanced_report_builder.views.query_modal.modal import QueryModal, QueryOrderModal
