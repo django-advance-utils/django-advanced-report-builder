@@ -39,10 +39,12 @@ from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import crispy_modal_link_args, excel_column_name, get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartJSTable
+from advanced_report_builder.views.datatables.modal import TableFieldModal, TableFieldForm
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
 from advanced_report_builder.views.helpers import QueryBuilderModelForm
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
+from advanced_report_builder.views.single_values import SingleValueTableFieldForm
 from advanced_report_builder.views.value_base import ValueBaseView
 from advanced_report_builder.widgets import SmallNumberInputWidget
 
@@ -467,7 +469,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
         )
 
         url = reverse(
-            'advanced_report_builder:single_value_field_modal',
+            'advanced_report_builder:multi_value_field_modal',
             kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'},
         )
 
@@ -1123,3 +1125,32 @@ class MultiValueCellCopyFromModal(FormModal):
         multi_value_report_cell.column = int(self.slug['column'])
         multi_value_report_cell.save()
         return self.command_response('reload')
+
+
+class MultiValueTableFieldForm(TableFieldForm):
+    cancel_class = 'btn-secondary modal-cancel'
+
+    def cancel_button(self, css_class=cancel_class, **kwargs):
+        commands = [{'function': 'save_query_builder_id_query_data'},
+                    {'function': 'save_query_builder_id_extra_query_data'},
+                    {'function': 'close'}]
+        return self.button('Cancel', commands, css_class, **kwargs)
+
+
+class MultiValueTableFieldModal(TableFieldModal):
+    form_class = MultiValueTableFieldForm
+
+    def form_valid(self, form):
+        selector = self.slug['selector']
+
+        _attr = form.get_additional_attributes()
+        self.add_command({'function': 'set_attr',
+                          'selector': f'#{selector}',
+                          'attr': 'data-attr',
+                          'val': _attr})
+
+        self.add_command({'function': 'html', 'selector': f'#{selector} span', 'html': form.cleaned_data['title']})
+        self.add_command({'function': 'save_query_builder_id_query_data'})
+        self.add_command({'function': 'save_query_builder_id_extra_query_data'})
+        self.add_command({'function': 'update_selection'})
+        return self.command_response('close')
