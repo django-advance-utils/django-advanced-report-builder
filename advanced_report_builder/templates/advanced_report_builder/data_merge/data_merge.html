@@ -1,88 +1,144 @@
-<textarea name="{{ widget.name }}" id="{{ widget.attrs.id }}_textarea" autocomplete="off" onkeydown="return false"
-        {% include "django/forms/widgets/attrs.html" %}>{{ widget.value }}</textarea>
+<textarea
+    name="{{ widget.name }}"
+    id="{{ widget.attrs.id }}_textarea"
+    autocomplete="off"
+    {% include "django/forms/widgets/attrs.html" %}
+>{{ widget.value }}</textarea>
 
 <script>
+/* -------------------------------
+   TinyMCE initialisation helpers
+-------------------------------- */
 
-    function setup_tiny_{{ widget.attrs.id }}() {
-        tinymce.init({
-            selector: '#{{ widget.attrs.id }}_textarea',
-            height: {{ height }},
-            menubar: false,
-            content_css: [
-                '//fonts.googleapis.com/css?family=Lato:300,300i,400,400i'],
-            {% if disabled %}readonly : 1,
-                toolbar: ' | '{% else %}
-            forced_root_block: '',
-            force_br_newlines: true,
-            force_p_newlines: false,
-            convert_newlines_to_brs: true,
-            branding: false,
-            cleanup: false,
-            plugins: [
-                'searchreplace',
-                'code'
-            ],
-            toolbar: 'bold italic | bullist numlist | standardparagraphbutton',
-            setup: function (editor) {
-                 django_modal.send_inputs({'ajax': 'get_{{ widget.name }}_data_merge_menu', 'field_auto_id': '{{ widget.attrs.id }}'});
-            }
-            {% endif %}
-        });
+function setup_tiny_{{ widget.attrs.id }}() {
+    const id = '{{ widget.attrs.id }}_textarea';
+
+    // already initialised
+    if (tinymce.get(id)) {
+        return;
     }
 
+    const el = document.getElementById(id);
+
+    // element not present or not visible yet
+    if (!el || el.offsetParent === null) {
+        return;
+    }
+
+    tinymce.init({
+        selector: '#' + id,
+        height: {{ height }},
+        menubar: false,
+        branding: false,
+        content_css: [
+            '//fonts.googleapis.com/css?family=Lato:300,300i,400,400i'
+        ],
+
+        {% if disabled %}
+        readonly: 1,
+        toolbar: '',
+        {% else %}
+        forced_root_block: '',
+        force_br_newlines: true,
+        force_p_newlines: false,
+        convert_newlines_to_brs: true,
+        cleanup: false,
+        plugins: ['searchreplace', 'code'],
+        toolbar: 'bold italic | bullist numlist | standardparagraphbutton',
+        setup: function (editor) {
+            django_modal.send_inputs({
+                ajax: 'get_{{ widget.name }}_data_merge_menu',
+                field_auto_id: '{{ widget.attrs.id }}'
+            });
+        }
+        {% endif %}
+    });
+}
 
 function reset_{{ widget.attrs.id }}() {
-    var t = tinymce.get('{{ widget.attrs.id }}_textarea')
-    if(t != null) {
-        tinymce.get('{{ widget.attrs.id }}_textarea').remove();
+    const id = '{{ widget.attrs.id }}_textarea';
+
+    if (tinymce.get(id)) {
+        tinymce.remove('#' + id);
     }
 
     setup_tiny_{{ widget.attrs.id }}();
-
 }
 
-    function build_menu(editor, menu_data) {
-        $.each(menu_data, function (index, menu) {
+/* ---------------------------------------
+   Retry until visible (modal / HTMX safe)
+---------------------------------------- */
 
-            if ('menu' in menu) {
-                build_menu(editor, menu['menu']);
-            } else {
-                menu['onclick'] = function () {
-                    if('raw' in menu && menu['raw']) {
-                        editor.insertContent(menu['code']);
-                    } else {
-                        editor.insertContent('{% templatetag openvariable %} ' + menu['code'] + ' {% templatetag closevariable %}');
-                    }
-                }
-            }
-        });
-        return menu_data;
-    }
+function init_tiny_when_visible_{{ widget.attrs.id }}(attempts) {
+    attempts = attempts || 0;
+
     reset_{{ widget.attrs.id }}();
 
-     ajax_helpers.command_functions.build_data_merge_menu_{{ widget.attrs.id }} = function (command) {
-        var editor = tinymce.get('{{ widget.attrs.id }}_textarea');
-        var menus = jQuery.parseJSON(command.data);
+    if (!tinymce.get('{{ widget.attrs.id }}_textarea') && attempts < 20) {
+        setTimeout(function () {
+            init_tiny_when_visible_{{ widget.attrs.id }}(attempts + 1);
+        }, 100);
+    }
+}
 
-        $.each(menus, function( index, menu ) {
-            var menu_data = build_menu(editor, menu['menu']);
-            editor.addButton(menu['code'], {
-                    type: 'menubutton',
-                    text: menu['text'],
-                    icon: false,
-                    menu: menu_data
-                });
-            var button=editor.buttons[menu['code']];
-            //find the buttongroup in the toolbar found in the panel of the theme
-            var bg=editor.theme.panel.find('toolbar buttongroup')[0];
-            //without this, the buttons look weird after that
-            bg._lastRepaintRect=bg._layoutRect;
-            //append the button to the group
-            bg.append(button);
-        })
-     };
+/* ---------------------------------------
+   Menu building helpers
+---------------------------------------- */
 
+function build_menu(editor, menu_data) {
+    $.each(menu_data, function (index, menu) {
+        if ('menu' in menu) {
+            build_menu(editor, menu['menu']);
+        } else {
+            menu.onclick = function () {
+                if ('raw' in menu && menu.raw) {
+                    editor.insertContent(menu.code);
+                } else {
+                    editor.insertContent(
+                        '{% templatetag openvariable %} ' +
+                        menu.code +
+                        ' {% templatetag closevariable %}'
+                    );
+                }
+            };
+        }
+    });
+    return menu_data;
+}
+
+/* ---------------------------------------
+   Data merge menu callback
+---------------------------------------- */
+
+ajax_helpers.command_functions.build_data_merge_menu_{{ widget.attrs.id }} = function (command) {
+    var editor = tinymce.get('{{ widget.attrs.id }}_textarea');
+    if (!editor) return;
+
+    var menus = jQuery.parseJSON(command.data);
+
+    $.each(menus, function (index, menu) {
+        var menu_data = build_menu(editor, menu.menu);
+
+        editor.addButton(menu.code, {
+            type: 'menubutton',
+            text: menu.text,
+            icon: false,
+            menu: menu_data
+        });
+
+        var button = editor.buttons[menu.code];
+        var bg = editor.theme.panel.find('toolbar buttongroup')[0];
+
+        bg._lastRepaintRect = bg._layoutRect;
+        bg.append(button);
+    });
+};
+
+/* ---------------------------------------
+   Kick everything off
+---------------------------------------- */
+
+setTimeout(function () {
+    init_tiny_when_visible_{{ widget.attrs.id }}();
+}, 0);
 </script>
-
-
-
