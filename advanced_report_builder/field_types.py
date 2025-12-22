@@ -83,7 +83,6 @@ class FieldTypes(ReportBuilderFieldUtils):
             self.OperatorFieldType.FOREIGN_KEY: ['is_null', 'is_not_null'],
             self.OperatorFieldType.ABSTRACT_USER: ['equal', 'not_equal'],
             self.OperatorFieldType.WEEKDAYS: ['equal', 'not_equal'],
-
             self.OperatorFieldType.WEEK_NUMBER: [
                 'equal',
                 'not_equal',
@@ -92,7 +91,6 @@ class FieldTypes(ReportBuilderFieldUtils):
                 'greater',
                 'greater_or_equal',
             ],
-
             self.OperatorFieldType.COMPARE_STRING: ['equal', 'not_equal'],
             self.OperatorFieldType.COMPARE_NUMBER: [
                 'equal',
@@ -257,14 +255,16 @@ class FieldTypes(ReportBuilderFieldUtils):
         variable_date = VariableDate()
 
         def add_filter(*, suffix, label, operator_type, values, input_type='select'):
-            query_builder_filters.append({
-                'id': f'{column_id}__{suffix}',
-                'label': f'{title} ({label})',
-                'field': field,
-                'operators': self.get_operator(operator_type),
-                'input': input_type,
-                'values': values,
-            })
+            query_builder_filters.append(
+                {
+                    'id': f'{column_id}__{suffix}',
+                    'label': f'{title} ({label})',
+                    'field': field,
+                    'operators': self.get_operator(operator_type),
+                    'input': input_type,
+                    'values': values,
+                }
+            )
 
         # Variable / date-part filters
         add_filter(
@@ -319,14 +319,16 @@ class FieldTypes(ReportBuilderFieldUtils):
         )
 
         # Field vs Field comparison (intentionally separate)
-        query_builder_filters.append({
-            'id': f'{column_id}__field_vs_field',
-            'label': f'{title} (Field vs Field)',
-            'field': field,
-            'input': 'select',
-            'operators': self.get_operator(self.OperatorFieldType.COMPARE_DATE),
-            'values': field_results_types[FieldType.DATE],
-        })
+        query_builder_filters.append(
+            {
+                'id': f'{column_id}__field_vs_field',
+                'label': f'{title} (Field vs Field)',
+                'field': field,
+                'input': 'select',
+                'operators': self.get_operator(self.OperatorFieldType.COMPARE_DATE),
+                'values': field_results_types[FieldType.DATE],
+            }
+        )
 
     def get_abstract_user_field(self, query_builder_filters, field, title):
         query_builder_filters.append(
