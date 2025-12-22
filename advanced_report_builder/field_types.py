@@ -45,6 +45,7 @@ class FieldTypes(ReportBuilderFieldUtils):
         COMPARE_DATE = 11
         COMPARE_BOOLEAN = 12
         WEEKDAYS = 13
+        WEEK_NUMBER = 14
 
     def get_operator(self, field_type):
         operators = {
@@ -82,6 +83,16 @@ class FieldTypes(ReportBuilderFieldUtils):
             self.OperatorFieldType.FOREIGN_KEY: ['is_null', 'is_not_null'],
             self.OperatorFieldType.ABSTRACT_USER: ['equal', 'not_equal'],
             self.OperatorFieldType.WEEKDAYS: ['equal', 'not_equal'],
+
+            self.OperatorFieldType.WEEK_NUMBER: [
+                'equal',
+                'not_equal',
+                'less',
+                'less_or_equal',
+                'greater',
+                'greater_or_equal',
+            ],
+
             self.OperatorFieldType.COMPARE_STRING: ['equal', 'not_equal'],
             self.OperatorFieldType.COMPARE_NUMBER: [
                 'equal',
@@ -244,51 +255,51 @@ class FieldTypes(ReportBuilderFieldUtils):
 
     def get_date_field(self, field_results_types, column_id, query_builder_filters, field, title):
         variable_date = VariableDate()
-        query_builder_filter = {
-            'id': f'{column_id}__variable_date',
-            'label': f'{title} (Variable)',
-            'field': field,
-            'operators': self.get_operator(self.OperatorFieldType.DATE),
-            'input': 'select',
-            'values': variable_date.get_variable_date_filter_values(),
-        }
-        query_builder_filters.append(query_builder_filter)
-        query_builder_filter = {
-            'id': f'{column_id}__variable_year',
-            'label': f'{title} (Year)',
-            'field': field,
-            'operators': self.get_operator(self.OperatorFieldType.DATE),
-            'input': 'select',
-            'values': variable_date.get_date_filter_years(),
-        }
-        query_builder_filters.append(query_builder_filter)
-        query_builder_filter = {
-            'id': f'{column_id}__variable_month',
-            'label': f'{title} (Month)',
-            'field': field,
-            'operators': self.get_operator(self.OperatorFieldType.DATE),
-            'input': 'select',
-            'values': variable_date.get_date_filter_months(),
-        }
-        query_builder_filters.append(query_builder_filter)
 
-        query_builder_filter = {
-            'id': f'{column_id}__variable_quarter',
-            'label': f'{title} (Quarter)',
-            'field': field,
-            'operators': self.get_operator(self.OperatorFieldType.PART_DATE),
-            'input': 'select',
-            'values': variable_date.get_date_filter_quarters(),
-        }
-        query_builder_filters.append(query_builder_filter)
+        def add_filter(*, suffix, label, operator_type, values, input_type='select'):
+            query_builder_filters.append({
+                'id': f'{column_id}__{suffix}',
+                'label': f'{title} ({label})',
+                'field': field,
+                'operators': self.get_operator(operator_type),
+                'input': input_type,
+                'values': values,
+            })
 
-        query_builder_filter = {
-            'id': f'{column_id}__variable_day',
-            'label': f'{title} (Day)',
-            'field': field,
-            'operators': self.get_operator(self.OperatorFieldType.WEEKDAYS),
-            'input': 'select',
-            'values': {
+        # Variable / date-part filters
+        add_filter(
+            suffix='variable_date',
+            label='Variable',
+            operator_type=self.OperatorFieldType.DATE,
+            values=variable_date.get_variable_date_filter_values(),
+        )
+
+        add_filter(
+            suffix='variable_year',
+            label='Year',
+            operator_type=self.OperatorFieldType.DATE,
+            values=variable_date.get_date_filter_years(),
+        )
+
+        add_filter(
+            suffix='variable_month',
+            label='Month',
+            operator_type=self.OperatorFieldType.DATE,
+            values=variable_date.get_date_filter_months(),
+        )
+
+        add_filter(
+            suffix='variable_quarter',
+            label='Quarter',
+            operator_type=self.OperatorFieldType.PART_DATE,
+            values=variable_date.get_date_filter_quarters(),
+        )
+
+        add_filter(
+            suffix='variable_day',
+            label='Day',
+            operator_type=self.OperatorFieldType.WEEKDAYS,
+            values={
                 1: 'Sunday',
                 2: 'Monday',
                 3: 'Tuesday',
@@ -297,19 +308,25 @@ class FieldTypes(ReportBuilderFieldUtils):
                 6: 'Friday',
                 7: 'Saturday',
             },
-        }
-        query_builder_filters.append(query_builder_filter)
-
-        query_builder_filters.append(
-            {
-                'id': f'{column_id}__field_vs_field',
-                'label': f'{title} (Field vs Field)',
-                'field': field,
-                'input': 'select',
-                'operators': self.get_operator(self.OperatorFieldType.COMPARE_DATE),
-                'values': field_results_types[FieldType.DATE],
-            }
         )
+
+        # Week number (ISO-safe: 1–53)
+        add_filter(
+            suffix='week_number',
+            label='Week Number',
+            operator_type=self.OperatorFieldType.WEEK_NUMBER,
+            values={i: i for i in range(1, 54)},
+        )
+
+        # Field vs Field comparison (intentionally separate)
+        query_builder_filters.append({
+            'id': f'{column_id}__field_vs_field',
+            'label': f'{title} (Field vs Field)',
+            'field': field,
+            'input': 'select',
+            'operators': self.get_operator(self.OperatorFieldType.COMPARE_DATE),
+            'values': field_results_types[FieldType.DATE],
+        })
 
     def get_abstract_user_field(self, query_builder_filters, field, title):
         query_builder_filters.append(

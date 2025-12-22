@@ -222,6 +222,14 @@ class FilterQueryMixin:
                     field=field,
                     annotations=annotations,
                 )
+            elif data_type == 'string' and _id.endswith('__week_number'):
+                self.get_week_number(
+                    value=value,
+                    query_list=query_list,
+                    display_operator=display_operator,
+                    field=field,
+                    query_string=query_string,
+                )
             elif data_type == 'string' and _id.endswith('__logged_in_user'):
                 self.get_logged_in_user(
                     value=value,
@@ -380,6 +388,33 @@ class FilterQueryMixin:
             query_list.append(~Q(**{f'{annotate_name}': value}))
         else:
             query_list.append(Q(**{f'{annotate_name}': value}))
+
+    @staticmethod
+    def get_week_number(value, query_list, display_operator, field, query_string):
+        if display_operator in ['is_null', 'is_not_null']:
+            query_list.append(Q((query_string, value)))
+            return
+        week = int(value)
+        operator_map = {
+            'equal': '',
+            'not_equal': '',
+            'less': '__lt',
+            'less_or_equal': '__lte',
+            'greater': '__gt',
+            'greater_or_equal': '__gte',
+        }
+
+        lookup = operator_map.get(display_operator)
+        if lookup is None:
+            return
+
+        key = f'{field}__week{lookup}'
+        q = Q(**{key: week})
+
+        if display_operator == 'not_equal':
+            query_list.append(~q)
+        else:
+            query_list.append(q)
 
     def get_logged_in_user(self, value, query_list, display_operator, query_string):
         # noinspection PyUnresolvedReferences
