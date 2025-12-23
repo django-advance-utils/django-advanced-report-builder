@@ -32,7 +32,28 @@ class PeriodData:
         if self.max_date is None or dt > self.max_date:
             self.max_date = dt
 
-    import calendar
+    def get_day_period(self):
+        if not self.min_date or not self.max_date:
+            return None
+
+        min_d = self.min_date.date()
+        max_d = self.max_date.date()
+
+        if min_d == max_d:
+            return min_d, max_d
+        return None
+
+    def get_week_period(self):
+        if not self.min_date or not self.max_date:
+            return None
+
+        min_d = self.min_date.date()
+        max_d = self.max_date.date()
+
+        if (max_d - min_d).days != 6:
+            return None
+
+        return min_d, max_d
 
     def get_month_period(self):
         if not self.min_date or not self.max_date:
@@ -56,6 +77,46 @@ class PeriodData:
         if min_d == start_of_month and max_d == end_of_month:
             return min_d, max_d
         return None
+
+    def get_quarter_period(self, quarter_start_month=1):
+        """
+        Returns (min_date, max_date) if the current period exactly matches
+        a quarter aligned to `quarter_start_month`.
+
+        quarter_start_month:
+            1  = calendar quarters
+            4  = UK financial quarters
+        """
+        if not self.min_date or not self.max_date:
+            return None
+
+        min_d = self.min_date.date()
+        max_d = self.max_date.date()
+
+        # Month index relative to quarter start (0–11)
+        rel_month = (min_d.month - quarter_start_month) % 12
+        quarter = (rel_month // 3)
+
+        # Quarter start month
+        start_month = ((quarter * 3 + quarter_start_month - 1) % 12) + 1
+
+        # Determine start year
+        start_year = min_d.year
+        if min_d.month < quarter_start_month:
+            start_year -= 1
+
+        start_date = datetime.date(start_year, start_month, 1)
+
+        # Quarter end
+        end_month = ((start_month + 2 - 1) % 12) + 1
+        end_year = start_year + (1 if end_month < start_month else 0)
+        last_day = calendar.monthrange(end_year, end_month)[1]
+        end_date = datetime.date(end_year, end_month, last_day)
+
+        if min_d != start_date or max_d != end_date:
+            return None
+
+        return min_d, max_d
 
 
 class FilterQueryMixin:

@@ -1,67 +1,270 @@
 from calendar import monthrange
+from datetime import date, timedelta
 
 from django.utils.dates import MONTHS
 
+from advanced_report_builder.models import Target
 
-def get_target_value(min_date, max_date, target, month_range=False):
-    override_data = target.get_override_data()
 
-    # We could find the proportion of the start month and end_month
-    # we are interested in and multiply the target by the result.
+class TargetUtils:
 
-    if min_date and max_date and override_data:
-        start_month = min_date.month
-        end_month = max_date.month
-        total_target_value = 0
+    @staticmethod
+    def is_exact_full_month(min_date: date, max_date: date) -> bool:
+        if min_date.year != max_date.year or min_date.month != max_date.month:
+            return False
 
-        if month_range:
-            # if we know that the range is exactly a month long then we can just look it up in the dict.
-            for year in range(min_date.year, max_date.year + 1):
-                year_data = override_data.get(str(year))
+        if min_date.day != 1:
+            return False
 
-                if year_data:
-                    month_str = MONTHS.get(min_date.month)
-                    return year_data.get(month_str, target.get_value())
-                else:
-                    return target.get_value()
+        last_day = monthrange(min_date.year, min_date.month)[1]
+        return max_date.day == last_day
+
+    def get_monthly_target_value_for_range(self, min_date, max_date, target):
+        """
+        Returns the monthly target value for an arbitrary date range.
+
+        Rules:
+        - Exact full calendar month → direct lookup
+        - Partial / multi-month range → prorated by days
+        """
+
+        # Safety fallback
+        if not min_date or not max_date:
+            return target.get_value()
+
+        override_data = target.get_override_data() or {}
+
+        # ---- 1. Exact full month → lookup only ----
+        if self.is_exact_full_month(min_date, max_date):
+            year_data = override_data.get(str(min_date.year))
+            if year_data:
+                month_str = MONTHS[min_date.month]
+                return year_data.get(month_str, target.get_value())
+            return target.get_value()
+
+        # ---- 2. Partial / multi-month → prorated ----
+        total = 0.0
+
+        current = date(min_date.year, min_date.month, 1)
+
+        while current <= max_date:
+            year = current.year
+            month = current.month
+
+            days_in_month = monthrange(year, month)[1]
+            month_start = date(year, month, 1)
+            month_end = date(year, month, days_in_month)
+
+            effective_start = max(min_date, month_start)
+            effective_end = min(max_date, month_end)
+
+            if effective_start <= effective_end:
+                days_in_range = (effective_end - effective_start).days + 1
+
+                year_data = override_data.get(str(year), {})
+                month_str = MONTHS[month]
+                month_value = year_data.get(month_str, target.get_value())
+
+                total += (days_in_range / days_in_month) * month_value
+
+            # advance month
+            if month == 12:
+                current = date(year + 1, 1, 1)
+            else:
+                current = date(year, month + 1, 1)
+
+        return total
+
+    @staticmethod
+    def start_of_week(d: date) -> date:
+        return d - timedelta(days=d.weekday())
+
+
+    def is_exact_full_week(self, min_date: date, max_date: date) -> bool:
+        week_start = self.start_of_week(min_date)
+        week_end = week_start + timedelta(days=6)
+
+        return min_date == week_start and max_date == week_end
+
+    def get_weekly_target_value_for_range(self, min_date, max_date, target):
+        """
+        Returns the weekly target value for an arbitrary date range.
+
+        Rules:
+        - Exact full week → direct lookup
+        - Partial / multi-week range → prorated by days
+        """
+
+        # Safety fallback
+        if not min_date or not max_date:
+            return target.get_value()
+
+        override_data = target.get_override_data() or {}
+
+        # ---- 1. Exact full week → lookup ----
+        if self.is_exact_full_week(min_date, max_date):
+            year, week_no, _ = min_date.isocalendar()
+            year_data = override_data.get(str(year))
+            if year_data:
+                week_key = f"W{week_no:02d}"
+                return year_data.get(week_key, target.get_value())
+            return target.get_value()
+
+        # ---- 2. Partial / multi-week → prorated ----
+        total = 0.0
+        current = self.start_of_week(min_date)
+
+        while current <= max_date:
+            week_start = current
+            week_end = week_start + timedelta(days=6)
+
+            effective_start = max(min_date, week_start)
+            effective_end = min(max_date, week_end)
+
+            if effective_start <= effective_end:
+                days_in_range = (effective_end - effective_start).days + 1
+
+                year, week_no, _ = week_start.isocalendar()
+                year_data = override_data.get(str(year), {})
+                week_key = f"W{week_no:02d}"
+
+                week_value = year_data.get(week_key, target.get_value())
+
+                total += (days_in_range / 7) * week_value
+
+            current += timedelta(days=7)
+
+        return total
+
+    @staticmethod
+    def get_daily_target_value_for_range(min_date, max_date, target):
+        """
+        Returns the daily target value for an arbitrary date range.
+
+        Rules:
+        - Each day contributes exactly one daily target value
+        - Overrides are applied per day if present
+        """
+
+        # Safety fallback
+        if not min_date or not max_date:
+            return target.get_value()
+
+        override_data = target.get_override_data() or {}
+        default_value = target.get_value()
+
+        total = 0.0
+        current = min_date
+
+        while current <= max_date:
+            year_data = override_data.get(str(current.year), {})
+
+            # Support either YYYY-MM-DD or day-of-year style keys
+            day_key = current.isoformat()          # "2025-03-12"
+            doy_key = f"D{current.timetuple().tm_yday:03d}"  # "D071"
+
+            day_value = (
+                year_data.get(day_key)
+                or year_data.get(doy_key)
+                or default_value
+            )
+
+            total += day_value
+            current += timedelta(days=1)
+
+        return total
+
+    @staticmethod
+    def get_quarterly_target_value_for_range(min_date, max_date, target):
+        """
+        Sum monthly target values for an aligned quarter.
+        Requires min_date/max_date to describe exactly one quarter.
+        """
+
+        if not min_date or not max_date:
+            return target.get_value()
+
+        override_data = target.get_override_data() or {}
+
+        total = 0.0
+        year = min_date.year
+        month = min_date.month
+
+        months_seen = []
+
+        while True:
+            months_seen.append((year, month))
+
+            # advance month
+            if month == 12:
+                month = 1
+                year += 1
+            else:
+                month += 1
+
+            # stop once we pass max_date
+            if date(year, month, 1) > max_date:
+                break
+
+        # Defensive check: a quarter must be exactly 3 months
+        if len(months_seen) != 3:
+            raise ValueError("Date range is not an aligned quarter")
+
+        for year, month in months_seen:
+            year_data = override_data.get(str(year), {})
+            month_str = MONTHS.get(month)
+            total += year_data.get(month_str, target.get_value())
+
+        return total
+
+
+    def get_target_value(self, period_data, target):
+
+
+        if target.period_type == Target.PeriodType.DAILY:
+            period = period_data.get_day_period()
+            if period is None:
+                return None
+            target_value = self.get_daily_target_value_for_range(
+                min_date=period[0],
+                max_date=period[1],
+                target=target,
+            )
+
+        elif target.period_type == Target.PeriodType.WEEKLY:
+            period = period_data.get_week_period()
+            if period is None:
+                return None
+            target_value = self.get_weekly_target_value_for_range(
+                min_date=period[0],
+                max_date=period[1],
+                target=target,
+            )
+
+        elif target.period_type == Target.PeriodType.MONTHLY:
+            period = period_data.get_month_period()
+            if period is None:
+                return None
+            target_value = self.get_monthly_target_value_for_range(
+                min_date=period[0],
+                max_date=period[1],
+                target=target,
+            )
+
+        elif target.period_type == Target.PeriodType.QUARTER:
+            period = period_data.get_quarter_period()
+            if period is None:
+                return None
+            target_value = self.get_quarterly_target_value_for_range(
+                min_date=period[0],
+                max_date=period[1],
+                target=target,
+            )
         else:
-            # if it isn't exactly a month long, then we need to do some calculations to find the exact amount.
+            return None
 
-            for year in range(min_date.year, max_date.year + 1):
-                year_data = override_data.get(str(year))
-                yearly_target_value = 0
+        if target_value == 0:
+            return None
 
-                for month in range(start_month, end_month + 1):
-                    if year_data:
-                        month_str = MONTHS.get(month)
-                        month_value = year_data.get(month_str)
-                    else:
-                        month_value = target.get_value()
+        return target_value
 
-                    days_in_month = monthrange(year, month)[1]
-
-                    # Work out the days inside the target in this month:
-                    if (month == min_date.month and year == min_date.year) and (
-                        month == max_date.month and year == max_date.year
-                    ):
-                        # if start and end dates are in the same month and year, just subtract min from max.
-                        days_in_target = (max_date - min_date).days
-                    elif month == min_date.month and year == min_date.year:
-                        days_in_target = (days_in_month - min_date.day) + 1
-                    elif month == max_date.month and year == max_date.year:
-                        days_in_target = max_date.day
-                    else:
-                        days_in_target = days_in_month
-
-                    # The actual target value for this month will have to be a proportion.
-                    # (Since the start date might be after the 1st of the month
-                    # and the end_date might be before the last day of the month.
-                    target_in_month = (days_in_target / days_in_month) * month_value
-                    yearly_target_value += target_in_month
-
-                total_target_value += yearly_target_value
-
-        return total_target_value
-    else:
-        # we don't have any dates to compare against, so we can only use the monthly default value.
-        return target.get_value()
