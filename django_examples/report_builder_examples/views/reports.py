@@ -99,7 +99,8 @@ class ViewReports(MainIndices):
                 url_name='report_builder_examples:view_report',
             ),
         )
-
+        table.table_options['rowGroup'] = {'dataSrc': 'OutputType', 'sumColumns': []}
+        table.sort('OutputType')
         table.add_js_filters('pivot', 'OutputType', filter_title='Output Type', collapsed=False)
 
 
