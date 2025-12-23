@@ -1013,8 +1013,14 @@ class MultiValueView(ValueBaseView):
             )
         return query
 
+    @staticmethod
+    def set_prefix(table, multi_value_report_cell):
+        if multi_value_report_cell.prefix:
+            table.prefix = multi_value_report_cell.prefix
+
     def render_value(self, base_model, fields, multi_value_report_cell):
         table = self.chart_js_table(model=base_model)
+        self.set_prefix(table=table, multi_value_report_cell=multi_value_report_cell)
         table.add_columns(*fields)
         table.single_value = self.chart_report
 
