@@ -171,10 +171,7 @@ class SingleValueView(ValueBaseView):
 
         try:
             raw_value = data[0][0]
-            if isinstance(raw_value, (float, int)):
-                value = raw_value
-            else:
-                value = float(raw_value.replace(',', ''))
+            value = raw_value if isinstance(raw_value, (float, int)) else float(raw_value.replace(',', ''))
         except (ValueError, TypeError, AttributeError, IndexError):
             return None
 

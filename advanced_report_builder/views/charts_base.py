@@ -128,7 +128,6 @@ class ChartJSTable(DatatableTable):
             target=target,
         )
 
-
         return target_value
 
 

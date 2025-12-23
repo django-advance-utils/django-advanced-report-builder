@@ -7,7 +7,6 @@ from advanced_report_builder.models import Target
 
 
 class TargetUtils:
-
     @staticmethod
     def is_exact_full_month(min_date: date, max_date: date) -> bool:
         if min_date.year != max_date.year or min_date.month != max_date.month:
@@ -68,17 +67,13 @@ class TargetUtils:
                 total += (days_in_range / days_in_month) * month_value
 
             # advance month
-            if month == 12:
-                current = date(year + 1, 1, 1)
-            else:
-                current = date(year, month + 1, 1)
+            current = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
 
         return total
 
     @staticmethod
     def start_of_week(d: date) -> date:
         return d - timedelta(days=d.weekday())
-
 
     def is_exact_full_week(self, min_date: date, max_date: date) -> bool:
         week_start = self.start_of_week(min_date)
@@ -106,7 +101,7 @@ class TargetUtils:
             year, week_no, _ = min_date.isocalendar()
             year_data = override_data.get(str(year))
             if year_data:
-                week_key = f"W{week_no:02d}"
+                week_key = f'W{week_no:02d}'
                 return year_data.get(week_key, target.get_value())
             return target.get_value()
 
@@ -126,7 +121,7 @@ class TargetUtils:
 
                 year, week_no, _ = week_start.isocalendar()
                 year_data = override_data.get(str(year), {})
-                week_key = f"W{week_no:02d}"
+                week_key = f'W{week_no:02d}'
 
                 week_value = year_data.get(week_key, target.get_value())
 
@@ -160,14 +155,10 @@ class TargetUtils:
             year_data = override_data.get(str(current.year), {})
 
             # Support either YYYY-MM-DD or day-of-year style keys
-            day_key = current.isoformat()          # "2025-03-12"
-            doy_key = f"D{current.timetuple().tm_yday:03d}"  # "D071"
+            day_key = current.isoformat()  # "2025-03-12"
+            doy_key = f'D{current.timetuple().tm_yday:03d}'  # "D071"
 
-            day_value = (
-                year_data.get(day_key)
-                or year_data.get(doy_key)
-                or default_value
-            )
+            day_value = year_data.get(day_key) or year_data.get(doy_key) or default_value
 
             total += day_value
             current += timedelta(days=1)
@@ -208,7 +199,7 @@ class TargetUtils:
 
         # Defensive check: a quarter must be exactly 3 months
         if len(months_seen) != 3:
-            raise ValueError("Date range is not an aligned quarter")
+            raise ValueError('Date range is not an aligned quarter')
 
         for year, month in months_seen:
             year_data = override_data.get(str(year), {})
@@ -217,10 +208,7 @@ class TargetUtils:
 
         return total
 
-
     def get_target_value(self, period_data, target):
-
-
         if target.period_type == Target.PeriodType.DAILY:
             period = period_data.get_day_period()
             if period is None:
@@ -267,4 +255,3 @@ class TargetUtils:
             return None
 
         return target_value
-

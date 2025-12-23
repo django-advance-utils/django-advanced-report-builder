@@ -95,7 +95,7 @@ class PeriodData:
 
         # Month index relative to quarter start (0–11)
         rel_month = (min_d.month - quarter_start_month) % 12
-        quarter = (rel_month // 3)
+        quarter = rel_month // 3
 
         # Quarter start month
         start_month = ((quarter * 3 + quarter_start_month - 1) % 12) + 1
