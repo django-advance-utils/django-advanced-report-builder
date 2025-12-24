@@ -8,7 +8,7 @@ from advanced_report_builder.models import Target
 
 class TargetModal(ModelFormModal):
     model = Target
-    form_fields = ['name', 'target_type', 'colour', 'default_value']
+    form_fields = ['name', 'target_type', 'period_type', 'colour', 'default_value']
 
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF

@@ -16,7 +16,8 @@ class ViewTargets(MainIndices):
     def setup_table(table):
         table.add_columns(
             ('id', {'column_defs': {'width': '30px'}}),
-            'slug',
             'name',
+            'period_type',
+            'default_value',
             EditColumn('advanced_report_builder:target_modal'),
         )

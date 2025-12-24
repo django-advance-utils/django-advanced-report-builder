@@ -36,7 +36,7 @@ from advanced_report_builder.views.modals_base import (
     QueryBuilderModalBaseMixin,
 )
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
-from advanced_report_builder.views.targets.utils import get_target_value
+from advanced_report_builder.views.targets.utils import TargetUtils
 from advanced_report_builder.views.value_base import ValueBaseView
 
 
@@ -159,38 +159,30 @@ class SingleValueView(ValueBaseView):
         if report_query is None or report_query.target is None:
             return None
 
-        # this query line need to be at the top otherwise get_month_period doesn't work
         data = self.table.get_table_array(self.kwargs.get('request'), self.table.get_query())
         if len(data) == 0 or len(data[0]) == 0:
             return None
-        month = self.period_data.get_month_period()
-        if month is None:
-            return None  # todo / week targets etc
 
-        target_value = get_target_value(
-            min_date=month[0],
-            max_date=month[1],
-            target=report_query.target,
-            month_range=True,
-        )
-        if target_value is None or target_value == 0:
+        target = report_query.target
+        target_utils = TargetUtils()
+        target_value = target_utils.get_target_value(period_data=self.period_data, target=target)
+        if target_value is None:
             return None
+
         try:
-            raw_value = data[0][0]  # Safely inside the try block
-            cleaned_value = raw_value.replace(',', '')
-            value = float(cleaned_value)
+            raw_value = data[0][0]
+            value = raw_value if isinstance(raw_value, (float, int)) else float(raw_value.replace(',', ''))
         except (ValueError, TypeError, AttributeError, IndexError):
             return None
+
         percentage = (value / float(target_value)) * 100
         bar_percentage = min(percentage, 100)
 
-        if report_query.target.target_type == Target.TargetType.MONEY:
-            # Format as currency (with commas, and possibly prefix later)
+        if target.target_type == Target.TargetType.MONEY:
             prefix = self.chart_report.prefix
             target_value = intcomma(f'{float(target_value):.2f}')
-            target_value = f'{prefix}&thinsp;' + target_value
+            target_value = f'{prefix}&thinsp;{target_value}'
         else:
-            # Remove trailing .0 if it's a whole number
             if float(target_value).is_integer():
                 target_value = str(int(float(target_value)))
             else:
@@ -198,7 +190,7 @@ class SingleValueView(ValueBaseView):
 
         return {
             'target_value': target_value,
-            'colour': report_query.target.colour,
+            'colour': target.colour,
             'percentage': percentage,
             'bar_percentage': bar_percentage,
         }

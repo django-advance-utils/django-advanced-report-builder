@@ -31,7 +31,7 @@ from advanced_report_builder.globals import (
     ANNOTATION_VALUE_WEEK,
     ANNOTATION_VALUE_YEAR,
 )
-from advanced_report_builder.models import ReportType
+from advanced_report_builder.models import ReportType, Target
 from advanced_report_builder.utils import (
     count_days,
     get_report_builder_class,
@@ -42,7 +42,7 @@ from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.helpers import QueryBuilderForm
 from advanced_report_builder.views.report import ReportBase
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
-from advanced_report_builder.views.targets.utils import get_target_value
+from advanced_report_builder.views.targets.utils import TargetUtils
 
 
 class ChartJSTable(DatatableTable):
@@ -87,21 +87,22 @@ class ChartJSTable(DatatableTable):
     def process_data_structure_target(self, targets, data):
         results = []
         for target in targets:
-            new_data_structure = []
-            for data_dict in data:
-                target_value = self.process_target_results(data_dict=data_dict, target=target)
-                new_data_structure.append(target_value)
-            label = target.name + ' Target'
-            colour = '#' + target.colour
-            results.append(
-                {
-                    'label': label,
-                    'data': new_data_structure,
-                    'borderWidth': 1,
-                    'backgroundColor': [colour for _ in range(len(new_data_structure))],
-                    'borderColor': '#' + target.colour,
-                }
-            )
+            if target.period_type == Target.PeriodType.MONTHLY:
+                new_data_structure = []
+                for data_dict in data:
+                    target_value = self.process_target_results(data_dict=data_dict, target=target)
+                    new_data_structure.append(target_value)
+                label = target.name + ' Target'
+                colour = '#' + target.colour
+                results.append(
+                    {
+                        'label': label,
+                        'data': new_data_structure,
+                        'borderWidth': 1,
+                        'backgroundColor': [colour for _ in range(len(new_data_structure))],
+                        'borderColor': '#' + target.colour,
+                    }
+                )
         return results
 
     @staticmethod
@@ -119,12 +120,12 @@ class ChartJSTable(DatatableTable):
         # since the targets are in months, this is the value we need.
         first_day_month = start_date.replace(day=1)
         next_date = date_offset.get_offset('1m', first_day_month) - timedelta(days=1)
+        target_utils = TargetUtils()
 
-        target_value = get_target_value(
+        target_value = target_utils.get_monthly_target_value_for_range(
             min_date=first_day_month,
             max_date=next_date,
             target=target,
-            month_range=True,
         )
 
         return target_value
