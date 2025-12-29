@@ -1,3 +1,5 @@
+from django.db.models import Q
+
 from advanced_report_builder.columns import RecordCountColumn
 
 
@@ -20,3 +22,5 @@ class ReportBuilderFields:
     default_multiple_pk = 'id'
 
     extra_chart_field = ['record_count']
+
+    options_filter = Q()

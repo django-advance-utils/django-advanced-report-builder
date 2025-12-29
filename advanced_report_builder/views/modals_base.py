@@ -136,6 +136,13 @@ class QueryBuilderModalBaseMixin(ReportBuilderFieldUtils):
                     show_order_by_fields=True,
                     must_have_django_field=field_type == 'django_order',
                 )
+            elif field_type == 'include_names':
+                self._get_include_names(
+                    base_model=base_model,
+                    fields=fields,
+                    report_builder_class=report_builder_fields,
+                    search_string=search_string,
+                )
 
         return JsonResponse({'results': fields})
 

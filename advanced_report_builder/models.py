@@ -260,6 +260,26 @@ class Report(TimeStampedModel):
             title='Tags',
         )
 
+class ReportOption(TimeStampedModel):
+    report = models.ForeignKey(Report, on_delete=models.CASCADE)
+    slug = models.SlugField()
+    name = models.CharField(max_length=256)
+    field = models.CharField(max_length=200)
+    content_type = models.ForeignKey(ContentType, null=False, blank=False, on_delete=models.PROTECT)
+    report_builder_class_name = models.CharField(max_length=200)
+    order = models.PositiveSmallIntegerField()
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        self.set_order_field(extra_filters={'report': self.report})
+        self.make_new_slug(allow_dashes=False, extra_filters={'report': self.report})
+        return super().save(*args, **kwargs)
+
 
 class ReportQuery(TimeStampedModel):
     report = models.ForeignKey(Report, on_delete=models.CASCADE)

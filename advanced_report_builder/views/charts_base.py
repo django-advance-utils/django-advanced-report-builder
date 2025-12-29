@@ -374,7 +374,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
 
         self.add_menu('button_menu', 'button_group').add_items(
             *report_menu,
-            *self.queries_menu(report=self.report, dashboard_report=self.dashboard_report),
+            *self.queries_option_menus(report=self.report, dashboard_report=self.dashboard_report),
         )
 
     def pod_dashboard_edit_menu(self):

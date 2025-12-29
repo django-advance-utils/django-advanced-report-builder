@@ -57,7 +57,7 @@ from advanced_report_builder.views.single_values import (
     QueryNumeratorModal,
     SingleValueModal,
     SingleValueShowBreakdownModal,
-    SingleValueTableFieldModal,
+    SingleValueTableFieldModal, SingleValueOptionModal,
 )
 from advanced_report_builder.views.targets.views import TargetModal
 
@@ -86,6 +86,11 @@ urlpatterns = [
         'single-value/modal/<str:slug>/',
         SingleValueModal.as_view(),
         name='single_value_modal',
+    ),
+    path(
+        'single-value/option/modal/<str:slug>/',
+        SingleValueOptionModal.as_view(),
+        name='single_value_option_modal',
     ),
     path(
         'single-value/modal/field/<str:slug>/',

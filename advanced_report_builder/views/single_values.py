@@ -1,13 +1,17 @@
 import json
 
+from crispy_forms.layout import Div, HTML
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.core.exceptions import FieldDoesNotExist, FieldError, ValidationError
-from django.forms import ChoiceField, ModelChoiceField
+from django.forms import ChoiceField, ModelChoiceField, CharField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django_datatables.columns import MenuColumn
 from django_datatables.datatables import DatatableTable
-from django_menus.menu import MenuItem
+from django_datatables.widgets import DataTableReorderWidget
+from django_menus.menu import MenuItem, HtmlMenu
 from django_modals.fields import FieldEx
 from django_modals.form_helpers import HorizontalNoEnterHelper
 from django_modals.helper import show_modal
@@ -22,8 +26,8 @@ from advanced_report_builder.globals import (
     ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT,
     ANNOTATION_CHOICE_SUM,
 )
-from advanced_report_builder.models import ReportQuery, ReportType, SingleValueReport, Target
-from advanced_report_builder.utils import get_report_builder_class
+from advanced_report_builder.models import ReportQuery, ReportType, SingleValueReport, Target, ReportOption
+from advanced_report_builder.utils import get_report_builder_class, get_query_js
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.datatables.modal import (
     TableFieldForm,
@@ -392,6 +396,7 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
         ]
         if self.object.id:
             self.add_extra_queries(form=form, fields=fields)
+            self.add_options(form=form, fields=fields)
             if self.object.single_value_type in [
                 SingleValueReport.SingleValueType.PERCENT,
                 SingleValueReport.SingleValueType.PERCENT_FROM_COUNT,
@@ -453,6 +458,85 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
             report_builder_class=report_builder_fields,
         )
         return self.command_response('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
+
+
+    def add_options(self, form, fields):
+        add_query_js = (
+            'django_modal.process_commands_lock([{"function": "post_modal", "button": {"button": "add_option"}}])'
+        )
+
+        description_add_menu_items = [
+            MenuItem(
+                add_query_js.replace('"', '&quot;'),
+                menu_display='Add Option',
+                css_classes='btn btn-primary',
+                font_awesome='fas fa-pencil',
+                link_type=MenuItem.HREF,
+            )
+        ]
+
+        menu = HtmlMenu(self.request, 'advanced_report_builder/datatables/onclick_menu.html').add_items(
+            *description_add_menu_items
+        )
+        fields.append(Div(HTML(menu.render()), css_class='form-buttons'))
+        description_edit_menu_items = self.query_option_menu()
+
+        form.fields['options'] = CharField(
+            required=False,
+            label='Options',
+            widget=DataTableReorderWidget(
+                model=ReportOption,
+                order_field='order',
+                fields=[
+                    '_.index',
+                    '.id',
+                    'name',
+                    MenuColumn(
+                        column_name='menu',
+                        field='id',
+                        column_defs={'orderable': False, 'className': 'dt-right'},
+                        menu=HtmlMenu(
+                            self.request,
+                            'advanced_report_builder/datatables/onclick_menu.html',
+                        ).add_items(*description_edit_menu_items),
+                    ),
+                ],
+                attrs={'filter': {'report__id': self.object.id}},
+            ),
+        )
+        fields.append('options')
+
+    def button_add_option(self, **_kwargs):
+        slug = self.get_query_slug(f'report_id-{self.object.id}', **_kwargs)
+        url = reverse(
+            'advanced_report_builder:single_value_option_modal',
+            kwargs={'slug': slug},
+        )
+        return self.command_response('show_modal', modal=url)
+
+    def button_edit_option(self, **_kwargs):
+        query_id = _kwargs['query_id'][1:]
+        slug = self.get_query_slug(f'pk-{query_id}', **_kwargs)
+        url = reverse(
+            'advanced_report_builder:single_value_option_modal',
+            kwargs={'slug': slug},
+        )
+        return self.command_response('show_modal', modal=url)
+
+    @staticmethod
+    def query_option_menu():
+        edit_query_js = get_query_js('edit_option', 'query_id')
+
+        description_edit_menu_items = [
+            MenuItem(
+                edit_query_js.replace('"', '&quot;'),
+                menu_display='Edit',
+                css_classes='btn btn-sm btn-outline-dark',
+                font_awesome='fas fa-pencil',
+                link_type=MenuItem.HREF,
+            ),
+        ]
+        return description_edit_menu_items
 
     def button_add_query(self, **_kwargs):
         single_value_type = _kwargs['single_value_type']
@@ -621,6 +705,59 @@ class QueryNumeratorModal(QueryBuilderModalBaseMixin, ModelFormModal):
         org_id = self.object.pk if hasattr(self, 'object') else None
         instance = form.save(commit=False)
         instance._current_user = self.request.user
+        instance.save()
+        self.post_save(created=org_id is None, form=form)
+        if not self.response_commands:
+            self.add_command('reload')
+        return self.command_response()
+
+
+class SingleValueOptionModal(QueryBuilderModalBaseMixin, ModelFormModal):
+    model = ReportOption
+    form_fields = ['name', 'field']
+    process = PROCESS_EDIT_DELETE
+    permission_delete = PERMISSION_OFF
+
+    def form_setup(self, form, *_args, **_kwargs):
+        self.setup_field(
+            field_type='include_names',
+            form=form,
+            field_name='field',
+            selected_field_id=self.object.field,
+            report_type=self.object.report.report_type,
+        )
+
+    def select2_field(self, **kwargs):
+        return self.get_fields_for_select2(
+            field_type='include_names',
+            report_type=kwargs['report_type'],
+            search_string=kwargs.get('search'),
+        )
+
+    def form_valid(self, form):
+        org_id = self.object.pk if hasattr(self, 'object') else None
+        instance = form.save(commit=False)
+        report_type = self.object.report.report_type
+        base_model = report_type.content_type.model_class()
+        report_builder_class = get_report_builder_class(model=base_model, report_type=report_type)
+        _fields = []
+        self.get_field_display_value(
+            field_type='include_names',
+            fields_values=_fields,
+            base_model=base_model,
+            report_builder_class=report_builder_class,
+            selected_field_value=instance.field,
+            for_select2=False,
+        )
+        data = _fields[0]
+        app_label, model_name, report_builder_class_name = data['include']['model'].split('.')
+
+        content_type = ContentType.objects.get(
+            app_label=app_label,
+            model=model_name.lower()
+        )
+        instance.content_type = content_type
+        instance.report_builder_class_name = report_builder_class_name
         instance.save()
         self.post_save(created=org_id is None, form=form)
         if not self.response_commands:

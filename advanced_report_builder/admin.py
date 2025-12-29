@@ -22,7 +22,12 @@ from advanced_report_builder.models import (
     SingleValueReport,
     TableReport,
     Target,
+    ReportOption,
 )
+
+@admin.register(ReportOption)
+class ReportOptionAdmin(admin.ModelAdmin):
+    list_display = ('report', 'name')
 
 
 @admin.register(ReportQuery)
@@ -33,6 +38,8 @@ class ReportQueryAdmin(admin.ModelAdmin):
 class ReportQueryInline(admin.TabularInline):
     model = ReportQuery
 
+class ReportOptionInline(admin.TabularInline):
+    model = ReportOption
 
 @admin.register(Report)
 class ReportAdmin(admin.ModelAdmin):
@@ -70,7 +77,8 @@ class SingleValueReportAdmin(admin.ModelAdmin):
         'instance_type',
         'slug',
     )
-    inlines = [ReportQueryInline]
+    inlines = [ReportQueryInline,
+               ReportOptionInline]
 
 
 @admin.register(BarChartReport)
