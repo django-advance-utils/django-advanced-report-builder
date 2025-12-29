@@ -56,8 +56,9 @@ from advanced_report_builder.views.reports import DuplicateReportModal
 from advanced_report_builder.views.single_values import (
     QueryNumeratorModal,
     SingleValueModal,
+    SingleValueOptionModal,
     SingleValueShowBreakdownModal,
-    SingleValueTableFieldModal, SingleValueOptionModal,
+    SingleValueTableFieldModal,
 )
 from advanced_report_builder.views.targets.views import TargetModal
 

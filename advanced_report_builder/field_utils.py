@@ -204,7 +204,6 @@ class ReportBuilderFieldUtils:
             allow_annotations_fields=False,
         )
 
-
     def _get_include_names(
         self,
         base_model,
@@ -223,7 +222,7 @@ class ReportBuilderFieldUtils:
             for_select2=for_select2,
             search_string=search_string,
             allow_annotations_fields=False,
-            only_include_names=True
+            only_include_names=True,
         )
 
     def _get_fields(
@@ -320,8 +319,7 @@ class ReportBuilderFieldUtils:
                 include_full_id = f'{prefix}{include_field}'
                 if only_include_names and (selected_field_id is None or selected_field_id == include_full_id):
                     if for_select2:
-                        fields.append({'id': include_full_id,
-                                       'text': f'{title_prefix}{include["title"]}'})
+                        fields.append({'id': include_full_id, 'text': f'{title_prefix}{include["title"]}'})
                     else:
                         fields.append(
                             {

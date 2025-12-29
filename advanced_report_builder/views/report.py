@@ -1,7 +1,7 @@
 from ajax_helpers.mixins import AjaxHelpers
 from django_menus.menu import MenuItem, MenuMixin
 
-from advanced_report_builder.utils import make_slug_str, get_report_builder_class
+from advanced_report_builder.utils import get_report_builder_class, make_slug_str
 
 
 class ReportBase(AjaxHelpers, MenuMixin):
