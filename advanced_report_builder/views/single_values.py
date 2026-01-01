@@ -1,17 +1,17 @@
 import json
 
-from crispy_forms.layout import Div, HTML
+from crispy_forms.layout import HTML, Div
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.core.exceptions import FieldDoesNotExist, FieldError, ValidationError
-from django.forms import ChoiceField, ModelChoiceField, CharField
+from django.forms import CharField, ChoiceField, ModelChoiceField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_datatables.columns import MenuColumn
 from django_datatables.datatables import DatatableTable
 from django_datatables.widgets import DataTableReorderWidget
-from django_menus.menu import MenuItem, HtmlMenu
+from django_menus.menu import HtmlMenu, MenuItem
 from django_modals.fields import FieldEx
 from django_modals.form_helpers import HorizontalNoEnterHelper
 from django_modals.helper import show_modal
@@ -26,8 +26,8 @@ from advanced_report_builder.globals import (
     ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT,
     ANNOTATION_CHOICE_SUM,
 )
-from advanced_report_builder.models import ReportQuery, ReportType, SingleValueReport, Target, ReportOption
-from advanced_report_builder.utils import get_report_builder_class, get_query_js
+from advanced_report_builder.models import ReportOption, ReportQuery, ReportType, SingleValueReport, Target
+from advanced_report_builder.utils import get_query_js, get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.datatables.modal import (
     TableFieldForm,
@@ -459,7 +459,6 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
         )
         return self.command_response('report_fields', data=json.dumps({'fields': fields, 'tables': tables}))
 
-
     def add_options(self, form, fields):
         add_query_js = (
             'django_modal.process_commands_lock([{"function": "post_modal", "button": {"button": "add_option"}}])'
@@ -752,10 +751,7 @@ class SingleValueOptionModal(QueryBuilderModalBaseMixin, ModelFormModal):
         data = _fields[0]
         app_label, model_name, report_builder_class_name = data['include']['model'].split('.')
 
-        content_type = ContentType.objects.get(
-            app_label=app_label,
-            model=model_name.lower()
-        )
+        content_type = ContentType.objects.get(app_label=app_label, model=model_name.lower())
         instance.content_type = content_type
         instance.report_builder_class_name = report_builder_class_name
         instance.save()

@@ -260,6 +260,7 @@ class Report(TimeStampedModel):
             title='Tags',
         )
 
+
 class ReportOption(TimeStampedModel):
     report = models.ForeignKey(Report, on_delete=models.CASCADE)
     slug = models.SlugField()

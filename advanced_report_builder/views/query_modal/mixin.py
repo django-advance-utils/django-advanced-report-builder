@@ -6,7 +6,7 @@ from django_datatables.columns import MenuColumn
 from django_datatables.widgets import DataTableReorderWidget
 from django_menus.menu import HtmlMenu, MenuItem
 
-from advanced_report_builder.models import ReportQuery, ReportOption
+from advanced_report_builder.models import ReportQuery
 from advanced_report_builder.utils import get_query_js
 
 
@@ -66,7 +66,6 @@ class MultiQueryModalMixin:
             kwargs={'slug': slug},
         )
         return self.command_response('show_modal', modal=url)
-
 
     def button_edit_query(self, **_kwargs):
         query_id = _kwargs['query_id'][1:]
