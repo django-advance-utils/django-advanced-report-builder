@@ -1,3 +1,5 @@
+import copy
+
 from ajax_helpers.mixins import AjaxHelpers
 from django_menus.menu import MenuItem, MenuMixin
 
@@ -50,7 +52,17 @@ class ReportBase(AjaxHelpers, MenuMixin):
             option_slug = f'option{option.id}'
             base_model = option.content_type.model_class()
             report_cls = get_report_builder_class(model=base_model, class_name=option.report_builder_class_name)
-            dropdown = []
+
+            new_slug = copy.deepcopy(self.slug)
+            if option_slug in new_slug:
+                del new_slug[option_slug]
+            slug_str = make_slug_str(new_slug)
+
+            dropdown = [(
+                self.request.resolver_match.view_name,
+                'N/A',
+                {'url_kwargs': {'slug': slug_str}},
+            )]
             for _obj in base_model.objects.filter(report_cls.options_filter):
                 slug_str = make_slug_str(self.slug, overrides={option_slug: _obj.id})
                 dropdown.append(

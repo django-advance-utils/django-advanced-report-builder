@@ -92,7 +92,7 @@ class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
         order_by_field = data_dict['order_by_field']
         field_values = []
         report_builder_class, base_model = self.get_report_builder_base_and_class()
-        self.get_field_display_value(
+        self.et_field_display_value(
             field_type='order',
             fields_values=field_values,
             base_model=base_model,
