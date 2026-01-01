@@ -58,11 +58,13 @@ class ReportBase(AjaxHelpers, MenuMixin):
                 del new_slug[option_slug]
             slug_str = make_slug_str(new_slug)
 
-            dropdown = [(
-                self.request.resolver_match.view_name,
-                'N/A',
-                {'url_kwargs': {'slug': slug_str}},
-            )]
+            dropdown = [
+                (
+                    self.request.resolver_match.view_name,
+                    'N/A',
+                    {'url_kwargs': {'slug': slug_str}},
+                )
+            ]
             for _obj in base_model.objects.filter(report_cls.options_filter):
                 slug_str = make_slug_str(self.slug, overrides={option_slug: _obj.id})
                 dropdown.append(

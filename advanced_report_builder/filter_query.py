@@ -10,7 +10,7 @@ from django.db.models.functions import ExtractWeekDay
 from django.shortcuts import get_object_or_404
 
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
-from advanced_report_builder.models import ReportQuery, ReportOption
+from advanced_report_builder.models import ReportOption, ReportQuery
 from advanced_report_builder.utils import get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
 
@@ -136,7 +136,7 @@ class FilterQueryMixin:
             search_filter_data=search_filter_data,
             annotations=annotations,
             extra_filter_data=extra_filter_data,
-            extra_filter=extra_filter
+            extra_filter=extra_filter,
         )
         if annotations:
             query = query.annotate(**annotations)
@@ -542,21 +542,14 @@ class FilterQueryMixin:
             return title
 
     def get_report_option_query(self):
-        report_options_dict = {
-            int(k[len('option'):]): v
-            for k, v in self.slug.items()
-            if k.startswith('option')
-        }
+        report_options_dict = {int(k[len('option') :]): v for k, v in self.slug.items() if k.startswith('option')}
 
         if not report_options_dict:
             return None
 
         query = Q()
 
-        report_options = ReportOption.objects.filter(
-            report=self.report,
-            id__in=report_options_dict.keys()
-        )
+        report_options = ReportOption.objects.filter(report=self.report, id__in=report_options_dict.keys())
 
         for report_option in report_options:
             value = report_options_dict[report_option.id]
@@ -564,7 +557,6 @@ class FilterQueryMixin:
             query &= Q(**{field_id: value})
 
         return query
-
 
     def _get_report_builder_class(self, base_model, field_str, report_builder_class, previous_base_model=None):
         if '__' in field_str:
