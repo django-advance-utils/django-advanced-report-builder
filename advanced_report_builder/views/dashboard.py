@@ -1,8 +1,9 @@
 import copy
 
 from ajax_helpers.mixins import AjaxHelpers
+from crispy_forms.layout import Fieldset
 from django.conf import settings
-from django.forms import ChoiceField, ModelChoiceField
+from django.forms import ChoiceField, ModelChoiceField, CharField
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -26,7 +27,7 @@ from advanced_report_builder.models import (
     Report,
     ReportQuery,
 )
-from advanced_report_builder.utils import split_slug
+from advanced_report_builder.utils import split_slug, get_report_builder_class
 from advanced_report_builder.views.bar_charts import BarChartView
 from advanced_report_builder.views.calendar import CalendarView
 from advanced_report_builder.views.datatables.datatables import TableView
@@ -234,6 +235,11 @@ class DashboardReportModal(ModelFormModal):
     permission_delete = PERMISSION_OFF
     permission_create = PERMISSION_DISABLE
 
+
+    def __init__(self, *args, **kwargs):
+        self._report_options = None
+        super().__init__(*args, **kwargs)
+
     @property
     def form_fields(self):
         fields = ['name_override', 'top', 'display_option']
@@ -243,14 +249,23 @@ class DashboardReportModal(ModelFormModal):
                 'show_versions',
                 'report_query',
             ]
+        if report_obj.show_options() and len(self.get_report_options()) > 0:
+            fields.append('show_options')
         return fields
 
     widgets = {
         'top': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
         'show_versions': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
+        'show_options': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
     }
 
+    def get_report_options(self):
+        if self._report_options is None:
+            self._report_options = self.object.report.reportoption_set.all()
+        return self._report_options
+
     def form_setup(self, form, *_args, **_kwargs):
+        layout = ['name_override', 'top', 'display_option']
         form.add_trigger(
             'top',
             'onchange',
@@ -266,16 +281,56 @@ class DashboardReportModal(ModelFormModal):
             'name_override'
         ].help_text = f'Original report name "{self.object.report.name}". Leave blank to keep this name.'
         report_obj = getattr(self.object.report, self.object.report.instance_type)
-        report_obj.dashboard_fields(form=form, dashboard_report=self.object)
+        report_obj.dashboard_fields(form=form, dashboard_report=self.object, layout=layout)
         if report_obj.show_dashboard_query():
+            layout += ['show_versions', 'report_query']
             report_queries = ReportQuery.objects.filter(report=form.instance.report)
             form.fields['report_query'] = ModelChoiceField(queryset=report_queries, widget=Select2, required=False)
+
+        if report_obj.show_options() and len(report_options := self.get_report_options()) > 0:
+            layout.append('show_options')
+            options = []
+            for report_option in report_options:
+                field_id = f'option{report_option.id}'
+
+                base_model = report_option.content_type.model_class()
+                report_cls = get_report_builder_class(model=base_model,
+                                                      class_name=report_option.report_builder_class_name)
+                choices = [(0, 'N/A')]
+                for _obj in base_model.objects.filter(report_cls.options_filter):
+                    method = getattr(_obj, report_cls.option_label, None)
+                    label = method() if callable(method) else _obj.__str__()
+                    choices.append((_obj.id, label))
+                initial = self.object.options.get(field_id) if self.object.options else None
+                form.fields[field_id] = ChoiceField(required=False,
+                                                    label=report_option.name,
+                                                    choices=choices,
+                                                    initial=initial)
+                options.append(field_id)
+            if options:
+                layout.append(Fieldset('Options',*options ))
+        return layout
 
     def form_valid(self, form):
         instance = form.save(commit=False)
         instance._current_user = self.request.user
         report_obj = getattr(self.object.report, self.object.report.instance_type)
         report_obj.save_extra_dashboard_fields(form=form, dashboard_report=instance)
+        report_options = self.get_report_options()
+        if report_options:
+            options = instance.options if instance.options else {}
+            for report_option in report_options:
+                field_id = f'option{report_option.id}'
+                try:
+                    value = int(form.cleaned_data[field_id])
+                except ValueError:
+                    value = form.cleaned_data[field_id]
+                if value == 0:
+                    if field_id in options:
+                        del options[field_id]
+                else:
+                    options[field_id] = value
+            instance.options = options
         instance.save()
         return self.command_response('reload')
 

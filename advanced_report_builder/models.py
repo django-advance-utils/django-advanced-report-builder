@@ -26,6 +26,7 @@ from advanced_report_builder.globals import (
     DISPLAY_OPTION_NONE,
 )
 from advanced_report_builder.signals import model_report_save
+from advanced_report_builder.utils import get_report_builder_class
 
 
 class Target(TimeStampedModel):
@@ -225,7 +226,10 @@ class Report(TimeStampedModel):
     def show_dashboard_query(self):
         return True
 
-    def dashboard_fields(self, form, dashboard_report):
+    def show_options(self):
+        return True
+
+    def dashboard_fields(self, form, dashboard_report, layout):
         pass
 
     def save_extra_dashboard_fields(self, form, dashboard_report):
@@ -713,12 +717,16 @@ class CalendarReport(Report):
     def show_dashboard_query(self):
         return False
 
-    def dashboard_fields(self, form, dashboard_report):
+    def show_options(self):
+        return False
+
+    def dashboard_fields(self, form, dashboard_report, layout):
         choices = [(0, f'Default ({self.view_type})'), *CALENDAR_VIEW_TYPE_CHOICES]
         calendar_view_type = dashboard_report.options.get('calendar_view_type') if dashboard_report.options else None
         form.fields['calendar_view_type'] = ChoiceField(
             choices=choices, required=False, widget=Select2(), initial=calendar_view_type
         )
+        layout.append('calendar_view_type')
 
     def save_extra_dashboard_fields(self, form, dashboard_report):
         options = {'calendar_view_type': form.cleaned_data['calendar_view_type']}
@@ -834,6 +842,7 @@ class DashboardReport(TimeStampedModel):
     display_option = models.PositiveIntegerField(choices=DISPLAY_OPTION_CHOICES, default=DISPLAY_OPTION_NONE)
     show_versions = models.BooleanField(default=True)
     report_query = models.ForeignKey(ReportQuery, blank=True, null=True, on_delete=models.CASCADE)
+    show_options = models.BooleanField(default=True)
     options = models.JSONField(null=True, blank=True)
 
     def get_class(self, extra_class_name):

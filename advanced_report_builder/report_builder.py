@@ -24,3 +24,4 @@ class ReportBuilderFields:
     extra_chart_field = ['record_count']
 
     options_filter = Q()
+    option_label = '__str__'

@@ -141,3 +141,10 @@ def excel_column_name(n: int, row: int | None = None) -> str:
     if row is not None:
         return f'{col}{row}'
     return col
+
+
+def try_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return value
