@@ -618,8 +618,7 @@ class SingleValueShowBreakdownModal(TableUtilsMixin, Modal):
         table = self.add_table(base_model=base_model)
         table.extra_filters = self.extra_filters
         table_fields = single_value_report.breakdown_fields
-        report_builder_class = get_report_builder_class(model=base_model,
-                                                        report_type=self.table_report.report_type)
+        report_builder_class = get_report_builder_class(model=base_model, report_type=self.table_report.report_type)
         fields_used = set()
         fields_map = {}
         try:

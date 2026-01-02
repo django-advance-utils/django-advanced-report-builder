@@ -411,9 +411,9 @@ class TableUtilsMixin(ReportUtilsMixin):
         report_query = self.get_report_query(report=self.table_report)
         option_query = self.get_report_option_query()
         if report_query or option_query:
-            query = self.process_query_filters(query=query,
-                                               search_filter_data=report_query.query,
-                                               extra_filter=option_query)
+            query = self.process_query_filters(
+                query=query, search_filter_data=report_query.query, extra_filter=option_query
+            )
         return query
 
     def setup_mathematical_field(
