@@ -27,8 +27,12 @@ from advanced_report_builder.models import (
     Report,
     ReportQuery,
 )
-from advanced_report_builder.utils import get_report_builder_class, split_slug, \
-    get_template_type_class, get_view_type_class
+from advanced_report_builder.utils import (
+    get_report_builder_class,
+    get_template_type_class,
+    get_view_type_class,
+    split_slug,
+)
 
 
 class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
@@ -38,7 +42,6 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
     custom_views = {}
     views_overrides = {}
     ajax_commands = ['button', 'select2', 'ajax']
-
 
     def __init__(self, *args, **kwargs):
         self.dashboard = None
@@ -145,7 +148,11 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
 
     def call_error_view(self, dashboard_report, extra_class_name, error_message):
         view_types_class = self.get_view_types_class()
-        error_view = self.views_overrides.get('error') if 'error' in self.views_overrides else view_types_class.views.get('error')
+        error_view = (
+            self.views_overrides.get('error')
+            if 'error' in self.views_overrides
+            else view_types_class.views.get('error')
+        )
         report_data = self.call_view(
             dashboard_report=dashboard_report, report_view=error_view, extra_kwargs={'error_message': error_message}
         ).rendered_content
@@ -180,8 +187,7 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
 
     def get_report_template(self, dashboard_report):
         template_types = get_template_type_class()
-        return template_types.get_template_name_from_instance_type(
-            instance_type=dashboard_report.report.instance_type)
+        return template_types.get_template_name_from_instance_type(instance_type=dashboard_report.report.instance_type)
 
     def post(self, request, *args, **kwargs):
         table_id = request.POST.get('table_id')

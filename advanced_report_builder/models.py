@@ -4,7 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.forms import ChoiceField
 from django.utils.dates import MONTHS
-from django_datatables.columns import DatatableColumn, ManyToManyColumn, NoHeadingColumn
+from django_datatables.columns import DatatableColumn, ManyToManyColumn
 from django_datatables.model_def import DatatableModel
 from django_modals.model_fields.colour import ColourField
 from django_modals.widgets.select2 import Select2
@@ -150,7 +150,6 @@ class Report(TimeStampedModel):
         return model()
 
     def get_output_type_name(self):
-
         child_model_class = self.get_child_model_class()
         if child_model_class is None:
             return self.report_type_label
@@ -158,7 +157,6 @@ class Report(TimeStampedModel):
             return child_model_class.report_type_label
 
     def get_output_type_icon(self):
-
         child_model_class = self.get_child_model_class()
         if child_model_class is None:
             return self.report_type_icon
@@ -201,8 +199,6 @@ class Report(TimeStampedModel):
     def get_title(self):
         return self.name
 
-
-
     def save(self, *args, **kwargs):
         current_user = getattr(self, '_current_user', None)
         if current_user is not None and current_user.is_authenticated:
@@ -243,17 +239,11 @@ class Report(TimeStampedModel):
     def save_extra_dashboard_fields(self, form, dashboard_report):
         pass
 
-
     class Datatable(DatatableModel):
-
         class OutputTypeBase(DatatableColumn):
             def setup_results(self, request, all_results):
                 if 'type_labels' not in all_results or 'type_icons' not in all_results:
-                    instance_types = (
-                        Report.objects
-                        .values_list('instance_type', flat=True)
-                        .distinct()
-                    )
+                    instance_types = Report.objects.values_list('instance_type', flat=True).distinct()
 
                     type_labels = {}
                     type_icons = {}
@@ -265,7 +255,6 @@ class Report(TimeStampedModel):
 
                     all_results['type_labels'] = type_labels
                     all_results['type_icons'] = type_icons
-
 
         class OutputType(OutputTypeBase):
             def col_setup(self):
@@ -281,7 +270,6 @@ class Report(TimeStampedModel):
                 return _page_data['type_labels'][instance_type]
 
         class OutputTypeIcon(OutputTypeBase):
-
             def __init__(self, **kwargs):
                 kwargs['title'] = ''
                 kwargs['no_col_search'] = True

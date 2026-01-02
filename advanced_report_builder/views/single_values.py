@@ -246,7 +246,6 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
     show_order_by = False
     show_target = True
 
-
     widgets = {
         'report_tags': Select2Multiple,
         'show_breakdown': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
@@ -254,10 +253,7 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
 
     @property
     def form_fields(self):
-        form_fields = [
-            'name']
-
-
+        form_fields = ['name']
 
         form_fields += [
             'notes',

@@ -14,7 +14,7 @@ from django_modals.modals import Modal
 from advanced_report_builder.duplicate import DuplicateReport
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.models import Report
-from advanced_report_builder.utils import split_slug, get_view_type_class, get_template_type_class
+from advanced_report_builder.utils import get_template_type_class, get_view_type_class, split_slug
 
 
 class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
@@ -79,7 +79,9 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         return context
 
     def call_error_view(self, error_message):
-        error_view = self.views_overrides.get('error') if 'error' in self.views_overrides else self.view_types.views.get('error')
+        error_view = (
+            self.views_overrides.get('error') if 'error' in self.views_overrides else self.view_types.views.get('error')
+        )
         report_cls = self.get_view(self.report)
 
         return error_view.as_view()(
