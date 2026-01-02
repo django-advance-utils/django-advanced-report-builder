@@ -594,17 +594,18 @@ class FilterQueryMixin:
                         continue
                     report_options_dict[key] = try_int(v)
 
-            # options from slug
-            for k, v in self.slug.items():
-                if not k.startswith('option'):
-                    continue
-                key = k[len('option') :]
-                if isinstance(key, str) and '_' in key:
-                    key, option_database_board_id = key.split('_', 1)
-                    if dashboard_report_id != try_int(option_database_board_id):
+            if self.slug is not None:
+                # options from slug
+                for k, v in self.slug.items():
+                    if not k.startswith('option'):
                         continue
-                key = try_int(key)
-                report_options_dict[key] = try_int(v)
+                    key = k[len('option') :]
+                    if isinstance(key, str) and '_' in key:
+                        key, option_database_board_id = key.split('_', 1)
+                        if dashboard_report_id != try_int(option_database_board_id):
+                            continue
+                    key = try_int(key)
+                    report_options_dict[key] = try_int(v)
 
             report_options = ReportOption.objects.filter(report=self.report, id__in=report_options_dict.keys())
             self._report_options_data = {'report_options': report_options, 'report_options_dict': report_options_dict}
