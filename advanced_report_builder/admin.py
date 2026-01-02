@@ -16,6 +16,7 @@ from advanced_report_builder.models import (
     MultiValueReportColumn,
     PieChartReport,
     Report,
+    ReportOption,
     ReportQuery,
     ReportTag,
     ReportType,
@@ -25,6 +26,11 @@ from advanced_report_builder.models import (
 )
 
 
+@admin.register(ReportOption)
+class ReportOptionAdmin(admin.ModelAdmin):
+    list_display = ('report', 'name')
+
+
 @admin.register(ReportQuery)
 class ReportQueryAdmin(admin.ModelAdmin):
     list_display = ('report', 'name', 'query')
@@ -32,6 +38,10 @@ class ReportQueryAdmin(admin.ModelAdmin):
 
 class ReportQueryInline(admin.TabularInline):
     model = ReportQuery
+
+
+class ReportOptionInline(admin.TabularInline):
+    model = ReportOption
 
 
 @admin.register(Report)
@@ -70,7 +80,7 @@ class SingleValueReportAdmin(admin.ModelAdmin):
         'instance_type',
         'slug',
     )
-    inlines = [ReportQueryInline]
+    inlines = [ReportQueryInline, ReportOptionInline]
 
 
 @admin.register(BarChartReport)

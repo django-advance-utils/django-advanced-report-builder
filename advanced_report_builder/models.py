@@ -225,7 +225,10 @@ class Report(TimeStampedModel):
     def show_dashboard_query(self):
         return True
 
-    def dashboard_fields(self, form, dashboard_report):
+    def show_options(self):
+        return True
+
+    def dashboard_fields(self, form, dashboard_report, layout):
         pass
 
     def save_extra_dashboard_fields(self, form, dashboard_report):
@@ -259,6 +262,27 @@ class Report(TimeStampedModel):
             html='<span class="badge badge-primary"> %1% </span>',
             title='Tags',
         )
+
+
+class ReportOption(TimeStampedModel):
+    report = models.ForeignKey(Report, on_delete=models.CASCADE)
+    slug = models.SlugField()
+    name = models.CharField(max_length=256)
+    field = models.CharField(max_length=200)
+    content_type = models.ForeignKey(ContentType, null=False, blank=False, on_delete=models.PROTECT)
+    report_builder_class_name = models.CharField(max_length=200)
+    order = models.PositiveSmallIntegerField()
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        self.set_order_field(extra_filters={'report': self.report})
+        self.make_new_slug(allow_dashes=False, extra_filters={'report': self.report})
+        return super().save(*args, **kwargs)
 
 
 class ReportQuery(TimeStampedModel):
@@ -692,12 +716,16 @@ class CalendarReport(Report):
     def show_dashboard_query(self):
         return False
 
-    def dashboard_fields(self, form, dashboard_report):
+    def show_options(self):
+        return False
+
+    def dashboard_fields(self, form, dashboard_report, layout):
         choices = [(0, f'Default ({self.view_type})'), *CALENDAR_VIEW_TYPE_CHOICES]
         calendar_view_type = dashboard_report.options.get('calendar_view_type') if dashboard_report.options else None
         form.fields['calendar_view_type'] = ChoiceField(
             choices=choices, required=False, widget=Select2(), initial=calendar_view_type
         )
+        layout.append('calendar_view_type')
 
     def save_extra_dashboard_fields(self, form, dashboard_report):
         options = {'calendar_view_type': form.cleaned_data['calendar_view_type']}
@@ -813,6 +841,7 @@ class DashboardReport(TimeStampedModel):
     display_option = models.PositiveIntegerField(choices=DISPLAY_OPTION_CHOICES, default=DISPLAY_OPTION_NONE)
     show_versions = models.BooleanField(default=True)
     report_query = models.ForeignKey(ReportQuery, blank=True, null=True, on_delete=models.CASCADE)
+    show_options = models.BooleanField(default=True)
     options = models.JSONField(null=True, blank=True)
 
     def get_class(self, extra_class_name):

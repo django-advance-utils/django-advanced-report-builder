@@ -120,6 +120,14 @@ class ReportBuilderFieldUtils:
                 for_select2=for_select2,
                 show_order_by_fields=True,
             )
+        elif field_type == 'include_names':
+            self._get_include_names(
+                base_model=base_model,
+                fields=fields_values,
+                report_builder_class=report_builder_class,
+                selected_field_id=selected_field_value,
+                for_select2=for_select2,
+            )
 
     def _get_date_fields(
         self,
@@ -196,6 +204,27 @@ class ReportBuilderFieldUtils:
             allow_annotations_fields=False,
         )
 
+    def _get_include_names(
+        self,
+        base_model,
+        fields,
+        report_builder_class,
+        selected_field_id=None,
+        search_string=None,
+        for_select2=True,
+    ):
+        return self._get_fields(
+            base_model=base_model,
+            fields=fields,
+            report_builder_class=report_builder_class,
+            selected_field_id=selected_field_id,
+            column_types=None,
+            for_select2=for_select2,
+            search_string=search_string,
+            allow_annotations_fields=False,
+            only_include_names=True,
+        )
+
     def _get_fields(
         self,
         base_model,
@@ -220,6 +249,7 @@ class ReportBuilderFieldUtils:
         allow_pivots=True,
         include_mathematical_columns=False,
         show_includes=True,
+        only_include_names=False,
     ):
         if title is None:
             title = report_builder_class.title
@@ -233,44 +263,44 @@ class ReportBuilderFieldUtils:
 
         if extra_fields:
             report_builder_class_fields += extra_fields
-
-        for report_builder_field in report_builder_class_fields:
-            if (
-                not isinstance(report_builder_field, str)
-                or report_builder_field not in report_builder_class.exclude_display_fields
-                or (show_order_by_fields and report_builder_field in report_builder_class.order_by_fields)
-            ):
-                django_field, col_type_override, columns, _ = self.get_field_details(
-                    base_model=base_model,
-                    field=report_builder_field,
-                    report_builder_class=report_builder_class,
-                )
-                if django_field is None and must_have_django_field:
-                    continue
-                for column in columns:
-                    if (
-                        (field_types is None and column_types is None)
-                        or (field_types is not None and isinstance(django_field, field_types))
-                        or (column_types is not None and isinstance(col_type_override, column_types))
-                        or (allow_annotations_fields and column.annotations)
-                    ):
-                        full_id = prefix + column.column_name
-                        if selected_field_id is None or selected_field_id == full_id:
-                            if column.title == '':
-                                full_title = title_prefix + col_type_override.title_from_name(column.column_name)
-                            else:
-                                full_title = title_prefix + column.title
-                            if self._is_search_match(search_string=search_string, title=full_title):
-                                if for_select2:
-                                    fields.append({'id': full_id, 'text': full_title})
+        if not only_include_names:
+            for report_builder_field in report_builder_class_fields:
+                if (
+                    not isinstance(report_builder_field, str)
+                    or report_builder_field not in report_builder_class.exclude_display_fields
+                    or (show_order_by_fields and report_builder_field in report_builder_class.order_by_fields)
+                ):
+                    django_field, col_type_override, columns, _ = self.get_field_details(
+                        base_model=base_model,
+                        field=report_builder_field,
+                        report_builder_class=report_builder_class,
+                    )
+                    if django_field is None and must_have_django_field:
+                        continue
+                    for column in columns:
+                        if (
+                            (field_types is None and column_types is None)
+                            or (field_types is not None and isinstance(django_field, field_types))
+                            or (column_types is not None and isinstance(col_type_override, column_types))
+                            or (allow_annotations_fields and column.annotations)
+                        ):
+                            full_id = prefix + column.column_name
+                            if selected_field_id is None or selected_field_id == full_id:
+                                if column.title == '':
+                                    full_title = title_prefix + col_type_override.title_from_name(column.column_name)
                                 else:
-                                    fields.append(
-                                        {
-                                            'field': full_id,
-                                            'label': full_title,
-                                            'colour': colour,
-                                        }
-                                    )
+                                    full_title = title_prefix + column.title
+                                if self._is_search_match(search_string=search_string, title=full_title):
+                                    if for_select2:
+                                        fields.append({'id': full_id, 'text': full_title})
+                                    else:
+                                        fields.append(
+                                            {
+                                                'field': full_id,
+                                                'label': full_title,
+                                                'colour': colour,
+                                            }
+                                        )
 
         if allow_pivots and not for_select2 and pivot_fields is not None:
             for pivot_code, pivot_field in report_builder_class.pivot_fields.items():
@@ -286,6 +316,20 @@ class ReportBuilderFieldUtils:
                     )
         if show_includes:
             for include_field, include in report_builder_class.includes.items():
+                include_full_id = f'{prefix}{include_field}'
+                if only_include_names and (selected_field_id is None or selected_field_id == include_full_id):
+                    if for_select2:
+                        fields.append({'id': include_full_id, 'text': f'{title_prefix}{include["title"]}'})
+                    else:
+                        fields.append(
+                            {
+                                'field': include_full_id,
+                                'label': f'{title_prefix}{include["title"]}',
+                                'colour': include.get('colour'),
+                                'include': include,
+                            }
+                        )
+
                 app_label, model, report_builder_fields_str = include['model'].split('.')
                 local_allow_pivots = allow_pivots
                 if local_allow_pivots and not include.get('allow_pivots', True):
@@ -316,6 +360,7 @@ class ReportBuilderFieldUtils:
                         show_order_by_fields=show_order_by_fields,
                         allow_pivots=local_allow_pivots,
                         show_includes=include.get('show_includes', True),
+                        only_include_names=only_include_names,
                     )
 
         if include_mathematical_columns:

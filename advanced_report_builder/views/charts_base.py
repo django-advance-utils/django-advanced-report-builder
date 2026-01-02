@@ -153,8 +153,12 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
 
     def extra_filters(self, query):
         report_query = self.get_report_query(report=self.chart_report)
-        if report_query:
-            query = self.process_query_filters(query=query, search_filter_data=report_query.query)
+        option_query = self.get_report_option_query()
+        if report_query or option_query:
+            search_filter_data = report_query.query if report_query else None
+            query = self.process_query_filters(
+                query=query, search_filter_data=search_filter_data, extra_filter=option_query
+            )
         return query
 
     def get_date_format(self):
@@ -374,7 +378,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
 
         self.add_menu('button_menu', 'button_group').add_items(
             *report_menu,
-            *self.queries_menu(report=self.report, dashboard_report=self.dashboard_report),
+            *self.queries_option_menus(report=self.report, dashboard_report=self.dashboard_report),
         )
 
     def pod_dashboard_edit_menu(self):

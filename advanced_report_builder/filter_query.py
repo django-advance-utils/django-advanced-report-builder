@@ -10,8 +10,8 @@ from django.db.models.functions import ExtractWeekDay
 from django.shortcuts import get_object_or_404
 
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
-from advanced_report_builder.models import ReportQuery
-from advanced_report_builder.utils import get_report_builder_class
+from advanced_report_builder.models import ReportOption, ReportQuery
+from advanced_report_builder.utils import get_report_builder_class, try_int
 from advanced_report_builder.variable_date import VariableDate
 
 
@@ -128,12 +128,16 @@ class FilterQueryMixin:
         self.base_model = None
         self.period_data = PeriodData()
         self._held_report_query = None
+        self._report_options_data = None
         super().__init__(*args, **kwargs)
 
-    def process_query_filters(self, query, search_filter_data, extra_filter_data=None):
+    def process_query_filters(self, query, search_filter_data, extra_filter_data=None, extra_filter=None):
         annotations = {}
         result = self.process_filters(
-            search_filter_data=search_filter_data, annotations=annotations, extra_filter_data=extra_filter_data
+            search_filter_data=search_filter_data,
+            annotations=annotations,
+            extra_filter_data=extra_filter_data,
+            extra_filter=extra_filter,
         )
         if annotations:
             query = query.annotate(**annotations)
@@ -532,11 +536,81 @@ class FilterQueryMixin:
             return self.dashboard_report.name_override
         else:
             title = self.report.name
+            extra_title_parts = []
             report_queries_count = self.report.reportquery_set.all().count()
             if report_queries_count > 1:
                 version_name = self.get_report_query(report=self.report).name
-                title += f' ({version_name})'
+                extra_title_parts.append(version_name)
+            report_options_data = self.get_report_options_data()
+            report_options = report_options_data['report_options']
+            report_options_dict = report_options_data['report_options_dict']
+
+            for report_option in report_options:
+                base_model = report_option.content_type.model_class()
+                report_cls = get_report_builder_class(
+                    model=base_model, class_name=report_option.report_builder_class_name
+                )
+
+                _obj = base_model.objects.filter(pk=report_options_dict.get(report_option.pk)).first()
+                if _obj is not None:
+                    method = getattr(_obj, report_cls.option_label, None)
+                    label = method() if callable(method) else _obj.__str__()
+                    extra_title_parts.append(label)
+
+            if extra_title_parts:
+                extra_title_parts = ' - '.join(extra_title_parts)
+                title = f'{title} ({extra_title_parts})'
+
             return title
+
+    def get_report_option_query(self):
+        report_options_data = self.get_report_options_data()
+        report_options = report_options_data['report_options']
+        report_options_dict = report_options_data['report_options_dict']
+        # build query
+        query = Q()
+
+        for report_option in report_options:
+            value = report_options_dict.get(report_option.id)
+            if value:
+                query &= Q(**{f'{report_option.field}_id': value})
+
+        return query
+
+    def get_report_options_data(self):
+        if self._report_options_data is None:
+            report_options_dict = {}
+            dashboard_report = self.dashboard_report
+            dashboard_report_id = dashboard_report.id if dashboard_report else None
+
+            # dashboard-level overrides (primary)
+            if dashboard_report and dashboard_report.options:
+                for k, v in dashboard_report.options.items():
+                    if not k.startswith('option'):
+                        continue
+                    try:
+                        key = int(k[len('option') :])
+                    except ValueError:
+                        continue
+                    report_options_dict[key] = try_int(v)
+
+            if self.slug is not None:
+                # options from slug
+                for k, v in self.slug.items():
+                    if not k.startswith('option'):
+                        continue
+                    key = k[len('option') :]
+                    if isinstance(key, str) and '_' in key:
+                        key, option_database_board_id = key.split('_', 1)
+                        if dashboard_report_id != try_int(option_database_board_id):
+                            continue
+                    key = try_int(key)
+                    report_options_dict[key] = try_int(v)
+
+            report_options = ReportOption.objects.filter(report=self.report, id__in=report_options_dict.keys())
+            self._report_options_data = {'report_options': report_options, 'report_options_dict': report_options_dict}
+
+        return self._report_options_data
 
     def _get_report_builder_class(self, base_model, field_str, report_builder_class, previous_base_model=None):
         if '__' in field_str:
