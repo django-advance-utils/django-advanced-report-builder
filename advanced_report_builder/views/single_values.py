@@ -206,6 +206,11 @@ class SingleValueView(ValueBaseView):
         slug = f'pk-{self.table.single_value.id}-enable_links-{self.table.enable_links}'
         if query_id is not None:
             slug += f'-query{self.report.pk}-{query_id}'
+
+        report_options_data = self.get_report_options_data()
+        report_options_dict = report_options_data['report_options_dict']
+        for key, value in report_options_dict.items():
+            slug += f'-option{key}-{value}'
         return slug
 
     def get_breakdown_url(self):
@@ -608,11 +613,13 @@ class SingleValueShowBreakdownModal(TableUtilsMixin, Modal):
         single_value_report = get_object_or_404(SingleValueReport, pk=self.slug['pk'])
         self.kwargs['enable_links'] = self.slug['enable_links'] == 'True'
         self.table_report = single_value_report
+        self.report = single_value_report
         base_model = single_value_report.get_base_model()
         table = self.add_table(base_model=base_model)
         table.extra_filters = self.extra_filters
         table_fields = single_value_report.breakdown_fields
-        report_builder_class = get_report_builder_class(model=base_model, report_type=self.table_report.report_type)
+        report_builder_class = get_report_builder_class(model=base_model,
+                                                        report_type=self.table_report.report_type)
         fields_used = set()
         fields_map = {}
         try:
