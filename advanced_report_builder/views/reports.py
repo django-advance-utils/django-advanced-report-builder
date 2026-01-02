@@ -14,41 +14,18 @@ from django_modals.modals import Modal
 from advanced_report_builder.duplicate import DuplicateReport
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.models import Report
-from advanced_report_builder.utils import split_slug
-from advanced_report_builder.views.bar_charts import BarChartView
-from advanced_report_builder.views.calendar import CalendarView
-from advanced_report_builder.views.datatables.datatables import TableView
-from advanced_report_builder.views.error_pod import ErrorPodView
-from advanced_report_builder.views.funnel_charts import FunnelChartView
-from advanced_report_builder.views.kanban import KanbanView
-from advanced_report_builder.views.line_charts import LineChartView
-from advanced_report_builder.views.multi_value import MultiValueView
-from advanced_report_builder.views.pie_charts import PieChartView
-from advanced_report_builder.views.single_values import SingleValueView
+from advanced_report_builder.utils import split_slug, get_view_type_class, get_template_type_class
 
 
 class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
     model = Report
-    views = {
-        'tablereport': TableView,
-        'singlevaluereport': SingleValueView,
-        'barchartreport': BarChartView,
-        'linechartreport': LineChartView,
-        'piechartreport': PieChartView,
-        'funnelchartreport': FunnelChartView,
-        'kanbanreport': KanbanView,
-        'calendarreport': CalendarView,
-        'multivaluereport': MultiValueView,
-        'error': ErrorPodView,
-    }
     enable_links = True
-
     custom_views = {}
-
     views_overrides = {}
 
     def __init__(self, *args, **kwargs):
         self.report = None
+        self._view_type_class = None
         super().__init__(*args, **kwargs)
 
     def redirect_url(self):
@@ -73,6 +50,10 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
 
         return super().dispatch(request, *args, **kwargs)
 
+    def get_report_template(self):
+        template_type_class = get_template_type_class()
+        return template_type_class.get_template_name_from_instance_type(instance_type=self.report.instance_type)
+
     def has_permission(self):
         """You can over override this to check if the user has permission to view the report.
         If return false 'report_no_permission' will be called"""
@@ -89,6 +70,7 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         view = self.get_view(report=self.report)
         self.kwargs['report'] = self.report
         self.kwargs['enable_links'] = self.enable_links
+        self.kwargs['output_type_template'] = self.get_report_template()
         try:
             report_data = view.as_view()(self.request, *self.args, **self.kwargs).rendered_content
         except (ReportError, ColumnNameError) as e:
@@ -97,7 +79,7 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         return context
 
     def call_error_view(self, error_message):
-        error_view = self.views_overrides.get('error') if 'error' in self.views_overrides else self.views.get('error')
+        error_view = self.views_overrides.get('error') if 'error' in self.views_overrides else self.view_types.views.get('error')
         report_cls = self.get_view(self.report)
 
         return error_view.as_view()(
@@ -108,12 +90,13 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         ).rendered_content
 
     def get_view(self, report):
+        view_types_class = self.get_view_types_class()
         if report.instance_type == 'customreport':
             view_name = report.customreport.view_name
-            return self.custom_views.get(view_name)
+            return self.custom_views.get(view_name, view_types_class.custom_views.get(view_name))
         elif report.instance_type in self.views_overrides:
             return self.views_overrides.get(report.instance_type)
-        return self.views.get(report.instance_type)
+        return view_types_class.views.get(report.instance_type)
 
     def post(self, request, *args, **kwargs):
         if (
@@ -132,6 +115,11 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
         self.kwargs['report'] = self.report
         self.kwargs['enable_links'] = self.enable_links
         return view.as_view()(self.request, *self.args, **self.kwargs)
+
+    def get_view_types_class(self):
+        if self._view_type_class is None:
+            self._view_type_class = get_view_type_class()
+        return self._view_type_class
 
 
 class DuplicateReportModal(Modal):

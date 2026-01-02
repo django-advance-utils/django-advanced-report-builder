@@ -245,28 +245,37 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
     model = SingleValueReport
     show_order_by = False
     show_target = True
+
+
     widgets = {
         'report_tags': Select2Multiple,
         'show_breakdown': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
     }
 
-    form_fields = [
-        'name',
-        'notes',
-        'report_type',
-        'report_tags',
-        ('single_value_type', {'label': 'Value type'}),
-        ('numerator', {'label': 'Numerator field'}),
-        'average_scale',
-        'average_start_period',
-        'average_end_period',
-        'field',
-        'prefix',
-        'tile_colour',
-        ('decimal_places', {'field_class': 'col-md-5 col-lg-3 input-group-sm'}),
-        'show_breakdown',
-        'breakdown_fields',
-    ]
+    @property
+    def form_fields(self):
+        form_fields = [
+            'name']
+
+
+
+        form_fields += [
+            'notes',
+            'report_type',
+            'report_tags',
+            ('single_value_type', {'label': 'Value type'}),
+            ('numerator', {'label': 'Numerator field'}),
+            'average_scale',
+            'average_start_period',
+            'average_end_period',
+            'field',
+            'prefix',
+            'tile_colour',
+            ('decimal_places', {'field_class': 'col-md-5 col-lg-3 input-group-sm'}),
+            'show_breakdown',
+            'breakdown_fields',
+        ]
+        return form_fields
 
     def form_setup(self, form, *_args, **_kwargs):
         form.add_trigger(

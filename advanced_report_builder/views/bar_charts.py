@@ -69,7 +69,7 @@ class BarChartView(ChartBaseView):
         except FieldDoesNotExist as e:
             raise ReportError(e)
         self.table.bar_chart_report = self.chart_report
-        self.table.datatable_template = 'advanced_report_builder/charts/bar/middle.html'
+        self.table.datatable_template = self.get_report_template()
         self.table.breakdown_url = self.get_breakdown_url()
 
         context['bar_chart_report'] = self.chart_report
