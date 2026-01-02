@@ -10,7 +10,7 @@ from django.db.models.functions import ExtractWeekDay
 from django.shortcuts import get_object_or_404
 
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
-from advanced_report_builder.models import ReportQuery, ReportOption
+from advanced_report_builder.models import ReportOption, ReportQuery
 from advanced_report_builder.utils import get_report_builder_class, try_int
 from advanced_report_builder.variable_date import VariableDate
 
@@ -137,7 +137,7 @@ class FilterQueryMixin:
             search_filter_data=search_filter_data,
             annotations=annotations,
             extra_filter_data=extra_filter_data,
-            extra_filter=extra_filter
+            extra_filter=extra_filter,
         )
         if annotations:
             query = query.annotate(**annotations)
@@ -546,10 +546,10 @@ class FilterQueryMixin:
             report_options_dict = report_options_data['report_options_dict']
 
             for report_option in report_options:
-
                 base_model = report_option.content_type.model_class()
-                report_cls = get_report_builder_class(model=base_model,
-                                                      class_name=report_option.report_builder_class_name)
+                report_cls = get_report_builder_class(
+                    model=base_model, class_name=report_option.report_builder_class_name
+                )
 
                 _obj = base_model.objects.filter(pk=report_options_dict.get(report_option.pk)).first()
                 if _obj is not None:
@@ -564,7 +564,6 @@ class FilterQueryMixin:
             return title
 
     def get_report_option_query(self):
-
         report_options_data = self.get_report_options_data()
         report_options = report_options_data['report_options']
         report_options_dict = report_options_data['report_options_dict']
@@ -578,7 +577,6 @@ class FilterQueryMixin:
 
         return query
 
-
     def get_report_options_data(self):
         if self._report_options_data is None:
             report_options_dict = {}
@@ -591,7 +589,7 @@ class FilterQueryMixin:
                     if not k.startswith('option'):
                         continue
                     try:
-                        key = int(k[len('option'):])
+                        key = int(k[len('option') :])
                     except ValueError:
                         continue
                     report_options_dict[key] = try_int(v)
@@ -600,7 +598,7 @@ class FilterQueryMixin:
             for k, v in self.slug.items():
                 if not k.startswith('option'):
                     continue
-                key = k[len('option'):]
+                key = k[len('option') :]
                 if isinstance(key, str) and '_' in key:
                     key, option_database_board_id = key.split('_', 1)
                     if dashboard_report_id != try_int(option_database_board_id):
@@ -608,12 +606,8 @@ class FilterQueryMixin:
                 key = try_int(key)
                 report_options_dict[key] = try_int(v)
 
-            report_options = ReportOption.objects.filter(
-                report=self.report,
-                id__in=report_options_dict.keys()
-            )
-            self._report_options_data = {'report_options': report_options,
-                                         'report_options_dict': report_options_dict}
+            report_options = ReportOption.objects.filter(report=self.report, id__in=report_options_dict.keys())
+            self._report_options_data = {'report_options': report_options, 'report_options_dict': report_options_dict}
 
         return self._report_options_data
 

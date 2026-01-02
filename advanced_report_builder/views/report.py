@@ -1,5 +1,3 @@
-import copy
-
 from ajax_helpers.mixins import AjaxHelpers
 from django_menus.menu import MenuItem, MenuMixin
 
@@ -20,20 +18,13 @@ class ReportBase(AjaxHelpers, MenuMixin):
     def get_dashboard_class(self, report):
         return None
 
-
     def queries_option_menus(self, report, dashboard_report):
         menus = []
 
-        self._queries_menus(report=report,
-                            dashboard_report=dashboard_report,
-                            menus=menus)
-        self._option_menus(report=report,
-                            dashboard_report=dashboard_report,
-                            menus=menus)
+        self._queries_menus(report=report, dashboard_report=dashboard_report, menus=menus)
+        self._option_menus(report=report, dashboard_report=dashboard_report, menus=menus)
 
         return menus
-
-
 
     def _queries_menus(self, report, dashboard_report, menus):
         query_slug = f'query{report.id}'
@@ -73,11 +64,13 @@ class ReportBase(AjaxHelpers, MenuMixin):
             base_model = report_option.content_type.model_class()
             report_cls = get_report_builder_class(model=base_model, class_name=report_option.report_builder_class_name)
             slug_str = make_slug_str(self.slug, overrides={option_slug: 0})
-            dropdown = [(
-                self.request.resolver_match.view_name,
-                'N/A',
-                {'url_kwargs': {'slug': slug_str}},
-            )]
+            dropdown = [
+                (
+                    self.request.resolver_match.view_name,
+                    'N/A',
+                    {'url_kwargs': {'slug': slug_str}},
+                )
+            ]
             for _obj in base_model.objects.filter(report_cls.options_filter):
                 slug_str = make_slug_str(self.slug, overrides={option_slug: _obj.id})
                 method = getattr(_obj, report_cls.option_label, None)
@@ -97,4 +90,3 @@ class ReportBase(AjaxHelpers, MenuMixin):
                     dropdown=dropdown,
                 )
             )
-

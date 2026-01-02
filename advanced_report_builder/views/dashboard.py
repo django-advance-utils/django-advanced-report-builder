@@ -3,7 +3,7 @@ import copy
 from ajax_helpers.mixins import AjaxHelpers
 from crispy_forms.layout import Fieldset
 from django.conf import settings
-from django.forms import ChoiceField, ModelChoiceField, CharField
+from django.forms import ChoiceField, ModelChoiceField
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -27,7 +27,7 @@ from advanced_report_builder.models import (
     Report,
     ReportQuery,
 )
-from advanced_report_builder.utils import split_slug, get_report_builder_class
+from advanced_report_builder.utils import get_report_builder_class, split_slug
 from advanced_report_builder.views.bar_charts import BarChartView
 from advanced_report_builder.views.calendar import CalendarView
 from advanced_report_builder.views.datatables.datatables import TableView
@@ -235,7 +235,6 @@ class DashboardReportModal(ModelFormModal):
     permission_delete = PERMISSION_OFF
     permission_create = PERMISSION_DISABLE
 
-
     def __init__(self, *args, **kwargs):
         self._report_options = None
         super().__init__(*args, **kwargs)
@@ -294,21 +293,21 @@ class DashboardReportModal(ModelFormModal):
                 field_id = f'option{report_option.id}'
 
                 base_model = report_option.content_type.model_class()
-                report_cls = get_report_builder_class(model=base_model,
-                                                      class_name=report_option.report_builder_class_name)
+                report_cls = get_report_builder_class(
+                    model=base_model, class_name=report_option.report_builder_class_name
+                )
                 choices = [(0, 'N/A')]
                 for _obj in base_model.objects.filter(report_cls.options_filter):
                     method = getattr(_obj, report_cls.option_label, None)
                     label = method() if callable(method) else _obj.__str__()
                     choices.append((_obj.id, label))
                 initial = self.object.options.get(field_id) if self.object.options else None
-                form.fields[field_id] = ChoiceField(required=False,
-                                                    label=report_option.name,
-                                                    choices=choices,
-                                                    initial=initial)
+                form.fields[field_id] = ChoiceField(
+                    required=False, label=report_option.name, choices=choices, initial=initial
+                )
                 options.append(field_id)
             if options:
-                layout.append(Fieldset('Options',*options ))
+                layout.append(Fieldset('Options', *options))
         return layout
 
     def form_valid(self, form):

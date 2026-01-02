@@ -26,7 +26,6 @@ from advanced_report_builder.globals import (
     DISPLAY_OPTION_NONE,
 )
 from advanced_report_builder.signals import model_report_save
-from advanced_report_builder.utils import get_report_builder_class
 
 
 class Target(TimeStampedModel):
