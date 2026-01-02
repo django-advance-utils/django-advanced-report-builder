@@ -320,10 +320,11 @@ class DashboardReportModal(ModelFormModal):
             options = instance.options if instance.options else {}
             for report_option in report_options:
                 field_id = f'option{report_option.id}'
+                raw_value = form.cleaned_data.get(field_id)
                 try:
-                    value = int(form.cleaned_data[field_id])
-                except ValueError:
-                    value = form.cleaned_data[field_id]
+                    value = int(raw_value or 0)
+                except (TypeError, ValueError):
+                    value = 0
                 if value == 0:
                     if field_id in options:
                         del options[field_id]
