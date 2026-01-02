@@ -155,8 +155,9 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         report_query = self.get_report_query(report=self.chart_report)
         option_query = self.get_report_option_query()
         if report_query or option_query:
+            search_filter_data = report_query.query if report_query else None
             query = self.process_query_filters(
-                query=query, search_filter_data=report_query.query, extra_filter=option_query
+                query=query, search_filter_data=search_filter_data, extra_filter=option_query
             )
         return query
 
