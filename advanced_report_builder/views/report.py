@@ -72,7 +72,6 @@ class ReportBase(AjaxHelpers, MenuMixin):
             option_slug = f'option{report_option.id}{append_option_slug}'
             base_model = report_option.content_type.model_class()
             report_cls = get_report_builder_class(model=base_model, class_name=report_option.report_builder_class_name)
-
             slug_str = make_slug_str(self.slug, overrides={option_slug: 0})
             dropdown = [(
                 self.request.resolver_match.view_name,
