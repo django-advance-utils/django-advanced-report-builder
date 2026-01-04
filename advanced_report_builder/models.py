@@ -267,7 +267,7 @@ class Report(TimeStampedModel):
                     output_type = data[self.model_path + 'customreport__output_type']
                     if output_type:
                         return output_type
-                return _page_data['type_labels'][instance_type]
+                return _page_data['type_labels'].get(instance_type, '')
 
         class OutputTypeIcon(OutputTypeBase):
             def __init__(self, **kwargs):
