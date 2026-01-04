@@ -80,7 +80,9 @@ class ViewReportBase(AjaxHelpers, MenuMixin, TemplateView):
 
     def call_error_view(self, error_message):
         error_view = (
-            self.views_overrides.get('error') if 'error' in self.views_overrides else self.view_types.views.get('error')
+            self.views_overrides.get('error')
+            if 'error' in self.views_overrides
+            else self.get_view_types_class().views.get('error')
         )
         report_cls = self.get_view(self.report)
 
