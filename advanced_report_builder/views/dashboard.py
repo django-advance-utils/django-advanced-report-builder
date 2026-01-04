@@ -181,7 +181,7 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         view_kwargs['dashboard_report'] = dashboard_report
         view_kwargs['enable_edit'] = self.enable_edit
         view_kwargs['enable_links'] = self.enable_links
-        self.kwargs['output_type_template'] = self.get_report_template(dashboard_report=dashboard_report)
+        view_kwargs['output_type_template'] = self.get_report_template(dashboard_report=dashboard_report)
         view_kwargs['extra_kwargs'] = extra_kwargs
         return report_view.as_view()(self.request, *self.args, **view_kwargs)
 
