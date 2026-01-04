@@ -141,7 +141,7 @@ class Report(TimeStampedModel):
     def get_child_model_class(self):
         try:
             if '.' in self.instance_type:
-                model = apps.get_model(*self.instance_type)
+                model = apps.get_model(*self.instance_type.split('.'))
             else:
                 model = apps.get_model('advanced_report_builder', self.instance_type)
         except LookupError:
