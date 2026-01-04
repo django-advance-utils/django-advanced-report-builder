@@ -14,11 +14,11 @@ class TemplateTypes:
         'multivaluereport': {'': {'template': 'advanced_report_builder/multi_values/middle.html', 'name': 'Standard'}},
     }
 
-    def get_template_name_from_instance_type(self, instance_type):
+    def get_template_name_from_instance_type(self, instance_type, template_style=''):
         templates_data = self.output_type_templates.get(instance_type)
         if templates_data is None:
             return None
-        template_data = templates_data.get('')
+        template_data = templates_data.get(template_style) or templates_data.get('')
         if template_data is None:
             return None
         return template_data['template']
