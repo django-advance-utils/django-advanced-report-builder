@@ -27,42 +27,25 @@ from advanced_report_builder.models import (
     Report,
     ReportQuery,
 )
-from advanced_report_builder.utils import get_report_builder_class, split_slug
-from advanced_report_builder.views.bar_charts import BarChartView
-from advanced_report_builder.views.calendar import CalendarView
-from advanced_report_builder.views.datatables.datatables import TableView
-from advanced_report_builder.views.error_pod import ErrorPodView
-from advanced_report_builder.views.funnel_charts import FunnelChartView
-from advanced_report_builder.views.kanban import KanbanView
-from advanced_report_builder.views.line_charts import LineChartView
-from advanced_report_builder.views.multi_value import MultiValueView
-from advanced_report_builder.views.pie_charts import PieChartView
-from advanced_report_builder.views.single_values import SingleValueView
+from advanced_report_builder.utils import (
+    get_report_builder_class,
+    get_template_type_class,
+    get_view_type_class,
+    split_slug,
+)
 
 
 class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
     model = Dashboard
     enable_edit = True
     enable_links = True
-    views = {
-        'tablereport': TableView,
-        'singlevaluereport': SingleValueView,
-        'barchartreport': BarChartView,
-        'linechartreport': LineChartView,
-        'piechartreport': PieChartView,
-        'funnelchartreport': FunnelChartView,
-        'kanbanreport': KanbanView,
-        'calendarreport': CalendarView,
-        'multivaluereport': MultiValueView,
-        'error': ErrorPodView,
-    }
-
     custom_views = {}
     views_overrides = {}
     ajax_commands = ['button', 'select2', 'ajax']
 
     def __init__(self, *args, **kwargs):
         self.dashboard = None
+        self._view_type_class = None
         super().__init__(*args, **kwargs)
 
     def redirect_url(self):
@@ -86,6 +69,11 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
                     return redirect_url
 
         return super().dispatch(request, *args, **kwargs)
+
+    def get_view_types_class(self):
+        if self._view_type_class is None:
+            self._view_type_class = get_view_type_class()
+        return self._view_type_class
 
     @staticmethod
     def get_top_report_class(reports):
@@ -159,7 +147,12 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         return context
 
     def call_error_view(self, dashboard_report, extra_class_name, error_message):
-        error_view = self.views_overrides.get('error') if 'error' in self.views_overrides else self.views.get('error')
+        view_types_class = self.get_view_types_class()
+        error_view = (
+            self.views_overrides.get('error')
+            if 'error' in self.views_overrides
+            else view_types_class.views.get('error')
+        )
         report_data = self.call_view(
             dashboard_report=dashboard_report, report_view=error_view, extra_kwargs={'error_message': error_message}
         ).rendered_content
@@ -172,12 +165,13 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         return report
 
     def get_view(self, report):
+        view_types_class = self.get_view_types_class()
         if report.instance_type == 'customreport':
             view_name = report.customreport.view_name
-            return self.custom_views.get(view_name)
+            return self.custom_views.get(view_name, view_types_class.custom_views.get(view_name))
         elif report.instance_type in self.views_overrides:
             return self.views_overrides.get(report.instance_type)
-        return self.views.get(report.instance_type)
+        return view_types_class.views.get(report.instance_type)
 
     def call_view(self, dashboard_report, report_view=None, extra_kwargs=None):
         if report_view is None:
@@ -187,9 +181,13 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         view_kwargs['dashboard_report'] = dashboard_report
         view_kwargs['enable_edit'] = self.enable_edit
         view_kwargs['enable_links'] = self.enable_links
+        view_kwargs['output_type_template'] = self.get_report_template(dashboard_report=dashboard_report)
         view_kwargs['extra_kwargs'] = extra_kwargs
-
         return report_view.as_view()(self.request, *self.args, **view_kwargs)
+
+    def get_report_template(self, dashboard_report):
+        template_types = get_template_type_class()
+        return template_types.get_template_name_from_instance_type(instance_type=dashboard_report.report.instance_type)
 
     def post(self, request, *args, **kwargs):
         table_id = request.POST.get('table_id')

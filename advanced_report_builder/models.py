@@ -1,9 +1,10 @@
+from django.apps import apps
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.forms import ChoiceField
 from django.utils.dates import MONTHS
-from django_datatables.columns import DatatableColumn, ManyToManyColumn, NoHeadingColumn
+from django_datatables.columns import DatatableColumn, ManyToManyColumn
 from django_datatables.model_def import DatatableModel
 from django_modals.model_fields.colour import ColourField
 from django_modals.widgets.select2 import Select2
@@ -134,37 +135,40 @@ class ReportType(TimeStampedModel):
 
 
 class Report(TimeStampedModel):
-    output_types = {
-        'tablereport': 'Table',
-        'singlevaluereport': 'Single Value',
-        'barchartreport': 'Bar Chart',
-        'linechartreport': 'Line Chart',
-        'piechartreport': 'Pie Chart',
-        'funnelchartreport': 'Funnel Chart',
-        'kanbanreport': 'Kanban',
-        'customreport': 'Custom',
-        'calendarreport': 'Calendar',
-        'multivaluereport': 'Multi Values',
-    }
+    report_type_label = 'N/A'
+    report_type_icon = '<i class="far fa-file"></i>'
 
-    output_types_icons = {
-        'tablereport': '<i class="fas fa-table"></i>',
-        'singlevaluereport': '<i class="fas fa-box-open"></i>',
-        'barchartreport': '<i class="fas fa-chart-bar"></i>',
-        'linechartreport': '<i class="fas fa-chart-line"></i>',
-        'piechartreport': '<i class="fas fa-chart-pie"></i>',
-        'funnelchartreport': '<i class="fas fa-filter"></i>',
-        'kanbanreport': '<i class="fas fa-chart-bar fa-flip-vertical"></i>',
-        'customreport': '<i class="fas fa-file"></i>',
-        'calendarreport': '<i class="fas fa-calendar"></i>',
-        'multivaluereport': '<i class="fas fa-grip-horizontal"></i>',
-    }
+    def get_child_model_class(self):
+        try:
+            if '.' in self.instance_type:
+                model = apps.get_model(*self.instance_type.split('.'))
+            else:
+                model = apps.get_model('advanced_report_builder', self.instance_type)
+        except LookupError:
+            return None
+
+        return model()
+
+    def get_output_type_name(self):
+        child_model_class = self.get_child_model_class()
+        if child_model_class is None:
+            return self.report_type_label
+        else:
+            return child_model_class.report_type_label
+
+    def get_output_type_icon(self):
+        child_model_class = self.get_child_model_class()
+        if child_model_class is None:
+            return self.report_type_icon
+        else:
+            return child_model_class.report_type_icon
 
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
     slug_alias = models.SlugField(blank=True, null=True)  # used if the slug changes
     report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
     instance_type = models.CharField(null=True, max_length=255)
+    template_style = models.CharField(blank=True, null=True, max_length=255)
     report_tags = models.ManyToManyField(ReportTag, blank=True)
     notes = models.TextField(null=True, blank=True)
     version = models.PositiveSmallIntegerField(default=0)
@@ -195,9 +199,6 @@ class Report(TimeStampedModel):
     def get_title(self):
         return self.name
 
-    def get_output_type_name(self):
-        return self.output_types[self.instance_type]
-
     def save(self, *args, **kwargs):
         current_user = getattr(self, '_current_user', None)
         if current_user is not None and current_user.is_authenticated:
@@ -212,7 +213,11 @@ class Report(TimeStampedModel):
         if slug_alias != self.slug:
             self.slug_alias = slug_alias
         if self.instance_type is None:
-            self.instance_type = self._meta.label_lower.split('.')[1]
+            instance_type_data = self._meta.label_lower.split('.')
+            if instance_type_data[0] == 'advanced_report_builder':
+                self.instance_type = instance_type_data[1]
+            else:
+                self.instance_type = self._meta.label_lower
         result = super().save(*args, **kwargs)
         model_report_save.send(sender=self.__class__, instance=self, created=is_new, user=current_user)
         return result
@@ -235,7 +240,23 @@ class Report(TimeStampedModel):
         pass
 
     class Datatable(DatatableModel):
-        class OutputType(DatatableColumn):
+        class OutputTypeBase(DatatableColumn):
+            def setup_results(self, request, all_results):
+                if 'type_labels' not in all_results or 'type_icons' not in all_results:
+                    instance_types = Report.objects.values_list('instance_type', flat=True).distinct()
+
+                    type_labels = {}
+                    type_icons = {}
+
+                    for instance_type in instance_types:
+                        report = Report(instance_type=instance_type)
+                        type_labels[instance_type] = report.get_output_type_name()
+                        type_icons[instance_type] = report.get_output_type_icon()
+
+                    all_results['type_labels'] = type_labels
+                    all_results['type_icons'] = type_icons
+
+        class OutputType(OutputTypeBase):
             def col_setup(self):
                 self.field = ['instance_type', 'customreport__output_type']
 
@@ -246,16 +267,22 @@ class Report(TimeStampedModel):
                     output_type = data[self.model_path + 'customreport__output_type']
                     if output_type:
                         return output_type
-                return Report.output_types.get(instance_type, '')
+                return _page_data['type_labels'].get(instance_type, '')
 
-        class OutputTypeIcon(NoHeadingColumn):
+        class OutputTypeIcon(OutputTypeBase):
+            def __init__(self, **kwargs):
+                kwargs['title'] = ''
+                kwargs['no_col_search'] = True
+                kwargs['column_defs'] = {'orderable': False}
+                super().__init__(**kwargs)
+
             def col_setup(self):
                 self.field = ['instance_type']
 
             # noinspection PyMethodMayBeStatic
             def row_result(self, data, _page_data):
                 instance_type = data[self.model_path + 'instance_type']
-                return Report.output_types_icons.get(instance_type, '')
+                return _page_data['type_icons'].get(instance_type, '')
 
         report_tags_badge = ManyToManyColumn(
             field='report_tags__name',
@@ -323,6 +350,9 @@ class ReportQueryOrder(TimeStampedModel):
 
 
 class TableReport(Report):
+    report_type_label = 'Table'
+    report_type_icon = '<i class="fas fa-table"></i>'
+
     table_fields = models.JSONField(null=True, blank=True)
     has_clickable_rows = models.BooleanField(default=False)
     link_field = models.CharField(max_length=200, blank=True, null=True)
@@ -343,6 +373,9 @@ class TableReport(Report):
 
 
 class SingleValueReport(Report):
+    report_type_label = 'Single Value'
+    report_type_icon = '<i class="fas fa-box-open"></i>'
+
     class SingleValueType(models.IntegerChoices):
         COUNT = 1, 'Count'
         SUM = 2, 'Sum'
@@ -379,6 +412,9 @@ class SingleValueReport(Report):
 
 
 class BarChartReport(Report):
+    report_type_label = 'Bar Chart'
+    report_type_icon = '<i class="fas fa-chart-bar"></i>'
+
     class BarChartOrientation(models.IntegerChoices):
         VERTICAL = 1, 'Vertical'
         HORIZONTAL = 2, 'Horizontal'
@@ -423,6 +459,9 @@ class BarChartReport(Report):
 
 
 class LineChartReport(Report):
+    report_type_label = 'Line Chart'
+    report_type_icon = '<i class="fas fa-chart-line"></i>'
+
     axis_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES)
     date_field = models.CharField(max_length=200)
     axis_value_type = models.PositiveSmallIntegerField(
@@ -444,6 +483,9 @@ class LineChartReport(Report):
 
 
 class PieChartReport(Report):
+    report_type_label = 'Pie Chart'
+    report_type_icon = '<i class="fas fa-chart-pie"></i>'
+
     class PieChartStyle(models.IntegerChoices):
         PIE = 1, 'Pie'
         DOUGHNUT = 2, 'Doughnut'
@@ -462,6 +504,9 @@ class PieChartReport(Report):
 
 
 class FunnelChartReport(Report):
+    report_type_label = 'Funnel'
+    report_type_icon = '<i class="fas fa-filter"></i>'
+
     axis_value_type = models.PositiveSmallIntegerField(
         choices=ANNOTATIONS_CHOICES,
         default=ANNOTATION_CHOICE_COUNT,
@@ -472,6 +517,9 @@ class FunnelChartReport(Report):
 
 
 class KanbanReport(Report):
+    report_type_label = 'Kanban Report'
+    report_type_icon = '<i class="fas fa-chart-bar fa-flip-vertical"></i>'
+
     def show_dashboard_query(self):
         return False  # show queries if true
 
@@ -559,6 +607,9 @@ class KanbanReportLane(TimeStampedModel):
 
 
 class MultiValueReport(Report):
+    report_type_label = 'Multi Values'
+    report_type_icon = '<i class="fas fa-grip-horizontal"></i>'
+
     rows = models.PositiveSmallIntegerField()
     columns = models.PositiveSmallIntegerField()
     default_multi_cell_style = models.ForeignKey('MultiCellStyle', on_delete=models.PROTECT, null=True, blank=True)
@@ -694,6 +745,9 @@ class MultiValueReportCell(TimeStampedModel):
 
 
 class CalendarReport(Report):
+    report_type_label = 'Calendar'
+    report_type_icon = '<i class="fas fa-calendar"></i>'
+
     VIEW_TYPE_CODES = {
         CALENDAR_VIEW_TYPE_MONTH: 'dayGridMonth',
         CALENDAR_VIEW_TYPE_GRID_WEEK: 'timeGridWeek',
@@ -810,6 +864,9 @@ class CalendarReportDataSet(TimeStampedModel):
 
 
 class CustomReport(Report):
+    report_type_label = 'Custom'
+    report_type_icon = '<i class="fas fa-file"></i>'
+
     output_type = models.CharField(max_length=200, blank=True, null=True)
     view_name = models.CharField(max_length=200)
     settings = models.JSONField(null=True, blank=True)
