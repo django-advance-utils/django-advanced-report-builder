@@ -1,11 +1,15 @@
 class TemplateTypes:
     output_type_templates = {
-        'singlevaluereport': {'': {'template': 'advanced_report_builder/single_values/middle.html', 'name': 'Standard'}},
+        'singlevaluereport': {
+            '': {'template': 'advanced_report_builder/single_values/middle.html', 'name': 'Standard'}
+        },
         'barchartreport': {'': {'template': 'advanced_report_builder/charts/bar/middle.html', 'name': 'Standard'}},
         'linechartreport': {'': {'template': 'advanced_report_builder/charts/line/middle.html', 'name': 'Standard'}},
         'piechartreport': {'': {'template': 'advanced_report_builder/charts/pie/middle.html', 'name': 'Standard'}},
-        'funnelchartreport': {'': {'template': 'advanced_report_builder/charts/funnel/middle.html', 'name': 'Standard'}},
-        'kanbanreport':  {'': {'template': 'advanced_report_builder/kanban/middle.html', 'name': 'Standard'}},
+        'funnelchartreport': {
+            '': {'template': 'advanced_report_builder/charts/funnel/middle.html', 'name': 'Standard'}
+        },
+        'kanbanreport': {'': {'template': 'advanced_report_builder/kanban/middle.html', 'name': 'Standard'}},
         'calendarreport': {'': {'template': 'advanced_report_builder/calendar/middle.html', 'name': 'Standard'}},
         'multivaluereport': {'': {'template': 'advanced_report_builder/multi_values/middle.html', 'name': 'Standard'}},
     }

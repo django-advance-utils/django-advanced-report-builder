@@ -35,8 +35,9 @@ from advanced_report_builder.models import ReportType, Target
 from advanced_report_builder.utils import (
     count_days,
     get_report_builder_class,
+    get_template_type_class,
     split_attr,
-    split_slug, get_template_type_class,
+    split_slug,
 )
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.helpers import QueryBuilderForm
