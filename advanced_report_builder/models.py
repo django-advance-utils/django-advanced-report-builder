@@ -282,7 +282,7 @@ class Report(TimeStampedModel):
             # noinspection PyMethodMayBeStatic
             def row_result(self, data, _page_data):
                 instance_type = data[self.model_path + 'instance_type']
-                return _page_data['type_icons'][instance_type]
+                return _page_data['type_icons'].get(instance_type, '')
 
         report_tags_badge = ManyToManyColumn(
             field='report_tags__name',
