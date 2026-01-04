@@ -148,3 +148,23 @@ def try_int(value):
         return int(value)
     except (TypeError, ValueError):
         return value
+
+
+def get_view_type_class():
+    cls_path = getattr(
+        settings,
+        'REPORT_BUILDER_VIEW_TYPES_CLASS',
+        'advanced_report_builder.view_types.ViewTypes',
+    )
+    cls = import_string(cls_path)
+    return cls()
+
+
+def get_template_type_class():
+    cls_path = getattr(
+        settings,
+        'REPORT_BUILDER_TEMPLATE_TYPES_CLASS',
+        'advanced_report_builder.template_types.TemplateTypes',
+    )
+    cls = import_string(cls_path)
+    return cls()
