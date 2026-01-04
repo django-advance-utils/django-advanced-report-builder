@@ -36,7 +36,7 @@ from advanced_report_builder.utils import (
     count_days,
     get_report_builder_class,
     split_attr,
-    split_slug,
+    split_slug, get_template_type_class,
 )
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.helpers import QueryBuilderForm
@@ -160,6 +160,10 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
                 query=query, search_filter_data=search_filter_data, extra_filter=option_query
             )
         return query
+
+    def get_report_template(self):
+        template_type_class = get_template_type_class()
+        return template_type_class.get_template_name_from_instance_type(instance_type=self.report.instance_type)
 
     def get_date_format(self):
         return '%Y-%m-%d'
