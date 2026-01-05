@@ -100,8 +100,7 @@ class Target(TimeStampedModel):
             return self.default_colour
 
         rule = (
-            self.targetcolour_set
-            .filter(percentage__gte=percentage)
+            self.targetcolour_set.filter(percentage__gte=percentage)
             .exclude(colour__isnull=True)
             .order_by('percentage')
             .first()

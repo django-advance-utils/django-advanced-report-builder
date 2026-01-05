@@ -1,10 +1,10 @@
-from crispy_forms.layout import Div, HTML
+from crispy_forms.layout import HTML, Div
 from django.conf import settings
 from django.forms import CharField
 from django.urls import reverse
 from django_datatables.columns import MenuColumn
 from django_datatables.widgets import DataTableWidget
-from django_menus.menu import MenuItem, HtmlMenu
+from django_menus.menu import HtmlMenu, MenuItem
 from django_modals.modals import ModelFormModal
 from django_modals.processes import PERMISSION_OFF, PROCESS_EDIT_DELETE
 
@@ -28,7 +28,6 @@ class TargetModal(ModelFormModal):
             self.add_target_colours(form=form, fields=fields)
         return fields
 
-
     def post_save(self, created, form):
         if created:
             url_name = getattr(settings, 'REPORT_BUILDER_TARGET_URL_NAME', '')
@@ -37,9 +36,7 @@ class TargetModal(ModelFormModal):
                 self.add_command('redirect', url=url)
 
     def add_target_colours(self, form, fields):
-        add_query_js = (
-            'django_modal.process_commands_lock([{"function": "post_modal", "button": {"button": "add_target_colour"}}])'
-        )
+        add_query_js = 'django_modal.process_commands_lock([{"function": "post_modal", "button": {"button": "add_target_colour"}}])'
 
         description_add_menu_items = [
             MenuItem(
@@ -96,7 +93,6 @@ class TargetModal(ModelFormModal):
             ),
         ]
         return description_edit_menu_items
-
 
     def button_add_target_colour(self, **_kwargs):
         slug = f'target_id-{self.object.id}'

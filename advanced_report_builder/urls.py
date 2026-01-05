@@ -60,7 +60,7 @@ from advanced_report_builder.views.single_values import (
     SingleValueShowBreakdownModal,
     SingleValueTableFieldModal,
 )
-from advanced_report_builder.views.targets.views import TargetModal, TargetColourModal
+from advanced_report_builder.views.targets.views import TargetColourModal, TargetModal
 
 app_name = 'advanced_report_builder'
 
