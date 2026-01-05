@@ -164,8 +164,9 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
 
     def get_report_template(self):
         template_type_class = get_template_type_class()
-        return template_type_class.get_template_name_from_instance_type(instance_type=self.report.instance_type,
-                                                                        template_style=self.report.template_style)
+        return template_type_class.get_template_name_from_instance_type(
+            instance_type=self.report.instance_type, template_style=self.report.template_style
+        )
 
     def get_date_format(self):
         return '%Y-%m-%d'
