@@ -22,7 +22,8 @@ from advanced_report_builder.models import (
     ReportType,
     SingleValueReport,
     TableReport,
-    Target, TargetColour,
+    Target,
+    TargetColour,
 )
 
 

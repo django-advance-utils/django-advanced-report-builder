@@ -99,6 +99,7 @@ class Target(TimeStampedModel):
         self.make_new_slug()
         super().save(*args, **kwargs)
 
+
 class TargetColour(TimeStampedModel):
     target = models.ForeignKey('Target', on_delete=models.CASCADE)
     percentage = models.FloatField(blank=True, null=True, help_text='Less than or equal.')

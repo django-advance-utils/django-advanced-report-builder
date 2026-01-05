@@ -2,7 +2,7 @@ class TemplateTypes:
     output_type_templates = {
         'singlevaluereport': {
             '': {'template': 'advanced_report_builder/single_values/middle.html', 'name': 'Standard'},
-            'gauge': {'template': 'advanced_report_builder/single_values/gauge_middle.html', 'name': 'Gauge'}
+            'gauge': {'template': 'advanced_report_builder/single_values/gauge_middle.html', 'name': 'Gauge'},
         },
         'barchartreport': {'': {'template': 'advanced_report_builder/charts/bar/middle.html', 'name': 'Standard'}},
         'linechartreport': {'': {'template': 'advanced_report_builder/charts/line/middle.html', 'name': 'Standard'}},
@@ -32,4 +32,3 @@ class TemplateTypes:
         for code, template_data in templates_data.items():
             templates_choices.append((code, template_data['name']))
         return templates_choices
-
