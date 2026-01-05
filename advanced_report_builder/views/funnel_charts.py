@@ -41,7 +41,7 @@ class FunnelChartView(ChartBaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         self.table.funnel_chart_report = self.chart_report
-        self.table.datatable_template = 'advanced_report_builder/charts/funnel/middle.html'
+        self.table.datatable_template = self.get_report_template()
         context['funnel_chart_report'] = self.chart_report
         return context
 

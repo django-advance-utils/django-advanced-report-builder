@@ -1,0 +1,141 @@
+{% if datatable.breakdown_url %}
+  <a href="{{ datatable.breakdown_url }}"
+     style="display:block; position:relative; cursor:pointer;">
+    <canvas id="{{ datatable.table_id }}"></canvas>
+  </a>
+{% else %}
+  <canvas id="{{ datatable.table_id }}"></canvas>
+{% endif %}
+<script>
+(function () {
+    var display_target = "{{ datatable.target_data.target_value|safe|default:"100" }}";   // change this2
+    const target = parseFloat(display_target.replace(/[^0-9.]/g, ''));
+
+var actual = 0;
+var display_actual = 0
+var table = {{ datatable.model_table_setup }};
+    table.find_column = django_datatables.PythonTable.prototype.find_column
+    if (table.data.length > 0) {
+        if (table.initsetup.colOptions[0]['render'] != undefined) {
+            render = new django_datatables.column_render(0, table.initsetup.colOptions[0]['render'], table);
+            actual = render(table.data[0][0], null, table.data[0]);
+        } else {
+            actual = table.data[0][0];
+        }
+        display_actual = actual;
+        if (actual == null) {
+            actual = 0;
+            display_actual = 0;
+        } else {
+            actual = parseFloat(actual.replace(/[^0-9.]/g, ''));
+        }
+    }
+
+// --------- DATA ----------
+const percent = target > 0
+    ? Math.round((actual / target) * 100)
+    : 0;
+    const performanceColour =
+        {% if datatable.target_data.colour %}
+            '#{{ datatable.target_data.colour }}'
+        {% else %}
+            percent < 40 ? '#d9534f' :
+            percent < 70 ? '#f0ad4e' :
+                           '#5cb85c'
+        {% endif %};
+
+
+    function formatNumber(n) {
+        return '{{ datatable.prefix|default_if_none:"" }}' + n + '{% if datatable.single_value.is_percentage %}%{% endif %}';
+    }
+
+    // ---- CENTER TEXT ----
+    const centerText = {
+        id: 'centerText',
+        afterDraw(chart) {
+            const { ctx, chartArea } = chart;
+            const x = (chartArea.left + chartArea.right) / 2;
+            const y = chartArea.bottom - 80;
+
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#{{ datatable.single_value.font_colour|default:"000000" }}';
+
+            ctx.font = 'bold 52px Arial';
+            ctx.fillText(formatNumber(display_actual), x, y - 40);
+
+            ctx.font = '22px Arial';
+            ctx.fillText(display_target, x, y);
+
+            ctx.restore();
+        }
+    };
+
+    // ---- % BADGE ----
+    const percentBadge = {
+        id: 'percentBadge',
+        afterDraw(chart) {
+            const ctx = chart.ctx;
+            const arc = chart.getDatasetMeta(0).data[0];
+            if (!arc) return;
+
+            const angle = arc.endAngle;
+            const radius = arc.outerRadius - 20;
+
+            const x = arc.x + Math.cos(angle) * radius;
+            const y = arc.y + Math.sin(angle) * radius;
+
+            ctx.save();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = '#dcdcdc';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.roundRect(x - 22, y - 14, 44, 28, 6);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#2c2c2c';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(percent + '%', x, y);
+
+            ctx.restore();
+        }
+    };
+
+    // ---- CHART ----
+    var ctx{{ datatable.table_id }} = document.getElementById('{{ datatable.table_id }}').getContext('2d');
+
+    new Chart(ctx{{ datatable.table_id }}, {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [
+                    actual,
+                    Math.max(0, target - actual)
+                ],
+                backgroundColor: [
+                    performanceColour,
+                    '#e6e6e6'
+                ],
+                borderWidth: 0,
+                cutout: '70%'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            rotation: -120,
+            circumference: 240,
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false }
+            }
+        },
+        plugins: [centerText, percentBadge]
+    });
+
+})();
+</script>

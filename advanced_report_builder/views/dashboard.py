@@ -187,7 +187,9 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
 
     def get_report_template(self, dashboard_report):
         template_types = get_template_type_class()
-        return template_types.get_template_name_from_instance_type(instance_type=dashboard_report.report.instance_type)
+        return template_types.get_template_name_from_instance_type(
+            instance_type=dashboard_report.report.instance_type,
+            template_style=dashboard_report.report.template_style)
 
     def post(self, request, *args, **kwargs):
         table_id = request.POST.get('table_id')

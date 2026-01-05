@@ -1,7 +1,8 @@
 class TemplateTypes:
     output_type_templates = {
         'singlevaluereport': {
-            '': {'template': 'advanced_report_builder/single_values/middle.html', 'name': 'Standard'}
+            '': {'template': 'advanced_report_builder/single_values/middle.html', 'name': 'Standard'},
+            'gauge': {'template': 'advanced_report_builder/single_values/gauge_middle.html', 'name': 'Gauge'}
         },
         'barchartreport': {'': {'template': 'advanced_report_builder/charts/bar/middle.html', 'name': 'Standard'}},
         'linechartreport': {'': {'template': 'advanced_report_builder/charts/line/middle.html', 'name': 'Standard'}},
@@ -22,3 +23,13 @@ class TemplateTypes:
         if template_data is None:
             return None
         return template_data['template']
+
+    def get_template_style_choices(self, instance_type):
+        templates_data = self.output_type_templates.get(instance_type)
+        if templates_data is None:
+            return []
+        templates_choices = []
+        for code, template_data in templates_data.items():
+            templates_choices.append((code, template_data['name']))
+        return templates_choices
+

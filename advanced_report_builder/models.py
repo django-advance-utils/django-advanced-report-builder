@@ -45,7 +45,7 @@ class Target(TimeStampedModel):
     name = models.CharField(max_length=64)
     target_type = models.PositiveSmallIntegerField(choices=TargetType.choices)
     period_type = models.PositiveSmallIntegerField(choices=PeriodType.choices, default=PeriodType.MONTHLY)
-    colour = ColourField(null=True, blank=True, help_text='The colour when it gets displayed on a report')
+    colour = ColourField(null=True, blank=True, help_text='The default colour when it gets displayed on a report')
     default_value = models.IntegerField(blank=True, null=True)
     default_percentage = models.FloatField(blank=True, null=True)
     overridden = models.BooleanField(default=False)
@@ -98,6 +98,14 @@ class Target(TimeStampedModel):
         """
         self.make_new_slug()
         super().save(*args, **kwargs)
+
+class TargetColour(TimeStampedModel):
+    target = models.ForeignKey('Target', on_delete=models.CASCADE)
+    percentage = models.FloatField(blank=True, null=True, help_text='Less than or equal.')
+    colour = ColourField(null=True, blank=True)
+
+    def __str__(self):
+        return self.percentage
 
 
 class ReportTag(TimeStampedModel):
@@ -394,6 +402,7 @@ class SingleValueReport(Report):
             }
 
     tile_colour = ColourField(blank=True, null=True)
+    font_colour = ColourField(blank=True, null=True)
     field = models.CharField(max_length=200, blank=True, null=True)  # denominator
     numerator = models.CharField(max_length=200, blank=True, null=True)
     single_value_type = models.PositiveSmallIntegerField(choices=SingleValueType.choices, default=SingleValueType.COUNT)
