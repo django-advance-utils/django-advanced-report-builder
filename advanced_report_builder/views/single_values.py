@@ -192,7 +192,7 @@ class SingleValueView(ValueBaseView):
 
         return {
             'target_value': target_value,
-            'colour': target.colour,
+            'colour': target.get_colour_from_percentage(percentage=percentage),
             'percentage': percentage,
             'bar_percentage': bar_percentage,
         }

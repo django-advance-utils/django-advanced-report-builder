@@ -45,7 +45,7 @@ class Target(TimeStampedModel):
     name = models.CharField(max_length=64)
     target_type = models.PositiveSmallIntegerField(choices=TargetType.choices)
     period_type = models.PositiveSmallIntegerField(choices=PeriodType.choices, default=PeriodType.MONTHLY)
-    colour = ColourField(null=True, blank=True, help_text='The default colour when it gets displayed on a report')
+    default_colour = ColourField(null=True, blank=True, help_text='The colour when it gets displayed on a report')
     default_value = models.IntegerField(blank=True, null=True)
     default_percentage = models.FloatField(blank=True, null=True)
     overridden = models.BooleanField(default=False)
@@ -89,6 +89,28 @@ class Target(TimeStampedModel):
         if sorted_dict:
             self.override_data = sorted_dict
             self.save()
+
+    def get_colour_from_percentage(self, percentage):
+        """
+        Returns a colour based on percentage thresholds.
+        Falls back to default_colour if no rule matches.
+        """
+
+        if percentage is None:
+            return self.default_colour
+
+        rule = (
+            self.targetcolour_set
+            .filter(percentage__gte=percentage)
+            .exclude(colour__isnull=True)
+            .order_by('percentage')
+            .first()
+        )
+
+        if rule and rule.colour:
+            return rule.colour
+
+        return self.default_colour
 
     def save(self, *args, **kwargs):
         """

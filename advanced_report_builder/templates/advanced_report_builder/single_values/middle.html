@@ -14,7 +14,7 @@
          role="progressbar"
          style="
            width: {{ datatable.target_data.bar_percentage }}%;
-           background-color: {% if datatable.target_data.colour %}#{{ datatable.target_data.colour }}{% else %}#28a745{% endif %};">
+           background-color: #{{ datatable.target_data.colour|default:"#008000" }};">
     </div>
   </div>
 </div>
@@ -61,3 +61,4 @@
         }
     })();
 </script>
+</div>

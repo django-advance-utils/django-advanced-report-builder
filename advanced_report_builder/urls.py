@@ -60,7 +60,7 @@ from advanced_report_builder.views.single_values import (
     SingleValueShowBreakdownModal,
     SingleValueTableFieldModal,
 )
-from advanced_report_builder.views.targets.views import TargetModal
+from advanced_report_builder.views.targets.views import TargetModal, TargetColourModal
 
 app_name = 'advanced_report_builder'
 
@@ -231,4 +231,5 @@ urlpatterns = [
         name='duplicate_report_modal',
     ),
     path('target/modal/<str:slug>/', TargetModal.as_view(), name='target_modal'),
+    path('target/colour/modal/<str:slug>/', TargetColourModal.as_view(), name='target_colour_modal'),
 ]

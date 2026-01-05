@@ -32,18 +32,20 @@ var table = {{ datatable.model_table_setup }};
     }
 
 // --------- DATA ----------
+
+console.log('{{ datatable.target_data.colour }}');
 const percent = target > 0
     ? Math.round((actual / target) * 100)
     : 0;
     const performanceColour =
         {% if datatable.target_data.colour %}
-            '#{{ datatable.target_data.colour }}'
+            '#{{ datatable.target_data.colour|default:"008000" }}'
         {% else %}
             percent < 40 ? '#d9534f' :
             percent < 70 ? '#f0ad4e' :
                            '#5cb85c'
         {% endif %};
-
+    console.log(performanceColour);
 
     function formatNumber(n) {
         return '{{ datatable.prefix|default_if_none:"" }}' + n + '{% if datatable.single_value.is_percentage %}%{% endif %}';
