@@ -9,6 +9,7 @@ from django.db.models import F, Q
 from django.db.models.functions import ExtractWeekDay
 from django.shortcuts import get_object_or_404
 
+from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.models import ReportOption, ReportQuery
 from advanced_report_builder.utils import get_report_builder_class, try_int
@@ -263,6 +264,14 @@ class FilterQueryMixin:
                     field=field,
                     query_string=query_string,
                 )
+            elif data_type == 'string' and _id.endswith('__financial_variable_year'):
+                self.get_variable_financial_year(
+                    value=value,
+                    query_list=query_list,
+                    display_operator=display_operator,
+                    field=field,
+                    query_string=query_string,
+                )
             elif data_type == 'string' and _id.endswith('__variable_month'):
                 self.get_variable_month(
                     value=value,
@@ -295,6 +304,17 @@ class FilterQueryMixin:
                     field=field,
                     query_string=query_string,
                 )
+            elif data_type == 'string' and _id.endswith('__financial_week_number'):
+                fy_start = self.get_financial_year(rules=query_data['rules'])
+                self.get_financial_week_number(
+                    value=value,
+                    query_list=query_list,
+                    display_operator=display_operator,
+                    field=field,
+                    query_string=query_string,
+                    fy_start=fy_start,
+                )
+
             elif data_type == 'string' and _id.endswith('__logged_in_user'):
                 self.get_logged_in_user(
                     value=value,
@@ -316,6 +336,44 @@ class FilterQueryMixin:
                     query_list.append(Q((query_string, value)))
 
         return query_list
+
+    def get_financial_year(self, rules):
+        for rule in rules:
+            if 'condition' in rule:
+                continue
+
+            if rule['operator'] != 'equal':
+                continue
+
+            data_type = rule['type']
+            value = rule.get('value')
+            _id = rule['id']
+
+            # 1) Variable Date → Financial Year
+            if data_type == 'string' and _id.endswith('__variable_date'):
+                _, range_type = str(value).split(':')
+                range_type = int(range_type)
+
+                if range_type in (
+                    VariableDate.RANGE_TYPE_LAST_FINANCIAL_YEAR,
+                    VariableDate.RANGE_TYPE_THIS_FINANCIAL_YEAR,
+                    VariableDate.RANGE_TYPE_NEXT_FINANCIAL_YEAR,
+                ):
+                    variable_date = VariableDate()
+                    dates = variable_date.get_variable_dates(
+                        range_type=range_type,
+                        financial_year_start_month=self.get_financial_month(),
+                    )
+                    return dates[0]
+
+            # 2) Explicit Financial Year (value IS the year)
+            elif data_type == 'string' and _id.endswith('__financial_variable_year'):
+                _, year = str(value).split(':')
+                year = int(year)
+                start_month = self.get_financial_month()
+                return datetime.date(year, start_month, 1)
+
+        return None
 
     @staticmethod
     def field_vs_field(value, query_list, display_operator, query_string):
@@ -392,6 +450,56 @@ class FilterQueryMixin:
                 self.set_min_max_date(date_in=start_date)
                 self.set_min_max_date(date_in=end_date)
 
+    def get_variable_financial_year(
+        self,
+        value,
+        query_list,
+        display_operator,
+        field,
+        query_string,
+    ):
+        if display_operator in ['is_null', 'is_not_null']:
+            query_list.append(Q((query_string, value)))
+            return
+
+        _, year = value.split(':')
+        year = int(year)
+
+        start_month = self.get_financial_month()
+
+        start_date = datetime.date(year, start_month, 1)
+        end_date = datetime.date(year + 1, start_month, 1) - datetime.timedelta(days=1)
+
+        if display_operator in [
+            'less',
+            'less_or_equal',
+            'greater',
+            'greater_or_equal',
+        ]:
+            if display_operator == 'less':
+                query_list.append(Q(**{f'{field}__lt': start_date}))
+                self.set_min_max_date(date_in=start_date)
+
+            elif display_operator == 'less_or_equal':
+                query_list.append(Q(**{f'{field}__lte': end_date}))
+                self.set_min_max_date(date_in=end_date)
+
+            elif display_operator == 'greater':
+                query_list.append(Q(**{f'{field}__gt': end_date}))
+                self.set_min_max_date(date_in=end_date)
+
+            elif display_operator == 'greater_or_equal':
+                query_list.append(Q(**{f'{field}__gte': start_date}))
+                self.set_min_max_date(date_in=start_date)
+
+        elif display_operator in ['not_equal', 'not_in']:
+            query_list.append(~(Q(**{f'{field}__gte': start_date}) & Q(**{f'{field}__lte': end_date})))
+
+        else:  # equal / in
+            query_list.append(Q(**{f'{field}__gte': start_date}) & Q(**{f'{field}__lte': end_date}))
+            self.set_min_max_date(date_in=start_date)
+            self.set_min_max_date(date_in=end_date)
+
     @staticmethod
     def get_variable_month(value, query_list, display_operator, field, query_string):
         if display_operator in ['is_null', 'is_not_null']:
@@ -459,7 +567,9 @@ class FilterQueryMixin:
         if display_operator in ['is_null', 'is_not_null']:
             query_list.append(Q((query_string, value)))
             return
+
         week = int(value)
+
         operator_map = {
             'equal': '',
             'not_equal': '',
@@ -480,6 +590,59 @@ class FilterQueryMixin:
             query_list.append(~q)
         else:
             query_list.append(q)
+
+    @staticmethod
+    def get_financial_week_number(
+        value,
+        query_list,
+        display_operator,
+        field,
+        query_string,
+        *,
+        fy_start,
+    ):
+        """
+        Applies a Financial Week Number filter.
+
+        Financial weeks are calculated relative to the financial year start date.
+        Week 1 begins at fy_start and each week spans 7 days.
+        """
+
+        if display_operator in ['is_null', 'is_not_null']:
+            query_list.append(Q((query_string, value)))
+            return
+
+        if fy_start is None:
+            raise ReportError(
+                'Financial Week Number requires a Financial Year '
+                '(select a Financial Year or use a Financial Year date range).'
+            )
+
+        week = int(value)
+
+        if not 1 <= week <= 53:
+            raise ReportError('Financial Week Number must be between 1 and 53')
+
+        week_start = fy_start + datetime.timedelta(days=(week - 1) * 7)
+        week_end = week_start + datetime.timedelta(days=7)
+
+        if display_operator == 'equal':
+            query_list.append(Q(**{f'{field}__gte': week_start}) & Q(**{f'{field}__lt': week_end}))
+
+        elif display_operator == 'not_equal':
+            query_list.append(~(Q(**{f'{field}__gte': week_start}) & Q(**{f'{field}__lt': week_end})))
+
+        elif display_operator == 'less':
+            query_list.append(Q(**{f'{field}__lt': week_start}))
+
+        elif display_operator == 'less_or_equal':
+            query_list.append(Q(**{f'{field}__lt': week_end}))
+
+        elif display_operator == 'greater':
+            query_list.append(Q(**{f'{field}__gte': week_end}))
+
+        elif display_operator == 'greater_or_equal':
+            query_list.append(Q(**{f'{field}__gte': week_start}))
 
     def get_logged_in_user(self, value, query_list, display_operator, query_string):
         # noinspection PyUnresolvedReferences
