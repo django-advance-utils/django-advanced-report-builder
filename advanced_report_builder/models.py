@@ -127,7 +127,9 @@ class TargetColour(TimeStampedModel):
     colour = ColourField(null=True, blank=True)
 
     def __str__(self):
-        return self.percentage
+        if self.percentage is None:
+            return 'No percentage'
+        return f'≤ {self.percentage}%'
 
 
 class ReportTag(TimeStampedModel):
