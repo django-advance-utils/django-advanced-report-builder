@@ -542,7 +542,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                 'field': field_name,
                 'column_name': field_name,
                 'model_path': '',
-                'render': [render_replace(html='%1%&thinsp;%', column=field_name)],
+                'render': [render_replace(html='%1%%', column=field_name)],
                 'hidden': data_attr.get('hidden', 0) == '1',
             }
         )

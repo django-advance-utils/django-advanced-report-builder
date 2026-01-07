@@ -27,7 +27,7 @@ from advanced_report_builder.globals import (
     ANNOTATION_CHOICE_SUM,
 )
 from advanced_report_builder.models import ReportOption, ReportQuery, ReportType, SingleValueReport, Target
-from advanced_report_builder.utils import get_query_js, get_report_builder_class
+from advanced_report_builder.utils import get_query_js, get_report_builder_class, get_template_type_class
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.datatables.modal import (
     TableFieldForm,
@@ -144,8 +144,6 @@ class SingleValueView(ValueBaseView):
 
     def set_prefix(self):
         self.table.prefix = self.chart_report.prefix
-        if self.table.prefix:
-            self.table.prefix += ' '
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -153,7 +151,7 @@ class SingleValueView(ValueBaseView):
         self.table.single_value = self.chart_report
         self.table.enable_links = self.kwargs.get('enable_links')
         self.table.target_data = self.get_target_data()
-        self.table.datatable_template = 'advanced_report_builder/single_values/middle.html'
+        self.table.datatable_template = self.get_report_template()
         self.table.breakdown_url = self.get_breakdown_url()
         context['single_value_report'] = self.chart_report
         return context
@@ -185,7 +183,7 @@ class SingleValueView(ValueBaseView):
         if target.target_type == Target.TargetType.MONEY:
             prefix = self.chart_report.prefix
             target_value = intcomma(f'{float(target_value):.2f}')
-            target_value = f'{prefix}&thinsp;{target_value}'
+            target_value = f'{prefix}{target_value}'
         else:
             if float(target_value).is_integer():
                 target_value = str(int(float(target_value)))
@@ -194,7 +192,7 @@ class SingleValueView(ValueBaseView):
 
         return {
             'target_value': target_value,
-            'colour': target.colour,
+            'colour': target.get_colour_from_percentage(percentage=percentage),
             'percentage': percentage,
             'bar_percentage': bar_percentage,
         }
@@ -251,9 +249,16 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
         'show_breakdown': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
     }
 
+    def __init__(self, *args, **kwargs):
+        self._template_styles = None
+        super().__init__(*args, **kwargs)
+
     @property
     def form_fields(self):
         form_fields = ['name']
+        template_styles = self.get_template_styles()
+        if len(template_styles) > 1:
+            form_fields.append('template_style')
 
         form_fields += [
             'notes',
@@ -267,13 +272,22 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
             'field',
             'prefix',
             'tile_colour',
+            'font_colour',
             ('decimal_places', {'field_class': 'col-md-5 col-lg-3 input-group-sm'}),
             'show_breakdown',
             'breakdown_fields',
         ]
         return form_fields
 
+    def get_template_styles(self):
+        if self._template_styles is None:
+            template_type_class = get_template_type_class()
+            self._template_styles = template_type_class.get_template_style_choices(instance_type='singlevaluereport')
+        return self._template_styles
+
     def form_setup(self, form, *_args, **_kwargs):
+        template_styles = self.get_template_styles()
+
         form.add_trigger(
             'single_value_type',
             'onchange',
@@ -383,8 +397,13 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
         range_type_choices = VariableDate.RANGE_TYPE_CHOICES
         form.fields['average_start_period'] = ChoiceField(required=False, choices=range_type_choices)
         form.fields['average_end_period'] = ChoiceField(required=False, choices=range_type_choices)
-        fields = [
-            'name',
+        fields = ['name']
+
+        if len(template_styles) > 1:
+            form.fields['template_style'] = ChoiceField(choices=template_styles, required=False)
+            fields.append('template_style')
+
+        fields += [
             'notes',
             'report_type',
             'report_tags',
@@ -396,6 +415,7 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
             'average_end_period',
             'prefix',
             'tile_colour',
+            'font_colour',
             'decimal_places',
             'show_breakdown',
             FieldEx(

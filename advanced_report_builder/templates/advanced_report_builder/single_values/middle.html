@@ -3,21 +3,21 @@
     {% if datatable.breakdown_url %}
         <a class="single_value_link" href="{{ datatable.breakdown_url }}"><h1 id="{{ datatable.table_id }}"></h1></a>{% else %} <h1 id="{{ datatable.table_id }}"></h1>{% endif %}
         {% if datatable.target_data %}
-<div class="d-flex align-items-center" style="gap: 0.5rem;">
-  <div style="min-width: 100px; text-align: right; font-weight: bold;">
-
-    {{ datatable.target_data.percentage|floatformat }}% of {{ datatable.target_data.target_value|safe}}
-</div>
-<div class="flex-grow-1">
-  <div class="progress" style="height: 24px;">
-    <div class="progress-bar"
-         role="progressbar"
-         style="
+  <div class="d-flex align-items-center" style="gap: 0.5rem;">
+    <div style="min-width: 100px; text-align: right; font-weight: bold;">
+      {{ datatable.target_data.percentage|floatformat }}% of {{ datatable.target_data.target_value|safe}}
+    </div>
+  <div class="flex-grow-1">
+    <div class="progress" style="height: 24px;">
+      <div class="progress-bar"
+           role="progressbar"
+           style="
            width: {{ datatable.target_data.bar_percentage }}%;
-           background-color: {% if datatable.target_data.colour %}#{{ datatable.target_data.colour }}{% else %}#28a745{% endif %};">
+           background-color: #{{ datatable.target_data.colour|default:"008000" }};">
+      </div>
     </div>
   </div>
-</div>
+  </div>
         {% endif %}
 
 </div>

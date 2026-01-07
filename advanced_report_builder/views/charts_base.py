@@ -164,7 +164,9 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
 
     def get_report_template(self):
         template_type_class = get_template_type_class()
-        return template_type_class.get_template_name_from_instance_type(instance_type=self.report.instance_type)
+        return template_type_class.get_template_name_from_instance_type(
+            instance_type=self.report.instance_type, template_style=self.report.template_style
+        )
 
     def get_date_format(self):
         return '%Y-%m-%d'
@@ -172,7 +174,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
     def get_date_field(self, index, fields, base_model, table):
         field_name = self.chart_report.date_field
         if field_name is None:
-            return
+            return None
         report_builder_class = get_report_builder_class(model=base_model, report_type=self.chart_report.report_type)
 
         django_field, col_type_override, _, _ = self.get_field_details(

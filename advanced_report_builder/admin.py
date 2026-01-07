@@ -23,6 +23,7 @@ from advanced_report_builder.models import (
     SingleValueReport,
     TableReport,
     Target,
+    TargetColour,
 )
 
 
@@ -182,8 +183,13 @@ class ReportTagAdmin(admin.ModelAdmin):
     list_display = ('name', 'order')
 
 
+class TargetColourInline(admin.TabularInline):
+    model = TargetColour
+
+
 @admin.register(Target)
 class TargetAdmin(admin.ModelAdmin):
+    inlines = [TargetColourInline]
     list_display = ('pk', 'name', 'target_type', 'default_value')
 
 
