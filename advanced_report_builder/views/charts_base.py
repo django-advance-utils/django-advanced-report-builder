@@ -424,7 +424,6 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         end_date_type,
         exclude_weekdays=None,
         exclude_dates=None,
-        financial_year_start_month: int = 4,  # April default
     ):
         """
         Calculates the number of periods (year, quarter, month, week, day)

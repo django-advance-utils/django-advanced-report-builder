@@ -591,7 +591,7 @@ class VariableDate:
     def get_date_filter_years():
         values = {}
         today = date.today()
-        start_year = today.year - 10
+        start_year = today.year - 15
         end_year = start_year + 15
 
         for year in range(start_year, end_year):
