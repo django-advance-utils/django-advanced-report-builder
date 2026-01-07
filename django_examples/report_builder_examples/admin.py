@@ -73,6 +73,7 @@ class TallyAdmin(admin.ModelAdmin):
         'tractors',
         'user_profile',
         'verified',
+        'description',
     )
 
 

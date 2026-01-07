@@ -367,6 +367,7 @@ class Tally(models.Model):
     tractors = models.IntegerField()
     verified = models.BooleanField(default=False)
     user_profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE, null=True, blank=True)
+    description = models.CharField(max_length=1025, null=True, blank=True)
 
     class Meta:
         verbose_name_plural = 'Tallies'
@@ -389,6 +390,7 @@ class Tally(models.Model):
             'tractors',
             'verified',
             'tag',
+            'description',
         ]
 
         includes = {
