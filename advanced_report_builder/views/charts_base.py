@@ -94,7 +94,7 @@ class ChartJSTable(DatatableTable):
                     target_value = self.process_target_results(data_dict=data_dict, target=target)
                     new_data_structure.append(target_value)
                 label = target.name + ' Target'
-                colour = '#' + target.colour
+                colour = '#' + target.default_colour
                 results.append(
                     {
                         'label': label,
