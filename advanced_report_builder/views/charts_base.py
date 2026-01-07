@@ -101,7 +101,7 @@ class ChartJSTable(DatatableTable):
                         'data': new_data_structure,
                         'borderWidth': 1,
                         'backgroundColor': [colour for _ in range(len(new_data_structure))],
-                        'borderColor': '#' + target.colour,
+                        'borderColor': '#' + target.default_colour,
                     }
                 )
         return results
