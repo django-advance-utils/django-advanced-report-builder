@@ -331,7 +331,7 @@ class FieldTypes(ReportBuilderFieldUtils):
             operator_type=self.OperatorFieldType.WEEK_NUMBER,
             values={i: i for i in range(1, 54)},
         )
-        # Week number (ISO-safe: 1–53)
+        # Financial Week Number (1–53 relative to financial year start)
         add_filter(
             suffix='financial_week_number',
             label='Financial Week Number – requires Financial Year',
