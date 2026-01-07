@@ -183,13 +183,13 @@ class ReportTagAdmin(admin.ModelAdmin):
     list_display = ('name', 'order')
 
 
-class TargetColumnInline(admin.TabularInline):
+class TargetColourInline(admin.TabularInline):
     model = TargetColour
 
 
 @admin.register(Target)
 class TargetAdmin(admin.ModelAdmin):
-    inlines = [TargetColumnInline]
+    inlines = [TargetColourInline]
     list_display = ('pk', 'name', 'target_type', 'default_value')
 
 
