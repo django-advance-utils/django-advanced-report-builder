@@ -92,6 +92,14 @@ class FieldTypes(ReportBuilderFieldUtils):
                 'greater',
                 'greater_or_equal',
             ],
+            self.OperatorFieldType.FINANCIAL_WEEK_NUMBER: [
+                'equal',
+                'not_equal',
+                'less',
+                'less_or_equal',
+                'greater',
+                'greater_or_equal',
+            ],
             self.OperatorFieldType.COMPARE_STRING: ['equal', 'not_equal'],
             self.OperatorFieldType.COMPARE_NUMBER: [
                 'equal',
