@@ -592,7 +592,7 @@ class VariableDate:
         values = {}
         today = date.today()
         start_year = today.year - 15
-        end_year = start_year + 15
+        end_year = start_year + 20
 
         for year in range(start_year, end_year):
             values['#year:%d' % year] = year
