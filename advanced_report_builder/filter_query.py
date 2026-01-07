@@ -355,9 +355,9 @@ class FilterQueryMixin:
                 range_type = int(range_type)
 
                 if range_type in (
-                        VariableDate.RANGE_TYPE_LAST_FINANCIAL_YEAR,
-                        VariableDate.RANGE_TYPE_THIS_FINANCIAL_YEAR,
-                        VariableDate.RANGE_TYPE_NEXT_FINANCIAL_YEAR,
+                    VariableDate.RANGE_TYPE_LAST_FINANCIAL_YEAR,
+                    VariableDate.RANGE_TYPE_THIS_FINANCIAL_YEAR,
+                    VariableDate.RANGE_TYPE_NEXT_FINANCIAL_YEAR,
                 ):
                     variable_date = VariableDate()
                     dates = variable_date.get_variable_dates(
@@ -451,12 +451,12 @@ class FilterQueryMixin:
                 self.set_min_max_date(date_in=end_date)
 
     def get_variable_financial_year(
-            self,
-            value,
-            query_list,
-            display_operator,
-            field,
-            query_string,
+        self,
+        value,
+        query_list,
+        display_operator,
+        field,
+        query_string,
     ):
         if display_operator in ['is_null', 'is_not_null']:
             query_list.append(Q((query_string, value)))
@@ -493,18 +493,10 @@ class FilterQueryMixin:
                 self.set_min_max_date(date_in=start_date)
 
         elif display_operator in ['not_equal', 'not_in']:
-            query_list.append(
-                ~(
-                        Q(**{f'{field}__gte': start_date}) &
-                        Q(**{f'{field}__lte': end_date})
-                )
-            )
+            query_list.append(~(Q(**{f'{field}__gte': start_date}) & Q(**{f'{field}__lte': end_date})))
 
         else:  # equal / in
-            query_list.append(
-                Q(**{f'{field}__gte': start_date}) &
-                Q(**{f'{field}__lte': end_date})
-            )
+            query_list.append(Q(**{f'{field}__gte': start_date}) & Q(**{f'{field}__lte': end_date}))
             self.set_min_max_date(date_in=start_date)
             self.set_min_max_date(date_in=end_date)
 
@@ -601,13 +593,13 @@ class FilterQueryMixin:
 
     @staticmethod
     def get_financial_week_number(
-            value,
-            query_list,
-            display_operator,
-            field,
-            query_string,
-            *,
-            fy_start,
+        value,
+        query_list,
+        display_operator,
+        field,
+        query_string,
+        *,
+        fy_start,
     ):
         """
         Applies a Financial Week Number filter.
@@ -622,31 +614,23 @@ class FilterQueryMixin:
 
         if fy_start is None:
             raise ReportError(
-                "Financial Week Number requires a Financial Year "
-                "(select a Financial Year or use a Financial Year date range)."
+                'Financial Week Number requires a Financial Year '
+                '(select a Financial Year or use a Financial Year date range).'
             )
 
         week = int(value)
 
         if not 1 <= week <= 53:
-            raise ReportError("Financial Week Number must be between 1 and 53")
+            raise ReportError('Financial Week Number must be between 1 and 53')
 
         week_start = fy_start + datetime.timedelta(days=(week - 1) * 7)
         week_end = week_start + datetime.timedelta(days=7)
 
         if display_operator == 'equal':
-            query_list.append(
-                Q(**{f'{field}__gte': week_start}) &
-                Q(**{f'{field}__lt': week_end})
-            )
+            query_list.append(Q(**{f'{field}__gte': week_start}) & Q(**{f'{field}__lt': week_end}))
 
         elif display_operator == 'not_equal':
-            query_list.append(
-                ~(
-                        Q(**{f'{field}__gte': week_start}) &
-                        Q(**{f'{field}__lt': week_end})
-                )
-            )
+            query_list.append(~(Q(**{f'{field}__gte': week_start}) & Q(**{f'{field}__lt': week_end})))
 
         elif display_operator == 'less':
             query_list.append(Q(**{f'{field}__lt': week_start}))
@@ -659,7 +643,6 @@ class FilterQueryMixin:
 
         elif display_operator == 'greater_or_equal':
             query_list.append(Q(**{f'{field}__gte': week_start}))
-
 
     def get_logged_in_user(self, value, query_list, display_operator, query_string):
         # noinspection PyUnresolvedReferences
