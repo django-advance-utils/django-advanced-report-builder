@@ -80,7 +80,7 @@ class ReportBase(AjaxHelpers, MenuMixin):
             report_cls = get_report_builder_class(model=base_model, class_name=report_option.report_builder_class_name)
             qs = base_model.objects.filter(report_cls.options_filter)
             # Fetch at most 21 rows
-            probe = list(qs[:self.max_dropdown_option+1])
+            probe = list(qs[: self.max_dropdown_option + 1])
             if len(probe) <= self.max_dropdown_option:
                 slug_str = make_slug_str(self.slug, overrides={option_slug: 0})
                 dropdown = [
