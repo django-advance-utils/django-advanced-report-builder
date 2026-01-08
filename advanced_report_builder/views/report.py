@@ -3,7 +3,6 @@ from urllib.parse import quote, unquote
 
 from ajax_helpers.mixins import AjaxHelpers
 from django.forms import ChoiceField
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_menus.menu import MenuItem, MenuMixin
@@ -218,17 +217,16 @@ class SelectOptionModal(FormModal):
         if search:
             qs = qs.filter(name__icontains=search)
 
-        qs = qs[:self.max_options]
+        qs = qs[: self.max_options]
 
         new_results = []
 
         # Add synthetic option (not from DB)
         if not search:
-            new_results.append((0, "N/A"))
+            new_results.append((0, 'N/A'))
 
         for _obj in qs:
             label = self.get_option_label(_obj, report_cls)
             new_results.append((_obj.id, label))
 
         return select2_ajax_result(new_results)
-
