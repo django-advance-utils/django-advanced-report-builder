@@ -3,12 +3,13 @@ from urllib.parse import quote, unquote
 
 from ajax_helpers.mixins import AjaxHelpers
 from django.forms import ChoiceField
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_menus.menu import MenuItem, MenuMixin
 from django_modals.forms import CrispyForm
 from django_modals.modals import FormModal
-from django_modals.widgets.select2 import Select2
+from django_modals.widgets.select2 import Select2, select2_ajax_result
 
 from advanced_report_builder.models import ReportOption
 from advanced_report_builder.utils import get_report_builder_class, make_slug_str
@@ -131,6 +132,7 @@ class ReportBase(AjaxHelpers, MenuMixin):
 
 class SelectOptionModal(FormModal):
     form_class = CrispyForm
+    max_options = 50
 
     @property
     def modal_title(self):
@@ -170,11 +172,22 @@ class SelectOptionModal(FormModal):
             choices.append((_obj.id, label))
 
         option_slug = self.get_option_slug()
-
-        form.fields['select_option'] = ChoiceField(widget=Select2(), choices=choices)
-
+        choices = []
+        initial = None
         if option_slug in self.slug:
-            form.fields['select_option'].initial = self.slug[option_slug]
+            _obj = base_model.objects.filter(report_cls.options_filter).first()
+            if _obj is not None:
+                label = self.get_option_label(_obj, report_cls)
+                choices.append((_obj.id, label))
+                initial = _obj.id
+
+        class MyChoiceField(ChoiceField):
+            def validate(self, value):
+                return
+
+        form.fields['select_option'] = MyChoiceField(widget=Select2(attrs={'ajax': True}), choices=choices)
+        if initial is None:
+            form.fields['select_option'].initial = initial
 
     def get_option_slug(self):
         if self._option_slug is None:
@@ -196,3 +209,26 @@ class SelectOptionModal(FormModal):
         )
         url = reverse(view_name, kwargs={'slug': slug_str})
         return self.command_response('redirect', url=url)
+
+    def select2_select_option(self, search=None, page=None, **_kwargs):
+        report_cls, base_model = self.get_report_class_and_base_model()
+
+        qs = base_model.objects.filter(report_cls.options_filter)
+
+        if search:
+            qs = qs.filter(name__icontains=search)
+
+        qs = qs[:self.max_options]
+
+        new_results = []
+
+        # Add synthetic option (not from DB)
+        if not search:
+            new_results.append((0, "N/A"))
+
+        for _obj in qs:
+            label = self.get_option_label(_obj, report_cls)
+            new_results.append((_obj.id, label))
+
+        return select2_ajax_result(new_results)
+
