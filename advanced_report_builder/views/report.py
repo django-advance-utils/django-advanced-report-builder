@@ -185,7 +185,7 @@ class SelectOptionModal(FormModal):
                 return
 
         form.fields['select_option'] = MyChoiceField(widget=Select2(attrs={'ajax': True}), choices=choices)
-        if initial is None:
+        if initial is not None:
             form.fields['select_option'].initial = initial
 
     def get_option_slug(self):
