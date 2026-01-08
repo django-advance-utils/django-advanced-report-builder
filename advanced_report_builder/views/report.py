@@ -144,7 +144,7 @@ class SelectOptionModal(FormModal):
             self._report_option = get_object_or_404(ReportOption, pk=self.slug['report_option'])
         return self._report_option
 
-    def get_report_class_base_model(self):
+    def get_report_class_and_base_model(self):
         if self._report_cls is None:
             report_option = self.get_report_option()
             self._base_model = report_option.content_type.model_class()
@@ -158,7 +158,7 @@ class SelectOptionModal(FormModal):
         return method() if callable(method) else obj.__str__()
 
     def form_setup(self, form, *_args, **_kwargs):
-        report_cls, base_model = self.get_report_class_base_model()
+        report_cls, base_model = self.get_report_class_and_base_model()
         choices = [(0, 'N/A')]
         for _obj in base_model.objects.filter(report_cls.options_filter):
             label = self.get_option_label(_obj, report_cls)
