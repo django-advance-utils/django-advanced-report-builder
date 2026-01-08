@@ -3,7 +3,6 @@ from urllib.parse import quote, unquote
 
 from ajax_helpers.mixins import AjaxHelpers
 from django.forms import ChoiceField
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_menus.menu import MenuItem, MenuMixin
@@ -81,7 +80,7 @@ class ReportBase(AjaxHelpers, MenuMixin):
             report_cls = get_report_builder_class(model=base_model, class_name=report_option.report_builder_class_name)
             qs = base_model.objects.filter(report_cls.options_filter)
             # Fetch at most 21 rows
-            probe = list(qs[:self.max_dropdown_option+1])
+            probe = list(qs[: self.max_dropdown_option + 1])
             if len(probe) <= self.max_dropdown_option:
                 slug_str = make_slug_str(self.slug, overrides={option_slug: 0})
                 dropdown = [
@@ -218,17 +217,16 @@ class SelectOptionModal(FormModal):
         if search:
             qs = qs.filter(name__icontains=search)
 
-        qs = qs[:self.max_options]
+        qs = qs[: self.max_options]
 
         new_results = []
 
         # Add synthetic option (not from DB)
         if not search:
-            new_results.append((0, "N/A"))
+            new_results.append((0, 'N/A'))
 
         for _obj in qs:
             label = self.get_option_label(_obj, report_cls)
             new_results.append((_obj.id, label))
 
         return select2_ajax_result(new_results)
-
