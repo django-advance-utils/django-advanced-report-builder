@@ -223,14 +223,13 @@ class SelectOptionModal(FormModal):
                 if fields:
                     query = Q()
                     for field in fields:
-                        query |= Q(**{f"{field}__icontains": search})
+                        query |= Q(**{f'{field}__icontains': search})
 
                     qs = qs.filter(query)
 
             except FieldError:
                 # Invalid field name → fall back to unfiltered qs
                 pass
-
 
         qs = qs[: self.max_options]
 
