@@ -153,12 +153,15 @@ class SelectOptionModal(FormModal):
             )
         return self._report_cls, self._base_model
 
+    def get_option_label(self, obj, report_cls):
+        method = getattr(obj, report_cls.option_label, None)
+        return method() if callable(method) else obj.__str__()
+
     def form_setup(self, form, *_args, **_kwargs):
         report_cls, base_model = self.get_report_class_base_model()
         choices = [(0, 'N/A')]
         for _obj in base_model.objects.filter(report_cls.options_filter):
-            method = getattr(_obj, report_cls.option_label, None)
-            label = method() if callable(method) else _obj.__str__()
+            label = self.get_option_label(_obj, report_cls)
             choices.append((_obj.id, label))
 
         option_slug = self.get_option_slug()
