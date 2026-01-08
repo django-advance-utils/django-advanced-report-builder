@@ -34,11 +34,7 @@ def make_slug_str(slug, overrides=None, excludes=None):
         return slug['pk']
 
     # 1. Start from base slug
-    final = {
-        k: v
-        for k, v in slug.items()
-        if k not in excludes
-    }
+    final = {k: v for k, v in slug.items() if k not in excludes}
 
     # 2. Apply overrides (replace or add)
     for k, v in overrides.items():

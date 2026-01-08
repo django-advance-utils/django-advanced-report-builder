@@ -2,16 +2,14 @@ from ajax_helpers.mixins import AjaxHelpers
 from ajax_helpers.utils import is_ajax
 from django.conf import settings
 from django.contrib import messages
-from django.forms import CharField
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.views.generic import TemplateView
 from django_datatables.columns import ColumnNameError
 from django_menus.menu import MenuItemDisplay, MenuMixin
-from django_modals.forms import CrispyForm
 from django_modals.helper import modal_button, modal_button_method
-from django_modals.modals import Modal, FormModal
+from django_modals.modals import Modal
 
 from advanced_report_builder.duplicate import DuplicateReport
 from advanced_report_builder.exceptions import ReportError
@@ -154,5 +152,3 @@ class DuplicateReportModal(Modal):
             return self.command_response('redirect', url=url)
         else:
             return self.command_response('reload')
-
-

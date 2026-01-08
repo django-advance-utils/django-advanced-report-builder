@@ -2,7 +2,7 @@ import base64
 from urllib.parse import quote, unquote
 
 from ajax_helpers.mixins import AjaxHelpers
-from django.forms import CharField, ChoiceField
+from django.forms import ChoiceField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_menus.menu import MenuItem, MenuMixin
@@ -102,12 +102,18 @@ class ReportBase(AjaxHelpers, MenuMixin):
                         no_hover=True,
                         css_classes='btn-secondary',
                         dropdown=dropdown,
-                    ))
+                    )
+                )
             else:
-                view_name_encoded = quote(base64.b64encode(view_name.encode()).decode(), safe="")
-                slug_str = make_slug_str(self.slug, overrides={'report_option': report_option.id,
-                                                               'view_name': view_name_encoded,
-                                                               'dashboard_report_id': dashboard_report_id})
+                view_name_encoded = quote(base64.b64encode(view_name.encode()).decode(), safe='')
+                slug_str = make_slug_str(
+                    self.slug,
+                    overrides={
+                        'report_option': report_option.id,
+                        'view_name': view_name_encoded,
+                        'dashboard_report_id': dashboard_report_id,
+                    },
+                )
                 menus.append(
                     MenuItem(
                         menu_display=report_option.name,
@@ -142,7 +148,9 @@ class SelectOptionModal(FormModal):
         if self._report_cls is None:
             report_option = self.get_report_option()
             self._base_model = report_option.content_type.model_class()
-            self._report_cls = get_report_builder_class(model=self._base_model, class_name=report_option.report_builder_class_name)
+            self._report_cls = get_report_builder_class(
+                model=self._base_model, class_name=report_option.report_builder_class_name
+            )
         return self._report_cls, self._base_model
 
     def form_setup(self, form, *_args, **_kwargs):
@@ -170,14 +178,13 @@ class SelectOptionModal(FormModal):
             self._option_slug = f'option{report_option.id}{append_option_slug}'
         return self._option_slug
 
-
     def form_valid(self, form):
         view_name = base64.b64decode(unquote(self.slug['view_name'])).decode()
         option_slug = self.get_option_slug()
-        slug_str = make_slug_str(self.slug,
-                                 overrides={option_slug: form.cleaned_data['select_option']},
-                                 excludes=['report_option',
-                                           'view_name',
-                                           'dashboard_report_id'])
+        slug_str = make_slug_str(
+            self.slug,
+            overrides={option_slug: form.cleaned_data['select_option']},
+            excludes=['report_option', 'view_name', 'dashboard_report_id'],
+        )
         url = reverse(view_name, kwargs={'slug': slug_str})
-        return  self.command_response('redirect', url=url)
+        return self.command_response('redirect', url=url)
