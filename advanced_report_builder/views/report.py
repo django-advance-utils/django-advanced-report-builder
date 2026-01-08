@@ -2,6 +2,8 @@ import base64
 from urllib.parse import quote, unquote
 
 from ajax_helpers.mixins import AjaxHelpers
+from django.core.exceptions import FieldError
+from django.db.models import Q
 from django.forms import ChoiceField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -215,7 +217,20 @@ class SelectOptionModal(FormModal):
         qs = base_model.objects.filter(report_cls.options_filter)
 
         if search:
-            qs = qs.filter(name__icontains=search)
+            try:
+                fields = report_cls.option_ajax_search or []
+
+                if fields:
+                    query = Q()
+                    for field in fields:
+                        query |= Q(**{f"{field}__icontains": search})
+
+                    qs = qs.filter(query)
+
+            except FieldError:
+                # Invalid field name → fall back to unfiltered qs
+                pass
+
 
         qs = qs[: self.max_options]
 

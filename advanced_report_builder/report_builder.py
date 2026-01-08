@@ -25,3 +25,4 @@ class ReportBuilderFields:
 
     options_filter = Q()
     option_label = '__str__'
+    option_ajax_search = []  # ie ['name__icontains']
