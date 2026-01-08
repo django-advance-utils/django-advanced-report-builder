@@ -76,7 +76,10 @@ class ReportBase(AjaxHelpers, MenuMixin):
             option_slug = f'option{report_option.id}{append_option_slug}'
             base_model = report_option.content_type.model_class()
             report_cls = get_report_builder_class(model=base_model, class_name=report_option.report_builder_class_name)
-            if base_model.objects.filter(report_cls.options_filter).count() <= 20:
+            qs = base_model.objects.filter(report_cls.options_filter)
+            # Fetch at most 21 rows
+            probe = list(qs[:21])
+            if len(probe) <= 20:
                 slug_str = make_slug_str(self.slug, overrides={option_slug: 0})
                 dropdown = [
                     (
@@ -85,7 +88,7 @@ class ReportBase(AjaxHelpers, MenuMixin):
                         {'url_kwargs': {'slug': slug_str}},
                     )
                 ]
-                for _obj in base_model.objects.filter(report_cls.options_filter):
+                for _obj in probe:
                     slug_str = make_slug_str(self.slug, overrides={option_slug: _obj.id})
                     method = getattr(_obj, report_cls.option_label, None)
                     label = method() if callable(method) else _obj.__str__()
