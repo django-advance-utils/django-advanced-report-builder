@@ -52,6 +52,7 @@ from advanced_report_builder.views.multi_value import (
 )
 from advanced_report_builder.views.pie_charts import PieChartFieldModal, PieChartModal
 from advanced_report_builder.views.query_modal.modal import QueryModal, QueryOrderModal
+from advanced_report_builder.views.report import SelectOptionModal
 from advanced_report_builder.views.reports import DuplicateReportModal
 from advanced_report_builder.views.single_values import (
     QueryNumeratorModal,
@@ -232,4 +233,5 @@ urlpatterns = [
     ),
     path('target/modal/<str:slug>/', TargetModal.as_view(), name='target_modal'),
     path('target/colour/modal/<str:slug>/', TargetColourModal.as_view(), name='target_colour_modal'),
+    path('select/option/modal/<str:slug>/', SelectOptionModal.as_view(), name='select_option_modal'),
 ]

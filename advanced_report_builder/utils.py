@@ -26,22 +26,23 @@ def split_slug(slug_str):
     return slug
 
 
-def make_slug_str(slug, overrides=None):
+def make_slug_str(slug, overrides=None, excludes=None):
+    overrides = overrides or {}
+    excludes = set(excludes or [])
+
     if len(slug) == 1 and 'pk' in slug and not overrides:
         return slug['pk']
 
-    if not overrides:
-        slug_parts = [f'{k}-{v}' for k, v in slug.items()]
-    else:
-        slug_parts = []
-        for key, value in slug.items():
-            if key in overrides:
-                continue
-            slug_parts.append(f'{key}-{value}')
-        for key, value in overrides.items():
-            slug_parts.append(f'{key}-{value}')
+    # 1. Start from base slug
+    final = {k: v for k, v in slug.items() if k not in excludes}
 
-    return '-'.join(slug_parts)
+    # 2. Apply overrides (replace or add)
+    for k, v in overrides.items():
+        if k not in excludes:
+            final[k] = v
+
+    # 3. Serialize
+    return '-'.join(f'{k}-{v}' for k, v in final.items())
 
 
 def get_custom_report_builder():

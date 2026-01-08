@@ -1,10 +1,22 @@
-from ajax_helpers.mixins import AjaxHelpers
-from django_menus.menu import MenuItem, MenuMixin
+import base64
+from urllib.parse import quote, unquote
 
+from ajax_helpers.mixins import AjaxHelpers
+from django.forms import ChoiceField
+from django.shortcuts import get_object_or_404
+from django.urls import reverse
+from django_menus.menu import MenuItem, MenuMixin
+from django_modals.forms import CrispyForm
+from django_modals.modals import FormModal
+from django_modals.widgets.select2 import Select2
+
+from advanced_report_builder.models import ReportOption
 from advanced_report_builder.utils import get_report_builder_class, make_slug_str
 
 
 class ReportBase(AjaxHelpers, MenuMixin):
+    max_dropdown_option = 20
+
     # noinspection PyUnusedLocal
     @staticmethod
     def duplicate_menu(request, report_id):
@@ -55,38 +67,132 @@ class ReportBase(AjaxHelpers, MenuMixin):
 
     def _option_menus(self, report, dashboard_report, menus):
         append_option_slug = ''
+        dashboard_report_id = 0
         if dashboard_report is not None:
             if not dashboard_report.show_options:
                 return
+            dashboard_report_id = dashboard_report.id
             append_option_slug = f'_{dashboard_report.id}'
+        view_name = self.request.resolver_match.view_name
         for report_option in report.reportoption_set.all():
             option_slug = f'option{report_option.id}{append_option_slug}'
             base_model = report_option.content_type.model_class()
             report_cls = get_report_builder_class(model=base_model, class_name=report_option.report_builder_class_name)
-            slug_str = make_slug_str(self.slug, overrides={option_slug: 0})
-            dropdown = [
-                (
-                    self.request.resolver_match.view_name,
-                    'N/A',
-                    {'url_kwargs': {'slug': slug_str}},
-                )
-            ]
-            for _obj in base_model.objects.filter(report_cls.options_filter):
-                slug_str = make_slug_str(self.slug, overrides={option_slug: _obj.id})
-                method = getattr(_obj, report_cls.option_label, None)
-                label = method() if callable(method) else _obj.__str__()
-                dropdown.append(
+            qs = base_model.objects.filter(report_cls.options_filter)
+            # Fetch at most 21 rows
+            probe = list(qs[: self.max_dropdown_option + 1])
+            if len(probe) <= self.max_dropdown_option:
+                slug_str = make_slug_str(self.slug, overrides={option_slug: 0})
+                dropdown = [
                     (
-                        self.request.resolver_match.view_name,
-                        label,
+                        view_name,
+                        'N/A',
                         {'url_kwargs': {'slug': slug_str}},
                     )
+                ]
+                for _obj in probe:
+                    slug_str = make_slug_str(self.slug, overrides={option_slug: _obj.id})
+                    method = getattr(_obj, report_cls.option_label, None)
+                    label = method() if callable(method) else _obj.__str__()
+                    dropdown.append(
+                        (
+                            view_name,
+                            label,
+                            {'url_kwargs': {'slug': slug_str}},
+                        )
+                    )
+                menus.append(
+                    MenuItem(
+                        menu_display=report_option.name,
+                        no_hover=True,
+                        css_classes='btn-secondary',
+                        dropdown=dropdown,
+                    )
                 )
-            menus.append(
-                MenuItem(
-                    menu_display=report_option.name,
-                    no_hover=True,
-                    css_classes='btn-secondary',
-                    dropdown=dropdown,
+            else:
+                view_name_encoded = quote(base64.b64encode(view_name.encode()).decode(), safe='')
+                slug_str = make_slug_str(
+                    self.slug,
+                    overrides={
+                        'report_option': report_option.id,
+                        'view_name': view_name_encoded,
+                        'dashboard_report_id': dashboard_report_id,
+                    },
                 )
+                menus.append(
+                    MenuItem(
+                        menu_display=report_option.name,
+                        url='advanced_report_builder:select_option_modal',
+                        url_slug=slug_str,
+                        css_classes='btn-secondary',
+                    )
+                )
+
+
+class SelectOptionModal(FormModal):
+    form_class = CrispyForm
+
+    @property
+    def modal_title(self):
+        report_option = self.get_report_option()
+        return f'Select {report_option.name} option'
+
+    def __init__(self, *args, **kwargs):
+        self._report_cls = None
+        self._report_option = None
+        self._base_model = None
+        self._option_slug = None
+        super().__init__(*args, **kwargs)
+
+    def get_report_option(self):
+        if self._report_option is None:
+            self._report_option = get_object_or_404(ReportOption, pk=self.slug['report_option'])
+        return self._report_option
+
+    def get_report_class_and_base_model(self):
+        if self._report_cls is None:
+            report_option = self.get_report_option()
+            self._base_model = report_option.content_type.model_class()
+            self._report_cls = get_report_builder_class(
+                model=self._base_model, class_name=report_option.report_builder_class_name
             )
+        return self._report_cls, self._base_model
+
+    def get_option_label(self, obj, report_cls):
+        method = getattr(obj, report_cls.option_label, None)
+        return method() if callable(method) else obj.__str__()
+
+    def form_setup(self, form, *_args, **_kwargs):
+        report_cls, base_model = self.get_report_class_and_base_model()
+        choices = [(0, 'N/A')]
+        for _obj in base_model.objects.filter(report_cls.options_filter):
+            label = self.get_option_label(_obj, report_cls)
+            choices.append((_obj.id, label))
+
+        option_slug = self.get_option_slug()
+
+        form.fields['select_option'] = ChoiceField(widget=Select2(), choices=choices)
+
+        if option_slug in self.slug:
+            form.fields['select_option'].initial = self.slug[option_slug]
+
+    def get_option_slug(self):
+        if self._option_slug is None:
+            dashboard_report_id = int(self.slug['dashboard_report_id'])
+            append_option_slug = ''
+            if dashboard_report_id != 0:
+                append_option_slug = f'_{dashboard_report_id}'
+            report_option = self.get_report_option()
+            self._option_slug = f'option{report_option.id}{append_option_slug}'
+        return self._option_slug
+
+    def form_valid(self, form):
+        view_name = base64.b64decode(unquote(self.slug['view_name'])).decode()
+        option_slug = self.get_option_slug()
+        slug_str = make_slug_str(
+            self.slug,
+            overrides={option_slug: form.cleaned_data['select_option']},
+            excludes=['report_option', 'view_name', 'dashboard_report_id'],
+        )
+        url = reverse(view_name, kwargs={'slug': slug_str})
+        return self.command_response('redirect', url=url)
