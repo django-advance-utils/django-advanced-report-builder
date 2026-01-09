@@ -167,11 +167,6 @@ class SelectOptionModal(FormModal):
 
     def form_setup(self, form, *_args, **_kwargs):
         report_cls, base_model = self.get_report_class_and_base_model()
-        choices = [(0, 'N/A')]
-        for _obj in base_model.objects.filter(report_cls.options_filter):
-            label = self.get_option_label(_obj, report_cls)
-            choices.append((_obj.id, label))
-
         option_slug = self.get_option_slug()
         choices = []
         initial = None
