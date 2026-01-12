@@ -32,7 +32,7 @@
             var prefix = '';
             var suffix = '';
             if(i === table.initsetup.colOptions.length-1) {
-                prefix = '{{ datatable.prefix|default_if_none:"" }}';
+                prefix = '{{ datatable.prefix|default:"" }}';
                 {% if datatable.single_value.is_percentage %}suffix = '%';{% endif %}
             }
 

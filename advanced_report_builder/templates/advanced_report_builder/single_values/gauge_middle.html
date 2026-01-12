@@ -48,7 +48,7 @@ const percent = target > 0
     console.log(performanceColour);
 
     function formatNumber(n) {
-        return '{{ datatable.prefix|default_if_none:"" }}' + n + '{% if datatable.single_value.is_percentage %}%{% endif %}';
+        return '{{ datatable.prefix|default:"" }}' + n + '{% if datatable.single_value.is_percentage %}%{% endif %}';
     }
 
     // ---- CENTER TEXT ----

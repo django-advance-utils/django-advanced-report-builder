@@ -143,7 +143,7 @@ class SingleValueView(ValueBaseView):
         return fields
 
     def set_prefix(self):
-        self.table.prefix = self.chart_report.prefix
+        self.table.prefix = self.chart_report.prefix if self.chart_report.prefix else ''
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -181,7 +181,7 @@ class SingleValueView(ValueBaseView):
         bar_percentage = min(percentage, 100)
 
         if target.target_type == Target.TargetType.MONEY:
-            prefix = self.chart_report.prefix
+            prefix = self.chart_report.prefix if self.chart_report.prefix else ''
             target_value = intcomma(f'{float(target_value):.2f}')
             target_value = f'{prefix}{target_value}'
         else:
