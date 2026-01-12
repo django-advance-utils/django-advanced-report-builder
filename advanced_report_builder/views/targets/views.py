@@ -18,8 +18,7 @@ class TargetModal(ModelFormModal):
     model = Target
     form_fields = ['name', 'target_type', 'period_type', 'default_colour', 'default_value', 'default_percentage']
 
-    widgets = {'default_value': SmallInputWidget,
-               'default_percentage': PercentageWidget}
+    widgets = {'default_value': SmallInputWidget, 'default_percentage': PercentageWidget}
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
 
@@ -32,9 +31,9 @@ class TargetModal(ModelFormModal):
             [
                 {
                     'selector': '#div_id_default_value',
-                    'values': {Target.TargetType.COUNT: 'show',
-                               Target.TargetType.MONEY: 'show'},
-                    'default': 'hide'},
+                    'values': {Target.TargetType.COUNT: 'show', Target.TargetType.MONEY: 'show'},
+                    'default': 'hide',
+                },
                 {
                     'selector': '#div_id_default_percentage',
                     'values': {Target.TargetType.PERCENTAGE: 'show'},
