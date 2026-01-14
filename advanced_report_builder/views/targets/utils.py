@@ -176,7 +176,7 @@ class TargetUtils:
 
         year = min_date.year
         quarter = ((min_date.month - 1) // 3) + 1
-        quarter_key = f"Q{quarter}"
+        quarter_key = f'Q{quarter}'
 
         year_data = override_data.get(str(year))
         if year_data and quarter_key in year_data:
@@ -189,11 +189,10 @@ class TargetUtils:
         override_data = target.get_override_data() or {}
 
         year_data = override_data.get(str(min_date.year))
-        if year_data and "YEAR" in year_data:
-            return year_data["YEAR"]
+        if year_data and 'YEAR' in year_data:
+            return year_data['YEAR']
 
         return target.get_value()
-
 
     def get_target_value(self, period_data, target):
         if target.period_type == Target.PeriodType.DAILY:
