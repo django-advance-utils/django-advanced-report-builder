@@ -166,47 +166,34 @@ class TargetUtils:
         return total
 
     @staticmethod
-    def get_quarterly_target_value_for_range(min_date, max_date, target):
+    def get_quarterly_target_value_for_range(min_date, target):
         """
-        Sum monthly target values for an aligned quarter.
-        Requires min_date/max_date to describe exactly one quarter.
+        Return the quarterly target value.
+        Quarter validity is assumed to be checked by the caller.
         """
-
-        if not min_date or not max_date:
-            return target.get_value()
 
         override_data = target.get_override_data() or {}
 
-        total = 0.0
         year = min_date.year
-        month = min_date.month
+        quarter = ((min_date.month - 1) // 3) + 1
+        quarter_key = f"Q{quarter}"
 
-        months_seen = []
+        year_data = override_data.get(str(year))
+        if year_data and quarter_key in year_data:
+            return year_data[quarter_key]
 
-        while True:
-            months_seen.append((year, month))
+        return target.get_value()
 
-            # advance month
-            if month == 12:
-                month = 1
-                year += 1
-            else:
-                month += 1
+    @staticmethod
+    def get_yearly_target_value_for_range(min_date, target):
+        override_data = target.get_override_data() or {}
 
-            # stop once we pass max_date
-            if date(year, month, 1) > max_date:
-                break
+        year_data = override_data.get(str(min_date.year))
+        if year_data and "YEAR" in year_data:
+            return year_data["YEAR"]
 
-        # Defensive check: a quarter must be exactly 3 months
-        if len(months_seen) != 3:
-            raise ValueError('Date range is not an aligned quarter')
+        return target.get_value()
 
-        for year, month in months_seen:
-            year_data = override_data.get(str(year), {})
-            month_str = MONTHS.get(month)
-            total += year_data.get(month_str, target.get_value())
-
-        return total
 
     def get_target_value(self, period_data, target):
         if target.period_type == Target.PeriodType.DAILY:
@@ -245,7 +232,15 @@ class TargetUtils:
                 return None
             target_value = self.get_quarterly_target_value_for_range(
                 min_date=period[0],
-                max_date=period[1],
+                target=target,
+            )
+        elif target.period_type == Target.PeriodType.YEARLY:
+            period = period_data.get_year_period()
+            if period is None:
+                return None
+
+            target_value = self.get_yearly_target_value_for_range(
+                min_date=period[0],
                 target=target,
             )
         else:

@@ -79,42 +79,49 @@ class PeriodData:
             return min_d, max_d
         return None
 
-    def get_quarter_period(self, quarter_start_month=1):
-        """
-        Returns (min_date, max_date) if the current period exactly matches
-        a quarter aligned to `quarter_start_month`.
-
-        quarter_start_month:
-            1  = calendar quarters
-            4  = UK financial quarters
-        """
+    def get_quarter_period(self):
         if not self.min_date or not self.max_date:
             return None
 
         min_d = self.min_date.date()
         max_d = self.max_date.date()
 
-        # Month index relative to quarter start (0–11)
-        rel_month = (min_d.month - quarter_start_month) % 12
-        quarter = rel_month // 3
+        # Must start on first of a month
+        if min_d.day != 1:
+            return None
 
-        # Quarter start month
-        start_month = ((quarter * 3 + quarter_start_month - 1) % 12) + 1
+        # Must end on last day of a month
+        last_day = calendar.monthrange(max_d.year, max_d.month)[1]
+        if max_d.day != last_day:
+            return None
 
-        # Determine start year
-        start_year = min_d.year
-        if min_d.month < quarter_start_month:
-            start_year -= 1
+        # Calculate number of months spanned (inclusive)
+        months = (max_d.year - min_d.year) * 12 + (max_d.month - min_d.month) + 1
 
-        start_date = datetime.date(start_year, start_month, 1)
+        if months != 3:
+            return None
 
-        # Quarter end
-        end_month = ((start_month + 2 - 1) % 12) + 1
-        end_year = start_year + (1 if end_month < start_month else 0)
-        last_day = calendar.monthrange(end_year, end_month)[1]
-        end_date = datetime.date(end_year, end_month, last_day)
+        return min_d, max_d
 
-        if min_d != start_date or max_d != end_date:
+    def get_year_period(self):
+        if not self.min_date or not self.max_date:
+            return None
+
+        min_d = self.min_date.date()
+        max_d = self.max_date.date()
+
+        # Must start on first day of a month
+        if min_d.day != 1:
+            return None
+
+        # Must end on last day of a month
+        last_day = calendar.monthrange(max_d.year, max_d.month)[1]
+        if max_d.day != last_day:
+            return None
+
+        # Must span exactly 12 months
+        months = (max_d.year - min_d.year) * 12 + (max_d.month - min_d.month) + 1
+        if months != 12:
             return None
 
         return min_d, max_d

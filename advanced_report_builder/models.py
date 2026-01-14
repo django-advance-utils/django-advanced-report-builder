@@ -40,6 +40,7 @@ class Target(TimeStampedModel):
         WEEKLY = 2, 'Weekly'
         MONTHLY = 3, 'Monthly'
         QUARTER = 4, 'Quarterly'
+        YEARLY = 5, 'Yearly'
 
     slug = models.SlugField(unique=True)
     name = models.CharField(max_length=64)
