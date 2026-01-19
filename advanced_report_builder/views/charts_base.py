@@ -29,9 +29,10 @@ from advanced_report_builder.globals import (
     ANNOTATION_VALUE_MONTH,
     ANNOTATION_VALUE_QUARTER,
     ANNOTATION_VALUE_WEEK,
-    ANNOTATION_VALUE_YEAR, PeriodType,
+    ANNOTATION_VALUE_YEAR,
+    PeriodType,
 )
-from advanced_report_builder.models import ReportType, Target
+from advanced_report_builder.models import ReportType
 from advanced_report_builder.utils import (
     count_days,
     get_report_builder_class,

@@ -19,12 +19,10 @@ from advanced_report_builder.variable_date import VariableDate
 
 
 class PeriodData:
-
     def __init__(self):
         self.max_date = None
         self.min_date = None
         self.min_max_dates = []  # used for quarter targets
-
 
     def set_min_max_date(self, min_date, max_date=None, period_type=None):
         min_dt = (
@@ -53,7 +51,6 @@ class PeriodData:
                 self.max_date = max_dt
 
             self.min_max_dates.append([min_date, max_date, period_type])
-
 
     def intersect_min_max_date(self, date_in):
         dt = (
@@ -178,7 +175,6 @@ class FilterQueryMixin:
         super().__init__(*args, **kwargs)
 
     def process_query_filters(self, query, search_filter_data, extra_filter_data=None, extra_filter=None):
-
         annotations = {}
         result = self.process_filters(
             search_filter_data=search_filter_data,
@@ -440,10 +436,7 @@ class FilterQueryMixin:
             query_list.append(Q(**{query_string: F(value)}))
 
     def set_min_max_date(self, min_date, max_date=None, period_type=None):
-        self.period_data.set_min_max_date(min_date=min_date,
-                                          max_date=max_date,
-                                          period_type=period_type)
-
+        self.period_data.set_min_max_date(min_date=min_date, max_date=max_date, period_type=period_type)
 
     def get_variable_date(self, value, query_list, display_operator, field, query_string):
         if display_operator in ['is_null', 'is_not_null']:
@@ -589,14 +582,14 @@ class FilterQueryMixin:
                 raise ReportError('Please use the new financial quarter type')
 
     def get_financial_quarter_number(
-            self,
-            value,
-            query_list,
-            display_operator,
-            field,
-            query_string,
-            *,
-            fy_start,
+        self,
+        value,
+        query_list,
+        display_operator,
+        field,
+        query_string,
+        *,
+        fy_start,
     ):
         """
         Applies a Financial Quarter Number filter.
@@ -624,20 +617,12 @@ class FilterQueryMixin:
         quarter_end = quarter_start + relativedelta(months=3)
 
         if display_operator == 'equal':
-            query_list.append(
-                Q(**{f'{field}__gte': quarter_start}) &
-                Q(**{f'{field}__lt': quarter_end})
-            )
+            query_list.append(Q(**{f'{field}__gte': quarter_start}) & Q(**{f'{field}__lt': quarter_end}))
             stored_end = quarter_end - datetime.timedelta(days=1)
             self.set_min_max_date(min_date=quarter_start, max_date=stored_end, period_type=PeriodType.QUARTER)
 
         elif display_operator == 'not_equal':
-            query_list.append(
-                ~(
-                        Q(**{f'{field}__gte': quarter_start}) &
-                        Q(**{f'{field}__lt': quarter_end})
-                )
-            )
+            query_list.append(~(Q(**{f'{field}__gte': quarter_start}) & Q(**{f'{field}__lt': quarter_end})))
 
         elif display_operator == 'less':
             query_list.append(Q(**{f'{field}__lt': quarter_start}))

@@ -4,7 +4,6 @@ from datetime import date, timedelta
 from django.utils.dates import MONTHS
 
 from advanced_report_builder.globals import PeriodType
-from advanced_report_builder.models import Target
 
 
 class TargetUtils:

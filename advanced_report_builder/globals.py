@@ -1,6 +1,6 @@
 from enum import Enum
-from django.db import models
 
+from django.db import models
 from django.db.models import Avg, Count, Max, Min, Sum
 from django.db.models.functions import (
     TruncDay,
@@ -237,6 +237,7 @@ class DisplayOption(models.IntegerChoices):
             return DISPLAY_OPTION_DOUBLE_CLASSES.get(value, '')
         return DISPLAY_OPTION_BASE_CLASSES.get(value, '')
 
+
 DISPLAY_OPTION_BASE_CLASSES = {
     DisplayOption.ONE_PER_ROW.value: 'col-12',
     DisplayOption.TWO_PER_ROW.value: 'col-12 col-md-12 col-lg-6',
@@ -257,6 +258,7 @@ class DisplaySizeOption(models.IntegerChoices):
     STANDARD = 1, 'Standard'
     LARGE = 2, 'Large'
 
+
 DEFAULT_DATE_FORMAT = {
     ANNOTATION_VALUE_YEAR: DATE_FORMAT_TYPE_YYYY,
     ANNOTATION_VALUE_QUARTER: DATE_FORMAT_TYPE_WORDS_MM_YY,
@@ -272,6 +274,7 @@ class PeriodType(models.IntegerChoices):
     MONTHLY = 3, 'Monthly'
     QUARTER = 4, 'Quarterly'
     YEARLY = 5, 'Yearly'
+
 
 CALENDAR_VIEW_TYPE_MONTH = 1
 CALENDAR_VIEW_TYPE_GRID_WEEK = 2

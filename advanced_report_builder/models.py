@@ -21,7 +21,9 @@ from advanced_report_builder.globals import (
     CALENDAR_VIEW_TYPE_LIST_WEEK,
     CALENDAR_VIEW_TYPE_MONTH,
     CALENDAR_VIEW_TYPE_YEAR,
-    DisplayOption, DisplaySizeOption, PeriodType,
+    DisplayOption,
+    DisplaySizeOption,
+    PeriodType,
 )
 from advanced_report_builder.signals import model_report_save
 
@@ -902,8 +904,9 @@ class Dashboard(TimeStampedModel):
     name = models.CharField(max_length=200)
     display_option = models.PositiveIntegerField(
         choices=[(e.value, e.label) for e in DisplayOption if e != DisplayOption.NONE],
-        default=DisplayOption.TWO_PER_ROW
+        default=DisplayOption.TWO_PER_ROW,
     )
+
     def __str__(self):
         return self.name
 
@@ -921,14 +924,8 @@ class DashboardReport(TimeStampedModel):
     report = models.ForeignKey(Report, on_delete=models.CASCADE)
     top = models.BooleanField(default=False)
     name_override = models.CharField(max_length=200, blank=True, null=True)
-    display_option = models.PositiveIntegerField(
-        choices=DisplayOption.choices,
-        default=DisplayOption.NONE
-    )
-    size = models.PositiveIntegerField(
-        choices=DisplaySizeOption.choices,
-        default=DisplaySizeOption.STANDARD
-    )
+    display_option = models.PositiveIntegerField(choices=DisplayOption.choices, default=DisplayOption.NONE)
+    size = models.PositiveIntegerField(choices=DisplaySizeOption.choices, default=DisplaySizeOption.STANDARD)
     show_versions = models.BooleanField(default=True)
     report_query = models.ForeignKey(ReportQuery, blank=True, null=True, on_delete=models.CASCADE)
     show_options = models.BooleanField(default=True)
