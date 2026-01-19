@@ -47,6 +47,7 @@ class FieldTypes(ReportBuilderFieldUtils):
         WEEKDAYS = 13
         WEEK_NUMBER = 14
         FINANCIAL_WEEK_NUMBER = 15
+        FINANCIAL_QUARTER = 16
 
     def get_operator(self, field_type):
         operators = {
@@ -93,6 +94,14 @@ class FieldTypes(ReportBuilderFieldUtils):
                 'greater_or_equal',
             ],
             self.OperatorFieldType.FINANCIAL_WEEK_NUMBER: [
+                'equal',
+                'not_equal',
+                'less',
+                'less_or_equal',
+                'greater',
+                'greater_or_equal',
+            ],
+            self.OperatorFieldType.FINANCIAL_QUARTER: [
                 'equal',
                 'not_equal',
                 'less',
@@ -305,7 +314,7 @@ class FieldTypes(ReportBuilderFieldUtils):
         add_filter(
             suffix='variable_quarter',
             label='Quarter',
-            operator_type=self.OperatorFieldType.PART_DATE,
+            operator_type=self.OperatorFieldType.FINANCIAL_QUARTER,
             values=variable_date.get_date_filter_quarters(),
         )
 
@@ -334,10 +343,19 @@ class FieldTypes(ReportBuilderFieldUtils):
         # Financial Week Number (1–53 relative to financial year start)
         add_filter(
             suffix='financial_week_number',
-            label='Financial Week Number – requires Financial Year',
+            label='Financial Week Number – requires financial year',
             operator_type=self.OperatorFieldType.FINANCIAL_WEEK_NUMBER,
             values={i: i for i in range(1, 54)},
         )
+
+        # Financial Week Number (1–53 relative to financial year start)
+        add_filter(
+            suffix='financial_quarter',
+            label='Financial Quarter – requires financial year',
+            operator_type=self.OperatorFieldType.FINANCIAL_QUARTER,
+            values={i: i for i in range(1, 5)},
+        )
+
         # Field vs Field comparison (intentionally separate)
         query_builder_filters.append(
             {

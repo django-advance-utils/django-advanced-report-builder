@@ -21,10 +21,7 @@ from advanced_report_builder.globals import (
     CALENDAR_VIEW_TYPE_LIST_WEEK,
     CALENDAR_VIEW_TYPE_MONTH,
     CALENDAR_VIEW_TYPE_YEAR,
-    DISPLAY_OPTION_2_PER_ROW,
-    DISPLAY_OPTION_CHOICES,
-    DISPLAY_OPTION_CLASSES,
-    DISPLAY_OPTION_NONE,
+    DisplayOption, DisplaySizeOption, PeriodType,
 )
 from advanced_report_builder.signals import model_report_save
 
@@ -34,13 +31,6 @@ class Target(TimeStampedModel):
         COUNT = 1, 'Count'
         MONEY = 2, 'Money'
         PERCENTAGE = 3, 'Percentage'
-
-    class PeriodType(models.IntegerChoices):
-        DAILY = 1, 'Daily'
-        WEEKLY = 2, 'Weekly'
-        MONTHLY = 3, 'Monthly'
-        QUARTER = 4, 'Quarterly'
-        YEARLY = 5, 'Yearly'
 
     slug = models.SlugField(unique=True)
     name = models.CharField(max_length=64)
@@ -910,8 +900,10 @@ class Dashboard(TimeStampedModel):
     slug = models.SlugField(unique=True)
     slug_alias = models.SlugField(blank=True, null=True)  # used if the slug changes
     name = models.CharField(max_length=200)
-    display_option = models.PositiveIntegerField(choices=DISPLAY_OPTION_CHOICES[1:], default=DISPLAY_OPTION_2_PER_ROW)
-
+    display_option = models.PositiveIntegerField(
+        choices=[(e.value, e.label) for e in DisplayOption if e != DisplayOption.NONE],
+        default=DisplayOption.TWO_PER_ROW
+    )
     def __str__(self):
         return self.name
 
@@ -929,17 +921,26 @@ class DashboardReport(TimeStampedModel):
     report = models.ForeignKey(Report, on_delete=models.CASCADE)
     top = models.BooleanField(default=False)
     name_override = models.CharField(max_length=200, blank=True, null=True)
-    display_option = models.PositiveIntegerField(choices=DISPLAY_OPTION_CHOICES, default=DISPLAY_OPTION_NONE)
+    display_option = models.PositiveIntegerField(
+        choices=DisplayOption.choices,
+        default=DisplayOption.NONE
+    )
+    size = models.PositiveIntegerField(
+        choices=DisplaySizeOption.choices,
+        default=DisplaySizeOption.STANDARD
+    )
     show_versions = models.BooleanField(default=True)
     report_query = models.ForeignKey(ReportQuery, blank=True, null=True, on_delete=models.CASCADE)
     show_options = models.BooleanField(default=True)
     options = models.JSONField(null=True, blank=True)
 
-    def get_class(self, extra_class_name):
-        if self.display_option != DISPLAY_OPTION_NONE:
-            class_names = DISPLAY_OPTION_CLASSES.get(self.display_option)
+    def get_class(self, extra_class_name=None):
+        if self.display_option != DisplayOption.NONE:
+            display_value = self.display_option
         else:
-            class_names = DISPLAY_OPTION_CLASSES.get(self.dashboard.display_option)
+            display_value = self.dashboard.display_option
+
+        class_names = DisplayOption.css_class(display_value, double=self.size == DisplaySizeOption.LARGE)
 
         if extra_class_name:
             class_names += f' {extra_class_name}'

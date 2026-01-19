@@ -29,7 +29,7 @@ from advanced_report_builder.globals import (
     ANNOTATION_VALUE_MONTH,
     ANNOTATION_VALUE_QUARTER,
     ANNOTATION_VALUE_WEEK,
-    ANNOTATION_VALUE_YEAR,
+    ANNOTATION_VALUE_YEAR, PeriodType,
 )
 from advanced_report_builder.models import ReportType, Target
 from advanced_report_builder.utils import (
@@ -88,7 +88,7 @@ class ChartJSTable(DatatableTable):
     def process_data_structure_target(self, targets, data):
         results = []
         for target in targets:
-            if target.period_type == Target.PeriodType.MONTHLY:
+            if target.period_type == PeriodType.MONTHLY:
                 new_data_structure = []
                 for data_dict in data:
                     target_value = self.process_target_results(data_dict=data_dict, target=target)

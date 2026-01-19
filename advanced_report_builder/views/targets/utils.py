@@ -3,6 +3,7 @@ from datetime import date, timedelta
 
 from django.utils.dates import MONTHS
 
+from advanced_report_builder.globals import PeriodType
 from advanced_report_builder.models import Target
 
 
@@ -195,7 +196,7 @@ class TargetUtils:
         return target.get_value()
 
     def get_target_value(self, period_data, target):
-        if target.period_type == Target.PeriodType.DAILY:
+        if target.period_type == PeriodType.DAILY:
             period = period_data.get_day_period()
             if period is None:
                 return None
@@ -205,7 +206,7 @@ class TargetUtils:
                 target=target,
             )
 
-        elif target.period_type == Target.PeriodType.WEEKLY:
+        elif target.period_type == PeriodType.WEEKLY:
             period = period_data.get_week_period()
             if period is None:
                 return None
@@ -215,7 +216,7 @@ class TargetUtils:
                 target=target,
             )
 
-        elif target.period_type == Target.PeriodType.MONTHLY:
+        elif target.period_type == PeriodType.MONTHLY:
             period = period_data.get_month_period()
             if period is None:
                 return None
@@ -225,7 +226,7 @@ class TargetUtils:
                 target=target,
             )
 
-        elif target.period_type == Target.PeriodType.QUARTER:
+        elif target.period_type == PeriodType.QUARTER:
             period = period_data.get_quarter_period()
             if period is None:
                 return None
@@ -233,7 +234,7 @@ class TargetUtils:
                 min_date=period[0],
                 target=target,
             )
-        elif target.period_type == Target.PeriodType.YEARLY:
+        elif target.period_type == PeriodType.YEARLY:
             period = period_data.get_year_period()
             if period is None:
                 return None

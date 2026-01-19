@@ -21,6 +21,7 @@ from django_modals.widgets.select2 import Select2
 from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.exceptions import ReportError
+from advanced_report_builder.globals import DisplayOption
 from advanced_report_builder.models import (
     Dashboard,
     DashboardReport,
@@ -77,16 +78,23 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
 
     @staticmethod
     def get_top_report_class(reports):
-        reports_len = len(reports)
-        spans = {
-            1: ' col-12',
-            2: ' col-12 col-sm-12 col-md-6',
-            3: ' col-12 col-sm-12 col-md-4',
-            4: ' col-12 col-sm-12 col-md-6 col-lg-3',
-            6: ' col-12 col-sm-12 col-md-4',
-            9: ' col-12 col-sm-12 col-md-4',
-        }
-        return spans.get(reports_len, ' col-12 col-sm-12 col-md-3')
+        count = len(reports)
+
+        # Choose a sensible default layout based on count
+        # Try 3 per row if evenly divisible, otherwise 4
+        per_row, remainder = divmod(count, 3)
+        if remainder == 0:
+            display_value = DisplayOption.THREE_PER_ROW.value
+        elif count % 4 == 0:
+            display_value = DisplayOption.FOUR_PER_ROW.value
+        elif count == 2:
+            display_value = DisplayOption.TWO_PER_ROW.value
+        elif count == 1:
+            display_value = DisplayOption.ONE_PER_ROW.value
+        else:
+            display_value = DisplayOption.THREE_PER_ROW.value  # default fallback
+
+        return DisplayOption.css_class(display_value)
 
     def has_dashboard_permission(self):
         """You can over override this to check if the user has permission to view the dashboard.
@@ -241,7 +249,7 @@ class DashboardReportModal(ModelFormModal):
 
     @property
     def form_fields(self):
-        fields = ['name_override', 'top', 'display_option']
+        fields = ['name_override', 'top', 'display_option', 'size']
         report_obj = getattr(self.object.report, self.object.report.instance_type)
         if report_obj.show_dashboard_query():
             fields += [
@@ -264,7 +272,7 @@ class DashboardReportModal(ModelFormModal):
         return self._report_options
 
     def form_setup(self, form, *_args, **_kwargs):
-        layout = ['name_override', 'top', 'display_option']
+        layout = ['name_override', 'top', 'display_option', 'size']
         form.add_trigger(
             'top',
             'onchange',

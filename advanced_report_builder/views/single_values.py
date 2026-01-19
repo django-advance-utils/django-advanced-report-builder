@@ -8,6 +8,7 @@ from django.core.exceptions import FieldDoesNotExist, FieldError, ValidationErro
 from django.forms import CharField, ChoiceField, ModelChoiceField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django.utils.safestring import mark_safe
 from django_datatables.columns import MenuColumn
 from django_datatables.datatables import DatatableTable
 from django_datatables.widgets import DataTableReorderWidget
@@ -143,7 +144,7 @@ class SingleValueView(ValueBaseView):
         return fields
 
     def set_prefix(self):
-        self.table.prefix = self.chart_report.prefix if self.chart_report.prefix else ''
+        self.table.prefix = self.chart_report.prefix if mark_safe(self.chart_report.prefix) else ''
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

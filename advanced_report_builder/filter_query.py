@@ -3,6 +3,7 @@ import datetime
 import operator
 from functools import reduce
 
+from dateutil.relativedelta import relativedelta
 from django.apps import apps
 from django.conf import settings
 from django.db.models import F, Q
@@ -11,26 +12,60 @@ from django.shortcuts import get_object_or_404
 
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
+from advanced_report_builder.globals import PeriodType
 from advanced_report_builder.models import ReportOption, ReportQuery
 from advanced_report_builder.utils import get_report_builder_class, try_int
 from advanced_report_builder.variable_date import VariableDate
 
 
 class PeriodData:
-    min_date = None
-    max_date = None
 
-    def set_min_max_date(self, date_in):
+    def __init__(self):
+        self.max_date = None
+        self.min_date = None
+        self.min_max_dates = []  # used for quarter targets
+
+
+    def set_min_max_date(self, min_date, max_date=None, period_type=None):
+        min_dt = (
+            datetime.datetime.combine(min_date, datetime.datetime.min.time())
+            if isinstance(min_date, datetime.date) and not isinstance(min_date, datetime.datetime)
+            else min_date
+        )
+
+        if self.min_date is None or min_dt < self.min_date:
+            self.min_date = min_dt
+
+        if self.max_date is None or min_dt > self.max_date:
+            self.max_date = min_dt
+
+        if max_date is not None:
+            max_dt = (
+                datetime.datetime.combine(max_date, datetime.datetime.min.time())
+                if isinstance(max_date, datetime.date) and not isinstance(max_date, datetime.datetime)
+                else max_date
+            )
+
+            if self.min_date is None or min_dt < self.min_date:
+                self.min_date = max_dt
+
+            if self.max_date is None or max_dt > self.max_date:
+                self.max_date = max_dt
+
+            self.min_max_dates.append([min_date, max_date, period_type])
+
+
+    def intersect_min_max_date(self, date_in):
         dt = (
             datetime.datetime.combine(date_in, datetime.datetime.min.time())
             if isinstance(date_in, datetime.date) and not isinstance(date_in, datetime.datetime)
             else date_in
         )
 
-        if self.min_date is None or dt < self.min_date:
+        if self.min_date is None or dt > self.min_date:
             self.min_date = dt
 
-        if self.max_date is None or dt > self.max_date:
+        if self.max_date is None or dt < self.max_date:
             self.max_date = dt
 
     def get_day_period(self):
@@ -80,11 +115,14 @@ class PeriodData:
         return None
 
     def get_quarter_period(self):
-        if not self.min_date or not self.max_date:
+        min_d = None
+        max_d = None
+        for date_range_data in self.min_max_dates:
+            if date_range_data[2] == PeriodType.QUARTER:
+                min_d = date_range_data[0]
+                max_d = date_range_data[1]
+        if not min_d or not max_d:
             return None
-
-        min_d = self.min_date.date()
-        max_d = self.max_date.date()
 
         # Must start on first of a month
         if min_d.day != 1:
@@ -95,10 +133,10 @@ class PeriodData:
         if max_d.day != last_day:
             return None
 
-        # Calculate number of months spanned (inclusive)
+        # Must span exactly 3 months
         months = (max_d.year - min_d.year) * 12 + (max_d.month - min_d.month) + 1
-
         if months != 3:
+            # assert False, months
             return None
 
         return min_d, max_d
@@ -140,6 +178,7 @@ class FilterQueryMixin:
         super().__init__(*args, **kwargs)
 
     def process_query_filters(self, query, search_filter_data, extra_filter_data=None, extra_filter=None):
+
         annotations = {}
         result = self.process_filters(
             search_filter_data=search_filter_data,
@@ -322,6 +361,17 @@ class FilterQueryMixin:
                     fy_start=fy_start,
                 )
 
+            elif data_type == 'string' and _id.endswith('__financial_quarter'):
+                fy_start = self.get_financial_year(rules=query_data['rules'])
+                self.get_financial_quarter_number(
+                    value=value,
+                    query_list=query_list,
+                    display_operator=display_operator,
+                    field=field,
+                    query_string=query_string,
+                    fy_start=fy_start,
+                )
+
             elif data_type == 'string' and _id.endswith('__logged_in_user'):
                 self.get_logged_in_user(
                     value=value,
@@ -389,8 +439,11 @@ class FilterQueryMixin:
         else:
             query_list.append(Q(**{query_string: F(value)}))
 
-    def set_min_max_date(self, date_in):
-        self.period_data.set_min_max_date(date_in)
+    def set_min_max_date(self, min_date, max_date=None, period_type=None):
+        self.period_data.set_min_max_date(min_date=min_date,
+                                          max_date=max_date,
+                                          period_type=period_type)
+
 
     def get_variable_date(self, value, query_list, display_operator, field, query_string):
         if display_operator in ['is_null', 'is_not_null']:
@@ -405,24 +458,21 @@ class FilterQueryMixin:
             if display_operator in ['less', 'greater_or_equal']:
                 query_list.append(Q((query_string, value[0])))
                 if display_operator == 'less':
-                    self.set_min_max_date(date_in=value[0])
+                    self.set_min_max_date(min_date=value[0])
                 else:
-                    self.set_min_max_date(date_in=value[0])
-                    self.set_min_max_date(date_in=value[1])
+                    self.set_min_max_date(min_date=value[0], max_date=value[1])
 
             elif display_operator in ['greater', 'less_or_equal']:
                 query_list.append(Q((query_string, value[1])))
                 if display_operator == 'greater':
-                    self.set_min_max_date(date_in=value[1])
+                    self.set_min_max_date(min_date=value[1])
                 else:
-                    self.set_min_max_date(date_in=value[0])
-                    self.set_min_max_date(date_in=value[1])
+                    self.set_min_max_date(min_date=value[0], max_date=value[1])
             elif display_operator in ['not_equal', 'not_in']:
                 query_list.append(~((Q((field + '__gte', value[0]))) & (Q((field + '__lte', value[1])))))
             else:
                 query_list.append((Q((field + '__gte', value[0]))) & (Q((field + '__lte', value[1]))))
-                self.set_min_max_date(date_in=value[0])
-                self.set_min_max_date(date_in=value[1])
+                self.set_min_max_date(min_date=value[0], max_date=value[1])
 
     def get_variable_year(self, value, query_list, display_operator, field, query_string):
         if display_operator in ['is_null', 'is_not_null']:
@@ -443,19 +493,17 @@ class FilterQueryMixin:
                 query_list.append(Q((f'{field}__year__{query_string_parts[-1]}', year)))
 
                 if display_operator == 'greater':
-                    self.set_min_max_date(date_in=end_date)
+                    self.set_min_max_date(min_date=end_date)
                 elif display_operator == 'less':
-                    self.set_min_max_date(date_in=start_date)
+                    self.set_min_max_date(min_date=start_date)
                 else:
-                    self.set_min_max_date(date_in=start_date)
-                    self.set_min_max_date(date_in=end_date)
+                    self.set_min_max_date(min_date=start_date, max_date=end_date)
 
             elif display_operator in ['not_equal', 'not_in']:
                 query_list.append(~Q((query_string + '__year', year)))
             else:
                 query_list.append(Q((query_string + '__year', year)))
-                self.set_min_max_date(date_in=start_date)
-                self.set_min_max_date(date_in=end_date)
+                self.set_min_max_date(min_date=start_date, max_date=end_date)
 
     def get_variable_financial_year(
         self,
@@ -485,27 +533,26 @@ class FilterQueryMixin:
         ]:
             if display_operator == 'less':
                 query_list.append(Q(**{f'{field}__lt': start_date}))
-                self.set_min_max_date(date_in=start_date)
+                self.set_min_max_date(min_date=start_date)
 
             elif display_operator == 'less_or_equal':
                 query_list.append(Q(**{f'{field}__lte': end_date}))
-                self.set_min_max_date(date_in=end_date)
+                self.set_min_max_date(min_date=end_date)
 
             elif display_operator == 'greater':
                 query_list.append(Q(**{f'{field}__gt': end_date}))
-                self.set_min_max_date(date_in=end_date)
+                self.set_min_max_date(min_date=end_date)
 
             elif display_operator == 'greater_or_equal':
                 query_list.append(Q(**{f'{field}__gte': start_date}))
-                self.set_min_max_date(date_in=start_date)
+                self.set_min_max_date(min_date=start_date)
 
         elif display_operator in ['not_equal', 'not_in']:
             query_list.append(~(Q(**{f'{field}__gte': start_date}) & Q(**{f'{field}__lte': end_date})))
 
         else:  # equal / in
             query_list.append(Q(**{f'{field}__gte': start_date}) & Q(**{f'{field}__lte': end_date}))
-            self.set_min_max_date(date_in=start_date)
-            self.set_min_max_date(date_in=end_date)
+            self.set_min_max_date(min_date=start_date, max_date=end_date)
 
     @staticmethod
     def get_variable_month(value, query_list, display_operator, field, query_string):
@@ -519,7 +566,8 @@ class FilterQueryMixin:
             else:
                 query_list.append(Q((field + '__month', month)))
 
-    def get_variable_quarter(self, value, query_list, display_operator, field, query_string):
+    @staticmethod
+    def get_variable_quarter(value, query_list, display_operator, field, query_string):
         if display_operator in ['is_null', 'is_not_null']:
             query_list.append(Q((query_string, value)))
         else:
@@ -536,25 +584,76 @@ class FilterQueryMixin:
                     query_list.append(
                         (Q((field + '__month__gt', start_month))) & (Q((field + '__month__lte', end_month)))
                     )
-            else:
-                start_month = self.get_financial_month() - 1
-                end_month = start_month + 3
-                months = [divmod(x, 12)[1] + 1 for x in range(start_month, end_month)]
 
-                if display_operator == 'not_equal':
-                    query_list.append(
-                        ~(
-                            (Q((field + '__month', months[0])))
-                            | (Q((field + '__month', months[1])))
-                            | (Q((field + '__month', months[2])))
-                        )
-                    )
-                else:
-                    query_list.append(
-                        (Q((field + '__month', months[0])))
-                        | (Q((field + '__month', months[1])))
-                        | (Q((field + '__month', months[2])))
-                    )
+            else:
+                raise ReportError('Please use the new financial quarter type')
+
+    def get_financial_quarter_number(
+            self,
+            value,
+            query_list,
+            display_operator,
+            field,
+            query_string,
+            *,
+            fy_start,
+    ):
+        """
+        Applies a Financial Quarter Number filter.
+
+        Financial quarters are calculated relative to the financial year start date.
+        Quarter 1 begins at fy_start and each quarter spans 3 months.
+        """
+
+        if display_operator in ['is_null', 'is_not_null']:
+            query_list.append(Q((query_string, value)))
+            return
+
+        if fy_start is None:
+            raise ReportError(
+                'Financial Quarter requires a Financial Year '
+                '(select a Financial Year or use a Financial Year date range).'
+            )
+
+        quarter = int(value)
+
+        if not 1 <= quarter <= 4:
+            raise ReportError('Financial Quarter must be between 1 and 4')
+
+        quarter_start = fy_start + relativedelta(months=(quarter - 1) * 3)
+        quarter_end = quarter_start + relativedelta(months=3)
+
+        if display_operator == 'equal':
+            query_list.append(
+                Q(**{f'{field}__gte': quarter_start}) &
+                Q(**{f'{field}__lt': quarter_end})
+            )
+            stored_end = quarter_end - datetime.timedelta(days=1)
+            self.set_min_max_date(min_date=quarter_start, max_date=stored_end, period_type=PeriodType.QUARTER)
+
+        elif display_operator == 'not_equal':
+            query_list.append(
+                ~(
+                        Q(**{f'{field}__gte': quarter_start}) &
+                        Q(**{f'{field}__lt': quarter_end})
+                )
+            )
+
+        elif display_operator == 'less':
+            query_list.append(Q(**{f'{field}__lt': quarter_start}))
+            self.set_min_max_date(min_date=value[0])
+
+        elif display_operator == 'less_or_equal':
+            query_list.append(Q(**{f'{field}__lt': quarter_end}))
+            self.set_min_max_date(min_date=value[0], max_date=value[1])
+
+        elif display_operator == 'greater':
+            query_list.append(Q(**{f'{field}__gte': quarter_end}))
+            self.set_min_max_date(min_date=value[1])
+
+        elif display_operator == 'greater_or_equal':
+            query_list.append(Q(**{f'{field}__gte': quarter_start}))
+            self.set_min_max_date(min_date=value[0], max_date=value[1])
 
     @staticmethod
     def get_variable_day(value, query_list, display_operator, field, annotations):
@@ -598,8 +697,8 @@ class FilterQueryMixin:
         else:
             query_list.append(q)
 
-    @staticmethod
     def get_financial_week_number(
+        self,
         value,
         query_list,
         display_operator,
@@ -635,21 +734,26 @@ class FilterQueryMixin:
 
         if display_operator == 'equal':
             query_list.append(Q(**{f'{field}__gte': week_start}) & Q(**{f'{field}__lt': week_end}))
+            self.set_min_max_date(min_date=week_start, max_date=week_end)
 
         elif display_operator == 'not_equal':
             query_list.append(~(Q(**{f'{field}__gte': week_start}) & Q(**{f'{field}__lt': week_end})))
 
         elif display_operator == 'less':
             query_list.append(Q(**{f'{field}__lt': week_start}))
+            self.set_min_max_date(min_date=week_start)
 
         elif display_operator == 'less_or_equal':
             query_list.append(Q(**{f'{field}__lt': week_end}))
+            self.set_min_max_date(min_date=week_start, max_date=week_end)
 
         elif display_operator == 'greater':
             query_list.append(Q(**{f'{field}__gte': week_end}))
+            self.set_min_max_date(min_date=week_end)
 
         elif display_operator == 'greater_or_equal':
             query_list.append(Q(**{f'{field}__gte': week_start}))
+            self.set_min_max_date(min_date=week_start, max_date=week_end)
 
     def get_logged_in_user(self, value, query_list, display_operator, query_string):
         # noinspection PyUnresolvedReferences

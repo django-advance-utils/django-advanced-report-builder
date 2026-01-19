@@ -610,8 +610,6 @@ class VariableDate:
         values = {}
         for quarter in range(1, 5):
             values['#quarter:%d' % quarter] = f'Quarter {quarter}'
-        for quarter in range(1, 5):
-            values['#financial_quarter:%d' % quarter] = f'Financial Quarter {quarter}'
         return values
 
     @staticmethod

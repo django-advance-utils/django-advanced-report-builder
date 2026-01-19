@@ -1,4 +1,5 @@
 from enum import Enum
+from django.db import models
 
 from django.db.models import Avg, Count, Max, Min, Sum
 from django.db.models.functions import (
@@ -221,26 +222,40 @@ DATE_FORMAT_TYPES = [
     (DATE_FORMAT_TYPE_WW_YY_DASH, 'WW-YY'),
 ]
 
-DISPLAY_OPTION_NONE = 0
-DISPLAY_OPTION_1_PER_ROW = 1
-DISPLAY_OPTION_2_PER_ROW = 2
-DISPLAY_OPTION_3_PER_ROW = 3
-DISPLAY_OPTION_4_PER_ROW = 4
 
-DISPLAY_OPTION_CHOICES = [
-    (DISPLAY_OPTION_NONE, 'None/Default'),
-    (DISPLAY_OPTION_1_PER_ROW, '1 Report per Row'),
-    (DISPLAY_OPTION_2_PER_ROW, '2 Reports per Row'),
-    (DISPLAY_OPTION_3_PER_ROW, '3 Reports per Row'),
-    (DISPLAY_OPTION_4_PER_ROW, '4 Reports per Row'),
-]
+class DisplayOption(models.IntegerChoices):
+    NONE = 0, 'None / Default'
+    ONE_PER_ROW = 1, '1 Report per Row'
+    TWO_PER_ROW = 2, '2 Reports per Row'
+    THREE_PER_ROW = 3, '3 Reports per Row'
+    FOUR_PER_ROW = 4, '4 Reports per Row'
+    SIX_PER_ROW = 6, '6 Reports per Row'
 
-DISPLAY_OPTION_CLASSES = {
-    DISPLAY_OPTION_1_PER_ROW: ' col-12',
-    DISPLAY_OPTION_2_PER_ROW: ' col-12 col-md-12 col-lg-6',
-    DISPLAY_OPTION_3_PER_ROW: ' col-12 col-md-12 col-lg-4',
-    DISPLAY_OPTION_4_PER_ROW: ' col-12 col-md-12 col-lg-3',
+    @classmethod
+    def css_class(cls, value, double=False):
+        if double:
+            return DISPLAY_OPTION_DOUBLE_CLASSES.get(value, '')
+        return DISPLAY_OPTION_BASE_CLASSES.get(value, '')
+
+DISPLAY_OPTION_BASE_CLASSES = {
+    DisplayOption.ONE_PER_ROW.value: 'col-12',
+    DisplayOption.TWO_PER_ROW.value: 'col-12 col-md-12 col-lg-6',
+    DisplayOption.THREE_PER_ROW.value: 'col-12 col-md-12 col-lg-4',
+    DisplayOption.FOUR_PER_ROW.value: 'col-12 col-md-12 col-lg-3',
+    DisplayOption.SIX_PER_ROW.value: 'col-12 col-md-12 col-lg-2',
 }
+
+DISPLAY_OPTION_DOUBLE_CLASSES = {
+    DisplayOption.TWO_PER_ROW.value: 'col-12 col-md-12 col-lg-12',
+    DisplayOption.THREE_PER_ROW.value: 'col-12 col-md-12 col-lg-8',
+    DisplayOption.FOUR_PER_ROW.value: 'col-12 col-md-12 col-lg-6',
+    DisplayOption.SIX_PER_ROW.value: 'col-12 col-md-12 col-lg-4',
+}
+
+
+class DisplaySizeOption(models.IntegerChoices):
+    STANDARD = 1, 'Standard'
+    LARGE = 2, 'Large'
 
 DEFAULT_DATE_FORMAT = {
     ANNOTATION_VALUE_YEAR: DATE_FORMAT_TYPE_YYYY,
@@ -249,6 +264,14 @@ DEFAULT_DATE_FORMAT = {
     ANNOTATION_VALUE_WEEK: DATE_FORMAT_TYPE_WW_YY_DASH,
     ANNOTATION_VALUE_DAY: DATE_FORMAT_TYPE_DD_MM_YY_SLASH,
 }
+
+
+class PeriodType(models.IntegerChoices):
+    DAILY = 1, 'Daily'
+    WEEKLY = 2, 'Weekly'
+    MONTHLY = 3, 'Monthly'
+    QUARTER = 4, 'Quarterly'
+    YEARLY = 5, 'Yearly'
 
 CALENDAR_VIEW_TYPE_MONTH = 1
 CALENDAR_VIEW_TYPE_GRID_WEEK = 2

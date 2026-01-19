@@ -32,7 +32,7 @@
 
     <div class="container-fluid{% if enable_edit %} dashboard_bottom{% endif %}">
     {% for report in reports %}
-        <div class="float-left{{ report.class }} dashboard_item" data-id="{{ report.id }}">
+        <div class="float-left {{ report.class }} dashboard_item" data-id="{{ report.id }}">
             {{ report.render }}
         </div>
     {% endfor %}
