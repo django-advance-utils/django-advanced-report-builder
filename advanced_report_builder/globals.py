@@ -269,11 +269,13 @@ DEFAULT_DATE_FORMAT = {
 
 
 class PeriodType(models.IntegerChoices):
+    NO_PERIOD = 0, 'No Period'
     DAILY = 1, 'Daily'
     WEEKLY = 2, 'Weekly'
     MONTHLY = 3, 'Monthly'
     QUARTER = 4, 'Quarterly'
     YEARLY = 5, 'Yearly'
+
 
 
 CALENDAR_VIEW_TYPE_MONTH = 1
