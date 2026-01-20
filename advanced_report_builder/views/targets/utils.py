@@ -195,10 +195,9 @@ class TargetUtils:
         return target.get_value()
 
     def get_target_value(self, period_data, target):
-
         if target.period_type == PeriodType.NO_PERIOD:
             target_value = target.get_value()
-            
+
         elif target.period_type == PeriodType.DAILY:
             period = period_data.get_day_period()
             if period is None:

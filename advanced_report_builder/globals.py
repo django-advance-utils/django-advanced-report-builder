@@ -277,7 +277,6 @@ class PeriodType(models.IntegerChoices):
     YEARLY = 5, 'Yearly'
 
 
-
 CALENDAR_VIEW_TYPE_MONTH = 1
 CALENDAR_VIEW_TYPE_GRID_WEEK = 2
 CALENDAR_VIEW_TYPE_LIST_WEEK = 3
