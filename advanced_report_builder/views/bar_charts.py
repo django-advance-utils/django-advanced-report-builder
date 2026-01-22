@@ -70,14 +70,14 @@ class BarChartView(ChartBaseView):
             raise ReportError(e)
         self.table.bar_chart_report = self.chart_report
         self.table.datatable_template = self.get_report_template()
+        self.table.enable_links = self.kwargs.get('enable_links')
         self.table.breakdown_url = self.get_breakdown_url()
-
         context['bar_chart_report'] = self.chart_report
         return context
 
     def get_breakdown_url(self):
         if self.table.bar_chart_report.show_breakdown:
-            enable_links = self.slug.get('enable_links') == 'True'
+            enable_links = self.table.enable_links
             slug = f'pk-{self.table.bar_chart_report.id}-data-99999-date-88888-enable_links-{enable_links}'
             return reverse(
                 'advanced_report_builder:bar_chart_show_breakdown_modal',
