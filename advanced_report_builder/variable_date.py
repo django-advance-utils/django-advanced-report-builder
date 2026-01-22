@@ -152,12 +152,10 @@ class VariableDate:
         (RANGE_TYPE_NEXT_12_MONTHS, 'Next 12 months'),
         (RANGE_TYPE_NEXT_24_MONTHS, 'Next 24 months'),
         (RANGE_TYPE_NEXT_36_MONTHS, 'Next 36 months'),
-
         # Calendar year full ranges
         (RANGE_TYPE_LAST_CALENDAR_YEAR, 'Last calendar year'),
         (RANGE_TYPE_THIS_CALENDAR_YEAR, 'This calendar year'),
         (RANGE_TYPE_NEXT_CALENDAR_YEAR, 'Next calendar year'),
-
         # Financial year full ranges
         (RANGE_TYPE_LAST_FINANCIAL_YEAR, 'Last financial year'),
         (RANGE_TYPE_THIS_FINANCIAL_YEAR, 'This financial year'),
