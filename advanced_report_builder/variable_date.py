@@ -26,8 +26,6 @@ class VariableDate:
     RANGE_TYPE_LAST_14_DAYS = 13
     RANGE_TYPE_NEXT_28_DAYS = 14
     RANGE_TYPE_LAST_28_DAYS = 15
-    RANGE_TYPE_THIS_YEAR = 16
-    RANGE_TYPE_LAST_YEAR = 17
     RANGE_TYPE_LAST_12_MONTHS = 38
     RANGE_TYPE_NEXT_12_MONTHS = 39
     RANGE_TYPE_LAST_WEEK = 18
@@ -53,9 +51,6 @@ class VariableDate:
     RANGE_TYPE_4_WEEKS_AGO = 46
     RANGE_TYPE_5_WEEKS_AGO = 47
     RANGE_TYPE_6_WEEKS_AGO = 48
-
-    RANGE_TYPE_THIS_YEAR = 16
-    RANGE_TYPE_LAST_YEAR = 17
 
     # Financial year ranges
     RANGE_TYPE_LAST_FINANCIAL_YEAR = 49
@@ -109,6 +104,11 @@ class VariableDate:
     RANGE_TYPE_NEXT_CALENDAR_YEAR_Q3 = 81
     RANGE_TYPE_NEXT_CALENDAR_YEAR_Q4 = 82
 
+    # Calendar year full ranges
+    RANGE_TYPE_THIS_CALENDAR_YEAR = 16
+    RANGE_TYPE_LAST_CALENDAR_YEAR = 17
+    RANGE_TYPE_NEXT_CALENDAR_YEAR = 83
+
     RANGE_TYPE_CHOICES = (
         (RANGE_TYPE_LAST_36_MONTHS, 'Last 36 months'),
         (RANGE_TYPE_LAST_24_MONTHS, 'Last 24 months'),
@@ -152,6 +152,12 @@ class VariableDate:
         (RANGE_TYPE_NEXT_12_MONTHS, 'Next 12 months'),
         (RANGE_TYPE_NEXT_24_MONTHS, 'Next 24 months'),
         (RANGE_TYPE_NEXT_36_MONTHS, 'Next 36 months'),
+
+        # Calendar year full ranges
+        (RANGE_TYPE_LAST_CALENDAR_YEAR, 'Last calendar year'),
+        (RANGE_TYPE_THIS_CALENDAR_YEAR, 'This calendar year'),
+        (RANGE_TYPE_NEXT_CALENDAR_YEAR, 'Next calendar year'),
+
         # Financial year full ranges
         (RANGE_TYPE_LAST_FINANCIAL_YEAR, 'Last financial year'),
         (RANGE_TYPE_THIS_FINANCIAL_YEAR, 'This financial year'),
@@ -318,13 +324,18 @@ class VariableDate:
             start_date = today - timedelta(days=90 - 1)
             end_date = today
             number_of_days = 90
-        elif range_type == self.RANGE_TYPE_THIS_YEAR:  # This Year
+        elif range_type == self.RANGE_TYPE_THIS_CALENDAR_YEAR:  # This Year
             start_date = date(today.year, 1, 1)
             end_date = date(today.year, 12, 31)
-        elif range_type == self.RANGE_TYPE_LAST_YEAR:  # Last Year
+        elif range_type == self.RANGE_TYPE_LAST_CALENDAR_YEAR:  # Last Year
             last_year = today.year - 1
             start_date = date(last_year, 1, 1)
             end_date = date(last_year, 12, 31)
+
+        elif range_type == self.RANGE_TYPE_LAST_CALENDAR_YEAR:  # Last Year
+            next_year = today.year + 1
+            start_date = date(next_year, 1, 1)
+            end_date = date(next_year, 12, 31)
         elif range_type == self.RANGE_TYPE_LAST_18_MONTHS:
             date_offset = DateOffset()
             start_date = date_offset.get_offset('-18m', today)
