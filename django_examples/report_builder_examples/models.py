@@ -446,8 +446,8 @@ class Contract(TimeStampedModel):
 
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     notes = models.TextField()
-    start_date = models.DateField()
-    end_date = models.DateField()
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
     amount = models.IntegerField()
     valid = models.BooleanField(default=False)
     temperature = models.IntegerField(choices=TEMPERATURE_TYPES, default=0)

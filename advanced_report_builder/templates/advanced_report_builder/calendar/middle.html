@@ -13,21 +13,31 @@ if(table.initsetup.tableOptions.row_href) {
     link_index = table.initsetup.field_ids.indexOf(link_details.column);
 }
 $.each(table.data, function( index, card ) {
+    try {
+        var start_date = toISOFormat(card[start_date_field_index]);
+        var end_date = toISOFormat(card[end_date_field_index]);
 
-    var start_date = toISOFormat(card[start_date_field_index]);
-    var end_date = toISOFormat(card[end_date_field_index]);
-    var link = '';
-    if(link_index >= 0) {
-        link = link_details.html.replace(link_details.var, card[link_index]);
+        // skip if either date is invalid
+        if (!start_date || !end_date || isNaN(Date.parse(start_date)) || isNaN(Date.parse(end_date))) {
+            return true; // continue
+        }
+
+        var link = '';
+        if(link_index >= 0) {
+            link = link_details.html.replace(link_details.var, card[link_index]);
+        }
+        var event = {
+            title: card[heading_index],
+            start: start_date,
+            end: end_date,
+            backgroundColor: card[background_colour_index],
+            borderColor: card[background_colour_index],
+            description: card[description],
+            url: link
+        }
+        events.push(event)
+
+    } catch (e) {
+        return true; // continue on error
     }
-    var event = {
-        title: card[heading_index],
-        start: start_date,
-        end: end_date,
-        backgroundColor: card[background_colour_index],
-        borderColor: card[background_colour_index],
-        description: card[description],
-        url: link
-    }
-    events.push(event)
 });
