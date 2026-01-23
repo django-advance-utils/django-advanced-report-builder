@@ -431,11 +431,10 @@ class FieldTypes(ReportBuilderFieldUtils):
                         full_field_name = prefix + column.field
                     else:
                         full_field_name = prefix + field
-                    column_id = prefix + field
 
                     if selected_field_type is not None:
                         title = title_prefix + column.title
-                        field_results_types[selected_field_type][column_id] = title
+                        field_results_types[selected_field_type][field] = title
                         field_results.append(
                             FieldDetail(
                                 django_field=django_field,
@@ -445,7 +444,7 @@ class FieldTypes(ReportBuilderFieldUtils):
                                 prefix=prefix,
                                 field_type=selected_field_type,
                                 full_field_name=full_field_name,
-                                column_id=column_id,
+                                column_id=field,
                             )
                         )
 
