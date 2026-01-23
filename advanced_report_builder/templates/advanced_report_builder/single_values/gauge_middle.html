@@ -27,7 +27,7 @@ var table = {{ datatable.model_table_setup }};
             actual = 0;
             display_actual = 0;
         } else {
-            actual = parseFloat(actual.replace(/[^0-9.]/g, ''));
+            actual = parseFloat(String(actual).replace(/[^0-9.]/g, '')) || 0;
         }
     }
 
@@ -51,23 +51,52 @@ const percent = target > 0
         return '{{ datatable.prefix|default:"" }}' + n + '{% if datatable.single_value.is_percentage %}%{% endif %}';
     }
 
+
     // ---- CENTER TEXT ----
     const centerText = {
         id: 'centerText',
         afterDraw(chart) {
-            const { ctx, chartArea } = chart;
+            const ctx = chart.ctx;
+            const chartArea = chart.chartArea;
+
             const x = (chartArea.left + chartArea.right) / 2;
             const y = chartArea.bottom - 80;
+
+            const meta = chart.getDatasetMeta(0);
+            if (!meta || !meta.data || !meta.data.length) return;
+
+            const arc = meta.data[0];
+            const maxWidth = arc.innerRadius * 2 - 20;
 
             ctx.save();
             ctx.textAlign = 'center';
             ctx.fillStyle = '#{{ datatable.single_value.font_colour|default:"000000" }}';
 
-            ctx.font = 'bold 52px Arial';
-            ctx.fillText(formatNumber(display_actual), x, y - 40);
+            /* ---------- ACTUAL (primary) ---------- */
+            const actualText = display_actual;
 
-            ctx.font = '22px Arial';
-            ctx.fillText(display_target, x, y);
+            let actualFontSize = 52;
+            ctx.font = `bold ${actualFontSize}px Arial`;
+
+            while (ctx.measureText(actualText).width > maxWidth && actualFontSize > 28) {
+                actualFontSize -= 2;
+                ctx.font = `bold ${actualFontSize}px Arial`;
+            }
+
+            ctx.fillText(actualText, x, y - 40);
+
+            /* ---------- TARGET (secondary) ---------- */
+            const targetText = display_target;
+
+            let targetFontSize = 22;
+            ctx.font = `${targetFontSize}px Arial`;
+
+            while (ctx.measureText(targetText).width > maxWidth && targetFontSize > 16) {
+                targetFontSize -= 1;
+                ctx.font = `${targetFontSize}px Arial`;
+            }
+
+            ctx.fillText(targetText, x, y);
 
             ctx.restore();
         }
