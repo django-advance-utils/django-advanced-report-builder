@@ -405,7 +405,9 @@ class FieldTypes(ReportBuilderFieldUtils):
                 for column in columns:
                     field = prefix + column.column_name
                     selected_field_type = None
-                    if django_field is not None and not isinstance(column, ManyToManyColumn):
+                    if (django_field is not None and
+                            not isinstance(column, ManyToManyColumn) and
+                            not getattr(column, 'many_to_many', False)):
                         if isinstance(column, FilterForeignKeyColumn):
                             selected_field_type = FieldType.FILTER_FOREIGN_KEY
                         elif isinstance(django_field, models.CharField | models.TextField | models.EmailField):
@@ -422,7 +424,7 @@ class FieldTypes(ReportBuilderFieldUtils):
                             selected_field_type = FieldType.BOOLEAN
                         elif isinstance(django_field, DATE_FIELDS):
                             selected_field_type = FieldType.DATE
-                    elif isinstance(column, ManyToManyColumn):
+                    elif isinstance(column, ManyToManyColumn) or getattr(column, 'many_to_many', False):
                         selected_field_type = FieldType.MANY_TO_MANY
 
                     if isinstance(column.field, list):
