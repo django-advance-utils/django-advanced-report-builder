@@ -405,9 +405,11 @@ class FieldTypes(ReportBuilderFieldUtils):
                 for column in columns:
                     field = prefix + column.column_name
                     selected_field_type = None
-                    if (django_field is not None and
-                            not isinstance(column, ManyToManyColumn) and
-                            not getattr(column, 'many_to_many', False)):
+                    if (
+                        django_field is not None
+                        and not isinstance(column, ManyToManyColumn)
+                        and not getattr(column, 'many_to_many', False)
+                    ):
                         if isinstance(column, FilterForeignKeyColumn):
                             selected_field_type = FieldType.FILTER_FOREIGN_KEY
                         elif isinstance(django_field, models.CharField | models.TextField | models.EmailField):

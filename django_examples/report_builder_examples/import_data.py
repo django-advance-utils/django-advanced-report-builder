@@ -51,7 +51,7 @@ def import_companies(path):
                 company=company,
                 first_name=r['First Name'],
                 surname=r['Surname'],
-                title=titles.get(r['Title'], None),
+                title=titles.get(r['Title']),
                 date_entered=datetime.datetime.strptime(r['date_entered'], '%d/%m/%Y'),
             )
             for _ in range(random.randrange(10)):
