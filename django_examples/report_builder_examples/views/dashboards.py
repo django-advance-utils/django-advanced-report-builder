@@ -79,11 +79,11 @@ class ViewDashboard(MainMenu, ViewDashboardBase):
                 *report_menu,
             )
 
-    def redirect_url(self):
+    def redirect_url(self, dashboard):
         if self.enable_edit:
-            return redirect('report_builder_examples:edit_dashboard', slug=self.dashboard.slug)
+            return redirect('report_builder_examples:edit_dashboard', slug=dashboard.slug)
         else:
-            return redirect('report_builder_examples:view_dashboard', slug=self.dashboard.slug)
+            return redirect('report_builder_examples:view_dashboard', slug=dashboard.slug)
 
     def has_report_got_permission(self, report):
         if hasattr(report, 'reportpermission') and report.reportpermission.requires_superuser:

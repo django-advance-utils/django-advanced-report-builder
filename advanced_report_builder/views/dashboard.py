@@ -49,26 +49,32 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         self._view_type_class = None
         super().__init__(*args, **kwargs)
 
-    def redirect_url(self):
+    def redirect_url(self, dashboard):
         """used if the slug changes"""
-        return None
+        raise Http404
 
     def dashboard_not_found(self):
         raise Http404
 
-    def dispatch(self, request, *args, **kwargs):
+    def get_dashboard(self):
         slug = split_slug(self.kwargs['slug'])
-        self.dashboard = self.model.objects.filter(slug=slug['pk']).first()
-
-        if self.dashboard is None:
-            self.dashboard = self.model.objects.filter(slug_alias=slug['pk']).first()
-            if self.dashboard is None:
-                return self.dashboard_not_found()
+        dashboard = self.model.objects.filter(slug=slug['pk']).first()
+        if dashboard is None:
+            dashboard = self.model.objects.filter(slug_alias=slug['pk']).first()
+            if dashboard is None:
+                return {'redirect': self.dashboard_not_found()}
             else:
-                redirect_url = self.redirect_url()
+                redirect_url = self.redirect_url(dashboard=dashboard)
                 if redirect_url:
-                    return redirect_url
+                    return {'redirect': redirect_url}
+        return {'dashboard': dashboard}
 
+    def dispatch(self, request, *args, **kwargs):
+        dashboard_data = self.get_dashboard()
+        if 'redirect' in dashboard_data:
+            return dashboard_data['redirect']
+        else:
+            self.dashboard = dashboard_data.get('dashboard')
         return super().dispatch(request, *args, **kwargs)
 
     def get_view_types_class(self):
