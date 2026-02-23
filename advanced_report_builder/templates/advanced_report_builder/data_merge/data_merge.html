@@ -45,7 +45,7 @@ function setup_tiny_{{ widget.attrs.id }}() {
         cleanup: false,
         plugins: ['searchreplace', 'code'],
         toolbar: 'bold italic | bullist numlist | standardparagraphbutton',
-        setup: function (editor) {
+        init_instance_callback: function (editor) {
             django_modal.send_inputs({
                 ajax: 'get_{{ widget.name }}_data_merge_menu',
                 field_auto_id: '{{ widget.attrs.id }}'
