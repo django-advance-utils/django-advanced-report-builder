@@ -1091,7 +1091,14 @@ class MultiValueShowBreakdownModal(TableUtilsMixin, Modal):
 
     def extra_filters(self, query):
         multi_value_report_cell = self.get_multi_value_report_cell()
-        query = self.process_query_filters(query=query, search_filter_data=multi_value_report_cell.query_data)
+        query_data = multi_value_report_cell.query_data
+        extra_filter_data = None
+        if multi_value_report_cell.multi_value_held_query is not None:
+            extra_filter_data = multi_value_report_cell.multi_value_held_query.query
+        if query_data:
+            query = self.process_query_filters(
+                query=query, search_filter_data=query_data, extra_filter_data=extra_filter_data
+            )
         return query
 
     def get_report_query(self, report):
