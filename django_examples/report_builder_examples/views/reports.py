@@ -76,6 +76,11 @@ class ViewReports(MainIndices):
                         'Multiple Values',
                         font_awesome='fas fa-grip-horizontal',
                     ),
+                    MenuItem(
+                        'advanced_report_builder:nl_builder_prompt_modal,new-1',
+                        'AI Report Builder',
+                        font_awesome='fas fa-robot',
+                    ),
                 ],
             ),
         )

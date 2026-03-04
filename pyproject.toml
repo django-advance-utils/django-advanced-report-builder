@@ -23,6 +23,9 @@ dependencies = [
     "expression-builder >= 0.0.12",
 ]
 
+[project.optional-dependencies]
+ai = ["anthropic>=0.39.0"]
+
 [project.urls]
 Homepage = "https://github.com/django-advance-utils/django-advanced-report-builder"
 
