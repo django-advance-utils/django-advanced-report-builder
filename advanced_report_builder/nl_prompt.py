@@ -42,11 +42,13 @@ def build_field_schema(report_type):
     for field in fields:
         field_id = field['id']
         field_type = field_type_map.get(field_id, 'string')
-        schema.append({
-            'field_id': field_id,
-            'label': field['text'],
-            'type': field_type,
-        })
+        schema.append(
+            {
+                'field_id': field_id,
+                'label': field['text'],
+                'type': field_type,
+            }
+        )
     return schema
 
 
@@ -56,7 +58,10 @@ class _FieldTypeHelper(ReportBuilderFieldUtils):
 
         field_type_map = {}
         for report_builder_field in report_builder_class.fields:
-            if not isinstance(report_builder_field, str) or report_builder_field not in report_builder_class.exclude_display_fields:
+            if (
+                not isinstance(report_builder_field, str)
+                or report_builder_field not in report_builder_class.exclude_display_fields
+            ):
                 try:
                     django_field, col_type_override, columns, _ = self.get_field_details(
                         base_model=base_model,
@@ -81,6 +86,7 @@ class _FieldTypeHelper(ReportBuilderFieldUtils):
         # Recurse into includes
         for include_field, include in report_builder_class.includes.items():
             from django.apps import apps
+
             app_label, model, rb_class_str = include['model'].split('.')
             new_model = apps.get_model(app_label, model)
             new_rb_class = get_report_builder_class(model=new_model, class_name=rb_class_str)
@@ -96,7 +102,7 @@ class _FieldTypeHelper(ReportBuilderFieldUtils):
 
 
 OUTPUT_TYPE_SCHEMAS = {
-    'table': '''{
+    'table': """{
   "name": "Report name",
   "table_fields": [{"field": "field_id_1"}, {"field": "field_id_2"}],
   "order_by_field": "field_id or null",
@@ -105,9 +111,8 @@ OUTPUT_TYPE_SCHEMAS = {
   "filters": null
 }
 
-table_fields is a JSON list of objects with a "field" key.''',
-
-    'bar_chart': '''{
+table_fields is a JSON list of objects with a "field" key.""",
+    'bar_chart': """{
   "name": "Report name",
   "axis_scale": 3,
   "date_field": "field_id of a date field",
@@ -122,9 +127,8 @@ table_fields is a JSON list of objects with a "field" key.''',
 
 axis_scale: 1=Year, 2=Quarter, 3=Month, 4=Week, 5=Day
 axis_value_type: 1=Sum, 2=Maximum, 3=Minimum, 4=Count, 5=Average
-fields is a JSON list of objects with a "field" key (the fields to aggregate/group by).''',
-
-    'line_chart': '''{
+fields is a JSON list of objects with a "field" key (the fields to aggregate/group by).""",
+    'line_chart': """{
   "name": "Report name",
   "axis_scale": 3,
   "date_field": "field_id of a date field",
@@ -138,9 +142,8 @@ fields is a JSON list of objects with a "field" key (the fields to aggregate/gro
 
 axis_scale: 1=Year, 2=Quarter, 3=Month, 4=Week, 5=Day
 axis_value_type: 1=Sum, 2=Maximum, 3=Minimum, 4=Count, 5=Average
-fields is a JSON list of objects with a "field" key.''',
-
-    'pie_chart': '''{
+fields is a JSON list of objects with a "field" key.""",
+    'pie_chart': """{
   "name": "Report name",
   "axis_value_type": 4,
   "fields": [{"field": "field_id_1"}],
@@ -150,9 +153,8 @@ fields is a JSON list of objects with a "field" key.''',
 
 axis_value_type: 1=Sum, 2=Maximum, 3=Minimum, 4=Count, 5=Average
 style: 1=Pie, 2=Doughnut
-fields is a JSON list of objects with a "field" key.''',
-
-    'single_value': '''{
+fields is a JSON list of objects with a "field" key.""",
+    'single_value': """{
   "name": "Report name",
   "single_value_type": 1,
   "field": "field_id or null",
@@ -162,9 +164,8 @@ fields is a JSON list of objects with a "field" key.''',
 }
 
 single_value_type: 1=Count, 2=Sum, 3=Count & Sum, 4=Percent, 5=Percent from Count, 6=Average Sum from Count
-field is required for Sum/Percent/Average types (must be a number field).''',
-
-    'funnel_chart': '''{
+field is required for Sum/Percent/Average types (must be a number field).""",
+    'funnel_chart': """{
   "name": "Report name",
   "axis_value_type": 4,
   "fields": [{"field": "field_id_1"}],
@@ -172,7 +173,7 @@ field is required for Sum/Percent/Average types (must be a number field).''',
 }
 
 axis_value_type: 1=Sum, 2=Maximum, 3=Minimum, 4=Count, 5=Average
-fields is a JSON list of objects with a "field" key.''',
+fields is a JSON list of objects with a "field" key.""",
 }
 
 

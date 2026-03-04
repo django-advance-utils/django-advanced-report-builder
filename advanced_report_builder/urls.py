@@ -50,10 +50,10 @@ from advanced_report_builder.views.multi_value import (
     MultiValueShowBreakdownModal,
     MultiValueTableFieldModal,
 )
+from advanced_report_builder.views.nl_builder import NLReportBuilderModal, NLReportPreviewModal
 from advanced_report_builder.views.pie_charts import PieChartFieldModal, PieChartModal
 from advanced_report_builder.views.query_modal.modal import QueryModal, QueryOrderModal
 from advanced_report_builder.views.report import SelectOptionModal
-from advanced_report_builder.views.nl_builder import NLReportBuilderModal, NLReportPreviewModal
 from advanced_report_builder.views.reports import DuplicateReportModal
 from advanced_report_builder.views.single_values import (
     QueryNumeratorModal,

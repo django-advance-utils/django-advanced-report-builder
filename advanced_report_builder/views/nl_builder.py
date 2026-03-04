@@ -63,7 +63,12 @@ class NLReportBuilderModal(FormModal):
             label='Output Type',
         )
         form.fields['description'] = CharField(
-            widget=Textarea(attrs={'rows': 4, 'placeholder': 'e.g. Show me all active companies with their name, sector and creation date'}),
+            widget=Textarea(
+                attrs={
+                    'rows': 4,
+                    'placeholder': 'e.g. Show me all active companies with their name, sector and creation date',
+                }
+            ),
             label='Describe what you want',
         )
 
@@ -96,7 +101,7 @@ class NLReportBuilderModal(FormModal):
         self.request.session['nl_output_type'] = output_type
         self.request.session['nl_description'] = description
 
-        slug = f'preview-1'
+        slug = 'preview-1'
         return self.command_response(
             'show_modal',
             modal=reverse('advanced_report_builder:nl_builder_preview_modal', kwargs={'slug': slug}),
