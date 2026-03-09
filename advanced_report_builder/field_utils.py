@@ -44,11 +44,17 @@ class ReportBuilderFieldUtils:
 
         if django_field is None and columns:
             col_type_override = columns[0]
-            if isinstance(col_type_override.field, str):
+            col_field = col_type_override.field
+            if isinstance(col_field, list):
+                col_field = col_field[0]
+            if isinstance(col_field, str):
                 if isinstance(field, str):
                     path_parts = field.split('__')[:-1]
-                    path_parts.append(col_type_override.field.split('__')[-1])
-                    path = '__'.join(path_parts)
+                    if path_parts:
+                        path_parts.append(col_field.split('__')[-1])
+                        path = '__'.join(path_parts)
+                    else:
+                        path = col_field
                     column_initialisor = self.column_initialisor_cls(
                         start_model=base_model, path=path, table=table, **field_attr
                     )
@@ -57,7 +63,7 @@ class ReportBuilderFieldUtils:
                 else:
                     column_initialisor = self.column_initialisor_cls(
                         start_model=base_model,
-                        path=col_type_override.field,
+                        path=col_field,
                         table=table,
                         **field_attr,
                     )
