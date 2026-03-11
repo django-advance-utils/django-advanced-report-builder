@@ -39,7 +39,13 @@ class QueryBuilderModalBaseMixin(ReportBuilderFieldUtils):
             report_builder_class=report_builder_class,
         )
 
-        return query_builder_filters
+        seen_ids = set()
+        unique_filters = []
+        for f in query_builder_filters:
+            if f['id'] not in seen_ids:
+                seen_ids.add(f['id'])
+                unique_filters.append(f)
+        return unique_filters
 
     def _get_query_builder_fields(
         self,
