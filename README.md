@@ -14,3 +14,17 @@ A Django application that provides a fully featured, dynamic report-building int
 - Export to CSV, Excel and other supported formats.
 - Pluggable architecture for adding formats, custom filters, or integration hooks.
 - Designed to integrate easily into existing Django projects.
+
+## Documentation
+
+Full documentation is available in the [docs](docs/index.md) directory:
+
+- [Installation](docs/installation.md)
+- [Quick start](docs/quickstart.md)
+- [Model configuration](docs/model-configuration.md)
+- [Report types](docs/report-types.md)
+- [Dashboards](docs/dashboards.md)
+- [Filters and queries](docs/filters-and-queries.md)
+- [Custom columns](docs/custom-columns.md)
+- [Targets](docs/targets.md)
+- [Settings](docs/settings.md)
