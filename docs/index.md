@@ -34,5 +34,6 @@ A Django application that provides a fully featured, dynamic report-building int
 - [Dashboards](dashboards.md)
 - [Filters and queries](filters-and-queries.md)
 - [Custom columns](custom-columns.md)
+- [Record navigation](record-nav.md)
 - [Targets](targets.md)
 - [Settings](settings.md)

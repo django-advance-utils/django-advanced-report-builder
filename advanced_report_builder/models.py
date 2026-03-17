@@ -395,6 +395,7 @@ class TableReport(Report):
         ),
         default=100,
     )
+    record_nav = models.BooleanField(default=True)
 
 
 class SingleValueReport(Report):
@@ -428,6 +429,7 @@ class SingleValueReport(Report):
 
     show_breakdown = models.BooleanField(default=False)
     breakdown_fields = models.JSONField(null=True, blank=True)
+    record_nav = models.BooleanField(default=True)
 
     average_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES, blank=True, null=True)
     average_start_period = models.PositiveSmallIntegerField(blank=True, null=True)
@@ -476,6 +478,7 @@ class BarChartReport(Report):
 
     show_breakdown = models.BooleanField(default=False)
     breakdown_fields = models.JSONField(null=True, blank=True)
+    record_nav = models.BooleanField(default=True)
 
     def is_orientation_vertical(self):
         return self.bar_chart_orientation == self.BarChartOrientation.VERTICAL
@@ -746,6 +749,7 @@ class MultiValueReportCell(TimeStampedModel):
 
     show_breakdown = models.BooleanField(default=False)
     breakdown_fields = models.JSONField(null=True, blank=True)
+    record_nav = models.BooleanField(default=True)
 
     average_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES, blank=True, null=True)
     average_start_period = models.PositiveSmallIntegerField(blank=True, null=True)

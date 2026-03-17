@@ -1,10 +1,15 @@
-<html>
-<body>
+{% extends 'report_builder_examples/base.html' %}
 
-Linked work <a href="/">click here</a>
-
-
-</body>
-
-
-</html>
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="card">
+        <div class="card-header">
+            <h5>Example Link Page</h5>
+        </div>
+        <div class="card-body">
+            Linked to: {{ slug }} <br>
+            <a href="/">Back to reports</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

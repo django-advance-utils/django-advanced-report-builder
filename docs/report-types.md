@@ -11,6 +11,7 @@ Displays data in a paginated, sortable table powered by DataTables. Supports:
 - Configurable page length
 - CSV and Excel export
 - Column alignment and formatting
+- **[Record navigation](record-nav.md)** for stepping through records from clickable rows
 
 ## Single value report
 
@@ -33,6 +34,7 @@ Displays a single aggregated metric as a tile or gauge.
 - **Prefix** and **suffix** text
 - **Percentage mode** using a numerator query
 - **Breakdown** modal to show the underlying data
+- **[Record navigation](record-nav.md)** for stepping through breakdown records
 - **Gauge** template style as an alternative to the default tile
 
 ## Bar chart report
@@ -46,6 +48,7 @@ Renders data as a bar chart using Chart.js.
 - **Axis scale** -- time-based grouping by year, quarter, month, week or day
 - **Date field** -- the field used for time-based grouping
 - **Breakdown** modal to show the underlying data
+- **[Record navigation](record-nav.md)** for stepping through breakdown records
 
 ## Line chart report
 
@@ -82,6 +85,7 @@ A grid-based layout where each cell is independently configured. Useful for dash
 - Shared queries across cells (held queries)
 - Column width configuration
 - Copy cells to duplicate configuration
+- **[Record navigation](record-nav.md)** for stepping through breakdown records
 
 ## Kanban report
 

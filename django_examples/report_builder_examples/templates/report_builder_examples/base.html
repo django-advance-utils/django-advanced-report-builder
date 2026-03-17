@@ -10,6 +10,7 @@
     {% lib_include 'Modals' 'JFormset' 'Toggle' 'select2' 'JQueryUI' 'TinyMce' 'ColourPicker' module='django_modals.includes' %}
     {% lib_include 'datatable' module='django_datatables.includes' %}
     {% lib_include 'full_calendar' module='advanced_report_builder.includes' %}
+    {% lib_include 'record_nav' module='advanced_report_builder.includes' %}
 
     <style>
         .row_link tr td {
@@ -38,6 +39,7 @@
             {{ menus.user_menu.render }}
         </div>
     </nav>
+    <div id="record-nav-placeholder"></div>
     {% block content %}{% endblock %}
 </body>
 </html>

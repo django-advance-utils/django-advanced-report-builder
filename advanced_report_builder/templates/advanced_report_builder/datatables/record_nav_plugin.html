@@ -1,0 +1,53 @@
+<script>
+    // Capture-phase click listener scoped to this table. Fires before the
+    // datatable's jQuery handler or <a> navigation, storing all visible row URLs.
+    document.addEventListener('click', function (e) {
+        var td = e.target.closest('#{{ datatable.table_id }} tbody td')
+        if (!td) return
+        var tr = td.closest('tr')
+        if (!tr) return
+        var dt = django_datatables.DataTables['{{ datatable.table_id }}']
+        if (!dt) return
+
+        var urls = []
+        var clickedIndex = -1
+        try {
+            if (dt.initsetup.tableOptions.row_href) {
+                // row_href mode: compute URLs from row data
+                var href_render = new django_datatables.column_render(0, dt.initsetup.tableOptions.row_href, dt)
+                var all_rows = dt.table.api().rows({order: 'applied', filter: 'applied'})
+                var row_data = all_rows.data()
+                var row_nodes = all_rows.nodes()
+                for (var i = 0; i < row_data.length; i++) {
+                    urls.push(href_render('', null, row_data[i]))
+                    if (row_nodes[i] === tr) clickedIndex = i
+                }
+            } else {
+                // Link column mode: find <a> tags in the same column
+                var link = e.target.closest('a')
+                if (!link) return
+                var colIndex = td.cellIndex
+                var rows = dt.table.api().rows({order: 'applied', filter: 'applied'}).nodes()
+                for (var i = 0; i < rows.length; i++) {
+                    var cell = rows[i].cells[colIndex]
+                    if (cell) {
+                        var a = cell.querySelector('a')
+                        if (a && a.href) {
+                            urls.push(a.href)
+                            if (rows[i] === tr) clickedIndex = urls.length - 1
+                        }
+                    }
+                }
+            }
+        } catch (ex) { return }
+
+        if (urls.length > 0 && clickedIndex >= 0) {
+            sessionStorage.setItem('record_nav', JSON.stringify({
+                urls: urls,
+                currentIndex: clickedIndex,
+                referrer: window.location.href,
+                title: '{{ nav_title|escapejs }}'
+            }))
+        }
+    }, true)
+</script>

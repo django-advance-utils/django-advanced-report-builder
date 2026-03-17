@@ -6,6 +6,7 @@ from django_menus.menu import MenuItem
 
 from advanced_report_builder.columns import ArrowColumn
 from advanced_report_builder.exceptions import ReportError
+from advanced_report_builder.record_nav import RecordNavPlugin
 from advanced_report_builder.utils import get_report_builder_class, split_slug
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
 from advanced_report_builder.views.report import ReportBase
@@ -89,6 +90,9 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
             if field not in fields_used:
                 table.add_columns(f'.{field}')
             table.table_options['row_href'] = row_link(col_type_override.url, field)
+
+        if self.table_report.record_nav:
+            table.add_plugin(RecordNavPlugin, self.get_title())
 
     def add_to_context(self, **kwargs):
         return {'title': self.get_title(), 'table_report': self.table_report}

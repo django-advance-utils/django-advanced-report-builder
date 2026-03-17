@@ -23,6 +23,11 @@ class DashboardInclude(SourceBase):
     js_filename = 'dashboard.js'
 
 
+class RecordNavInclude(SourceBase):
+    static_path = 'advanced_report_builder/record_nav/'
+    js_filename = 'record_nav.js'
+
+
 class ChartJS(SourceBase):
     static_path = 'advanced_report_builder/chart-js/'
     js_filename = [
@@ -69,4 +74,5 @@ packages = {
     'full_calendar': [Moment, FullCalendar, FullCalendarYearView],
     'dashboard': [DashboardInclude],
     'funnel': [D3, D3Funnel],
+    'record_nav': [RecordNavInclude],
 }

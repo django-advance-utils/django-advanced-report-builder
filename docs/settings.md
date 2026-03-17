@@ -66,6 +66,15 @@ Dotted path to the class that defines available template types. Override this to
 REPORT_BUILDER_TEMPLATE_TYPES_CLASS = 'advanced_report_builder.template_types.TemplateTypes'
 ```
 
+### REPORT_BUILDER_RECORD_NAV_DEFAULT
+
+Controls the default value of the **Record Nav** toggle when creating new reports. See [Record navigation](record-nav.md) for details.
+
+```python
+# Default: True (record nav enabled for new reports)
+REPORT_BUILDER_RECORD_NAV_DEFAULT = False
+```
+
 ## Other settings
 
 ### FINANCIAL_YEAR_START_MONTH
