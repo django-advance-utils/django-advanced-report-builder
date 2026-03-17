@@ -23,12 +23,12 @@ from django_modals.widgets.widgets import Toggle
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.exceptions import ReportError
-from advanced_report_builder.record_nav import RecordNavPlugin
 from advanced_report_builder.globals import (
     ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT,
     ANNOTATION_CHOICE_SUM,
 )
 from advanced_report_builder.models import ReportOption, ReportQuery, ReportType, SingleValueReport, Target
+from advanced_report_builder.record_nav import RecordNavPlugin
 from advanced_report_builder.utils import get_query_js, get_report_builder_class, get_template_type_class
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.datatables.modal import (
