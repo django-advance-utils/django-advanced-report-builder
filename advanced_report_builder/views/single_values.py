@@ -28,6 +28,7 @@ from advanced_report_builder.globals import (
     ANNOTATION_CHOICE_SUM,
 )
 from advanced_report_builder.models import ReportOption, ReportQuery, ReportType, SingleValueReport, Target
+from advanced_report_builder.record_nav import RecordNavPlugin
 from advanced_report_builder.utils import get_query_js, get_report_builder_class, get_template_type_class
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.datatables.modal import (
@@ -279,6 +280,7 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
             ('decimal_places', {'field_class': 'col-md-5 col-lg-3 input-group-sm'}),
             'show_breakdown',
             'breakdown_fields',
+            ('record_nav', {'widget': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'})}),
         ]
         return form_fields
 
@@ -289,6 +291,9 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
         return self._template_styles
 
     def form_setup(self, form, *_args, **_kwargs):
+        if not form.instance.pk:
+            form.fields['record_nav'].initial = getattr(settings, 'REPORT_BUILDER_RECORD_NAV_DEFAULT', True)
+
         template_styles = self.get_template_styles()
 
         form.add_trigger(
@@ -362,6 +367,11 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     'values': {'checked': 'show'},
                     'default': 'hide',
                 },
+                {
+                    'selector': '#div_id_record_nav',
+                    'values': {'checked': 'show'},
+                    'default': 'hide',
+                },
             ],
         )
 
@@ -425,6 +435,10 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
                 'breakdown_fields',
                 template='advanced_report_builder/select_column.html',
                 extra_context={'select_column_url': url, 'command_prefix': ''},
+            ),
+            FieldEx(
+                'record_nav',
+                template='django_modals/fields/label_checkbox.html',
             ),
         ]
         if self.object.id:
@@ -663,6 +677,8 @@ class SingleValueShowBreakdownModal(TableUtilsMixin, Modal):
         table.ajax_data = False
         table.table_options['pageLength'] = 25
         table.table_options['bStateSave'] = False
+        if single_value_report.record_nav:
+            table.add_plugin(RecordNavPlugin, self.modal_title())
         return table
 
     def modal_content(self):

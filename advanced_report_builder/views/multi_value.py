@@ -35,6 +35,7 @@ from advanced_report_builder.models import (
     MultiValueReportColumn,
     ReportType,
 )
+from advanced_report_builder.record_nav import RecordNavPlugin
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import crispy_modal_link_args, excel_column_name, get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
@@ -263,6 +264,7 @@ class MultiValueReportCellForm(QueryBuilderModelForm):
             'multi_value_held_query',
             'show_breakdown',
             'breakdown_fields',
+            'record_nav',
             'average_scale',
             'average_start_period',
             'average_end_period',
@@ -272,6 +274,7 @@ class MultiValueReportCellForm(QueryBuilderModelForm):
         widgets = {
             'report_tags': Select2Multiple,
             'show_breakdown': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
+            'record_nav': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
             'row': SmallNumberInputWidget,
             'column': SmallNumberInputWidget,
             'col_span': SmallNumberInputWidget,
@@ -299,6 +302,9 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
         return [f'Add {title}', f'Edit {title}']
 
     def form_setup(self, form, *_args, **_kwargs):
+        if not form.instance.pk:
+            form.fields['record_nav'].initial = getattr(settings, 'REPORT_BUILDER_RECORD_NAV_DEFAULT', True)
+
         form.fields['label'].help_text = 'Used when setting up the table and for the show breakdown title.'
         form.fields['multi_cell_style'] = ModelChoiceField(
             queryset=MultiCellStyle.objects.filter(multi_value_report_id=self.object.multi_value_report_id),
@@ -436,6 +442,11 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     'values': {'checked': 'show'},
                     'default': 'hide',
                 },
+                {
+                    'selector': '#div_id_record_nav',
+                    'values': {'checked': 'show'},
+                    'default': 'hide',
+                },
             ],
         )
         if 'data' in _kwargs and len(_kwargs['data']) > 0:
@@ -507,6 +518,10 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                 'breakdown_fields',
                 template='advanced_report_builder/select_column.html',
                 extra_context={'select_column_url': url, 'command_prefix': ''},
+            ),
+            FieldEx(
+                'record_nav',
+                template='django_modals/fields/label_checkbox.html',
             ),
             FieldEx('query_data', template='advanced_report_builder/query_builder.html'),
             FieldEx('extra_query_data', template='advanced_report_builder/query_builder.html'),
@@ -1083,6 +1098,8 @@ class MultiValueShowBreakdownModal(TableUtilsMixin, Modal):
         table.ajax_data = False
         table.table_options['pageLength'] = 25
         table.table_options['bStateSave'] = False
+        if multi_value_report_cell.record_nav:
+            table.add_plugin(RecordNavPlugin, self.modal_title())
         return table
 
     def modal_content(self):

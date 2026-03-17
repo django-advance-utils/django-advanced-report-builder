@@ -7,6 +7,7 @@ from functools import reduce
 from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Div
 from date_offset.monthdelta import MonthDelta
+from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist
 from django.db.models import Q
 from django.forms import BooleanField, CharField, ChoiceField
@@ -37,6 +38,7 @@ from advanced_report_builder.globals import (
     GENERATE_SERIES_INTERVALS,
 )
 from advanced_report_builder.models import BarChartReport, ReportType
+from advanced_report_builder.record_nav import RecordNavPlugin
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import (
     decode_attribute,
@@ -222,9 +224,13 @@ class BarChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
         'show_blank_dates',
         'show_breakdown',
         'breakdown_fields',
+        ('record_nav', {'widget': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'})}),
     ]
 
     def form_setup(self, form, *_args, **_kwargs):
+        if not form.instance.pk:
+            form.fields['record_nav'].initial = getattr(settings, 'REPORT_BUILDER_RECORD_NAV_DEFAULT', True)
+
         if 'data' in _kwargs and len(_kwargs['data']) > 0:
             date_field = _kwargs['data'].get('date_field')
             end_date_field = _kwargs['data'].get('end_date_field')
@@ -269,6 +275,11 @@ class BarChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
             [
                 {
                     'selector': '#div_id_breakdown_fields',
+                    'values': {'checked': 'show'},
+                    'default': 'hide',
+                },
+                {
+                    'selector': '#div_id_record_nav',
                     'values': {'checked': 'show'},
                     'default': 'hide',
                 },
@@ -323,6 +334,10 @@ class BarChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     'select_column_url': url_breakdown,
                     'command_prefix': 'breakdown_',
                 },
+            ),
+            FieldEx(
+                'record_nav',
+                template='django_modals/fields/label_checkbox.html',
             ),
         ]
         if self.object.id:
@@ -681,6 +696,8 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
         table.ajax_data = False
         table.table_options['pageLength'] = 25
         table.table_options['bStateSave'] = False
+        if bar_chart_report.record_nav:
+            table.add_plugin(RecordNavPlugin, self.modal_title())
         return table
 
     def modal_content(self):

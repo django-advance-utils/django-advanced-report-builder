@@ -4,6 +4,7 @@ import json
 from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Div
 from django.apps import apps
+from django.conf import settings
 from django.forms import BooleanField, CharField, ChoiceField, IntegerField
 from django.urls import reverse
 from django_modals.fields import FieldEx
@@ -90,6 +91,18 @@ class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
             },
         ),
         'page_length',
+        (
+            'record_nav',
+            {
+                'widget': Toggle(
+                    attrs={
+                        'data-onstyle': 'success',
+                        'data-on': 'YES',
+                        'data-off': 'NO',
+                    }
+                )
+            },
+        ),
         'report_type',
         'report_tags',
         'table_fields',
@@ -97,6 +110,9 @@ class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
     ]
 
     def form_setup(self, form, *_args, **_kwargs):
+        if not form.instance.pk:
+            form.fields['record_nav'].initial = getattr(settings, 'REPORT_BUILDER_RECORD_NAV_DEFAULT', True)
+
         url = reverse(
             'advanced_report_builder:table_field_modal',
             kwargs={'slug': 'selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID'},
@@ -163,6 +179,10 @@ class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
                 template='django_modals/fields/label_checkbox.html',
             ),
             FieldEx('page_length', template='django_modals/fields/label_checkbox.html'),
+            FieldEx(
+                'record_nav',
+                template='django_modals/fields/label_checkbox.html',
+            ),
             FieldEx(
                 'table_fields',
                 template='advanced_report_builder/select_column.html',

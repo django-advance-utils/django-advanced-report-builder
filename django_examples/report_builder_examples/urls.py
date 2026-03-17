@@ -14,7 +14,7 @@ app_name = 'report_builder_examples'
 
 urlpatterns = [
     path(
-        'example_link/<int:pk>',
+        'example_link/<str:slug>',
         TemplateView.as_view(template_name='report_builder_examples/example_link.html'),
         name='example_link',
     ),
