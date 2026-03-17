@@ -26,7 +26,6 @@ from expression_builder.expression_builder import ExpressionBuilder
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.exceptions import ReportError
-from advanced_report_builder.record_nav import RecordNavPlugin
 from advanced_report_builder.globals import ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT, ANNOTATION_CHOICE_SUM
 from advanced_report_builder.models import (
     MultiCellStyle,
@@ -36,6 +35,7 @@ from advanced_report_builder.models import (
     MultiValueReportColumn,
     ReportType,
 )
+from advanced_report_builder.record_nav import RecordNavPlugin
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import crispy_modal_link_args, excel_column_name, get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate

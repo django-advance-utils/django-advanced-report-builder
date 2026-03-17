@@ -4,11 +4,10 @@ import operator
 from datetime import datetime, timedelta
 from functools import reduce
 
-from django.conf import settings
-
 from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Div
 from date_offset.monthdelta import MonthDelta
+from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist
 from django.db.models import Q
 from django.forms import BooleanField, CharField, ChoiceField
@@ -27,7 +26,6 @@ from django_modals.widgets.widgets import Toggle
 from advanced_report_builder.column_types import NUMBER_FIELDS
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.generate_series import GenerateSeries
-from advanced_report_builder.record_nav import RecordNavPlugin
 from advanced_report_builder.globals import (
     ANNOTATION_VALUE_DAY,
     ANNOTATION_VALUE_FUNCTIONS,
@@ -40,6 +38,7 @@ from advanced_report_builder.globals import (
     GENERATE_SERIES_INTERVALS,
 )
 from advanced_report_builder.models import BarChartReport, ReportType
+from advanced_report_builder.record_nav import RecordNavPlugin
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import (
     decode_attribute,
