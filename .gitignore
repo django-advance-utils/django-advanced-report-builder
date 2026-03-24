@@ -131,3 +131,5 @@ dmypy.json
 .idea/
 data/
 .DS_Store
+uv.lock
+tests/videos/

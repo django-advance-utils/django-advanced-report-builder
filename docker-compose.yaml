@@ -7,7 +7,11 @@ services:
    - ./django_examples/:/app
    - ./advanced_report_builder/:/app/advanced_report_builder
    - /var/run/docker.sock:/var/run/docker.sock
-  command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8010"
+  command: >
+   bash -c "python manage.py migrate &&
+            python manage.py import_report_builder &&
+            python manage.py shell -c \"from report_builder_examples.models import UserProfile; UserProfile.objects.filter(username='admin').exists() or UserProfile.objects.create_superuser('admin', 'admin@example.com', 'admin')\" &&
+            python manage.py runserver 0.0.0.0:8010"
   environment:
    - PYTHONPATH=/advanced_report_builder
   ports:
