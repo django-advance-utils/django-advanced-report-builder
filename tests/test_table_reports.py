@@ -1,7 +1,7 @@
 """Tests for creating, configuring, and viewing table reports end-to-end."""
-from playwright.sync_api import expect
 
 from conftest import BASE_URL, click_submit_button, open_dropdown_item, wait_for_modal
+from playwright.sync_api import expect
 
 
 def _create_table_report(page, name, report_type='Company'):

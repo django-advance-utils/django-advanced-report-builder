@@ -10,6 +10,7 @@ The Percent single value type calculates:
 Since extra_query and denominator_query have no UI yet, these tests set them
 via the database and verify the rendered percentage changes accordingly.
 """
+
 import re
 import subprocess
 
@@ -19,9 +20,9 @@ from conftest import BASE_URL, click_submit_button, open_dropdown_item, select2_
 def _run_django_shell(command):
     """Run a Django shell command inside the Docker container."""
     result = subprocess.run(
-        ['docker', 'compose', 'exec', '-T', 'django_report_builder',
-         'python', 'manage.py', 'shell', '-c', command],
-        capture_output=True, text=True,
+        ['docker', 'compose', 'exec', '-T', 'django_report_builder', 'python', 'manage.py', 'shell', '-c', command],
+        capture_output=True,
+        text=True,
         cwd='/Users/tom/GitHub/django-advanced-report-builder',
     )
     return result.stdout.strip(), result.stderr.strip()
@@ -153,9 +154,7 @@ print(f'OK')
 
     pct_after = _get_report_percentage(page, 'Denom Increase Test')
     assert pct_after is not None
-    assert pct_after > pct_before, (
-        f'Denominator filter should increase %: before={pct_before}%, after={pct_after}%'
-    )
+    assert pct_after > pct_before, f'Denominator filter should increase %: before={pct_before}%, after={pct_after}%'
 
 
 def test_independent_numerator_and_denominator_filters(authenticated_page):
@@ -190,4 +189,4 @@ print(f'OK')
     pct = _get_report_percentage(page, 'Denom Independent Test')
     assert pct is not None and pct > 0, f'Expected a positive percentage, got {pct}%'
     # With independent filters the result won't be 100% or 0%
-    assert pct != 100, f'With different filters on numerator and denominator, should not be 100%'
+    assert pct != 100, 'With different filters on numerator and denominator, should not be 100%'

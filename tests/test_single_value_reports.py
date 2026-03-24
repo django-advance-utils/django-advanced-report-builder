@@ -1,7 +1,7 @@
 """Tests for creating and viewing single value reports — verifying actual computed values."""
-from playwright.sync_api import expect
 
 from conftest import BASE_URL, click_submit_button, open_dropdown_item, select2_select, wait_for_modal
+from playwright.sync_api import expect
 
 
 def _open_single_value_modal(page):
@@ -59,6 +59,7 @@ def test_sum_report_shows_total_amount(authenticated_page):
     # The sum should be a number with commas (e.g. "2,345,678")
     # Extract digits from the body text
     import re
+
     numbers = re.findall(r'[\d,]+', body)
     large_numbers = [n for n in numbers if len(n.replace(',', '')) >= 4]
     assert len(large_numbers) > 0, f'Expected a large sum value, got: {body[:200]}'

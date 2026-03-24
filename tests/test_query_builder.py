@@ -1,9 +1,9 @@
 """Tests for query versions and the query builder — filtering report data."""
+
 import re
 
+from conftest import BASE_URL, click_submit_button, open_dropdown_item, wait_for_modal
 from playwright.sync_api import expect
-
-from conftest import BASE_URL, click_submit_button, open_dropdown_item, select2_select, wait_for_modal
 
 
 def _create_table_report_with_fields(page, name, report_type='Company', fields=None):
@@ -54,7 +54,7 @@ def _select_query_field(page, modal, rule_index, field_label):
     select2_container = container.locator('..').locator('.select2-container')
     if select2_container.count() == 0:
         # Try the sibling select2
-        select2_container = modal.locator(f'.rule-container').nth(rule_index).locator('.select2-container').first
+        select2_container = modal.locator('.rule-container').nth(rule_index).locator('.select2-container').first
     select2_container.click()
     page.wait_for_timeout(300)
 

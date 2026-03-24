@@ -1,7 +1,7 @@
 """Tests for the reports index page — listing, adding, and dropdown menu."""
-from playwright.sync_api import expect
 
 from conftest import BASE_URL, open_dropdown_item, wait_for_modal
+from playwright.sync_api import expect
 
 
 def test_reports_index_loads(authenticated_page):
@@ -18,8 +18,17 @@ def test_reports_index_has_add_report_menu(authenticated_page):
     page.get_by_role('link', name='Add Report').click()
     page.wait_for_timeout(300)
 
-    for report_type in ['Table', 'Single Value', 'Bar Chart', 'Line Chart', 'Pie Chart',
-                         'Funnel Chart', 'Kanban', 'Calendar', 'Multiple Values']:
+    for report_type in [
+        'Table',
+        'Single Value',
+        'Bar Chart',
+        'Line Chart',
+        'Pie Chart',
+        'Funnel Chart',
+        'Kanban',
+        'Calendar',
+        'Multiple Values',
+    ]:
         expect(page.locator('.dropdown-item', has_text=report_type).first).to_be_visible()
 
 

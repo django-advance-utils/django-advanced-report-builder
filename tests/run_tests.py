@@ -7,6 +7,7 @@ Usage:
     uv run run_tests.py --headed                     # run with browser visible
     uv run run_tests.py --video                      # record mp4 videos
 """
+
 import argparse
 import subprocess
 import sys

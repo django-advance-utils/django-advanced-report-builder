@@ -3,7 +3,6 @@ import subprocess
 
 import pytest
 
-
 BASE_URL = 'http://localhost:8010'
 ADMIN_USERNAME = 'admin'
 ADMIN_PASSWORD = 'admin'
@@ -24,8 +23,17 @@ def restore_baseline():
 
     # Drop and recreate the database
     subprocess.run(
-        [*compose, 'exec', '-T', 'db', 'psql', '-U', 'django_report_builder', '-c',
-         'SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = \'django_report_builder\' AND pid <> pg_backend_pid()'],
+        [
+            *compose,
+            'exec',
+            '-T',
+            'db',
+            'psql',
+            '-U',
+            'django_report_builder',
+            '-c',
+            "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'django_report_builder' AND pid <> pg_backend_pid()",
+        ],
         capture_output=True,
     )
     subprocess.run(
@@ -34,14 +42,27 @@ def restore_baseline():
     )
     subprocess.run(
         [*compose, 'exec', '-T', 'db', 'createdb', '-U', 'django_report_builder', 'django_report_builder'],
-        check=True, capture_output=True,
+        check=True,
+        capture_output=True,
     )
 
     # Restore from dump
     with open(BASELINE_DUMP, 'rb') as f:
         subprocess.run(
-            [*compose, 'exec', '-T', 'db', 'pg_restore', '-U', 'django_report_builder', '-d', 'django_report_builder', '--no-owner'],
-            stdin=f, capture_output=True,
+            [
+                *compose,
+                'exec',
+                '-T',
+                'db',
+                'pg_restore',
+                '-U',
+                'django_report_builder',
+                '-d',
+                'django_report_builder',
+                '--no-owner',
+            ],
+            stdin=f,
+            capture_output=True,
         )
 
 

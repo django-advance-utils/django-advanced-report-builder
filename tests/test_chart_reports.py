@@ -1,7 +1,7 @@
 """Tests for chart report creation, configuration, and rendering."""
-from playwright.sync_api import expect
 
 from conftest import BASE_URL, click_submit_button, open_dropdown_item, select2_select, wait_for_modal
+from playwright.sync_api import expect
 
 
 def _navigate_to_report(page, name):

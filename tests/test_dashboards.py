@@ -1,8 +1,7 @@
 """Tests for dashboard creation and report embedding."""
+
+from conftest import BASE_URL
 from playwright.sync_api import expect
-
-from conftest import BASE_URL, click_submit_button, open_dropdown_item, wait_for_modal
-
 
 DASHBOARDS_URL = f'{BASE_URL}/dashboards/'
 

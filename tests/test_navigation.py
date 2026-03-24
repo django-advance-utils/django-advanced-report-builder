@@ -1,7 +1,7 @@
 """Tests for main navigation, page structure, and admin access."""
-from playwright.sync_api import expect
 
 from conftest import BASE_URL
+from playwright.sync_api import expect
 
 
 def test_main_nav_links(authenticated_page):
