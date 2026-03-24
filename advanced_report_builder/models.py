@@ -342,6 +342,7 @@ class ReportQuery(TimeStampedModel):
     name = models.CharField(max_length=256, default='Standard')
     query = models.JSONField(null=True, blank=True)
     extra_query = models.JSONField(null=True, blank=True)  # used for single value Numerator
+    denominator_query = models.JSONField(null=True, blank=True)  # used for single value Denominator
     target = models.ForeignKey(Target, blank=True, null=True, on_delete=models.SET_NULL)
     order = models.PositiveSmallIntegerField()
 
@@ -760,6 +761,7 @@ class MultiValueReportCell(TimeStampedModel):
 
     query_data = models.JSONField(null=True, blank=True)
     extra_query_data = models.JSONField(null=True, blank=True)  # used for single value Numerator
+    denominator_query_data = models.JSONField(null=True, blank=True)  # used for single value Denominator
 
     class Meta:
         constraints = [

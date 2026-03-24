@@ -65,6 +65,7 @@ class ValueBaseView(ChartBaseView):
         denominator_col_type_override,
         numerator_filter,
         decimal_places=0,
+        denominator_filter=None,
     ):
         if numerator_col_type_override:
             actual_numerator_field_name = numerator_col_type_override.field
@@ -106,10 +107,16 @@ class ValueBaseView(ChartBaseView):
                 raise ReportError('Unknown annotation type')
 
             annotations = list(denominator_col_type_override.annotations.values())[0]
-
-            denominator = Coalesce(annotations + 0.0, 0.0)
+            if denominator_filter and isinstance(annotations, Sum | Count):
+                annotations.filter = denominator_filter
+                denominator = Coalesce(annotations + 0.0, 0.0)
+            else:
+                denominator = Coalesce(annotations + 0.0, 0.0)
         else:
-            denominator = Coalesce(Sum(actual_denominator_field_name) + 0.0, 0.0)
+            if denominator_filter:
+                denominator = Coalesce(Sum(actual_denominator_field_name, filter=denominator_filter) + 0.0, 0.0)
+            else:
+                denominator = Coalesce(Sum(actual_denominator_field_name) + 0.0, 0.0)
 
         number_function_kwargs['aggregations'] = {
             new_field_name: ExpressionWrapper((numerator / NullIf(denominator, 0)) * 100.0, output_field=FloatField())
@@ -140,6 +147,7 @@ class ValueBaseView(ChartBaseView):
         report_builder_class,
         decimal_places,
         fields,
+        denominator_filter=None,
     ):
         if denominator_field is None:
             raise ReportError('denominator field is None')
@@ -174,6 +182,7 @@ class ValueBaseView(ChartBaseView):
             denominator_col_type_override=denominator_col_type_override,
             numerator_filter=numerator_filter,
             decimal_places=decimal_places,
+            denominator_filter=denominator_filter,
         )
 
     def _process_percentage_from_count(self, numerator_filter, decimal_places, fields):
