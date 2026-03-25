@@ -66,17 +66,23 @@ class ReportBuilderNumberColumn(ColumnBase):
 
 
 class ReportBuilderCurrencyPenceColumn(CurrencyPenceColumn):
+    currency_prefix = ''
+
     def row_result(self, data, _page_data):
         try:
-            return intcomma(f'{data[self.field] / 100.0:.2f}')
+            value = intcomma(f'{data[self.field] / 100.0:.2f}')
+            return f'{self.currency_prefix}{value}' if self.currency_prefix else value
         except (KeyError, TypeError):
             return '0.00'
 
 
 class ReportBuilderCurrencyColumn(CurrencyColumn):
+    currency_prefix = ''
+
     def row_result(self, data, _page_data):
         try:
-            return intcomma(f'{data[self.field]:.2f}')
+            value = intcomma(f'{data[self.field]:.2f}')
+            return f'{self.currency_prefix}{value}' if self.currency_prefix else value
         except (KeyError, TypeError):
             return '0.00'
 

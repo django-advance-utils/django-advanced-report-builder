@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404
 
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
-from advanced_report_builder.globals import PeriodType
+from advanced_report_builder.globals import DATE_FORMAT_TYPE_DD_MM_YYYY_SLASH, PeriodType
 from advanced_report_builder.models import ReportOption, ReportQuery
 from advanced_report_builder.utils import get_report_builder_class, try_int
 from advanced_report_builder.variable_date import VariableDate
@@ -173,6 +173,12 @@ class FilterQueryMixin:
         self._held_report_query = None
         self._report_options_data = None
         super().__init__(*args, **kwargs)
+
+    def get_currency_prefix(self):
+        return getattr(settings, 'REPORT_BUILDER_CURRENCY_PREFIX', '£')
+
+    def get_default_date_format(self):
+        return getattr(settings, 'REPORT_BUILDER_DATE_FORMAT', DATE_FORMAT_TYPE_DD_MM_YYYY_SLASH)
 
     def process_query_filters(self, query, search_filter_data, extra_filter_data=None, extra_filter=None):
         annotations = {}

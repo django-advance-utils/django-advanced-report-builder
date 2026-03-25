@@ -26,7 +26,11 @@ from expression_builder.expression_builder import ExpressionBuilder
 
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.exceptions import ReportError
-from advanced_report_builder.globals import ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT, ANNOTATION_CHOICE_SUM
+from advanced_report_builder.globals import (
+    ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT,
+    ANNOTATION_CHOICE_SUM,
+    PREFIX_TYPE_CUSTOM,
+)
 from advanced_report_builder.models import (
     MultiCellStyle,
     MultiValueHeldQuery,
@@ -259,6 +263,7 @@ class MultiValueReportCellForm(QueryBuilderModelForm):
             'report_type',
             'field',
             'numerator',
+            'prefix_type',
             'prefix',
             'decimal_places',
             'multi_value_held_query',
@@ -344,7 +349,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     'default': 'show',
                 },
                 {
-                    'selector': '#div_id_prefix',
+                    'selector': '#div_id_prefix_type',
                     'values': {
                         MultiValueReportCell.MultiValueType.STATIC_TEXT: 'hide',
                         MultiValueReportCell.MultiValueType.EQUATION: 'hide',
@@ -434,6 +439,18 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
         )
 
         form.add_trigger(
+            'prefix_type',
+            'onchange',
+            [
+                {
+                    'selector': '#div_id_prefix',
+                    'values': {PREFIX_TYPE_CUSTOM: 'show'},
+                    'default': 'hide',
+                }
+            ],
+        )
+
+        form.add_trigger(
             'show_breakdown',
             'onchange',
             [
@@ -507,6 +524,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
             'report_type',
             'field',
             'numerator',
+            'prefix_type',
             'prefix',
             'decimal_places',
             'multi_value_held_query',
@@ -1032,10 +1050,38 @@ class MultiValueView(ValueBaseView):
             )
         return query
 
-    @staticmethod
-    def set_prefix(table, multi_value_report_cell):
-        if multi_value_report_cell.prefix:
-            table.prefix = multi_value_report_cell.prefix
+    def _is_currency_field(self, multi_value_report_cell):
+        from advanced_report_builder.column_types import CURRENCY_COLUMNS
+
+        field_name = multi_value_report_cell.field
+        if not field_name:
+            return False
+        base_model = multi_value_report_cell.get_base_model()
+        if base_model is None:
+            return False
+        report_builder_class = get_report_builder_class(
+            model=base_model, report_type=multi_value_report_cell.report_type
+        )
+        _, col_type_override, _, _ = self.get_field_details(
+            base_model=base_model,
+            field=field_name,
+            report_builder_class=report_builder_class,
+        )
+        return isinstance(col_type_override, CURRENCY_COLUMNS)
+
+    def set_prefix(self, table, multi_value_report_cell):
+        from advanced_report_builder.globals import PREFIX_TYPE_CUSTOM, PREFIX_TYPE_NONE
+
+        prefix_type = multi_value_report_cell.prefix_type
+        if prefix_type == PREFIX_TYPE_NONE:
+            table.prefix = ''
+        elif prefix_type == PREFIX_TYPE_CUSTOM:
+            table.prefix = multi_value_report_cell.prefix if multi_value_report_cell.prefix else ''
+        else:
+            if self._is_currency_field(multi_value_report_cell):
+                table.prefix = self.get_currency_prefix()
+            else:
+                table.prefix = ''
 
     def render_value(self, base_model, fields, multi_value_report_cell):
         table = self.chart_js_table(model=base_model)

@@ -219,6 +219,7 @@ class MultiValueReportCellInline(admin.TabularInline):
         'report_type',
         'field',
         'numerator',
+        'prefix_type',
         'prefix',
         'decimal_places',
         'show_breakdown',

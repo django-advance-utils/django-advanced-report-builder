@@ -30,6 +30,9 @@ from advanced_report_builder.globals import (
     ANNOTATION_VALUE_CHOICES,
     ANNOTATIONS_CHOICES,
     DATE_FORMAT_TYPES,
+    PREFIX_TYPE_AUTOMATIC,
+    PREFIX_TYPE_CHOICES,
+    PREFIX_TYPE_CUSTOM,
     REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_CHOICES,
     REVERSE_FOREIGN_KEY_ANNOTATION_DATE_ARRAY,
     REVERSE_FOREIGN_KEY_ANNOTATION_DATE_CHOICES,
@@ -286,15 +289,15 @@ class TableFieldForm(ChartBaseFieldForm):
 
         if self.django_field is not None and isinstance(self.django_field, DATE_FIELDS):
             self.setup_date_fields(data_attr)
-        elif self.django_field is not None and isinstance(self.django_field, NUMBER_FIELDS):
-            self.setup_number_fields(
+        elif isinstance(self.col_type_override, CURRENCY_COLUMNS):
+            self.setup_currency_fields(
                 data_attr=data_attr,
                 base_model=base_model,
                 report_type=report_type,
                 has_existing_annotations=has_existing_annotations,
             )
-        elif isinstance(self.col_type_override, CURRENCY_COLUMNS):
-            self.setup_currency_fields(
+        elif self.django_field is not None and isinstance(self.django_field, NUMBER_FIELDS):
+            self.setup_number_fields(
                 data_attr=data_attr,
                 base_model=base_model,
                 report_type=report_type,
@@ -326,6 +329,12 @@ class TableFieldForm(ChartBaseFieldForm):
             self.fields['show_table_totals'].initial = True
 
     def setup_currency_fields(self, data_attr, base_model, report_type, has_existing_annotations):
+        self.fields['alignment'] = ChoiceField(choices=ALIGNMENT_CHOICES, required=False)
+        if 'alignment' in data_attr:
+            self.fields['alignment'].initial = data_attr['alignment']
+        else:
+            self.fields['alignment'].initial = ALIGNMENT_CHOICE_RIGHT
+
         if has_existing_annotations:
             self.fields['append_annotation_query'] = BooleanField(
                 required=False, widget=RBToggle(), label='Append annotation query'
@@ -336,8 +345,6 @@ class TableFieldForm(ChartBaseFieldForm):
             self.fields['annotations_type'] = ChoiceField(choices=[(0, '-----')] + ANNOTATIONS_CHOICES, required=False)
             if 'annotations_type' in data_attr:
                 self.fields['annotations_type'].initial = data_attr['annotations_type']
-            else:
-                self.fields['alignment'].initial = ALIGNMENT_CHOICE_RIGHT
 
         annotation_column_help_text = 'Not required however useful for mathematical columns.'
         self.fields['annotation_column_id'] = CharField(required=False, help_text=annotation_column_help_text)
@@ -348,11 +355,17 @@ class TableFieldForm(ChartBaseFieldForm):
         if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
             self.fields['show_table_totals'].initial = True
 
-        self.fields['alignment'] = ChoiceField(choices=ALIGNMENT_CHOICES, required=False)
-        if 'alignment' in data_attr:
-            self.fields['alignment'].initial = data_attr['alignment']
-        else:
-            self.fields['alignment'].initial = ALIGNMENT_CHOICE_RIGHT
+        self.fields['currency_prefix_type'] = ChoiceField(
+            choices=PREFIX_TYPE_CHOICES, required=False, label='Currency prefix'
+        )
+        if 'currency_prefix_type' in data_attr:
+            self.fields['currency_prefix_type'].initial = int(data_attr['currency_prefix_type'])
+        elif not data_attr:
+            self.fields['currency_prefix_type'].initial = PREFIX_TYPE_AUTOMATIC
+
+        self.fields['currency_prefix'] = CharField(required=False, label='Custom prefix')
+        if 'currency_prefix' in data_attr:
+            self.fields['currency_prefix'].initial = decode_attribute(data_attr['currency_prefix'])
         self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
 
         self.fields['filter'] = CharField(required=False)
@@ -439,7 +452,7 @@ class TableFieldForm(ChartBaseFieldForm):
         self.fields['delimiter_type'] = ChoiceField(choices=REVERSE_FOREIGN_KEY_DELIMITER_CHOICES, required=False)
         if 'delimiter_type' in data_attr:
             self.fields['delimiter_type'].initial = data_attr['delimiter_type']
-        self.fields['date_format'] = ChoiceField(choices=[(0, '-----')] + DATE_FORMAT_TYPES, required=False)
+        self.fields['date_format'] = ChoiceField(choices=[(0, 'Automatic')] + DATE_FORMAT_TYPES, required=False)
         if 'date_format' in data_attr:
             self.fields['date_format'].initial = data_attr['date_format']
         self.fields['has_filter'] = BooleanField(required=False, widget=RBToggle())
@@ -455,7 +468,7 @@ class TableFieldForm(ChartBaseFieldForm):
         )
         if 'annotations_value' in data_attr:
             self.fields['annotations_value'].initial = data_attr['annotations_value']
-        self.fields['date_format'] = ChoiceField(choices=[(0, '-----')] + DATE_FORMAT_TYPES, required=False)
+        self.fields['date_format'] = ChoiceField(choices=[(0, 'Automatic')] + DATE_FORMAT_TYPES, required=False)
         if 'date_format' in data_attr:
             self.fields['date_format'].initial = data_attr['date_format']
 
@@ -625,6 +638,11 @@ class TableFieldForm(ChartBaseFieldForm):
             attributes.append(f'annotation_column_id-{b64_annotation_column_id}')
         if self.cleaned_data['show_table_totals']:
             attributes.append('show_totals-1')
+        currency_prefix_type = self.cleaned_data.get('currency_prefix_type', str(PREFIX_TYPE_AUTOMATIC))
+        attributes.append(f'currency_prefix_type-{currency_prefix_type}')
+        if self.cleaned_data.get('currency_prefix'):
+            b64_currency_prefix = encode_attribute(self.cleaned_data['currency_prefix'])
+            attributes.append(f'currency_prefix-{b64_currency_prefix}')
         self.save_filter(attributes=attributes)
 
     def save_filter(self, attributes):
@@ -703,10 +721,10 @@ class TableFieldForm(ChartBaseFieldForm):
 
         if self.django_field is not None and isinstance(self.django_field, DATE_FIELDS):
             self.save_date_fields(attributes=attributes)
-        elif self.django_field is not None and isinstance(self.django_field, NUMBER_FIELDS):
-            self.save_number_fields(attributes=attributes)
         elif isinstance(self.col_type_override, CURRENCY_COLUMNS):
             self.save_currency_fields(attributes=attributes)
+        elif self.django_field is not None and isinstance(self.django_field, NUMBER_FIELDS):
+            self.save_number_fields(attributes=attributes)
         elif isinstance(self.col_type_override, LINK_COLUMNS):
             self.save_link_fields(attributes=attributes)
         elif isinstance(self.col_type_override, REVERSE_FOREIGN_KEY_STR_COLUMNS):
@@ -776,10 +794,10 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
         )
         has_existing_annotations = col_type_override is not None and col_type_override.annotations is not None
 
-        if django_field is not None and isinstance(django_field, NUMBER_FIELDS):
-            return self.layout_number_field(form=form, has_existing_annotations=has_existing_annotations)
-        elif isinstance(col_type_override, CURRENCY_COLUMNS):
+        if isinstance(col_type_override, CURRENCY_COLUMNS):
             return self.layout_currency_field(form=form, has_existing_annotations=has_existing_annotations)
+        elif django_field is not None and isinstance(django_field, NUMBER_FIELDS):
+            return self.layout_number_field(form=form, has_existing_annotations=has_existing_annotations)
 
         elif isinstance(col_type_override, LINK_COLUMNS):
             return self.layout_link_field()
@@ -913,6 +931,18 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
             )
 
         form.add_trigger(
+            'currency_prefix_type',
+            'onchange',
+            [
+                {
+                    'selector': '#div_id_currency_prefix',
+                    'values': {PREFIX_TYPE_CUSTOM: 'show'},
+                    'default': 'hide',
+                }
+            ],
+        )
+
+        form.add_trigger(
             'has_filter',
             'onchange',
             [
@@ -938,6 +968,8 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
         return [
             'title',
             'display_heading',
+            'currency_prefix_type',
+            'currency_prefix',
             'show_table_totals',
             'alignment',
             annotations_type_field,

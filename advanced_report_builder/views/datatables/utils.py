@@ -26,6 +26,7 @@ from advanced_report_builder.globals import (
     ANNOTATION_VALUE_FUNCTIONS,
     DATE_FORMAT_TYPE_DD_MM_YY_SLASH,
     DATE_FORMAT_TYPES_DJANGO_FORMAT,
+    DATE_FORMAT_TYPES_MOMENT_FORMAT,
     REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_XOR,
     REVERSE_FOREIGN_KEY_DELIMITER_COMMA,
 )
@@ -41,13 +42,17 @@ class TableUtilsMixin(ReportUtilsMixin):
         self.table_report = None
         super().__init__(*args, **kwargs)
 
-    def get_date_field(self, index, col_type_override, table_field, fields):
+    def get_date_field(self, index, col_type_override, table_field, fields, table=None):
         data_attr = split_attr(table_field)
         field_name = table_field['field']
-        date_format = data_attr.get('date_format')
+        date_format_type = data_attr.get('date_format')
+        date_format_type = int(date_format_type) if date_format_type else self.get_default_date_format()
 
-        if date_format:
-            date_format = DATE_FORMAT_TYPES_DJANGO_FORMAT.get(int(date_format))
+        date_format = DATE_FORMAT_TYPES_DJANGO_FORMAT.get(date_format_type)
+        moment_format = DATE_FORMAT_TYPES_MOMENT_FORMAT.get(date_format_type)
+
+        if table is not None and moment_format and hasattr(table, 'date_formats'):
+            table.date_formats.add(moment_format)
 
         if int(data_attr.get('display_heading', 1)) == 0:
             display_heading = False
@@ -57,28 +62,24 @@ class TableUtilsMixin(ReportUtilsMixin):
             title = table_field.get('title')
 
         annotations_value = int(data_attr.get('annotations_value', 0))
-        if col_type_override and annotations_value == 0:
-            col_type_override.table = None
-            field = copy.deepcopy(col_type_override)
-            if title or not display_heading:
-                field.title = title
-            fields.append(field)
-        else:
-            if col_type_override:
-                field_name = col_type_override.field
-            date_function_kwargs = {'title': title, 'date_format': date_format}
+        if col_type_override:
+            field_name = col_type_override.field
 
-            if annotations_value != 0:
-                new_field_name = f'{annotations_value}_{field_name}_{index}'
-                new_field_name = new_field_name.replace('__', '_')
-                function = ANNOTATION_VALUE_FUNCTIONS[annotations_value]
-                date_function_kwargs['annotations_value'] = {new_field_name: function(field_name)}
-                field_name = new_field_name
+        date_function_kwargs = {'title': title, 'date_format': date_format}
 
-            date_function_kwargs.update({'field': field_name, 'column_name': field_name})
+        if annotations_value != 0:
+            new_field_name = f'{annotations_value}_{field_name}_{index}'
+            new_field_name = new_field_name.replace('__', '_')
+            function = ANNOTATION_VALUE_FUNCTIONS[annotations_value]
+            date_function_kwargs['annotations_value'] = {new_field_name: function(field_name)}
+            field_name = new_field_name
 
-            field = self.date_field(**date_function_kwargs)
-            fields.append(field)
+        date_function_kwargs.update({'field': field_name, 'column_name': field_name})
+
+        field = self.date_field(**date_function_kwargs)
+        if title or not display_heading:
+            field.title = title
+        fields.append(field)
 
         return field_name
 
@@ -164,7 +165,50 @@ class TableUtilsMixin(ReportUtilsMixin):
                     col_type_override=col_type_override,
                     table_field=table_field,
                     fields=fields,
+                    table=table,
                 )
+            elif isinstance(col_type_override, CURRENCY_COLUMNS):
+                annotations_type = int(data_attr.get('annotations_type', 0))
+                append_annotation_query = int(data_attr.get('append_annotation_query', 0)) == 1
+                fields_before = len(fields)
+                field_name = self.get_number_fields(
+                    field_name=field_name,
+                    table=table,
+                    base_model=base_model,
+                    report_builder_class=report_builder_class,
+                    annotations_type=annotations_type,
+                    append_annotation_query=append_annotation_query,
+                    index=index,
+                    data_attr=data_attr,
+                    table_field=table_field,
+                    fields=fields,
+                    totals=totals,
+                    col_type_override=col_type_override,
+                    decimal_places=2,
+                    convert_currency_fields=True,
+                )
+                from advanced_report_builder.globals import PREFIX_TYPE_AUTOMATIC, PREFIX_TYPE_CUSTOM, PREFIX_TYPE_NONE
+
+                if 'currency_prefix_type' in data_attr:
+                    prefix_type = int(data_attr['currency_prefix_type'])
+                elif data_attr:
+                    prefix_type = PREFIX_TYPE_NONE  # existing saved field without prefix setting
+                else:
+                    prefix_type = PREFIX_TYPE_AUTOMATIC  # new field, no data_attr yet
+                if prefix_type == PREFIX_TYPE_AUTOMATIC:
+                    currency_prefix = self.get_currency_prefix()
+                elif prefix_type == PREFIX_TYPE_CUSTOM:
+                    from advanced_report_builder.utils import decode_attribute as _decode
+                    currency_prefix = _decode(data_attr['currency_prefix']) if 'currency_prefix' in data_attr else ''
+                else:
+                    currency_prefix = ''
+                if currency_prefix:
+                    for f in fields[fields_before:]:
+                        if hasattr(f, 'currency_prefix'):
+                            f.currency_prefix = currency_prefix
+                    if field_name and field_name in totals:
+                        totals[field_name]['prefix'] = currency_prefix
+
             elif isinstance(django_field, NUMBER_FIELDS) and (django_field is None or django_field.choices is None):
                 decimal_places = data_attr.get('decimal_places')
                 append_annotation_query = int(data_attr.get('append_annotation_query', 0)) == 1
@@ -254,26 +298,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                         table.initial_values.append(col_type_override.field)
 
                 field_name = field
-                if isinstance(col_type_override, CURRENCY_COLUMNS) and totals is not None:
-                    annotations_type = int(data_attr.get('annotations_type', 0))
-                    append_annotation_query = int(data_attr.get('append_annotation_query', 0)) == 1
-                    field_name = self.get_number_fields(
-                        field_name=field_name,
-                        table=table,
-                        base_model=base_model,
-                        report_builder_class=report_builder_class,
-                        annotations_type=annotations_type,
-                        append_annotation_query=append_annotation_query,
-                        index=index,
-                        data_attr=data_attr,
-                        table_field=table_field,
-                        fields=fields,
-                        totals=totals,
-                        col_type_override=col_type_override,
-                        decimal_places=2,
-                    )
-
-                elif col_type_override.annotations is not None:
+                if col_type_override is not None and col_type_override.annotations is not None:
                     css_class = col_type_override.column_defs.get('className')
                     show_total = data_attr.get('show_totals')
                     if show_total == '1':
@@ -341,6 +366,7 @@ class TableUtilsMixin(ReportUtilsMixin):
         totals,
         col_type_override,
         decimal_places,
+        convert_currency_fields=False,
     ):
         if (annotations_type != ANNOTATION_CHOICE_NA or append_annotation_query) and data_attr.get(
             'multiple_columns'
@@ -384,6 +410,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                     extra_filter=extra_filter,
                     title_suffix=suffix,
                     decimal_places=decimal_places,
+                    convert_currency_fields=convert_currency_fields,
                 )
         else:
             field_name = self.get_number_field(
@@ -396,6 +423,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                 totals=totals,
                 col_type_override=col_type_override,
                 decimal_places=decimal_places,
+                convert_currency_fields=convert_currency_fields,
             )
         return field_name
 

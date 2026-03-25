@@ -26,6 +26,7 @@ from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import (
     ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT,
     ANNOTATION_CHOICE_SUM,
+    PREFIX_TYPE_CUSTOM,
 )
 from advanced_report_builder.models import ReportOption, ReportQuery, ReportType, SingleValueReport, Target
 from advanced_report_builder.record_nav import RecordNavPlugin
@@ -147,8 +148,36 @@ class SingleValueView(ValueBaseView):
             )
         return fields
 
+    def _is_currency_field(self):
+        from advanced_report_builder.column_types import CURRENCY_COLUMNS
+
+        field_name = self.chart_report.field
+        if not field_name:
+            return False
+        base_model = self.chart_report.get_base_model()
+        report_builder_class = self.report_builder_class(base_model)
+        _, col_type_override, _, _ = self.get_field_details(
+            base_model=base_model,
+            field=field_name,
+            report_builder_class=report_builder_class,
+        )
+        return isinstance(col_type_override, CURRENCY_COLUMNS)
+
+    def get_resolved_prefix(self):
+        from advanced_report_builder.globals import PREFIX_TYPE_CUSTOM, PREFIX_TYPE_NONE
+
+        prefix_type = self.chart_report.prefix_type
+        if prefix_type == PREFIX_TYPE_NONE:
+            return ''
+        elif prefix_type == PREFIX_TYPE_CUSTOM:
+            return mark_safe(self.chart_report.prefix) if self.chart_report.prefix else ''
+        else:
+            if self._is_currency_field():
+                return self.get_currency_prefix()
+            return ''
+
     def set_prefix(self):
-        self.table.prefix = self.chart_report.prefix if mark_safe(self.chart_report.prefix) else ''
+        self.table.prefix = self.get_resolved_prefix()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -186,7 +215,7 @@ class SingleValueView(ValueBaseView):
         bar_percentage = min(percentage, 100)
 
         if target.target_type == Target.TargetType.MONEY:
-            prefix = self.chart_report.prefix if self.chart_report.prefix else ''
+            prefix = self.get_resolved_prefix()
             target_value = intcomma(f'{float(target_value):.2f}')
             target_value = f'{prefix}{target_value}'
         else:
@@ -277,6 +306,7 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
             'average_start_period',
             'average_end_period',
             'field',
+            'prefix_type',
             'prefix',
             'tile_colour',
             'font_colour',
@@ -312,7 +342,7 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     'default': 'show',
                 },
                 {
-                    'selector': '#div_id_prefix',
+                    'selector': '#div_id_prefix_type',
                     'values': {
                         SingleValueReport.SingleValueType.COUNT: 'hide',
                         SingleValueReport.SingleValueType.PERCENT_FROM_COUNT: 'hide',
@@ -358,6 +388,18 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     },
                     'default': 'hide',
                 },
+            ],
+        )
+
+        form.add_trigger(
+            'prefix_type',
+            'onchange',
+            [
+                {
+                    'selector': '#div_id_prefix',
+                    'values': {PREFIX_TYPE_CUSTOM: 'show'},
+                    'default': 'hide',
+                }
             ],
         )
 
@@ -429,6 +471,7 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
             'average_scale',
             'average_start_period',
             'average_end_period',
+            'prefix_type',
             'prefix',
             'tile_colour',
             'font_colour',

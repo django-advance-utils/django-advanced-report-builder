@@ -112,6 +112,8 @@ def test_count_report_with_prefix(authenticated_page):
     modal.locator('#id_single_value_type').select_option(label='Sum')
     page.wait_for_timeout(500)
     select2_select(page, 'id_field', 'Amount')
+    modal.locator('#id_prefix_type').select_option(label='Custom')
+    page.wait_for_timeout(300)
     modal.locator('#id_prefix').fill('£')
     click_submit_button(page)
     page.wait_for_timeout(1000)

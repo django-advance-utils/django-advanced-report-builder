@@ -11,6 +11,7 @@ from report_builder_examples import models
 
 def import_data(path):
     import_companies(path)
+    import_contracts()
     import_tallies(path)
     import_report_types()
 
@@ -66,6 +67,42 @@ def import_companies(path):
                     tag.company.add(company)
 
 
+def import_contracts():
+    models.Contract.objects.all().delete()
+    random.seed(a='import_contracts', version=2)
+
+    company_ids = list(models.Company.objects.values_list('id', flat=True))
+    notes_prefixes = [
+        'Annual support', 'Consulting services', 'Software licence',
+        'Maintenance agreement', 'Cloud hosting', 'Data migration',
+        'Training package', 'Security audit', 'Integration project',
+        'Custom development', 'SLA agreement', 'Infrastructure upgrade',
+        'Managed services', 'Advisory retainer', 'Platform subscription',
+    ]
+
+    contracts = []
+    for i in range(200):
+        company_id = random.choice(company_ids)
+        start = datetime.date(2023, 1, 1) + datetime.timedelta(days=random.randint(0, 730))
+        duration = random.randint(30, 365)
+        end = start + datetime.timedelta(days=duration)
+        amount = random.randint(5000, 500000)
+        valid = random.random() > 0.2
+        temperature = random.choice([0, 0, 1, 1, 1, 2])
+        note = f'{random.choice(notes_prefixes)} #{i + 1}'
+        contracts.append(models.Contract(
+            company_id=company_id,
+            notes=note,
+            start_date=start,
+            end_date=end,
+            amount=amount,
+            valid=valid,
+            temperature=temperature,
+        ))
+
+    models.Contract.objects.bulk_create(contracts)
+
+
 def import_tallies(path):
     with open(path + '/data/test_tallies_data.csv') as f:
         csv_reader = csv.DictReader(f)
@@ -89,6 +126,7 @@ def import_report_types():
         ['company', 'Company', 'ReportBuilder'],
         ['sector', 'Sector', 'ReportBuilder'],
         ['person', 'Person', 'ReportBuilder'],
+        ['contract', 'Contract', 'ReportBuilder'],
     ]
 
     for report_type in report_types:
