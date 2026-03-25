@@ -73,11 +73,21 @@ def import_contracts():
 
     company_ids = list(models.Company.objects.values_list('id', flat=True))
     notes_prefixes = [
-        'Annual support', 'Consulting services', 'Software licence',
-        'Maintenance agreement', 'Cloud hosting', 'Data migration',
-        'Training package', 'Security audit', 'Integration project',
-        'Custom development', 'SLA agreement', 'Infrastructure upgrade',
-        'Managed services', 'Advisory retainer', 'Platform subscription',
+        'Annual support',
+        'Consulting services',
+        'Software licence',
+        'Maintenance agreement',
+        'Cloud hosting',
+        'Data migration',
+        'Training package',
+        'Security audit',
+        'Integration project',
+        'Custom development',
+        'SLA agreement',
+        'Infrastructure upgrade',
+        'Managed services',
+        'Advisory retainer',
+        'Platform subscription',
     ]
 
     contracts = []
@@ -90,15 +100,17 @@ def import_contracts():
         valid = random.random() > 0.2
         temperature = random.choice([0, 0, 1, 1, 1, 2])
         note = f'{random.choice(notes_prefixes)} #{i + 1}'
-        contracts.append(models.Contract(
-            company_id=company_id,
-            notes=note,
-            start_date=start,
-            end_date=end,
-            amount=amount,
-            valid=valid,
-            temperature=temperature,
-        ))
+        contracts.append(
+            models.Contract(
+                company_id=company_id,
+                notes=note,
+                start_date=start,
+                end_date=end,
+                amount=amount,
+                valid=valid,
+                temperature=temperature,
+            )
+        )
 
     models.Contract.objects.bulk_create(contracts)
 

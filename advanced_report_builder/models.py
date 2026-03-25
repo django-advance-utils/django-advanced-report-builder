@@ -428,9 +428,7 @@ class SingleValueReport(Report):
     numerator = models.CharField(max_length=200, blank=True, null=True)
     single_value_type = models.PositiveSmallIntegerField(choices=SingleValueType.choices, default=SingleValueType.COUNT)
     prefix = models.CharField(max_length=64, blank=True, null=True)
-    prefix_type = models.PositiveSmallIntegerField(
-        choices=PREFIX_TYPE_CHOICES, default=PREFIX_TYPE_AUTOMATIC
-    )
+    prefix_type = models.PositiveSmallIntegerField(choices=PREFIX_TYPE_CHOICES, default=PREFIX_TYPE_AUTOMATIC)
     decimal_places = models.IntegerField(default=0)
 
     show_breakdown = models.BooleanField(default=False)
@@ -751,9 +749,7 @@ class MultiValueReportCell(TimeStampedModel):
     field = models.CharField(max_length=200, blank=True, null=True)  # denominator
     numerator = models.CharField(max_length=200, blank=True, null=True)
     prefix = models.CharField(max_length=64, blank=True, null=True)
-    prefix_type = models.PositiveSmallIntegerField(
-        choices=PREFIX_TYPE_CHOICES, default=PREFIX_TYPE_AUTOMATIC
-    )
+    prefix_type = models.PositiveSmallIntegerField(choices=PREFIX_TYPE_CHOICES, default=PREFIX_TYPE_AUTOMATIC)
     decimal_places = models.IntegerField(default=0)
 
     show_breakdown = models.BooleanField(default=False)

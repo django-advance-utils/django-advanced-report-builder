@@ -1,6 +1,6 @@
 """Tests for creating, configuring, and viewing table reports end-to-end."""
 
-from conftest import BASE_URL, click_submit_button, open_dropdown_item, select2_select, wait_for_modal
+from conftest import BASE_URL, click_submit_button, open_dropdown_item, wait_for_modal
 from playwright.sync_api import expect
 
 
@@ -150,11 +150,25 @@ def _run_django_shell(command):
     """Run a Django shell command in the docker container and return stdout, stderr."""
     import os
     import subprocess
+
     repo_root = os.path.dirname(os.path.dirname(__file__))
     result = subprocess.run(
-        ['docker', 'compose', '-f', os.path.join(repo_root, 'docker-compose.yaml'),
-         'exec', '-T', 'django_report_builder', 'python', 'manage.py', 'shell', '-c', command],
-        capture_output=True, text=True,
+        [
+            'docker',
+            'compose',
+            '-f',
+            os.path.join(repo_root, 'docker-compose.yaml'),
+            'exec',
+            '-T',
+            'django_report_builder',
+            'python',
+            'manage.py',
+            'shell',
+            '-c',
+            command,
+        ],
+        capture_output=True,
+        text=True,
     )
     return result.stdout.strip(), result.stderr.strip()
 
@@ -273,10 +287,10 @@ def test_table_report_currency_prefix_custom(authenticated_page):
 
     # Set prefix type to Custom (2) with $ prefix via database
     import base64
-    b64_prefix = base64.b64encode('$'.encode()).decode()
+
+    b64_prefix = base64.b64encode(b'$').decode()
     _set_table_field_data_attr(
-        'Currency Custom Test', 'currency_amount',
-        f'currency_prefix_type-2-currency_prefix-{b64_prefix}'
+        'Currency Custom Test', 'currency_amount', f'currency_prefix_type-2-currency_prefix-{b64_prefix}'
     )
 
     # Reload the report

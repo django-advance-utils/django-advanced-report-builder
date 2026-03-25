@@ -199,6 +199,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                     currency_prefix = self.get_currency_prefix()
                 elif prefix_type == PREFIX_TYPE_CUSTOM:
                     from advanced_report_builder.utils import decode_attribute as _decode
+
                     currency_prefix = _decode(data_attr['currency_prefix']) if 'currency_prefix' in data_attr else ''
                 else:
                     currency_prefix = ''
