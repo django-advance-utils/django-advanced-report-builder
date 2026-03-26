@@ -6,7 +6,7 @@ django-crispy-forms==1.14.0
 git+https://github.com/jonesim/django-menus.git@ad597ee3969e730e9760b1a596af7fb3aee42f3a
 
 # django-filtered-datatables==0.0.21
-git+https://github.com/jonesim/django-datatables.git@2d8226862582fad9e0efa75607525263d59da72a
+git+https://github.com/jonesim/django-datatables.git@060a3c0fddb66dc99eb790277a9b4f2a4403936f
 
 # django-nested-modals==0.0.21
 git+https://github.com/jonesim/django-modals.git@6c932d7b814f4778b26255dc4103891d6d65c81f
