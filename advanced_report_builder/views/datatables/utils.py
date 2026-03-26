@@ -62,15 +62,18 @@ class TableUtilsMixin(ReportUtilsMixin):
             title = table_field.get('title')
 
         annotations_value = int(data_attr.get('annotations_value', 0))
+        if col_type_override and annotations_value == 0:
+            col_type_override.table = None
+            field = copy.deepcopy(col_type_override)
+            if date_format:
+                field.date_format = date_format
+            if title or not display_heading:
+                field.title = title
+            fields.append(field)
+            return table_field['field']
+
         if col_type_override:
             field_name = col_type_override.field
-            if isinstance(field_name, list):
-                col_type_override.table = None
-                field = copy.deepcopy(col_type_override)
-                if title or not display_heading:
-                    field.title = title
-                fields.append(field)
-                return table_field['field']
 
         date_function_kwargs = {'title': title, 'date_format': date_format}
 
