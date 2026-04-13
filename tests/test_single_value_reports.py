@@ -65,6 +65,34 @@ def test_sum_report_shows_total_amount(authenticated_page):
     assert len(large_numbers) > 0, f'Expected a large sum value, got: {body[:200]}'
 
 
+def test_sum_report_via_fk_include_shows_value(authenticated_page):
+    """A Sum report where the field is reached via a FK include must aggregate
+    using the full traversal path, not just the leaf field name. Regression test
+    for N/A on the single-value tile when col_type_override has a model_path
+    (e.g. `Delivery Schedule -> Invoice -> Net Amount`).
+    """
+    page = authenticated_page
+    modal = _open_single_value_modal(page)
+    modal.locator('#id_name').fill('Sum Via Include')
+    modal.locator('#id_report_type').select_option(label='Payment')
+    modal.locator('#id_single_value_type').select_option(label='Sum')
+    page.wait_for_timeout(500)
+    # 'Company -> Importance' traverses Payment.company FK to Company.importance.
+    # This mirrors the customer bug pattern (forward FK to an included model's
+    # numeric column); without the fix, Sum() gets the stripped leaf name and
+    # Django raises FieldError, which renders as 'N/A'.
+    select2_select(page, 'id_field', 'Company -> Importance')
+    click_submit_button(page)
+    page.wait_for_timeout(1000)
+
+    _navigate_to_report(page, 'Sum Via Include')
+    body = _get_report_value(page)
+    # Without the fix the Sum() call raises FieldError (wrong field path) and
+    # charts_base.py substitutes 'N/A' into the tile. The core regression is
+    # that 'N/A' should never appear for a valid FK-include Sum.
+    assert 'N/A' not in body, f'Single value showed N/A — FK-include Sum broken: {body[:300]}'
+
+
 def test_count_and_sum_report(authenticated_page):
     """A Count & Sum report shows both a count and a sum value."""
     page = authenticated_page

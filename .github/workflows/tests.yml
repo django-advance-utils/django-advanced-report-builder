@@ -1,0 +1,92 @@
+name: Playwright tests
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - master
+      - main
+
+# Cancel superseded runs for the same branch/PR.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: '0.4.30'
+          enable-cache: true
+          cache-dependency-glob: 'tests/uv.lock'
+
+      # Build and start the Django app + Postgres via docker compose.
+      # Runs detached so we can hit it from the host over localhost:8010.
+      - name: Start app stack
+        run: docker compose up -d --build django_report_builder db
+
+      - name: Wait for Django to respond on :8010
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8010/admin/login/ > /dev/null; then
+              echo "App is up."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "App did not come up in 120s. Dumping logs:"
+          docker compose logs django_report_builder
+          docker compose logs db
+          exit 1
+
+      - name: Install test dependencies
+        working-directory: tests
+        run: uv sync --frozen
+
+      - name: Install Playwright browsers
+        working-directory: tests
+        run: uv run playwright install --with-deps chromium
+
+      - name: Run pytest
+        working-directory: tests
+        run: >
+          uv run pytest -q --tb=short
+          --screenshot=only-on-failure
+          --video=retain-on-failure
+          --tracing=retain-on-failure
+          --output=test-results
+
+      # Capture Playwright output on failure so we can debug without rerunning locally.
+      - name: Upload Playwright artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            tests/test-results/
+            tests/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Dump Django container logs on failure
+        if: failure()
+        run: docker compose logs django_report_builder
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

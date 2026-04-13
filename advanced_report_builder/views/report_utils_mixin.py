@@ -76,10 +76,6 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
         if col_type_override:
             col_type_override.table = None
             field = copy.deepcopy(col_type_override)
-            if field.model_path and isinstance(field.field, str) and field.field.startswith(field.model_path):
-                raw_field_name = field.field[len(field.model_path) :]
-            else:
-                raw_field_name = field.field
 
             if convert_currency_fields:
                 if isinstance(field, CurrencyPenceColumn):
@@ -163,10 +159,12 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                     multiple_index=multiple_index,
                     additional_options=additional_options,
                 )
+                # field.field is prefixed with model_path (set by get_field_details) so
+                # Sum/Count can traverse FK relationships when reached via an include.
                 if annotation_filter:
-                    function = function_type(raw_field_name, filter=annotation_filter)
+                    function = function_type(field.field, filter=annotation_filter)
                 else:
-                    function = function_type(raw_field_name)
+                    function = function_type(field.field)
                 if divider:
                     function = ExpressionWrapper(function / NullIf(divider, 0), output_field=FloatField())
                 if self.use_annotations:
@@ -210,9 +208,9 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                     )
                     function_type = ANNOTATION_FUNCTIONS[annotations_type]
                     if annotation_filter:
-                        function = function_type(raw_field_name, filter=annotation_filter)
+                        function = function_type(field.field, filter=annotation_filter)
                     else:
-                        function = function_type(raw_field_name)
+                        function = function_type(field.field)
                     if divider:
                         function = ExpressionWrapper(function / NullIf(float(divider), 0.0), output_field=FloatField())
                     function = Round(function, decimal_places)
