@@ -11,10 +11,14 @@ Since extra_query and denominator_query have no UI yet, these tests set them
 via the database and verify the rendered percentage changes accordingly.
 """
 
+import os
 import re
 import subprocess
 
 from conftest import BASE_URL, click_submit_button, open_dropdown_item, select2_select, wait_for_modal
+
+# Repo root (parent of the tests/ dir) — where docker-compose.yaml lives.
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def _run_django_shell(command):
@@ -23,7 +27,7 @@ def _run_django_shell(command):
         ['docker', 'compose', 'exec', '-T', 'django_report_builder', 'python', 'manage.py', 'shell', '-c', command],
         capture_output=True,
         text=True,
-        cwd='/Users/tom/GitHub/django-advanced-report-builder',
+        cwd=REPO_ROOT,
     )
     return result.stdout.strip(), result.stderr.strip()
 
