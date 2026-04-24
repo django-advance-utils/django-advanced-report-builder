@@ -24,6 +24,7 @@ from advanced_report_builder.column_types import (
     REVERSE_FOREIGN_KEY_DATE_COLUMNS,
     REVERSE_FOREIGN_KEY_STR_COLUMNS,
 )
+from advanced_report_builder.field_extensions import load_field_extensions
 from advanced_report_builder.globals import (
     ALIGNMENT_CHOICE_RIGHT,
     ALIGNMENT_CHOICES,
@@ -321,6 +322,9 @@ class TableFieldForm(ChartBaseFieldForm):
             self.fields['annotation_label'] = BooleanField(required=False, widget=RBToggle())
             if 'annotation_label' in data_attr and data_attr['annotation_label'] == '1':
                 self.fields['annotation_label'].initial = True
+        for ext in load_field_extensions(self.slug):
+            if ext.applies_to(self.django_field, self.col_type_override, data):
+                ext.add_form_fields(self, data_attr)
         super().setup_modal(*args, **kwargs)
 
     def setup_annotation_fields(self, data_attr):
@@ -743,6 +747,10 @@ class TableFieldForm(ChartBaseFieldForm):
             if self.cleaned_data['annotation_label'] and self.cleaned_data['annotation_label']:
                 attributes.append('annotation_label-1')
 
+        for ext in load_field_extensions(self.slug):
+            if ext.applies_to(self.django_field, self.col_type_override, data):
+                ext.save_attributes(self, attributes)
+
         if attributes:
             return '-'.join(attributes)
         return None
@@ -795,25 +803,34 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
         has_existing_annotations = col_type_override is not None and col_type_override.annotations is not None
 
         if isinstance(col_type_override, CURRENCY_COLUMNS):
-            return self.layout_currency_field(form=form, has_existing_annotations=has_existing_annotations)
+            layout = self.layout_currency_field(form=form, has_existing_annotations=has_existing_annotations)
         elif django_field is not None and isinstance(django_field, NUMBER_FIELDS):
-            return self.layout_number_field(form=form, has_existing_annotations=has_existing_annotations)
-
+            layout = self.layout_number_field(form=form, has_existing_annotations=has_existing_annotations)
         elif isinstance(col_type_override, LINK_COLUMNS):
-            return self.layout_link_field()
+            layout = self.layout_link_field()
         elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_STR_COLUMNS):
-            return self.layout_reverse_foreign_key_str_field(form=form, col_type_override=col_type_override)
-
+            layout = self.layout_reverse_foreign_key_str_field(form=form, col_type_override=col_type_override)
         elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_BOOL_COLUMNS):
-            return self.layout_reverse_foreign_key_bool_field(form=form, col_type_override=col_type_override)
-
+            layout = self.layout_reverse_foreign_key_bool_field(form=form, col_type_override=col_type_override)
         elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_CHOICE_COLUMNS):
-            return self.layout_reverse_foreign_key_choice_field(form=form, col_type_override=col_type_override)
-
+            layout = self.layout_reverse_foreign_key_choice_field(form=form, col_type_override=col_type_override)
         elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_DATE_COLUMNS):
             self.layout_reverse_foreign_key_date_field(form=form, col_type_override=col_type_override)
+            layout = None
+        else:
+            layout = None
 
-        return None
+        if layout is not None:
+            extras = []
+            for ext in load_field_extensions(self.slug):
+                if ext.applies_to(django_field, col_type_override, data):
+                    items = ext.layout()
+                    if items:
+                        extras.extend(items)
+            if extras:
+                layout = list(layout) + extras
+
+        return layout
 
     def layout_number_field(self, form, has_existing_annotations):
         if has_existing_annotations:

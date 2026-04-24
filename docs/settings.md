@@ -75,6 +75,18 @@ Controls the default value of the **Record Nav** toggle when creating new report
 REPORT_BUILDER_RECORD_NAV_DEFAULT = False
 ```
 
+### ADVANCED_REPORT_BUILDER_FIELD_EXTENSIONS
+
+A dict mapping short keys to dotted paths of `FieldExtension` subclasses. Registered extensions can inject extra fields into the column edit modal on an opt-in per-render basis. See [Field extensions](field-extensions.md) for the full interface.
+
+```python
+ADVANCED_REPORT_BUILDER_FIELD_EXTENSIONS = {
+    'my_extension': 'myapp.arb_extensions.MyExtension',
+}
+```
+
+Registering an extension alone has no effect on existing modals; the owning modal must opt in by appending `extensions-<key>` to its `select_column_url` slug.
+
 ## Other settings
 
 ### FINANCIAL_YEAR_START_MONTH

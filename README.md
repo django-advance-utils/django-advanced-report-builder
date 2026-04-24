@@ -26,5 +26,6 @@ Full documentation is available in the [docs](docs/index.md) directory:
 - [Dashboards](docs/dashboards.md)
 - [Filters and queries](docs/filters-and-queries.md)
 - [Custom columns](docs/custom-columns.md)
+- [Field extensions](docs/field-extensions.md)
 - [Targets](docs/targets.md)
 - [Settings](docs/settings.md)
