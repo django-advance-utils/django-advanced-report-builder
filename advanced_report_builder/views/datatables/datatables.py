@@ -184,11 +184,7 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
             return None
 
         report_type_id = self.table_report.report_type_id
-        new_slug = (
-            f'report_id-{self.table_report.id}'
-            f'-report_type-{report_type_id}'
-            f'-show_order_by-1-show_target-0'
-        )
+        new_slug = f'report_id-{self.table_report.id}-report_type-{report_type_id}-show_order_by-1-show_target-0'
 
         # Edit targets the currently-selected version (or the first one
         # if nothing explicitly selected). Goes to the same QueryModal
@@ -200,11 +196,7 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
 
         edit_slug = None
         if current_query_id is not None:
-            edit_slug = (
-                f'pk-{current_query_id}'
-                f'-report_type-{report_type_id}'
-                f'-show_order_by-1-show_target-0'
-            )
+            edit_slug = f'pk-{current_query_id}-report_type-{report_type_id}-show_order_by-1-show_target-0'
         return new_slug, edit_slug
 
     def version_management_menu(self):
