@@ -400,6 +400,11 @@ class TableReport(Report):
     )
     record_nav = models.BooleanField(default=True)
 
+    # If true, the report viewer shows a top-level "New Version" button that
+    # opens the query modal so users can save a new ReportQuery (a saved
+    # query / version) without going into the report-edit flow.
+    allow_new_version = models.BooleanField(default=False)
+
 
 class SingleValueReport(Report):
     report_type_label = 'Single Value'

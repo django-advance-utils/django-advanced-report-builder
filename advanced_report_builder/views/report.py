@@ -7,7 +7,7 @@ from django.db.models import Q
 from django.forms import ChoiceField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
-from django_menus.menu import MenuItem, MenuMixin
+from django_menus.menu import DividerItem, MenuItem, MenuMixin
 from django_modals.forms import CrispyForm
 from django_modals.modals import FormModal
 from django_modals.widgets.select2 import Select2, select2_ajax_result
@@ -40,6 +40,29 @@ class ReportBase(AjaxHelpers, MenuMixin):
 
         return menus
 
+    def force_show_version_menu(self, report):
+        """Hook: return True to render the Version dropdown even when the
+        report has 0 or 1 saved queries.
+
+        Default behaviour is to hide the dropdown unless there are 2+
+        versions (the historical behaviour). TableReport subclasses can
+        override this to keep the dropdown visible whenever the
+        ``allow_new_version`` opt-in is on, so users always see where to
+        switch / add saved queries.
+        """
+        return False
+
+    def version_dropdown_extras(self, report):
+        """Hook: return a list of extra MenuItems to append to the Version
+        dropdown (after a divider). Used by TableView to expose 'New
+        Version' / 'Edit Version' actions inline with the version
+        selector when ``allow_new_version`` is on.
+
+        Default is an empty list — the historical Version dropdown only
+        listed selectable versions.
+        """
+        return []
+
     def _queries_menus(self, report, dashboard_report, menus):
         query_slug = f'query{report.id}'
         if dashboard_report is not None:
@@ -47,7 +70,8 @@ class ReportBase(AjaxHelpers, MenuMixin):
                 return
             query_slug += f'_{dashboard_report.id}'
         report_queries = report.reportquery_set.all()
-        if len(report_queries) > 1:
+        extras = self.version_dropdown_extras(report)
+        if len(report_queries) > 1 or extras or self.force_show_version_menu(report):
             dropdown = []
             for report_query in report_queries:
                 slug_str = make_slug_str(self.slug, overrides={query_slug: report_query.id})
@@ -58,6 +82,10 @@ class ReportBase(AjaxHelpers, MenuMixin):
                         {'url_kwargs': {'slug': slug_str}},
                     )
                 )
+            if extras:
+                if dropdown:
+                    dropdown.append(DividerItem())
+                dropdown.extend(extras)
             menus.append(
                 MenuItem(
                     menu_display='Version',

@@ -107,6 +107,18 @@ class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
                 )
             },
         ),
+        (
+            'allow_new_version',
+            {
+                'widget': Toggle(
+                    attrs={
+                        'data-onstyle': 'success',
+                        'data-on': 'YES',
+                        'data-off': 'NO',
+                    }
+                )
+            },
+        ),
         'report_type',
         'report_tags',
         'table_fields',
@@ -185,6 +197,10 @@ class TableModal(MultiQueryModalMixin, QueryBuilderModalBase):
             FieldEx('page_length', template='django_modals/fields/label_checkbox.html'),
             FieldEx(
                 'record_nav',
+                template='django_modals/fields/label_checkbox.html',
+            ),
+            FieldEx(
+                'allow_new_version',
                 template='django_modals/fields/label_checkbox.html',
             ),
             FieldEx(
