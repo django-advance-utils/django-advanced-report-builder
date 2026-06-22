@@ -215,6 +215,13 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
                         function = ExpressionWrapper(function / NullIf(float(divider), 0.0), output_field=FloatField())
                     function = Round(function, decimal_places)
 
+                    # field.field already carries the full ORM path (e.g. 'item_summary__doors'),
+                    # so this annotation is self-contained. Clear model_path so the column's
+                    # annotation setter does not re-prefix it - re-prefixing both double-prefixes
+                    # the alias ("Unable to find column ...") and crashes on wrapped expressions
+                    # such as Round(Sum(...), Value(2)) ("'Value' object has no attribute 'name'").
+                    field.model_path = ''
+
                     if self.use_annotations:
                         field.annotations = {new_field_name: function}
                     else:

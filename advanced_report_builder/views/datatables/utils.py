@@ -168,6 +168,12 @@ class TableUtilsMixin(ReportUtilsMixin):
 
             if annotations_type != 0 or append_annotation_query != 0:
                 has_annotations = True
+            # Columns that carry their own pre-built annotation (e.g. a Sum/Count defined on the
+            # report builder column) also make the query aggregate. Count them so the default
+            # (non-aggregate) columns are not injected, which would otherwise be added to the
+            # GROUP BY and break grouping (every row splits out on its own line).
+            if col_type_override is not None and getattr(col_type_override, 'annotations', None):
+                has_annotations = True
 
             if isinstance(django_field, DATE_FIELDS):
                 field_name = self.get_date_field(

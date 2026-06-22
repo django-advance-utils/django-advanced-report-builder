@@ -301,3 +301,63 @@ def test_table_report_currency_prefix_custom(authenticated_page):
     # Currency values should have $ prefix
     first_cell = page.locator('table.dataTable tbody tr td').first
     expect(first_cell).to_contain_text('$', timeout=5000)
+
+
+def _set_table_fields(report_name, fields):
+    """Replace a report's entire table_fields list (JSON) directly in the DB."""
+    import base64
+    import json
+
+    b64 = base64.b64encode(json.dumps(fields).encode()).decode()
+    stdout, stderr = _run_django_shell(f"""
+import base64, json
+from advanced_report_builder.models import TableReport
+report = TableReport.objects.get(name='{report_name}')
+report.table_fields = json.loads(base64.b64decode('{b64}').decode())
+report.save()
+print('OK')
+""")
+    assert 'OK' in stdout, f'Failed to set table_fields: {stderr}'
+
+
+def test_table_report_sum_of_included_field_grouped_by_week(authenticated_page):
+    """Regression test for summing a numeric field reached through an include.
+
+    Person includes Company, so ``company__importance`` is a number column with a
+    non-empty ``model_path``. Summing it (annotations_type=1) and grouping by the
+    week-truncated ``date_entered`` (annotations_value=4) used to:
+      * crash with "'Value' object has no attribute 'name'" while building the
+        ``Round(Sum(...))`` annotation (django-datatables column rewrite), and
+      * once that was worked around, split every row out on its own line because
+        the pre-annotated column was not counted toward ``has_annotations`` and the
+        default ``id`` column got added to the GROUP BY.
+
+    With the fix the report renders one aggregated row per week showing the summed
+    importance (885 across the single seeded week), instead of 193 ungrouped rows.
+    """
+    page = authenticated_page
+    _create_table_report(page, 'Weekly Importance', report_type='Person')
+
+    _set_table_fields(
+        'Weekly Importance',
+        [
+            {'field': 'date_entered', 'title': 'Week', 'data_attr': 'annotations_value-4-date_format-2'},
+            {
+                'field': 'company__importance',
+                'title': 'Total Importance',
+                'data_attr': 'annotations_type-1-show_totals-1',
+            },
+        ],
+    )
+
+    _navigate_to_report(page, 'Weekly Importance')
+
+    # Renders without the crash: the summed column header and a data row are present.
+    expect(page.locator('th', has_text='Total Importance').first).to_be_visible(timeout=10000)
+    rows = page.locator('table.dataTable tbody tr')
+    assert rows.count() > 0, 'Expected the report to render aggregated rows, not crash'
+
+    # Grouped, not one row per person: 193 people collapse to a single weekly total of 885.
+    info = page.locator('.dataTables_info')
+    expect(info).not_to_contain_text('193', timeout=5000)
+    expect(page.locator('table.dataTable tbody tr').first).to_contain_text('885', timeout=5000)

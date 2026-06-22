@@ -65,6 +65,15 @@ def restore_baseline():
             capture_output=True,
         )
 
+    # The baseline dump is a point-in-time snapshot, so apply any migrations added since
+    # it was captured. Without this a newer column (e.g. tablereport.allow_new_version)
+    # is missing and every report-creating test fails on insert.
+    subprocess.run(
+        [*compose, 'exec', '-T', 'django_report_builder', 'python', 'manage.py', 'migrate', '--noinput'],
+        check=True,
+        capture_output=True,
+    )
+
 
 @pytest.fixture(scope='session', autouse=True)
 def reset_database():
