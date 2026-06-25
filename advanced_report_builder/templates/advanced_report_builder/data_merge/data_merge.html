@@ -44,11 +44,13 @@ function setup_tiny_{{ widget.attrs.id }}() {
         convert_newlines_to_brs: true,
         cleanup: false,
         plugins: ['searchreplace', 'code'],
-        toolbar: 'bold italic | bullist numlist | ifgen{% if save_include_url %} saveinclude{% endif %} | standardparagraphbutton',
+        toolbar: 'bold italic | bullist numlist |{% if if_statement_url %} ifgen{% endif %}{% if save_include_url %} saveinclude{% endif %} | standardparagraphbutton',
         setup: function (editor) {
-            data_merge_add_if_button(editor);
+            {% if if_statement_url %}
+            data_merge_add_if_button(editor, '{{ if_statement_url|escapejs }}');
+            {% endif %}
             {% if save_include_url %}
-            data_merge_add_save_include_button(editor, '{{ save_include_url }}');
+            data_merge_add_save_include_button(editor, '{{ save_include_url|escapejs }}');
             {% endif %}
         },
         init_instance_callback: function (editor) {
@@ -139,113 +141,45 @@ ajax_helpers.command_functions.build_data_merge_menu_{{ widget.attrs.id }} = fun
 };
 
 /* ---------------------------------------
-   If-Statement Generator
+   If-gen / Save-include dialogs (django-modals)
+   Each opens a stacked modal; on submit the modal returns an
+   insert_data_merge_<id> command (below) plus close(no_refresh).
 ---------------------------------------- */
 
-function data_merge_build_if_statement(d) {
-    var tag = (d.tag || '').trim();
-    if (tag) {
-        if (tag.charAt(0) !== '{') {
-            tag = '{ ' + tag + ' }';
-        }
-    } else {
-        tag = '{  }';
-    }
-    var open = '', close = '';
-    if (d.bold) { open += '<strong>'; close = '</strong>' + close; }
-    if (d.italic) { open += '<em>'; close = '</em>' + close; }
-    if (d.underline) { open += '<span style="text-decoration: underline;">'; close = '</span>' + close; }
-    var pre = d.pre_text || '';
-    var post = d.post_text || '';
-    var notf = d.not_flag ? '?' : '';
-    var inner;
-    if (d.show_tag) {
-        inner = pre + ' ' + open + tag + notf + close + ' ' + post;
-    } else {
-        // The tag value is hidden, so styling it is meaningless.
-        inner = pre + ' !' + tag + notf + ' ' + post;
-    }
-    // Split the delimiters so Django's template lexer doesn't parse them as a block tag.
-    return '{' + '% ' + inner + ' %' + '}';
+// base64 the selection so it survives the query string (handles unicode).
+function data_merge_encode_selection(text) {
+    return btoa(unescape(encodeURIComponent(text || '')));
 }
 
-function data_merge_add_if_button(editor) {
+function data_merge_add_if_button(editor, modal_url) {
     editor.addButton('ifgen', {
         text: 'If',
         tooltip: 'Insert a conditional (if) statement',
         onclick: function () {
-            var selection = editor.selection.getContent({ format: 'text' }) || '';
-            editor.windowManager.open({
-                title: 'If Statement Generator',
-                width: 480,
-                height: 340,
-                body: [
-                    { type: 'textbox', name: 'pre_text', label: 'Before text' },
-                    { type: 'textbox', name: 'tag', label: 'Tag', value: selection },
-                    { type: 'checkbox', name: 'show_tag', label: 'Show tag result', checked: true },
-                    { type: 'checkbox', name: 'not_flag', label: 'NOT (show only when the tag is empty)' },
-                    { type: 'checkbox', name: 'bold', label: 'Bold' },
-                    { type: 'checkbox', name: 'italic', label: 'Italic' },
-                    { type: 'checkbox', name: 'underline', label: 'Underline' },
-                    { type: 'textbox', name: 'post_text', label: 'After text' }
-                ],
-                onsubmit: function (e) {
-                    editor.insertContent(data_merge_build_if_statement(e.data));
-                }
-            });
+            var selection = editor.selection.getContent({ format: 'text' });
+            django_modal.show_modal(modal_url, undefined, { selected: data_merge_encode_selection(selection) });
         }
     });
 }
 
-/* ---------------------------------------
-   Save selection as a Data Merge Include
----------------------------------------- */
-
-function data_merge_get_csrf() {
-    var m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
-    return m ? m[1] : '';
-}
-
-function data_merge_add_save_include_button(editor, save_url) {
+function data_merge_add_save_include_button(editor, modal_url) {
     editor.addButton('saveinclude', {
         text: 'Save include',
         tooltip: 'Save the selected content as a reusable data merge include',
         onclick: function () {
-            var selection = editor.selection.getContent() || '';
-            editor.windowManager.open({
-                title: 'Save as Data Merge Include',
-                width: 420,
-                height: 200,
-                body: [
-                    { type: 'textbox', name: 'name', label: 'Name' },
-                    { type: 'textbox', name: 'code', label: 'Code (a-z and _ only)' }
-                ],
-                onsubmit: function (e) {
-                    var body = 'name=' + encodeURIComponent(e.data.name) +
-                        '&code=' + encodeURIComponent(e.data.code) +
-                        '&dm_string=' + encodeURIComponent(selection);
-                    fetch(save_url, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'X-CSRFToken': data_merge_get_csrf()
-                        },
-                        body: body,
-                        credentials: 'same-origin'
-                    }).then(function (r) { return r.json(); }).then(function (d) {
-                        if (d.ok) {
-                            editor.insertContent('[{ ' + d.code + ' }]');
-                        } else {
-                            editor.windowManager.alert(d.error || 'Could not save include.');
-                        }
-                    }).catch(function () {
-                        editor.windowManager.alert('Could not save include.');
-                    });
-                }
-            });
+            var selection = editor.selection.getContent();
+            django_modal.show_modal(modal_url, undefined, { selected: data_merge_encode_selection(selection) });
         }
     });
 }
+
+// Command the dialogs call back with to drop their result into this editor.
+ajax_helpers.command_functions.insert_data_merge_{{ widget.attrs.id }} = function (command) {
+    var editor = tinymce.get('{{ widget.attrs.id }}_textarea');
+    if (editor) {
+        editor.insertContent(command.data);
+    }
+};
 
 /* ---------------------------------------
    Kick everything off
