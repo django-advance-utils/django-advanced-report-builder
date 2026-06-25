@@ -5,24 +5,6 @@ from django.apps import apps
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.utils import get_report_builder_class
 
-_COLON_KEY_RE = re.compile(r'^([A-Za-z][A-Za-z0-9]*)\s*:\s*(.+)$')
-
-
-def normalize_data_merge_key(key):
-    """Translate JMS Pro's ``{ Model: field }`` colon form into a dotted path.
-
-    The identifier is slugified the way Pro does (``GlassSpacer`` -> ``glass_spacer``) and joined
-    to the field, e.g. ``Glass: code`` -> ``glass.code`` / ``GlassSpacer: width`` ->
-    ``glass_spacer.width``. Plain dotted keys (``project.name``) are returned unchanged.
-    """
-    key = (key or '').strip()
-    match = _COLON_KEY_RE.match(key)
-    if not match:
-        return key
-    identifier, field = match.group(1), match.group(2).strip()
-    slug = '_'.join(re.findall('[A-Z][^A-Z]*', identifier)).lower() or identifier.lower()
-    return f'{slug}.{field}'
-
 
 class DataMergeUtils(ReportBuilderFieldUtils):
     def get_menu_fields(
@@ -36,7 +18,6 @@ class DataMergeUtils(ReportBuilderFieldUtils):
         previous_base_model=None,
         table=None,
         show_includes=True,
-        colon_includes=False,
     ):
         for report_builder_field in report_builder_class.fields:
             django_field, col_type_override, columns, _ = self.get_field_details(
@@ -78,31 +59,13 @@ class DataMergeUtils(ReportBuilderFieldUtils):
                         show_includes=include.get('show_includes', True),
                     )
                     if menus is not None:
-                        if colon_includes:
-                            # JMS Pro look: a related model's own fields insert as the colon form
-                            # ``{ Model: field }`` (round-trips through normalize_data_merge_key).
-                            # Only this include's direct leaf fields; nested includes stay dotted.
-                            identifier = ''.join(word.title() for word in include_field.split('_'))
-                            prefix = f'{code_prefix}{include_field}{next_code_prefix}'
-                            for item in menu:
-                                if 'code' in item and item['code'].startswith(prefix):
-                                    item['colon'] = f'{identifier}: {item["code"][len(prefix) :]}'
                         menus.append({'text': title, 'menu': menu})
 
-    # Characters allowed inside a JMS Pro single-brace ``{ }`` tag (mirrors the grammar in
-    # ``core.libraries.data_merge_parser.DataMergeParser``).
-    _PRO_TAG_RE = re.compile(r'\{ *([A-Za-z0-9_:&%\-+*/.; ()|=@!]+?) *\}')
-    # The alt ``{[ ]}`` form (Pro's second-pass tags).
-    _PRO_ALT_TAG_RE = re.compile(r'\{\[ *([A-Za-z0-9_:&%\-+*/.; ()|=@!]+?) *\]\}')
-    _PRO_OPERATOR_RE = re.compile(r'\||&amp;&amp;|&&|@[-+*/]@')
-    _PRO_PATH_RE = re.compile(r'^[A-Za-z0-9_.]+$')
-
-    @classmethod
-    def get_data_merge_variables(cls, html):
-        all_fields = set()
-
-        # Legacy Django ``{{ }}`` / ``{% if %}`` tags (resolved during the dual-parse window).
+    @staticmethod
+    def get_data_merge_variables(html):
         variables = re.findall(r'{{\s*([^*\s*}}]+)\s*}}', html)
+
+        all_fields = set()
         for variable in variables:
             if '|' in variable:
                 field = variable.split('|')[0]
@@ -113,6 +76,7 @@ class DataMergeUtils(ReportBuilderFieldUtils):
             all_fields.add(field)
 
         variables = re.findall(r'{%\s*(if|elif|with)\s([^%}]+)\s*%}', html)
+
         for variable in variables:
             for field in variable[1].split(' '):
                 if field != '' and (field == 'as' or field[0] in ['=', '<', '>']):
@@ -124,16 +88,6 @@ class DataMergeUtils(ReportBuilderFieldUtils):
                     "'",
                 ]:
                     all_fields.add(field)
-
-        # JMS Pro single-brace ``{ field }`` and alt ``{[ field ]}`` tags, including those nested
-        # inside ``{% %}`` / ``{[% %]}`` conditionals. Split off multi/fallback (``|``, ``&&``) and
-        # maths (``@x@``) operators, normalise the colon ``Model: field`` form to a dotted path,
-        # and keep only dotted field paths (literals are ignored for column fetching).
-        for content in cls._PRO_TAG_RE.findall(html) + cls._PRO_ALT_TAG_RE.findall(html):
-            for token in cls._PRO_OPERATOR_RE.split(content):
-                token = normalize_data_merge_key(token.strip().lstrip('!').strip())
-                if token and cls._PRO_PATH_RE.match(token):
-                    all_fields.add(token)
         return all_fields
 
     def get_data_merge_columns(self, base_model, report_builder_class, html, table):
