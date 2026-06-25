@@ -86,7 +86,7 @@ class DataMergeUtils(ReportBuilderFieldUtils):
                             prefix = f'{code_prefix}{include_field}{next_code_prefix}'
                             for item in menu:
                                 if 'code' in item and item['code'].startswith(prefix):
-                                    item['colon'] = f'{identifier}: {item["code"][len(prefix):]}'
+                                    item['colon'] = f'{identifier}: {item["code"][len(prefix) :]}'
                         menus.append({'text': title, 'menu': menu})
 
     # Characters allowed inside a JMS Pro single-brace ``{ }`` tag (mirrors the grammar in
