@@ -36,6 +36,7 @@ class DataMergeUtils(ReportBuilderFieldUtils):
         previous_base_model=None,
         table=None,
         show_includes=True,
+        colon_includes=False,
     ):
         for report_builder_field in report_builder_class.fields:
             django_field, col_type_override, columns, _ = self.get_field_details(
@@ -77,6 +78,15 @@ class DataMergeUtils(ReportBuilderFieldUtils):
                         show_includes=include.get('show_includes', True),
                     )
                     if menus is not None:
+                        if colon_includes:
+                            # JMS Pro look: a related model's own fields insert as the colon form
+                            # ``{ Model: field }`` (round-trips through normalize_data_merge_key).
+                            # Only this include's direct leaf fields; nested includes stay dotted.
+                            identifier = ''.join(word.title() for word in include_field.split('_'))
+                            prefix = f'{code_prefix}{include_field}{next_code_prefix}'
+                            for item in menu:
+                                if 'code' in item and item['code'].startswith(prefix):
+                                    item['colon'] = f'{identifier}: {item["code"][len(prefix):]}'
                         menus.append({'text': title, 'menu': menu})
 
     # Characters allowed inside a JMS Pro single-brace ``{ }`` tag (mirrors the grammar in

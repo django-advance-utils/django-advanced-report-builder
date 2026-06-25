@@ -103,6 +103,8 @@ function build_menu(editor, menu_data) {
                     editor.insertContent(menu.code);
                 } else if ('include' in menu && menu.include) {
                     editor.insertContent('[{ ' + menu.code + ' }]');
+                } else if ('colon' in menu && menu.colon) {
+                    editor.insertContent('{ ' + menu.colon + ' }');
                 } else {
                     editor.insertContent('{ ' + menu.code + ' }');
                 }
