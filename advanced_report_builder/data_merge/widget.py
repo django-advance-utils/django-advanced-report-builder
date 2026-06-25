@@ -1,4 +1,5 @@
 from django.forms.widgets import TextInput
+from django.urls import NoReverseMatch, reverse
 from django_modals.fields import FieldEx
 
 
@@ -27,4 +28,10 @@ class DataMergeWidget(TextInput):
 
         context['disabled'] = attrs is not None and attrs.get('disabled', False)
         context['height'] = self.height
+        # URL the editor's "save selection as include" button POSTs to. Optional so the widget
+        # still works when the host project hasn't wired the endpoint.
+        try:
+            context['save_include_url'] = reverse('settings_client:data_merge_include_save')
+        except NoReverseMatch:
+            context['save_include_url'] = None
         return context

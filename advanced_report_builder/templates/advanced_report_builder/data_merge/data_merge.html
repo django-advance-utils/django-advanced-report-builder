@@ -44,7 +44,13 @@ function setup_tiny_{{ widget.attrs.id }}() {
         convert_newlines_to_brs: true,
         cleanup: false,
         plugins: ['searchreplace', 'code'],
-        toolbar: 'bold italic | bullist numlist | standardparagraphbutton',
+        toolbar: 'bold italic | bullist numlist | ifgen{% if save_include_url %} saveinclude{% endif %} | standardparagraphbutton',
+        setup: function (editor) {
+            data_merge_add_if_button(editor);
+            {% if save_include_url %}
+            data_merge_add_save_include_button(editor, '{{ save_include_url }}');
+            {% endif %}
+        },
         init_instance_callback: function (editor) {
             django_modal.send_inputs({
                 ajax: 'get_{{ widget.name }}_data_merge_menu',
@@ -93,12 +99,10 @@ function build_menu(editor, menu_data) {
             menu.onclick = function () {
                 if ('raw' in menu && menu.raw) {
                     editor.insertContent(menu.code);
+                } else if ('include' in menu && menu.include) {
+                    editor.insertContent('[{ ' + menu.code + ' }]');
                 } else {
-                    editor.insertContent(
-                        '{% templatetag openvariable %} ' +
-                        menu.code +
-                        ' {% templatetag closevariable %}'
-                    );
+                    editor.insertContent('{ ' + menu.code + ' }');
                 }
             };
         }
@@ -133,6 +137,115 @@ ajax_helpers.command_functions.build_data_merge_menu_{{ widget.attrs.id }} = fun
         bg.append(button);
     });
 };
+
+/* ---------------------------------------
+   If-Statement Generator
+---------------------------------------- */
+
+function data_merge_build_if_statement(d) {
+    var tag = (d.tag || '').trim();
+    if (tag) {
+        if (tag.charAt(0) !== '{') {
+            tag = '{ ' + tag + ' }';
+        }
+    } else {
+        tag = '{  }';
+    }
+    var open = '', close = '';
+    if (d.bold) { open += '<strong>'; close = '</strong>' + close; }
+    if (d.italic) { open += '<em>'; close = '</em>' + close; }
+    if (d.underline) { open += '<span style="text-decoration: underline;">'; close = '</span>' + close; }
+    var pre = d.pre_text || '';
+    var post = d.post_text || '';
+    var notf = d.not_flag ? '?' : '';
+    var inner;
+    if (d.show_tag) {
+        inner = pre + ' ' + open + tag + notf + close + ' ' + post;
+    } else {
+        // The tag value is hidden, so styling it is meaningless.
+        inner = pre + ' !' + tag + notf + ' ' + post;
+    }
+    // Split the delimiters so Django's template lexer doesn't parse them as a block tag.
+    return '{' + '% ' + inner + ' %' + '}';
+}
+
+function data_merge_add_if_button(editor) {
+    editor.addButton('ifgen', {
+        text: 'If',
+        tooltip: 'Insert a conditional (if) statement',
+        onclick: function () {
+            var selection = editor.selection.getContent({ format: 'text' }) || '';
+            editor.windowManager.open({
+                title: 'If Statement Generator',
+                width: 480,
+                height: 340,
+                body: [
+                    { type: 'textbox', name: 'pre_text', label: 'Before text' },
+                    { type: 'textbox', name: 'tag', label: 'Tag', value: selection },
+                    { type: 'checkbox', name: 'show_tag', label: 'Show tag result', checked: true },
+                    { type: 'checkbox', name: 'not_flag', label: 'NOT (show only when the tag is empty)' },
+                    { type: 'checkbox', name: 'bold', label: 'Bold' },
+                    { type: 'checkbox', name: 'italic', label: 'Italic' },
+                    { type: 'checkbox', name: 'underline', label: 'Underline' },
+                    { type: 'textbox', name: 'post_text', label: 'After text' }
+                ],
+                onsubmit: function (e) {
+                    editor.insertContent(data_merge_build_if_statement(e.data));
+                }
+            });
+        }
+    });
+}
+
+/* ---------------------------------------
+   Save selection as a Data Merge Include
+---------------------------------------- */
+
+function data_merge_get_csrf() {
+    var m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+    return m ? m[1] : '';
+}
+
+function data_merge_add_save_include_button(editor, save_url) {
+    editor.addButton('saveinclude', {
+        text: 'Save include',
+        tooltip: 'Save the selected content as a reusable data merge include',
+        onclick: function () {
+            var selection = editor.selection.getContent() || '';
+            editor.windowManager.open({
+                title: 'Save as Data Merge Include',
+                width: 420,
+                height: 200,
+                body: [
+                    { type: 'textbox', name: 'name', label: 'Name' },
+                    { type: 'textbox', name: 'code', label: 'Code (a-z and _ only)' }
+                ],
+                onsubmit: function (e) {
+                    var body = 'name=' + encodeURIComponent(e.data.name) +
+                        '&code=' + encodeURIComponent(e.data.code) +
+                        '&dm_string=' + encodeURIComponent(selection);
+                    fetch(save_url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRFToken': data_merge_get_csrf()
+                        },
+                        body: body,
+                        credentials: 'same-origin'
+                    }).then(function (r) { return r.json(); }).then(function (d) {
+                        if (d.ok) {
+                            editor.insertContent('[{ ' + d.code + ' }]');
+                        } else {
+                            editor.windowManager.alert(d.error || 'Could not save include.');
+                        }
+                    }).catch(function () {
+                        editor.windowManager.alert('Could not save include.');
+                    });
+                }
+            });
+        }
+    });
+}
 
 /* ---------------------------------------
    Kick everything off

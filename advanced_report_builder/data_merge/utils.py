@@ -61,11 +61,18 @@ class DataMergeUtils(ReportBuilderFieldUtils):
                     if menus is not None:
                         menus.append({'text': title, 'menu': menu})
 
-    @staticmethod
-    def get_data_merge_variables(html):
-        variables = re.findall(r'{{\s*([^*\s*}}]+)\s*}}', html)
+    # Characters allowed inside a JMS Pro single-brace ``{ }`` tag (mirrors the grammar in
+    # ``core.libraries.data_merge_parser.DataMergeParser``).
+    _PRO_TAG_RE = re.compile(r'\{ *([A-Za-z0-9_:&%\-+*/.; ()|=@!]+?) *\}')
+    _PRO_OPERATOR_RE = re.compile(r'\||&amp;&amp;|&&|@[-+*/]@')
+    _PRO_PATH_RE = re.compile(r'^[A-Za-z0-9_.]+$')
 
+    @classmethod
+    def get_data_merge_variables(cls, html):
         all_fields = set()
+
+        # Legacy Django ``{{ }}`` / ``{% if %}`` tags (resolved during the dual-parse window).
+        variables = re.findall(r'{{\s*([^*\s*}}]+)\s*}}', html)
         for variable in variables:
             if '|' in variable:
                 field = variable.split('|')[0]
@@ -76,7 +83,6 @@ class DataMergeUtils(ReportBuilderFieldUtils):
             all_fields.add(field)
 
         variables = re.findall(r'{%\s*(if|elif|with)\s([^%}]+)\s*%}', html)
-
         for variable in variables:
             for field in variable[1].split(' '):
                 if field != '' and (field == 'as' or field[0] in ['=', '<', '>']):
@@ -88,6 +94,16 @@ class DataMergeUtils(ReportBuilderFieldUtils):
                     "'",
                 ]:
                     all_fields.add(field)
+
+        # JMS Pro single-brace ``{ field }`` tags, including those nested inside ``{% %}``
+        # conditionals. Split off multi/fallback (``|``, ``&&``) and maths (``@x@``) operators
+        # and keep only dotted field paths — anything else (colon-form, literals) is ignored
+        # for column fetching.
+        for content in cls._PRO_TAG_RE.findall(html):
+            for token in cls._PRO_OPERATOR_RE.split(content):
+                token = token.strip().lstrip('!').strip()
+                if token and cls._PRO_PATH_RE.match(token):
+                    all_fields.add(token)
         return all_fields
 
     def get_data_merge_columns(self, base_model, report_builder_class, html, table):
