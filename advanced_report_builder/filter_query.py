@@ -930,10 +930,10 @@ class FilterQueryMixin:
 
         if '__' in pivot_str:
             pivot_parts = pivot_str.split('__')
-            include_str = pivot_parts[0]
+            first_part = pivot_parts[0]
             new_pivot_str = '__'.join(pivot_parts[1:])
 
-            include = report_builder_class.includes.get(include_str)
+            include = report_builder_class.includes.get(first_part)
             if include is not None:
                 app_label, model, report_builder_fields_str = include['model'].split('.')
                 new_model = apps.get_model(app_label, model)
@@ -941,12 +941,18 @@ class FilterQueryMixin:
                     model=new_model, class_name=report_builder_fields_str
                 )
                 if new_model != previous_base_model:
+                    # Accumulate the full include path so nested (2+ level) pivots keep their
+                    # parent prefix. Previously only the deepest include was kept, producing an
+                    # id like 'project_salesman__formatted_name' instead of the full
+                    # 'project_wide_information__project_salesman__formatted_name', which then
+                    # failed to resolve as a column path.
+                    next_include_str = first_part if include_str == '' else '__'.join((include_str, first_part))
                     result = self._get_pivot_details(
                         base_model=new_model,
                         pivot_str=new_pivot_str,
                         report_builder_class=new_report_builder_class,
                         previous_base_model=base_model,
-                        include_str=include_str,
+                        include_str=next_include_str,
                     )
                     if result:
                         return result
