@@ -42,6 +42,7 @@ from advanced_report_builder.views.line_charts import (
 from advanced_report_builder.views.multi_value import (
     MultiValueCellCopyFromModal,
     MultiValueCellStyleModal,
+    MultiValueDynamicFilterModal,
     MultiValueHeldQueryModal,
     MultiValueModal,
     MultiValueReportCellModal,
@@ -163,6 +164,11 @@ urlpatterns = [
         'multi-value/column/modal/<str:slug>/', MultiValueReportColumnModal.as_view(), name='multi_value_column_modal'
     ),
     path('multi-value/query/modal/<str:slug>/', MultiValueHeldQueryModal.as_view(), name='multi_value_query_modal'),
+    path(
+        'multi-value/dynamic-filter/modal/<str:slug>/',
+        MultiValueDynamicFilterModal.as_view(),
+        name='multi_value_dynamic_filter_modal',
+    ),
     path(
         'multi-value/breakdown/modal/<str:slug>/',
         MultiValueShowBreakdownModal.as_view(),

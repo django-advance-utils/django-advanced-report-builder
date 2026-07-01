@@ -116,12 +116,52 @@ class MultiValueModal(ModelFormModal):
         'report_tags': Select2Multiple,
         'rows': SmallNumberInputWidget,
         'columns': SmallNumberInputWidget,
+        'dynamic_rows': RBToggle,
+        'dynamic_row_descending': RBToggle,
+        'dynamic_row_report_type': Select2,
+        'dynamic_row_period': Select2,
+        'dynamic_row_template_row': SmallNumberInputWidget,
+        'dynamic_row_limit': SmallNumberInputWidget,
     }
     ajax_commands = ['datatable', 'button']
 
-    form_fields = ['name', 'notes', 'report_tags', 'rows', 'columns']
+    # Fixed-grid fields, then the dynamic-row config as a group. When ``dynamic_rows`` is on, rows
+    # are generated one per populated period instead of the fixed grid. ``dynamic_row_base_query`` is
+    # a query-builder JSON, so it is edited via its own modal rather than inline.
+    form_fields = [
+        'name',
+        'notes',
+        'report_tags',
+        'rows',
+        'columns',
+        'dynamic_rows',
+        'dynamic_row_report_type',
+        'dynamic_row_date_field',
+        'dynamic_row_period',
+        'dynamic_row_template_row',
+        'dynamic_row_label_format',
+        'dynamic_row_limit',
+        'dynamic_row_descending',
+    ]
+
+    def _setup_dynamic_row_help(self, form):
+        help_texts = {
+            'dynamic_row_report_type': 'Model whose records define the periods (rows).',
+            'dynamic_row_date_field': 'Date field on that model to group into periods, e.g. customer_deadline_date.',
+            'dynamic_row_period': 'One row per this period that has data.',
+            'dynamic_row_template_row': (
+                'The grid row holding the column template; rows above it are static headers. In a template '
+                'cell use the token #dynamic_period - in a date filter it limits the cell to the row\'s '
+                'period, and in Static Text it prints the period-start date (the row label).'
+            ),
+            'dynamic_row_label_format': 'Python strftime for the period label, e.g. %d/%m/%Y.',
+        }
+        for field_name, text in help_texts.items():
+            if field_name in form.fields:
+                form.fields[field_name].help_text = text
 
     def form_setup(self, form, *_args, **_kwargs):
+        self._setup_dynamic_row_help(form)
         org_id = self.object.id if hasattr(self, 'object') else None
         if org_id is not None:
             cell_styles_menu_items = [
@@ -187,6 +227,16 @@ class MultiValueModal(ModelFormModal):
 
             return [
                 *self.form_fields,
+                crispy_modal_link_args(
+                    'advanced_report_builder:multi_value_dynamic_filter_modal',
+                    'Dynamic Rows Filter',
+                    'pk-',
+                    self.object.id,
+                    div=True,
+                    div_classes='form-buttons',
+                    button_classes='btn btn-primary',
+                    font_awesome='fas fa-filter',
+                ),
                 crispy_modal_link_args(
                     'advanced_report_builder:multi_value_cell_style_modal',
                     'Add Cell Style',
@@ -294,6 +344,46 @@ class MultiValueHeldQueryModal(QueryBuilderModalBase):
             FieldEx('query', template='advanced_report_builder/query_builder.html'),
         ]
         return fields
+
+    def form_valid(self, form):
+        form.save()
+        return self.command_response('reload')
+
+
+class MultiValueDynamicFilterForm(QueryBuilderModelForm):
+    """Query builder for a dynamic-row report's base filter (which records define the periods). The
+    selector field is named ``report_type`` so it drives the stock query-builder JS; on save it is
+    written to the report's ``dynamic_row_report_type``."""
+
+    cancel_class = 'btn-secondary modal-cancel'
+    report_type = ModelChoiceField(queryset=ReportType.objects.all(), required=False, widget=Select2)
+
+    class Meta:
+        model = MultiValueReport
+        fields = ['dynamic_row_base_query']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if getattr(self.instance, 'dynamic_row_report_type_id', None):
+            self.fields['report_type'].initial = self.instance.dynamic_row_report_type_id
+
+    def save(self, commit=True):
+        self.instance.dynamic_row_report_type = self.cleaned_data.get('report_type')
+        return super().save(commit=commit)
+
+
+class MultiValueDynamicFilterModal(QueryBuilderModalBase):
+    process = PROCESS_EDIT_DELETE
+    permission_delete = PERMISSION_OFF
+    model = MultiValueReport
+    form_class = MultiValueDynamicFilterForm
+    template_name = 'advanced_report_builder/multi_values/dynamic_filter_modal.html'
+
+    def form_setup(self, form, *_args, **_kwargs):
+        return [
+            'report_type',
+            FieldEx('dynamic_row_base_query', template='advanced_report_builder/query_builder.html'),
+        ]
 
     def form_valid(self, form):
         form.save()
