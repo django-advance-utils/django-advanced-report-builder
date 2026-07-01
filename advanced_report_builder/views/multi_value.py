@@ -108,6 +108,45 @@ def substitute_dynamic_period(query_data, start, end):
     return walk(deepcopy(query_data))
 
 
+def _query_has_dynamic_period(query_data):
+    """True if any rule in the query-builder data uses the #dynamic_period token."""
+    if not query_data:
+        return False
+
+    def walk(group):
+        for rule in group.get('rules', []):
+            if 'condition' in rule:
+                if walk(rule):
+                    return True
+            elif rule.get('value') == DYNAMIC_PERIOD_TOKEN:
+                return True
+        return False
+
+    return walk(query_data)
+
+
+def _period_rule(field, start, end):
+    """A query-builder AND group limiting ``field`` to [start, end)."""
+    return {
+        'condition': 'AND',
+        'valid': True,
+        'rules': [
+            {'id': field, 'field': field, 'type': 'date', 'operator': 'greater_or_equal',
+             'value': start.strftime('%Y-%m-%d')},
+            {'id': field, 'field': field, 'type': 'date', 'operator': 'less', 'value': end.strftime('%Y-%m-%d')},
+        ],
+    }
+
+
+def _and_period_filter(query_data, field, start, end):
+    """AND a ``field in [start, end)`` restriction onto ``query_data`` (which may be empty), keeping
+    any existing rules intact by nesting them alongside the period group under a top-level AND."""
+    period_group = _period_rule(field, start, end)
+    if not query_data or not query_data.get('rules'):
+        return period_group
+    return {'condition': 'AND', 'valid': True, 'rules': [deepcopy(query_data), period_group]}
+
+
 class MultiValueModal(ModelFormModal):
     size = 'xl'
     process = PROCESS_EDIT_DELETE
@@ -396,6 +435,7 @@ class MultiValueReportCellForm(QueryBuilderModelForm):
             'report_type',
             'field',
             'numerator',
+            'period_date_field',
             'prefix_type',
             'prefix',
             'decimal_places',
@@ -538,6 +578,14 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     'default': 'show',
                 },
                 {
+                    'selector': '#div_id_period_date_field',
+                    'values': {
+                        MultiValueReportCell.MultiValueType.STATIC_TEXT: 'hide',
+                        MultiValueReportCell.MultiValueType.EQUATION: 'hide',
+                    },
+                    'default': 'show',
+                },
+                {
                     'selector': '#div_id_show_breakdown',
                     'values': {
                         MultiValueReportCell.MultiValueType.STATIC_TEXT: 'hide',
@@ -602,6 +650,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
         if 'data' in _kwargs and len(_kwargs['data']) > 0:
             field = _kwargs['data'].get('field')
             numerator = _kwargs['data'].get('numerator')
+            period_date_field = _kwargs['data'].get('period_date_field')
             report_type_id = _kwargs['data'].get('report_type')
             if report_type_id != '':
                 report_type = get_object_or_404(ReportType, id=report_type_id)
@@ -611,6 +660,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
             field = form.instance.field
             report_type = form.instance.report_type
             numerator = form.instance.numerator
+            period_date_field = form.instance.period_date_field
 
         self.setup_field(
             field_type='number',
@@ -627,6 +677,19 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
             selected_field_id=numerator,
             report_type=report_type,
         )
+
+        self.setup_field(
+            field_type='date',
+            form=form,
+            field_name='period_date_field',
+            selected_field_id=period_date_field,
+            report_type=report_type,
+        )
+        form.fields['period_date_field'].help_text = (
+            "On a dynamic row, limits this cell to the row's period using this date field. Leave blank "
+            'to use the dynamic row\'s own date field when this cell has the same report type.'
+        )
+        form.fields['text'].help_text = 'On a dynamic row, use #dynamic_period to show the period date.'
 
         url = reverse(
             'advanced_report_builder:multi_value_field_modal',
@@ -657,6 +720,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
             'report_type',
             'field',
             'numerator',
+            'period_date_field',
             'prefix_type',
             'prefix',
             'decimal_places',
@@ -678,6 +742,11 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
             FieldEx('extra_query_data', template='advanced_report_builder/query_builder.html'),
         ]
         return fields
+
+    def select2_period_date_field(self, **kwargs):
+        return self.get_fields_for_select2(
+            field_type='date', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+        )
 
     def select2_multi_value_held_query(self, **kwargs):
         results = []
@@ -1186,11 +1255,7 @@ class MultiValueView(ValueBaseView):
                 for start, end in self._distinct_period_bounds(row_config):
                     table_data.append(
                         self._render_period_row(
-                            row_cells=row_cells,
-                            columns=columns,
-                            start=start,
-                            end=end,
-                            label_format=row_config.label_format,
+                            row_cells=row_cells, columns=columns, start=start, end=end, row_config=row_config
                         )
                     )
         return table_data
@@ -1212,14 +1277,14 @@ class MultiValueView(ValueBaseView):
                     data_row[column + col_offset] = {'value': None}
         return data_row
 
-    def _render_period_row(self, row_cells, columns, start, end, label_format):
+    def _render_period_row(self, row_cells, columns, start, end, row_config):
         data_row = [None for _ in range(columns)]
         for cell in row_cells:
             column = cell.column - 1
             if column >= columns or data_row[column] is not None:
                 continue
             cell_name = excel_column_name(cell.column, row=cell.row)
-            period_cell = self._period_cell(template_cell=cell, start=start, end=end, label_format=label_format)
+            period_cell = self._period_cell(template_cell=cell, start=start, end=end, row_config=row_config)
             if period_cell.multi_value_type == MultiValueReportCell.MultiValueType.EQUATION:
                 # Cross-row equations don't have a well-defined meaning in a dynamic grid yet.
                 value, append_str = period_cell.text or '', ''
@@ -1268,13 +1333,25 @@ class MultiValueView(ValueBaseView):
         month = month_index % 12 + 1
         return start.replace(year=year, month=month, day=1)
 
-    def _period_cell(self, template_cell, start, end, label_format):
-        """A per-period copy of a dynamic row's cell: the ``#dynamic_period`` token becomes the
-        period's date bounds in the query, and the formatted period-start date in static text."""
+    def _period_cell(self, template_cell, start, end, row_config):
+        """A per-period copy of a dynamic row's cell, limited to the period.
+
+        The cell is filtered to [start, end) automatically: on the date field the cell specifies
+        (``period_date_field``), else the row's own ``date_field`` when the cell shares the row's
+        report type. An explicit ``#dynamic_period`` token in the query still works and takes
+        precedence (for hand-built cells). Static Text ``#dynamic_period`` becomes the period label.
+        """
         cell = deepcopy(template_cell)
-        cell.query_data = substitute_dynamic_period(cell.query_data, start, end)
+        if _query_has_dynamic_period(cell.query_data):
+            cell.query_data = substitute_dynamic_period(cell.query_data, start, end)
+        else:
+            period_field = template_cell.period_date_field
+            if not period_field and template_cell.report_type_id == row_config.report_type_id:
+                period_field = row_config.date_field
+            if period_field:
+                cell.query_data = _and_period_filter(cell.query_data, period_field, start, end)
         if cell.text and DYNAMIC_PERIOD_TOKEN in cell.text:
-            cell.text = cell.text.replace(DYNAMIC_PERIOD_TOKEN, start.strftime(label_format))
+            cell.text = cell.text.replace(DYNAMIC_PERIOD_TOKEN, start.strftime(row_config.label_format))
         return cell
 
     def render_html(self, table_data):

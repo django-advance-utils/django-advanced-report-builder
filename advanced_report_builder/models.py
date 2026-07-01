@@ -782,6 +782,10 @@ class MultiValueReportCell(TimeStampedModel):
 
     field = models.CharField(max_length=200, blank=True, null=True)  # denominator
     numerator = models.CharField(max_length=200, blank=True, null=True)
+    # When this cell is on a dynamic row, limit it to that row's period using this date field. Leave
+    # blank to fall back to the dynamic row's own date field (works when the cell shares the row's
+    # report type); set it for a cell on a different model, e.g. project_batch__customer_deadline_date.
+    period_date_field = models.CharField(max_length=200, blank=True, null=True)
     prefix = models.CharField(max_length=64, blank=True, null=True)
     prefix_type = models.PositiveSmallIntegerField(choices=PREFIX_TYPE_CHOICES, default=PREFIX_TYPE_AUTOMATIC)
     decimal_places = models.IntegerField(default=0)
