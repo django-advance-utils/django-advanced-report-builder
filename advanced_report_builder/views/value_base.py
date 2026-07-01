@@ -1,4 +1,4 @@
-from django.db.models import AutoField, Count, ExpressionWrapper, FloatField, Sum
+from django.db.models import Count, ExpressionWrapper, FloatField, Sum
 from django.db.models.functions import Coalesce, NullIf
 
 from advanced_report_builder.column_types import NUMBER_FIELDS
@@ -41,12 +41,14 @@ class ValueBaseView(ChartBaseView):
         )
 
         has_annotation = col_type_override is not None and col_type_override.annotations
-        # An AutoField (primary key) is technically an IntegerField but is never meaningfully
-        # summable. Without this guard a Python-computed column whose underlying field is the pk
-        # (e.g. one that resolves to 'id') is mistaken for a number field, builds Sum('id'), and
-        # then crashes when its row_result looks for the (now absent) 'id' column. Reject it with a
-        # clean error unless the column supplies a real aggregation annotation.
-        is_summable_number = isinstance(django_field, NUMBER_FIELDS) and not isinstance(django_field, AutoField)
+        # A primary key is technically an integer field but is never meaningfully summable. Without
+        # this guard a Python-computed column whose underlying field is the pk (e.g. one that
+        # resolves to 'id') is mistaken for a number field, builds Sum('id'), and then crashes when
+        # its row_result looks for the (now absent) 'id' column. Guard on primary_key (not AutoField)
+        # so an explicit IntegerField(primary_key=True) is caught too. Reject unless the column
+        # supplies a real aggregation annotation.
+        is_primary_key = getattr(django_field, 'primary_key', False)
+        is_summable_number = isinstance(django_field, NUMBER_FIELDS) and not is_primary_key
         if is_summable_number or has_annotation:
             self.get_number_field(
                 annotations_type=aggregations_type,
