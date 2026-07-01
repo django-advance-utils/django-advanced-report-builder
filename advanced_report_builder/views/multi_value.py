@@ -131,8 +131,13 @@ def _period_rule(field, start, end):
         'condition': 'AND',
         'valid': True,
         'rules': [
-            {'id': field, 'field': field, 'type': 'date', 'operator': 'greater_or_equal',
-             'value': start.strftime('%Y-%m-%d')},
+            {
+                'id': field,
+                'field': field,
+                'type': 'date',
+                'operator': 'greater_or_equal',
+                'value': start.strftime('%Y-%m-%d'),
+            },
             {'id': field, 'field': field, 'type': 'date', 'operator': 'less', 'value': end.strftime('%Y-%m-%d')},
         ],
     }
@@ -687,7 +692,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
         )
         form.fields['period_date_field'].help_text = (
             "On a dynamic row, limits this cell to the row's period using this date field. Leave blank "
-            'to use the dynamic row\'s own date field when this cell has the same report type.'
+            "to use the dynamic row's own date field when this cell has the same report type."
         )
         form.fields['text'].help_text = 'On a dynamic row, use #dynamic_period to show the period date.'
 
