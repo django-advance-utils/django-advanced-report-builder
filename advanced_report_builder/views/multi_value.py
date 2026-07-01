@@ -89,8 +89,13 @@ def substitute_dynamic_period(query_data, start, end):
                     {
                         'condition': 'AND',
                         'rules': [
-                            {'id': field, 'field': field, 'type': 'date',
-                             'operator': 'greater_or_equal', 'value': start_value},
+                            {
+                                'id': field,
+                                'field': field,
+                                'type': 'date',
+                                'operator': 'greater_or_equal',
+                                'value': start_value,
+                            },
                             {'id': field, 'field': field, 'type': 'date', 'operator': 'less', 'value': end_value},
                         ],
                     }
@@ -1061,9 +1066,7 @@ class MultiValueView(ValueBaseView):
         template_row = report.dynamic_row_template_row
         columns = report.columns
         cells = (
-            MultiValueReportCell.objects.filter(
-                multi_value_report=report, row__lte=report.rows, column__lte=columns
-            )
+            MultiValueReportCell.objects.filter(multi_value_report=report, row__lte=report.rows, column__lte=columns)
             .select_related('multi_value_held_query')
             .order_by('row', 'column')
         )
