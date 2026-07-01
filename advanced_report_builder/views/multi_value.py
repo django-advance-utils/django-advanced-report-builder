@@ -335,6 +335,25 @@ class MultiValueReportRowModal(QueryBuilderModalBase):
         for field_name, text in self.helptext.items():
             if field_name in form.fields:
                 form.fields[field_name].help_text = text
+
+        # date_field is a Select2 of the report type's date fields (populated by report_type), rather
+        # than free text. On a report_type change the modal reposts with `data`; otherwise use the
+        # saved instance.
+        if 'data' in _kwargs and len(_kwargs['data']) > 0:
+            date_field = _kwargs['data'].get('date_field')
+            report_type_id = _kwargs['data'].get('report_type')
+            report_type = get_object_or_404(ReportType, id=report_type_id) if report_type_id else None
+        else:
+            date_field = form.instance.date_field
+            report_type = form.instance.report_type
+
+        self.setup_field(
+            field_type='date',
+            form=form,
+            field_name='date_field',
+            selected_field_id=date_field,
+            report_type=report_type,
+        )
         return [
             'report_type',
             'date_field',
@@ -344,6 +363,11 @@ class MultiValueReportRowModal(QueryBuilderModalBase):
             'limit',
             'descending',
         ]
+
+    def select2_date_field(self, **kwargs):
+        return self.get_fields_for_select2(
+            field_type='date', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+        )
 
     def form_valid(self, form):
         instance = form.save(commit=False)
