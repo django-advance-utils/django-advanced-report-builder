@@ -45,6 +45,7 @@ from advanced_report_builder.models import (
     MultiValueReport,
     MultiValueReportCell,
     MultiValueReportColumn,
+    MultiValueReportRow,
     ReportType,
 )
 from advanced_report_builder.record_nav import RecordNavPlugin
@@ -116,52 +117,12 @@ class MultiValueModal(ModelFormModal):
         'report_tags': Select2Multiple,
         'rows': SmallNumberInputWidget,
         'columns': SmallNumberInputWidget,
-        'dynamic_rows': RBToggle,
-        'dynamic_row_descending': RBToggle,
-        'dynamic_row_report_type': Select2,
-        'dynamic_row_period': Select2,
-        'dynamic_row_template_row': SmallNumberInputWidget,
-        'dynamic_row_limit': SmallNumberInputWidget,
     }
     ajax_commands = ['datatable', 'button']
 
-    # Fixed-grid fields, then the dynamic-row config as a group. When ``dynamic_rows`` is on, rows
-    # are generated one per populated period instead of the fixed grid. ``dynamic_row_base_query`` is
-    # a query-builder JSON, so it is edited via its own modal rather than inline.
-    form_fields = [
-        'name',
-        'notes',
-        'report_tags',
-        'rows',
-        'columns',
-        'dynamic_rows',
-        'dynamic_row_report_type',
-        'dynamic_row_date_field',
-        'dynamic_row_period',
-        'dynamic_row_template_row',
-        'dynamic_row_label_format',
-        'dynamic_row_limit',
-        'dynamic_row_descending',
-    ]
-
-    def _setup_dynamic_row_help(self, form):
-        help_texts = {
-            'dynamic_row_report_type': 'Model whose records define the periods (rows).',
-            'dynamic_row_date_field': 'Date field on that model to group into periods, e.g. customer_deadline_date.',
-            'dynamic_row_period': 'One row per this period that has data.',
-            'dynamic_row_template_row': (
-                'The grid row holding the column template; rows above it are static headers. In a template '
-                "cell use the token #dynamic_period - in a date filter it limits the cell to the row's "
-                'period, and in Static Text it prints the period-start date (the row label).'
-            ),
-            'dynamic_row_label_format': 'Python strftime for the period label, e.g. %d/%m/%Y.',
-        }
-        for field_name, text in help_texts.items():
-            if field_name in form.fields:
-                form.fields[field_name].help_text = text
+    form_fields = ['name', 'notes', 'report_tags', 'rows', 'columns']
 
     def form_setup(self, form, *_args, **_kwargs):
-        self._setup_dynamic_row_help(form)
         org_id = self.object.id if hasattr(self, 'object') else None
         if org_id is not None:
             cell_styles_menu_items = [
@@ -227,16 +188,6 @@ class MultiValueModal(ModelFormModal):
 
             return [
                 *self.form_fields,
-                crispy_modal_link_args(
-                    'advanced_report_builder:multi_value_dynamic_filter_modal',
-                    'Dynamic Rows Filter',
-                    'pk-',
-                    self.object.id,
-                    div=True,
-                    div_classes='form-buttons',
-                    button_classes='btn btn-primary',
-                    font_awesome='fas fa-filter',
-                ),
                 crispy_modal_link_args(
                     'advanced_report_builder:multi_value_cell_style_modal',
                     'Add Cell Style',
@@ -350,43 +301,57 @@ class MultiValueHeldQueryModal(QueryBuilderModalBase):
         return self.command_response('reload')
 
 
-class MultiValueDynamicFilterForm(QueryBuilderModelForm):
-    """Query builder for a dynamic-row report's base filter (which records define the periods). The
-    selector field is named ``report_type`` so it drives the stock query-builder JS; on save it is
-    written to the report's ``dynamic_row_report_type``."""
+class MultiValueReportRowForm(QueryBuilderModelForm):
+    """Config for a dynamic grid row (from the "Dynamic" button on the cells grid): which model /
+    date field / period define its generated rows, plus an optional base filter. ``report_type`` and
+    ``base_query`` are named to drive the stock query-builder JS."""
 
     cancel_class = 'btn-secondary modal-cancel'
-    report_type = ModelChoiceField(queryset=ReportType.objects.all(), required=False, widget=Select2)
 
     class Meta:
-        model = MultiValueReport
-        fields = ['dynamic_row_base_query']
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if getattr(self.instance, 'dynamic_row_report_type_id', None):
-            self.fields['report_type'].initial = self.instance.dynamic_row_report_type_id
-
-    def save(self, commit=True):
-        self.instance.dynamic_row_report_type = self.cleaned_data.get('report_type')
-        return super().save(commit=commit)
+        model = MultiValueReportRow
+        fields = ['report_type', 'date_field', 'period', 'base_query', 'label_format', 'limit', 'descending']
+        widgets = {
+            'report_type': Select2,
+            'period': Select2,
+            'limit': SmallNumberInputWidget,
+            'descending': RBToggle,
+        }
 
 
-class MultiValueDynamicFilterModal(QueryBuilderModalBase):
+class MultiValueReportRowModal(QueryBuilderModalBase):
     process = PROCESS_EDIT_DELETE
     permission_delete = PERMISSION_OFF
-    model = MultiValueReport
-    form_class = MultiValueDynamicFilterForm
-    template_name = 'advanced_report_builder/multi_values/dynamic_filter_modal.html'
+    model = MultiValueReportRow
+    form_class = MultiValueReportRowForm
+    template_name = 'advanced_report_builder/multi_values/row_modal.html'
+    helptext = {
+        'date_field': 'Date field on the report type to group into periods, e.g. customer_deadline_date.',
+        'period': 'One generated row per this period that has data.',
+        'label_format': 'Python strftime for the row label, e.g. %d/%m/%Y.',
+    }
 
     def form_setup(self, form, *_args, **_kwargs):
+        for field_name, text in self.helptext.items():
+            if field_name in form.fields:
+                form.fields[field_name].help_text = text
         return [
             'report_type',
-            FieldEx('dynamic_row_base_query', template='advanced_report_builder/query_builder.html'),
+            'date_field',
+            'period',
+            FieldEx('base_query', template='advanced_report_builder/query_builder.html'),
+            'label_format',
+            'limit',
+            'descending',
         ]
 
     def form_valid(self, form):
-        form.save()
+        instance = form.save(commit=False)
+        # Created via the cells grid button, which passes the report id + row number in the slug.
+        if not instance.multi_value_report_id:
+            instance.multi_value_report_id = self.slug['multi_value_report_id']
+            instance.row = int(self.slug['row'])
+        instance.save()
         return self.command_response('reload')
 
 
@@ -745,6 +710,7 @@ class MultiValueReportCellsModal(Modal):
 
     @staticmethod
     def render_html(table_data, multi_value_report):
+        dynamic_rows = {row.row: row for row in multi_value_report.multivaluereportrow_set.all()}
         html = '<table class="table table-bordered kanban_summary"><tr><td></td>'
         columns_data = {}
         for multi_value_report_column in multi_value_report.multivaluereportcolumn_set.all():
@@ -778,7 +744,27 @@ class MultiValueReportCellsModal(Modal):
                 )
         html += '</tr>'
         for row_index, row in enumerate(table_data, start=1):
-            html += f'<tr><td>{row_index}</td>'
+            dynamic_row = dynamic_rows.get(row_index)
+            if dynamic_row is not None:
+                row_link = show_modal(
+                    'advanced_report_builder:multi_value_row_modal', '', f'pk-{dynamic_row.id}', href=True
+                )
+                row_button = (
+                    f'<a href="{row_link}" class="btn btn-warning btn-sm mt-1" title="Dynamic row - edit">'
+                    f'<i class="fas fa-bolt"></i></a>'
+                )
+            else:
+                row_link = show_modal(
+                    'advanced_report_builder:multi_value_row_modal',
+                    '',
+                    f'multi_value_report_id-{multi_value_report.id}-row-{row_index}',
+                    href=True,
+                )
+                row_button = (
+                    f'<a href="{row_link}" class="btn btn-outline-secondary btn-sm mt-1" title="Make row dynamic">'
+                    f'<i class="fas fa-bolt"></i></a>'
+                )
+            html += f'<tr><td>{row_index}<br>{row_button}</td>'
             for cols_index, cell in enumerate(row, start=1):
                 if cell is None:
                     add_link = show_modal(
@@ -951,8 +937,9 @@ class MultiValueView(ValueBaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs) if hasattr(super(), 'get_context_data') else {}
 
-        if self.chart_report.dynamic_rows:
-            context['html'] = self.render_html(table_data=self._get_dynamic_table_data())
+        dynamic_rows = {row.row: row for row in self.chart_report.multivaluereportrow_set.all()}
+        if dynamic_rows:
+            context['html'] = self.render_html(table_data=self._get_dynamic_table_data(dynamic_rows))
             return context
 
         multi_value_report_cells = (
@@ -1147,99 +1134,102 @@ class MultiValueView(ValueBaseView):
             unresolved = next_unresolved
 
     # --- Dynamic rows -----------------------------------------------------------------------------
-    def _get_dynamic_table_data(self):
-        """Build the grid when ``dynamic_rows`` is on: static header rows (every row above the
-        template row) followed by one generated row per populated period. Each generated row is the
-        template row's cells with the current period substituted into their query/label via the
-        ``#dynamic_period`` token."""
+    def _get_dynamic_table_data(self, dynamic_rows):
+        """Build the grid when one or more rows are dynamic. Rows render top to bottom: a static row
+        renders once; a dynamic row (one with a MultiValueReportRow config, keyed by row number in
+        ``dynamic_rows``) is the template for one generated row per period that has data, with the
+        ``#dynamic_period`` token substituted into its cells' query (limiting them to the period) and
+        Static Text (the period-start label)."""
         report = self.chart_report
-        template_row = report.dynamic_row_template_row
         columns = report.columns
         cells = (
             MultiValueReportCell.objects.filter(multi_value_report=report, row__lte=report.rows, column__lte=columns)
             .select_related('multi_value_held_query')
             .order_by('row', 'column')
         )
-        header_cells = [c for c in cells if c.row < template_row]
-        template_cells = [c for c in cells if c.row == template_row]
+        cells_by_row = {}
+        for cell in cells:
+            cells_by_row.setdefault(cell.row, []).append(cell)
 
         exp = ExpressionBuilder()
-        header_row_count = max(template_row - 1, 0)
-        table_data = [[None for _ in range(columns)] for _ in range(header_row_count)]
-        for cell in header_cells:
-            row = cell.row - 1
+        table_data = []
+        for row_number in range(1, report.rows + 1):
+            row_cells = cells_by_row.get(row_number, [])
+            row_config = dynamic_rows.get(row_number)
+            if row_config is None:
+                table_data.append(self._render_static_row(row_cells=row_cells, columns=columns, exp=exp))
+            else:
+                for start, end in self._distinct_period_bounds(row_config):
+                    table_data.append(
+                        self._render_period_row(
+                            row_cells=row_cells, columns=columns, start=start, end=end,
+                            label_format=row_config.label_format,
+                        )
+                    )
+        return table_data
+
+    def _render_static_row(self, row_cells, columns, exp):
+        data_row = [None for _ in range(columns)]
+        for cell in row_cells:
             column = cell.column - 1
-            if table_data[row][column] is not None:
+            if column >= columns or data_row[column] is not None:
                 continue
             cell_name = excel_column_name(cell.column, row=cell.row)
             if cell.multi_value_type == MultiValueReportCell.MultiValueType.EQUATION:
                 value, append_str = cell.text or '', ''
             else:
                 value, append_str = self._evaluate_cell(multi_value_report_cell=cell, cell_name=cell_name, exp=exp)
-            table_data[row][column] = {'value': value, 'cell': cell, 'append_str': append_str}
-            if cell.row_span > 1 or cell.col_span > 1:
-                for row_offset in range(cell.row_span):
-                    for col_offset in range(cell.col_span):
-                        if row_offset == 0 and col_offset == 0:
-                            continue
-                        if row + row_offset < header_row_count and column + col_offset < columns:
-                            table_data[row + row_offset][column + col_offset] = {'value': None}
+            data_row[column] = {'value': value, 'cell': cell, 'append_str': append_str}
+            for col_offset in range(1, cell.col_span):
+                if column + col_offset < columns:
+                    data_row[column + col_offset] = {'value': None}
+        return data_row
 
-        for start, end in self._distinct_period_bounds():
-            data_row = [None for _ in range(columns)]
-            for template_cell in template_cells:
-                column = template_cell.column - 1
-                if data_row[column] is not None:
-                    continue
-                cell_name = excel_column_name(template_cell.column, row=template_cell.row)
-                period_cell = self._period_cell(template_cell=template_cell, start=start, end=end)
-                if period_cell.multi_value_type == MultiValueReportCell.MultiValueType.EQUATION:
-                    # Cross-row equations don't have a well-defined meaning in a dynamic grid yet.
-                    value, append_str = period_cell.text or '', ''
-                else:
-                    value, append_str = self._evaluate_cell(
-                        multi_value_report_cell=period_cell, cell_name=cell_name, exp=ExpressionBuilder()
-                    )
-                data_row[column] = {
-                    'value': value,
-                    'cell': period_cell,
-                    'append_str': append_str,
-                    'period': (start, end),
-                }
-                for col_offset in range(1, template_cell.col_span):
-                    if column + col_offset < columns:
-                        data_row[column + col_offset] = {'value': None}
-            table_data.append(data_row)
+    def _render_period_row(self, row_cells, columns, start, end, label_format):
+        data_row = [None for _ in range(columns)]
+        for cell in row_cells:
+            column = cell.column - 1
+            if column >= columns or data_row[column] is not None:
+                continue
+            cell_name = excel_column_name(cell.column, row=cell.row)
+            period_cell = self._period_cell(template_cell=cell, start=start, end=end, label_format=label_format)
+            if period_cell.multi_value_type == MultiValueReportCell.MultiValueType.EQUATION:
+                # Cross-row equations don't have a well-defined meaning in a dynamic grid yet.
+                value, append_str = period_cell.text or '', ''
+            else:
+                value, append_str = self._evaluate_cell(
+                    multi_value_report_cell=period_cell, cell_name=cell_name, exp=ExpressionBuilder()
+                )
+            data_row[column] = {'value': value, 'cell': period_cell, 'append_str': append_str, 'period': (start, end)}
+            for col_offset in range(1, cell.col_span):
+                if column + col_offset < columns:
+                    data_row[column + col_offset] = {'value': None}
+        return data_row
 
-        return table_data
-
-    def _distinct_period_bounds(self):
-        """The ordered list of (period_start, period_end) that actually contain data - the rows."""
-        report = self.chart_report
-        if not report.dynamic_row_report_type_id or not report.dynamic_row_date_field:
+    def _distinct_period_bounds(self, row_config):
+        """The ordered (period_start, period_end) list that actually contains data - one per row."""
+        if not row_config.report_type_id or not row_config.date_field:
             return []
-        model = report.dynamic_row_report_type.content_type.model_class()
-        trunc = ANNOTATION_VALUE_FUNCTIONS[report.dynamic_row_period]
+        model = row_config.report_type.content_type.model_class()
+        trunc = ANNOTATION_VALUE_FUNCTIONS[row_config.period]
         query = model.objects.all()
-        if report.dynamic_row_base_query:
-            query = self.process_query_filters(query=query, search_filter_data=report.dynamic_row_base_query)
+        if row_config.base_query:
+            query = self.process_query_filters(query=query, search_filter_data=row_config.base_query)
         starts = (
-            query.annotate(_dyn_period=trunc(report.dynamic_row_date_field))
-            .values_list('_dyn_period', flat=True)
-            .distinct()
+            query.annotate(_dyn_period=trunc(row_config.date_field)).values_list('_dyn_period', flat=True).distinct()
         )
-        starts = sorted({s for s in starts if s is not None}, reverse=report.dynamic_row_descending)
-        starts = starts[: report.dynamic_row_limit]
-        return [(start, self._period_end(start)) for start in starts]
+        starts = sorted({s for s in starts if s is not None}, reverse=row_config.descending)
+        starts = starts[: row_config.limit]
+        return [(start, self._period_end(start, row_config.period)) for start in starts]
 
-    def _period_end(self, start):
-        period = self.chart_report.dynamic_row_period
+    @staticmethod
+    def _period_end(start, period):
         if period == ANNOTATION_VALUE_DAY:
             return start + timedelta(days=1)
         if period == ANNOTATION_VALUE_MONTH:
-            return self._add_months(start, 1)
+            return MultiValueView._add_months(start, 1)
         if period == ANNOTATION_VALUE_QUARTER:
-            return self._add_months(start, 3)
+            return MultiValueView._add_months(start, 3)
         if period == ANNOTATION_VALUE_YEAR:
             return start.replace(year=start.year + 1, month=1, day=1)
         return start + timedelta(days=7)  # ANNOTATION_VALUE_WEEK (default)
@@ -1251,15 +1241,13 @@ class MultiValueView(ValueBaseView):
         month = month_index % 12 + 1
         return start.replace(year=year, month=month, day=1)
 
-    def _period_cell(self, template_cell, start, end):
-        """A per-period copy of a template cell: the ``#dynamic_period`` token is replaced by the
-        period's date bounds in the query, and by the formatted period date in static text."""
+    def _period_cell(self, template_cell, start, end, label_format):
+        """A per-period copy of a dynamic row's cell: the ``#dynamic_period`` token becomes the
+        period's date bounds in the query, and the formatted period-start date in static text."""
         cell = deepcopy(template_cell)
         cell.query_data = substitute_dynamic_period(cell.query_data, start, end)
         if cell.text and DYNAMIC_PERIOD_TOKEN in cell.text:
-            cell.text = cell.text.replace(
-                DYNAMIC_PERIOD_TOKEN, start.strftime(self.chart_report.dynamic_row_label_format)
-            )
+            cell.text = cell.text.replace(DYNAMIC_PERIOD_TOKEN, start.strftime(label_format))
         return cell
 
     def render_html(self, table_data):

@@ -653,27 +653,33 @@ class MultiValueReport(Report):
     columns = models.PositiveSmallIntegerField()
     default_multi_cell_style = models.ForeignKey('MultiCellStyle', on_delete=models.PROTECT, null=True, blank=True)
 
-    # --- Dynamic rows -------------------------------------------------------------------------
-    # When enabled the grid is no longer a fixed set of hand-placed rows. Instead one row is
-    # generated per distinct period (week/month) that actually has data, taken from
-    # ``dynamic_row_date_field`` on ``dynamic_row_report_type`` and scoped by
-    # ``dynamic_row_base_query``. The cells on ``dynamic_row_template_row`` act as the column
-    # template applied to every generated row; rows above it render as static headers. Cells carry
-    # the current period into their metric/label via the ``#dynamic_period`` token (see
-    # MultiValueView). Everything is gated on ``dynamic_rows`` so fixed-grid reports are unaffected.
-    dynamic_rows = models.BooleanField(default=False)
-    dynamic_row_report_type = models.ForeignKey(
-        ReportType, on_delete=models.PROTECT, null=True, blank=True, related_name='dynamic_multi_value_reports'
-    )
-    dynamic_row_date_field = models.CharField(max_length=200, blank=True, null=True)
-    dynamic_row_period = models.PositiveSmallIntegerField(
-        choices=ANNOTATION_VALUE_CHOICES, default=ANNOTATION_VALUE_WEEK
-    )
-    dynamic_row_base_query = models.JSONField(null=True, blank=True)
-    dynamic_row_template_row = models.PositiveSmallIntegerField(default=2)
-    dynamic_row_label_format = models.CharField(max_length=32, default='%d/%m/%Y')
-    dynamic_row_limit = models.PositiveSmallIntegerField(default=60)
-    dynamic_row_descending = models.BooleanField(default=False)
+
+class MultiValueReportRow(TimeStampedModel):
+    """Marks a grid row as dynamic: instead of rendering once, its cells are the template for one
+    generated row per distinct period (week/month/...) that has data. The presence of this record is
+    what makes ``row`` dynamic; deleting it makes the row static again. In a template cell the token
+    ``#dynamic_period`` becomes a date-range filter on that cell's field (limiting it to the row's
+    period) or, in Static Text, the formatted period-start date (the row label)."""
+
+    multi_value_report = models.ForeignKey(MultiValueReport, on_delete=models.CASCADE)
+    row = models.PositiveSmallIntegerField()
+    report_type = models.ForeignKey(ReportType, on_delete=models.PROTECT, null=True, blank=True)
+    date_field = models.CharField(max_length=200, blank=True, null=True)
+    period = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES, default=ANNOTATION_VALUE_WEEK)
+    base_query = models.JSONField(null=True, blank=True)
+    label_format = models.CharField(max_length=32, default='%d/%m/%Y')
+    limit = models.PositiveSmallIntegerField(default=60)
+    descending = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['multi_value_report', 'row'], name='multi_value_report_row_unique'),
+        ]
+
+    def get_base_model(self):
+        if self.report_type is None:
+            return None
+        return self.report_type.content_type.model_class()
 
 
 class MultiCellStyle(TimeStampedModel):

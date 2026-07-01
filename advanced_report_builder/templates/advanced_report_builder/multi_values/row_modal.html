@@ -5,7 +5,7 @@
     function save_modal_{{ form.form_id }}() {
 
     try {
-        id_dynamic_row_base_query.save_query_builder();
+        id_base_query.save_query_builder();
     } catch (error) {
     }
     django_modal.process_commands_lock([{'function': 'post_modal'}]);
