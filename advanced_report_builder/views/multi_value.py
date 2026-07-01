@@ -908,15 +908,20 @@ class MultiValueView(ValueBaseView):
                 elif multi_value_type == MultiValueReportCell.MultiValueType.EQUATION:
                     multi_value_report_equations.append((cell_name, multi_value_report_cell))
             except ReportError as e:
-                value = e.value
+                value = f'{cell_name}: {e.value}'
+            except Exception as e:  # noqa: BLE001 - contain a bad cell rather than 500-ing the whole grid
+                value = f'{cell_name}: {e}'
 
             if fields:
                 try:
                     value, raw_value = self.render_value(
                         base_model=base_model, fields=fields, multi_value_report_cell=multi_value_report_cell
                     )
-                except (AttributeError, TypeError) as e:
-                    value = e
+                # A cell that fails to render (e.g. a non-aggregatable field wrongly summed) must not
+                # take down the whole report - show the error in the cell, prefixed with its grid
+                # reference (e.g. "B2") so it is clear which cell failed.
+                except Exception as e:  # noqa: BLE001
+                    value = f'{cell_name}: {getattr(e, "value", e)}'
                     raw_value = None
                 if raw_value is not None:
                     with contextlib.suppress(ValueError):
