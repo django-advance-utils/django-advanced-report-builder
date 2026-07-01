@@ -1,5 +1,6 @@
 import contextlib
 import json
+import logging
 from copy import deepcopy
 
 from django.conf import settings
@@ -8,6 +9,7 @@ from django.forms import CharField, ChoiceField, ModelChoiceField
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django.utils.html import escape
 from django_datatables.columns import ColumnBase, MenuColumn
 from django_datatables.datatables import DatatableTable
 from django_datatables.helpers import DUMMY_ID
@@ -51,6 +53,8 @@ from advanced_report_builder.views.modals_base import QueryBuilderModalBase
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 from advanced_report_builder.views.value_base import ValueBaseView
 from advanced_report_builder.widgets import SmallNumberInputWidget
+
+logger = logging.getLogger(__name__)
 
 
 class MultiValueModal(ModelFormModal):
@@ -795,6 +799,15 @@ class MultiValueView(ValueBaseView):
             *self.duplicate_menu(request=request, report_id=chart_report_id),
         ]
 
+    @staticmethod
+    def _cell_error(cell_name, err):
+        """Contain a per-cell failure: log the full exception server-side and return a short,
+        HTML-escaped message for display. The cell value is later emitted into ``{{ html|safe }}``,
+        so the returned text MUST be escaped to avoid injecting an exception message into the page."""
+        message = getattr(err, 'value', err)
+        logger.warning('MultiValueReport cell %s failed to render: %s', cell_name, message, exc_info=err)
+        return escape(f'{cell_name}: {message}')
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs) if hasattr(super(), 'get_context_data') else {}
 
@@ -908,15 +921,20 @@ class MultiValueView(ValueBaseView):
                 elif multi_value_type == MultiValueReportCell.MultiValueType.EQUATION:
                     multi_value_report_equations.append((cell_name, multi_value_report_cell))
             except ReportError as e:
-                value = e.value
+                value = self._cell_error(cell_name, e)
+            except Exception as e:  # noqa: BLE001 - contain a bad cell rather than 500-ing the whole grid
+                value = self._cell_error(cell_name, e)
 
             if fields:
                 try:
                     value, raw_value = self.render_value(
                         base_model=base_model, fields=fields, multi_value_report_cell=multi_value_report_cell
                     )
-                except (AttributeError, TypeError) as e:
-                    value = e
+                # A cell that fails to render (e.g. a non-aggregatable field wrongly summed) must not
+                # take down the whole report - show the error in the cell, prefixed with its grid
+                # reference (e.g. "B2") so it is clear which cell failed.
+                except Exception as e:  # noqa: BLE001
+                    value = self._cell_error(cell_name, e)
                     raw_value = None
                 if raw_value is not None:
                     with contextlib.suppress(ValueError):

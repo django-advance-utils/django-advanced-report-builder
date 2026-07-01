@@ -40,7 +40,16 @@ class ValueBaseView(ChartBaseView):
             report_builder_class=report_builder_class,
         )
 
-        if isinstance(django_field, NUMBER_FIELDS) or col_type_override is not None and col_type_override.annotations:
+        has_annotation = col_type_override is not None and col_type_override.annotations
+        # A primary key is technically an integer field but is never meaningfully summable. Without
+        # this guard a Python-computed column whose underlying field is the pk (e.g. one that
+        # resolves to 'id') is mistaken for a number field, builds Sum('id'), and then crashes when
+        # its row_result looks for the (now absent) 'id' column. Guard on primary_key (not AutoField)
+        # so an explicit IntegerField(primary_key=True) is caught too. Reject unless the column
+        # supplies a real aggregation annotation.
+        is_primary_key = getattr(django_field, 'primary_key', False)
+        is_summable_number = isinstance(django_field, NUMBER_FIELDS) and not is_primary_key
+        if is_summable_number or has_annotation:
             self.get_number_field(
                 annotations_type=aggregations_type,
                 append_annotation_query=False,
