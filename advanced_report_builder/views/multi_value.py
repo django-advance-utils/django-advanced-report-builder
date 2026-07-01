@@ -1162,7 +1162,10 @@ class MultiValueView(ValueBaseView):
                 for start, end in self._distinct_period_bounds(row_config):
                     table_data.append(
                         self._render_period_row(
-                            row_cells=row_cells, columns=columns, start=start, end=end,
+                            row_cells=row_cells,
+                            columns=columns,
+                            start=start,
+                            end=end,
                             label_format=row_config.label_format,
                         )
                     )
