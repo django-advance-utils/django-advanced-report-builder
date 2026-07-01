@@ -151,7 +151,7 @@ class MultiValueModal(ModelFormModal):
             'dynamic_row_period': 'One row per this period that has data.',
             'dynamic_row_template_row': (
                 'The grid row holding the column template; rows above it are static headers. In a template '
-                'cell use the token #dynamic_period - in a date filter it limits the cell to the row\'s '
+                "cell use the token #dynamic_period - in a date filter it limits the cell to the row's "
                 'period, and in Static Text it prints the period-start date (the row label).'
             ),
             'dynamic_row_label_format': 'Python strftime for the period label, e.g. %d/%m/%Y.',
