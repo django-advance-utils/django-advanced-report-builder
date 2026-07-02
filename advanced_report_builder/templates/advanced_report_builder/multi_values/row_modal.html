@@ -12,9 +12,13 @@
             $(selector)[action]();
         });
     };
-    $(document).off('change.mvgroupfield').on('change.mvgroupfield', '#id_group_field', function () {
-        django_modal.send_inputs({'ajax': 'group_field_changed'});
-    });
+    // Use select2:select (which bubbles) as well as change: setting the report type recreates the
+    // group-field Select2, and its jQuery-triggered change does not reach a delegated change handler.
+    $(document).off('.mvgroupfield').on(
+        'change.mvgroupfield select2:select.mvgroupfield', '#id_group_field', function () {
+            django_modal.send_inputs({'ajax': 'group_field_changed'});
+        }
+    );
 
     function save_modal_{{ form.form_id }}() {
 
