@@ -676,7 +676,9 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
             "On a dynamic row, limits this cell to the row's period using this date field. Leave blank "
             "to use the dynamic row's own date field when this cell has the same report type."
         )
-        form.fields['text'].help_text = (
+        form.fields[
+            'text'
+        ].help_text = (
             'On a dynamic row, use {{ period }} to show the period date (and {{ period_end }} for its last day).'
         )
 
@@ -703,10 +705,10 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
             '<div id="div_id_period_insert" class="form-group row">'
             '<div class="col-3"></div><div class="col-9">'
             '<button type="button" class="btn btn-sm btn-outline-secondary mr-1" '
-            "onclick=\"mv_insert_period_token('period')\">"
+            'onclick="mv_insert_period_token(\'period\')">'
             'Insert {% verbatim %}{{ period }}{% endverbatim %}</button>'
             '<button type="button" class="btn btn-sm btn-outline-secondary" '
-            "onclick=\"mv_insert_period_token('period_end')\">"
+            'onclick="mv_insert_period_token(\'period_end\')">'
             'Insert {% verbatim %}{{ period_end }}{% endverbatim %}</button>'
             '</div></div>'
         )
