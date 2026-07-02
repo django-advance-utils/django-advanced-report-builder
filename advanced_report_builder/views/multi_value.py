@@ -1,6 +1,7 @@
 import contextlib
 import json
 import logging
+import re
 from copy import deepcopy
 from datetime import datetime, timedelta
 
@@ -63,66 +64,28 @@ from advanced_report_builder.widgets import SmallNumberInputWidget
 
 logger = logging.getLogger(__name__)
 
-# Token a dynamic-row template cell uses to reference "the current row's period". In a query rule
-# value it is expanded to a date-range filter on that rule's field; in static text it is replaced by
-# the formatted period-start date (the Week Commencing label).
-DYNAMIC_PERIOD_TOKEN = '#dynamic_period'
+# Data-merge variables available in a dynamic row's cell text, using ARB's ``{{ }}`` merge syntax:
+# ``{{ period }}`` -> the period-start (row label), ``{{ period_end }}`` -> the period's last day.
+_PERIOD_MERGE_RE = re.compile(r'{{\s*(period_end|period)\s*}}')
 
 
-def substitute_dynamic_period(query_data, start, end):
-    """Return a copy of ``query_data`` (query-builder rules) with every ``#dynamic_period`` rule
-    replaced by ``field >= start AND field < end`` on that rule's own field, so a cell filters to the
-    row's period. The field path lives on the rule, so cells on different models (e.g. Project Batch
-    vs Project Batch Item Summary) each carry the correct path. Nested rule groups are preserved."""
-    if not query_data:
-        return query_data
-    start_value = start.strftime('%Y-%m-%d')
-    end_value = end.strftime('%Y-%m-%d')
+def apply_period_merge(text, start, end, label_format):
+    """Resolve the ``{{ period }}`` / ``{{ period_end }}`` merge variables in a dynamic row's text.
 
-    def walk(group):
-        new_rules = []
-        for rule in group.get('rules', []):
-            if 'condition' in rule:
-                new_rules.append(walk(rule))
-            elif rule.get('value') == DYNAMIC_PERIOD_TOKEN:
-                field = rule['field']
-                new_rules.append(
-                    {
-                        'condition': 'AND',
-                        'rules': [
-                            {
-                                'id': field,
-                                'field': field,
-                                'type': 'date',
-                                'operator': 'greater_or_equal',
-                                'value': start_value,
-                            },
-                            {'id': field, 'field': field, 'type': 'date', 'operator': 'less', 'value': end_value},
-                        ],
-                    }
-                )
-            else:
-                new_rules.append(rule)
-        return {**group, 'rules': new_rules}
+    ``{{ period }}`` is the period start (the row label, e.g. Week Commencing); ``{{ period_end }}``
+    is the inclusive last day of the period. Both are formatted with the row's ``label_format``.
+    Other ``{{ ... }}`` fields are left untouched.
+    """
+    if not text:
+        return text
+    inclusive_end = end - timedelta(days=1)
 
-    return walk(deepcopy(query_data))
+    def _replace(match):
+        if match.group(1) == 'period_end':
+            return inclusive_end.strftime(label_format)
+        return start.strftime(label_format)
 
-
-def _query_has_dynamic_period(query_data):
-    """True if any rule in the query-builder data uses the #dynamic_period token."""
-    if not query_data:
-        return False
-
-    def walk(group):
-        for rule in group.get('rules', []):
-            if 'condition' in rule:
-                if walk(rule):
-                    return True
-            elif rule.get('value') == DYNAMIC_PERIOD_TOKEN:
-                return True
-        return False
-
-    return walk(query_data)
+    return _PERIOD_MERGE_RE.sub(_replace, text)
 
 
 def _period_rule(field, start, end):
@@ -694,7 +657,10 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
             "On a dynamic row, limits this cell to the row's period using this date field. Leave blank "
             "to use the dynamic row's own date field when this cell has the same report type."
         )
-        form.fields['text'].help_text = 'On a dynamic row, use #dynamic_period to show the period date.'
+        form.fields['text'].help_text = (
+            'On a dynamic row, use {{ period }} to show the period date (and {{ period_end }} for its '
+            'last day).'
+        )
 
         url = reverse(
             'advanced_report_builder:multi_value_field_modal',
@@ -1235,9 +1201,9 @@ class MultiValueView(ValueBaseView):
     def _get_dynamic_table_data(self, dynamic_rows):
         """Build the grid when one or more rows are dynamic. Rows render top to bottom: a static row
         renders once; a dynamic row (one with a MultiValueReportRow config, keyed by row number in
-        ``dynamic_rows``) is the template for one generated row per period that has data, with the
-        ``#dynamic_period`` token substituted into its cells' query (limiting them to the period) and
-        Static Text (the period-start label)."""
+        ``dynamic_rows``) is the template for one generated row per period that has data, each cell
+        limited to its period (via its period date field) and Static Text able to show the period via
+        the ``{{ period }}`` merge variable."""
         report = self.chart_report
         columns = report.columns
         cells = (
@@ -1341,22 +1307,18 @@ class MultiValueView(ValueBaseView):
     def _period_cell(self, template_cell, start, end, row_config):
         """A per-period copy of a dynamic row's cell, limited to the period.
 
-        The cell is filtered to [start, end) automatically: on the date field the cell specifies
+        The cell's metric is filtered to [start, end) on the date field it specifies
         (``period_date_field``), else the row's own ``date_field`` when the cell shares the row's
-        report type. An explicit ``#dynamic_period`` token in the query still works and takes
-        precedence (for hand-built cells). Static Text ``#dynamic_period`` becomes the period label.
+        report type. Static Text can reference the period via the ``{{ period }}`` /
+        ``{{ period_end }}`` merge variables (the row label).
         """
         cell = deepcopy(template_cell)
-        if _query_has_dynamic_period(cell.query_data):
-            cell.query_data = substitute_dynamic_period(cell.query_data, start, end)
-        else:
-            period_field = template_cell.period_date_field
-            if not period_field and template_cell.report_type_id == row_config.report_type_id:
-                period_field = row_config.date_field
-            if period_field:
-                cell.query_data = _and_period_filter(cell.query_data, period_field, start, end)
-        if cell.text and DYNAMIC_PERIOD_TOKEN in cell.text:
-            cell.text = cell.text.replace(DYNAMIC_PERIOD_TOKEN, start.strftime(row_config.label_format))
+        period_field = template_cell.period_date_field
+        if not period_field and template_cell.report_type_id == row_config.report_type_id:
+            period_field = row_config.date_field
+        if period_field:
+            cell.query_data = _and_period_filter(cell.query_data, period_field, start, end)
+        cell.text = apply_period_merge(cell.text, start, end, row_config.label_format)
         return cell
 
     def render_html(self, table_data):
@@ -1557,14 +1519,26 @@ class MultiValueShowBreakdownModal(TableUtilsMixin, Modal):
     def extra_filters(self, query):
         multi_value_report_cell = self.get_multi_value_report_cell()
         query_data = multi_value_report_cell.query_data
-        # Dynamic-row drill-down: the cell holds the #dynamic_period template, and the clicked row's
-        # period arrives in the slug - substitute it so the breakdown lists only that period.
+        # Dynamic-row drill-down: the clicked row's period arrives in the slug; limit the breakdown to
+        # it on the same date field the cell is filtered by (its period_date_field, else the row's).
         dyn_start = self.slug.get('dyn_start')
         dyn_end = self.slug.get('dyn_end')
-        if dyn_start and dyn_end and query_data:
-            query_data = substitute_dynamic_period(
-                query_data, datetime.strptime(dyn_start, '%Y%m%d'), datetime.strptime(dyn_end, '%Y%m%d')
-            )
+        if dyn_start and dyn_end:
+            period_field = multi_value_report_cell.period_date_field
+            if not period_field:
+                row_config = MultiValueReportRow.objects.filter(
+                    multi_value_report_id=multi_value_report_cell.multi_value_report_id,
+                    row=multi_value_report_cell.row,
+                ).first()
+                if row_config and row_config.report_type_id == multi_value_report_cell.report_type_id:
+                    period_field = row_config.date_field
+            if period_field:
+                query_data = _and_period_filter(
+                    query_data,
+                    period_field,
+                    datetime.strptime(dyn_start, '%Y%m%d'),
+                    datetime.strptime(dyn_end, '%Y%m%d'),
+                )
         extra_filter_data = None
         if multi_value_report_cell.multi_value_held_query is not None:
             extra_filter_data = multi_value_report_cell.multi_value_held_query.query

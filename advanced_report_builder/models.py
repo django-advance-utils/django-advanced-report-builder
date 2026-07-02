@@ -657,9 +657,10 @@ class MultiValueReport(Report):
 class MultiValueReportRow(TimeStampedModel):
     """Marks a grid row as dynamic: instead of rendering once, its cells are the template for one
     generated row per distinct period (week/month/...) that has data. The presence of this record is
-    what makes ``row`` dynamic; deleting it makes the row static again. In a template cell the token
-    ``#dynamic_period`` becomes a date-range filter on that cell's field (limiting it to the row's
-    period) or, in Static Text, the formatted period-start date (the row label)."""
+    what makes ``row`` dynamic; deleting it makes the row static again. Each cell is limited to the
+    row's period on its ``period_date_field`` (or this row's ``date_field`` when the cell shares this
+    report type); Static Text cells can show the period via the ``{{ period }}`` / ``{{ period_end }}``
+    merge variables (the row label)."""
 
     multi_value_report = models.ForeignKey(MultiValueReport, on_delete=models.CASCADE)
     row = models.PositiveSmallIntegerField()
