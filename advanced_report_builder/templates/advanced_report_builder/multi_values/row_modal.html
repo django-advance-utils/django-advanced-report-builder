@@ -2,6 +2,15 @@
 
 {% block javascript %}
 <script>
+    // The group_field trigger (show date-only options for a date field) is wired via an inline
+    // onchange attribute, which a Select2 (jQuery-triggered) change does not fire - so it only
+    // applied on load. Re-run the trigger on real change events via a delegated handler.
+    $(document).off('change.mvgroupfield').on('change.mvgroupfield', '#id_group_field', function () {
+        if (window.django_modal && django_modal.alter_form) {
+            django_modal.alter_form(this);
+        }
+    });
+
     function save_modal_{{ form.form_id }}() {
 
     try {
