@@ -2,13 +2,18 @@
 
 {% block javascript %}
 <script>
-    // The group_field trigger (show date-only options for a date field) is wired via an inline
-    // onchange attribute, which a Select2 (jQuery-triggered) change does not fire - so it only
-    // applied on load. Re-run the trigger on real change events via a delegated handler.
+    // Show the date-only options (Period / label format / show blank dates) iff the chosen group
+    // field is a date. Date-ness depends on the report type (which may be picked after the modal
+    // opened), so ask the server on change rather than a baked client-side field list. (A Select2
+    // fires change via jQuery, so a delegated handler is used - inline onchange wouldn't fire.)
+    ajax_helpers.command_functions.mv_period_visibility = function (command) {
+        var action = command.is_date ? 'show' : 'hide';
+        ['#div_id_period', '#div_id_label_format', '#div_id_show_blank_dates'].forEach(function (selector) {
+            $(selector)[action]();
+        });
+    };
     $(document).off('change.mvgroupfield').on('change.mvgroupfield', '#id_group_field', function () {
-        if (window.django_modal && django_modal.alter_form) {
-            django_modal.alter_form(this);
-        }
+        django_modal.send_inputs({'ajax': 'group_field_changed'});
     });
 
     function save_modal_{{ form.form_id }}() {

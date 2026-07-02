@@ -457,10 +457,32 @@ class MultiValueReportRowModal(QueryBuilderModalBase):
             return False
         return django_field is not None or col_type_override is not None
 
+    def _field_is_date(self, report_type, field):
+        """True if ``field`` resolves to a date/datetime field on ``report_type``'s model."""
+        model = report_type.content_type.model_class()
+        report_builder_class = get_report_builder_class(model=model, report_type=report_type)
+        try:
+            django_field, _, _, _ = self.get_field_details(
+                base_model=model, field=field, report_builder_class=report_builder_class
+            )
+        except Exception:  # noqa: BLE001
+            return False
+        return isinstance(django_field, DATE_FIELDS)
+
     def select2_group_field(self, **kwargs):
         return self.get_fields_for_select2(
             field_type='all', report_type=kwargs['report_type'], search_string=kwargs.get('search')
         )
+
+    def ajax_group_field_changed(self, **kwargs):
+        """Called when the group field changes: show the date-only options (period / label format /
+        show blank dates) iff the chosen field is a date on the current report type. Done server-side
+        because date-ness depends on the report type, which may be picked after the modal opened."""
+        report_type_id = kwargs.get('report_type')
+        group_field = kwargs.get('group_field')
+        report_type = ReportType.objects.filter(id=report_type_id).first() if report_type_id else None
+        is_date = bool(report_type and group_field and self._field_is_date(report_type, group_field))
+        return self.command_response('mv_period_visibility', is_date=is_date)
 
     def form_valid(self, form):
         instance = form.save(commit=False)
