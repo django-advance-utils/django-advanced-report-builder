@@ -14,6 +14,7 @@ from advanced_report_builder.globals import (
     ANNOTATION_CHART_SCALE,
     ANNOTATION_CHOICE_COUNT,
     ANNOTATION_VALUE_CHOICES,
+    ANNOTATION_VALUE_WEEK,
     ANNOTATIONS_CHOICES,
     CALENDAR_VIEW_TYPE_CHOICES,
     CALENDAR_VIEW_TYPE_DAY,
@@ -653,6 +654,39 @@ class MultiValueReport(Report):
     default_multi_cell_style = models.ForeignKey('MultiCellStyle', on_delete=models.PROTECT, null=True, blank=True)
 
 
+class MultiValueReportRow(TimeStampedModel):
+    """Marks a grid row as dynamic: instead of rendering once, its cells are the template for one
+    generated row per distinct value of ``group_field``. A date group field gives one row per period
+    (week/month/... per ``period``); any other field (user, type, ...) gives one row per distinct
+    value. The presence of this record is what makes ``row`` dynamic; deleting it makes the row
+    static again. Each cell is limited to the row's value on its own ``group_field`` (or this row's
+    when the cell shares this report type); Static Text cells can show it via the ``{{ value }}`` (and
+    for dates ``{{ period }}`` / ``{{ period_end }}``) merge variables (the row label)."""
+
+    multi_value_report = models.ForeignKey(MultiValueReport, on_delete=models.CASCADE)
+    row = models.PositiveSmallIntegerField()
+    report_type = models.ForeignKey(ReportType, on_delete=models.PROTECT, null=True, blank=True)
+    group_field = models.CharField(max_length=200, blank=True, null=True)
+    period = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES, default=ANNOTATION_VALUE_WEEK)
+    base_query = models.JSONField(null=True, blank=True)
+    label_format = models.CharField(max_length=32, default='%d/%m/%Y')
+    limit = models.PositiveSmallIntegerField(default=60)
+    descending = models.BooleanField(default=False)
+    # Show every period between the first and last that have data, including empty ones (blank rows),
+    # rather than only periods that contain records.
+    show_blank_dates = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['multi_value_report', 'row'], name='multi_value_report_row_unique'),
+        ]
+
+    def get_base_model(self):
+        if self.report_type is None:
+            return None
+        return self.report_type.content_type.model_class()
+
+
 class MultiCellStyle(TimeStampedModel):
     class AlignType(models.IntegerChoices):
         LEFT = 0, 'Left'
@@ -753,6 +787,10 @@ class MultiValueReportCell(TimeStampedModel):
 
     field = models.CharField(max_length=200, blank=True, null=True)  # denominator
     numerator = models.CharField(max_length=200, blank=True, null=True)
+    # When this cell is on a dynamic row, limit it to that row's value using this field. Leave blank
+    # to fall back to the dynamic row's own group field (works when the cell shares the row's report
+    # type); set it for a cell on a different model, e.g. project_batch__customer_deadline_date.
+    group_field = models.CharField(max_length=200, blank=True, null=True)
     prefix = models.CharField(max_length=64, blank=True, null=True)
     prefix_type = models.PositiveSmallIntegerField(choices=PREFIX_TYPE_CHOICES, default=PREFIX_TYPE_AUTOMATIC)
     decimal_places = models.IntegerField(default=0)

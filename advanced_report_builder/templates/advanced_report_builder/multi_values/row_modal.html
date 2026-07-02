@@ -1,0 +1,32 @@
+{% extends 'django_modals/modal_base.html' %}
+
+{% block javascript %}
+<script>
+    // Show the date-only options (Period / label format / show blank dates) iff the chosen group
+    // field is a date. Date-ness depends on the report type (which may be picked after the modal
+    // opened), so ask the server on change rather than a baked client-side field list. (A Select2
+    // fires change via jQuery, so a delegated handler is used - inline onchange wouldn't fire.)
+    ajax_helpers.command_functions.mv_period_visibility = function (command) {
+        var action = command.is_date ? 'show' : 'hide';
+        ['#div_id_period', '#div_id_label_format', '#div_id_show_blank_dates'].forEach(function (selector) {
+            $(selector)[action]();
+        });
+    };
+    // Use select2:select (which bubbles) as well as change: setting the report type recreates the
+    // group-field Select2, and its jQuery-triggered change does not reach a delegated change handler.
+    $(document).off('.mvgroupfield').on(
+        'change.mvgroupfield select2:select.mvgroupfield', '#id_group_field', function () {
+            django_modal.send_inputs({'ajax': 'group_field_changed'});
+        }
+    );
+
+    function save_modal_{{ form.form_id }}() {
+
+    try {
+        id_base_query.save_query_builder();
+    } catch (error) {
+    }
+    django_modal.process_commands_lock([{'function': 'post_modal'}]);
+}
+</script>
+{% endblock %}
