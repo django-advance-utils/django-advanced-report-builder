@@ -5,6 +5,7 @@ import re
 from copy import deepcopy
 from datetime import datetime, timedelta
 
+from crispy_forms.layout import HTML
 from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist, FieldError
 from django.forms import CharField, ChoiceField, ModelChoiceField
@@ -460,12 +461,30 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
 
         form.fields['extra_query_data'].label = 'Numerator'
 
+        # When this cell is on a dynamic (repeat) row, offer buttons to insert the period merge
+        # variables into the Static Text field, so the {{ }} syntax needn't be typed.
+        report_id = self.object.multi_value_report_id or self.slug.get('multi_value_report_id')
+        row_number = self.object.row or self.slug.get('row')
+        self.is_dynamic_row = bool(
+            report_id
+            and row_number
+            and MultiValueReportRow.objects.filter(multi_value_report_id=report_id, row=row_number).exists()
+        )
+
         form.add_trigger(
             'multi_value_type',
             'onchange',
             [
                 {
                     'selector': '#div_id_text',
+                    'values': {
+                        MultiValueReportCell.MultiValueType.STATIC_TEXT: 'show',
+                        MultiValueReportCell.MultiValueType.EQUATION: 'show',
+                    },
+                    'default': 'hide',
+                },
+                {
+                    'selector': '#div_id_period_insert',
                     'values': {
                         MultiValueReportCell.MultiValueType.STATIC_TEXT: 'show',
                         MultiValueReportCell.MultiValueType.EQUATION: 'show',
@@ -678,9 +697,24 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
             ]
             form.fields['multi_value_held_query'].widget.select_data = selected_data
 
+        # crispy HTML() renders its content as a Django template, so wrap the literal {{ }} tokens
+        # shown on the buttons in {% verbatim %} so they aren't evaluated.
+        period_insert = HTML(
+            '<div id="div_id_period_insert" class="form-group row">'
+            '<div class="col-3"></div><div class="col-9">'
+            '<button type="button" class="btn btn-sm btn-outline-secondary mr-1" '
+            "onclick=\"mv_insert_period_token('period')\">"
+            'Insert {% verbatim %}{{ period }}{% endverbatim %}</button>'
+            '<button type="button" class="btn btn-sm btn-outline-secondary" '
+            "onclick=\"mv_insert_period_token('period_end')\">"
+            'Insert {% verbatim %}{{ period_end }}{% endverbatim %}</button>'
+            '</div></div>'
+        )
+
         fields = [
             'multi_value_type',
             'text',
+            *([period_insert] if self.is_dynamic_row else []),
             'label',
             'multi_cell_style',
             'row',
