@@ -656,16 +656,17 @@ class MultiValueReport(Report):
 
 class MultiValueReportRow(TimeStampedModel):
     """Marks a grid row as dynamic: instead of rendering once, its cells are the template for one
-    generated row per distinct period (week/month/...) that has data. The presence of this record is
-    what makes ``row`` dynamic; deleting it makes the row static again. Each cell is limited to the
-    row's period on its ``period_date_field`` (or this row's ``date_field`` when the cell shares this
-    report type); Static Text cells can show the period via the ``{{ period }}`` / ``{{ period_end }}``
-    merge variables (the row label)."""
+    generated row per distinct value of ``group_field``. A date group field gives one row per period
+    (week/month/... per ``period``); any other field (user, type, ...) gives one row per distinct
+    value. The presence of this record is what makes ``row`` dynamic; deleting it makes the row
+    static again. Each cell is limited to the row's value on its own ``group_field`` (or this row's
+    when the cell shares this report type); Static Text cells can show it via the ``{{ value }}`` (and
+    for dates ``{{ period }}`` / ``{{ period_end }}``) merge variables (the row label)."""
 
     multi_value_report = models.ForeignKey(MultiValueReport, on_delete=models.CASCADE)
     row = models.PositiveSmallIntegerField()
     report_type = models.ForeignKey(ReportType, on_delete=models.PROTECT, null=True, blank=True)
-    date_field = models.CharField(max_length=200, blank=True, null=True)
+    group_field = models.CharField(max_length=200, blank=True, null=True)
     period = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES, default=ANNOTATION_VALUE_WEEK)
     base_query = models.JSONField(null=True, blank=True)
     label_format = models.CharField(max_length=32, default='%d/%m/%Y')
@@ -786,10 +787,10 @@ class MultiValueReportCell(TimeStampedModel):
 
     field = models.CharField(max_length=200, blank=True, null=True)  # denominator
     numerator = models.CharField(max_length=200, blank=True, null=True)
-    # When this cell is on a dynamic row, limit it to that row's period using this date field. Leave
-    # blank to fall back to the dynamic row's own date field (works when the cell shares the row's
-    # report type); set it for a cell on a different model, e.g. project_batch__customer_deadline_date.
-    period_date_field = models.CharField(max_length=200, blank=True, null=True)
+    # When this cell is on a dynamic row, limit it to that row's value using this field. Leave blank
+    # to fall back to the dynamic row's own group field (works when the cell shares the row's report
+    # type); set it for a cell on a different model, e.g. project_batch__customer_deadline_date.
+    group_field = models.CharField(max_length=200, blank=True, null=True)
     prefix = models.CharField(max_length=64, blank=True, null=True)
     prefix_type = models.PositiveSmallIntegerField(choices=PREFIX_TYPE_CHOICES, default=PREFIX_TYPE_AUTOMATIC)
     decimal_places = models.IntegerField(default=0)
