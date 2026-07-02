@@ -318,12 +318,22 @@ class MultiValueReportRowForm(QueryBuilderModelForm):
 
     class Meta:
         model = MultiValueReportRow
-        fields = ['report_type', 'date_field', 'period', 'base_query', 'label_format', 'limit', 'descending']
+        fields = [
+            'report_type',
+            'date_field',
+            'period',
+            'base_query',
+            'label_format',
+            'limit',
+            'descending',
+            'show_blank_dates',
+        ]
         widgets = {
             'report_type': Select2,
             'period': Select2,
             'limit': SmallNumberInputWidget,
             'descending': RBToggle,
+            'show_blank_dates': RBToggle,
         }
 
 
@@ -337,6 +347,7 @@ class MultiValueReportRowModal(QueryBuilderModalBase):
         'date_field': 'Date field on the report type to group into periods, e.g. customer_deadline_date.',
         'period': 'One generated row per this period that has data.',
         'label_format': 'Python strftime for the row label, e.g. %d/%m/%Y.',
+        'show_blank_dates': 'Also show periods with no data (blank rows) between the first and last.',
     }
 
     def form_setup(self, form, *_args, **_kwargs):
@@ -370,6 +381,7 @@ class MultiValueReportRowModal(QueryBuilderModalBase):
             'label_format',
             'limit',
             'descending',
+            'show_blank_dates',
         ]
 
     def select2_date_field(self, **kwargs):
@@ -1305,7 +1317,10 @@ class MultiValueView(ValueBaseView):
         return data_row
 
     def _distinct_period_bounds(self, row_config):
-        """The ordered (period_start, period_end) list that actually contains data - one per row."""
+        """The ordered (period_start, period_end) list, one per generated row.
+
+        By default only periods that actually contain data. With ``show_blank_dates`` on, every
+        period from the first to the last is included (empty ones become blank rows)."""
         if not row_config.report_type_id or not row_config.date_field:
             return []
         model = row_config.report_type.content_type.model_class()
@@ -1313,11 +1328,25 @@ class MultiValueView(ValueBaseView):
         query = model.objects.all()
         if row_config.base_query:
             query = self.process_query_filters(query=query, search_filter_data=row_config.base_query)
-        starts = (
-            query.annotate(_dyn_period=trunc(row_config.date_field)).values_list('_dyn_period', flat=True).distinct()
-        )
-        starts = sorted({s for s in starts if s is not None}, reverse=row_config.descending)
-        starts = starts[: row_config.limit]
+        period_starts = {
+            start
+            for start in query.annotate(_dyn_period=trunc(row_config.date_field))
+            .values_list('_dyn_period', flat=True)
+            .distinct()
+            if start is not None
+        }
+        if not period_starts:
+            return []
+        if row_config.show_blank_dates:
+            # Fill every period between the first and last, so empty periods render as blank rows.
+            starts = []
+            current, last = min(period_starts), max(period_starts)
+            while current <= last and len(starts) < row_config.limit:
+                starts.append(current)
+                current = self._period_end(current, row_config.period)
+        else:
+            starts = period_starts
+        starts = sorted(starts, reverse=row_config.descending)[: row_config.limit]
         return [(start, self._period_end(start, row_config.period)) for start in starts]
 
     @staticmethod

@@ -671,6 +671,9 @@ class MultiValueReportRow(TimeStampedModel):
     label_format = models.CharField(max_length=32, default='%d/%m/%Y')
     limit = models.PositiveSmallIntegerField(default=60)
     descending = models.BooleanField(default=False)
+    # Show every period between the first and last that have data, including empty ones (blank rows),
+    # rather than only periods that contain records.
+    show_blank_dates = models.BooleanField(default=False)
 
     class Meta:
         constraints = [
