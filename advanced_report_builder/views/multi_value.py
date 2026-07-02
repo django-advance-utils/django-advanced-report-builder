@@ -1294,9 +1294,7 @@ class MultiValueView(ValueBaseView):
             else:
                 for spec in self._distinct_row_specs(row_config):
                     table_data.append(
-                        self._render_dynamic_row(
-                            row_cells=row_cells, columns=columns, spec=spec, row_config=row_config
-                        )
+                        self._render_dynamic_row(row_cells=row_cells, columns=columns, spec=spec, row_config=row_config)
                     )
         return table_data
 
@@ -1360,9 +1358,7 @@ class MultiValueView(ValueBaseView):
 
         if not self._group_field_is_date(row_config):
             values = {
-                value
-                for value in query.values_list(row_config.group_field, flat=True).distinct()
-                if value is not None
+                value for value in query.values_list(row_config.group_field, flat=True).distinct() if value is not None
             }
             values = sorted(values, reverse=row_config.descending)[: row_config.limit]
             return [{'period': None, 'value': value} for value in values]
