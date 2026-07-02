@@ -394,6 +394,31 @@ class MultiValueReportRowModal(QueryBuilderModalBase):
             report_type=report_type,
         )
 
+        # The period / label format / blank-dates options only apply to a DATE group field, so show
+        # them only when the chosen group field is one of the report type's date fields (and hide them
+        # for user/type/etc. value grouping). Driven by the set of date-field paths.
+        date_field_ids = []
+        if report_type:
+            date_fields = []
+            model = report_type.content_type.model_class()
+            self._get_date_fields(
+                base_model=model,
+                fields=date_fields,
+                report_builder_class=get_report_builder_class(model=model, report_type=report_type),
+                search_string=None,
+            )
+            date_field_ids = [date_field['id'] for date_field in date_fields]
+        show_for_dates = {date_field_id: 'show' for date_field_id in date_field_ids}
+        form.add_trigger(
+            'group_field',
+            'onchange',
+            [
+                {'selector': '#div_id_period', 'values': show_for_dates, 'default': 'hide'},
+                {'selector': '#div_id_label_format', 'values': show_for_dates, 'default': 'hide'},
+                {'selector': '#div_id_show_blank_dates', 'values': show_for_dates, 'default': 'hide'},
+            ],
+        )
+
         # Flag a stale group field (one that no longer resolves, e.g. a renamed/removed field) in red
         # so it is obvious it must be reselected - and keep the old value visible in the dropdown.
         stale_warning = []
