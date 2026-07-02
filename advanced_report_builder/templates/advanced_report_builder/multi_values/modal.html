@@ -2,6 +2,22 @@
 
 {% block javascript %}
 <script>
+    // Insert a period merge variable (double-brace syntax) into the Static Text field (dynamic rows).
+    function mv_insert_period_token(name) {
+        // Build "{{ name }}" without adjacent braces in the template source (Django would parse them).
+        var token = '{' + '{ ' + name + ' }' + '}';
+        var el = document.getElementById('id_text');
+        if (!el) { return; }
+        var start = el.selectionStart, end = el.selectionEnd;
+        if (start === undefined || start === null) {
+            el.value += token;
+        } else {
+            el.value = el.value.slice(0, start) + token + el.value.slice(end);
+            el.selectionStart = el.selectionEnd = start + token.length;
+        }
+        el.focus();
+    }
+
     function save_modal_{{ form.form_id }}() {
 
     try {

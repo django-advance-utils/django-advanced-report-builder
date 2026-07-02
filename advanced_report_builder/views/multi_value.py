@@ -1,8 +1,11 @@
 import contextlib
 import json
 import logging
+import re
 from copy import deepcopy
+from datetime import datetime, timedelta
 
+from crispy_forms.layout import HTML
 from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist, FieldError
 from django.forms import CharField, ChoiceField, ModelChoiceField
@@ -26,11 +29,17 @@ from django_modals.widgets.widgets import Toggle
 from expression_builder.exceptions import ExpressionVariableError
 from expression_builder.expression_builder import ExpressionBuilder
 
+from advanced_report_builder.column_types import DATE_FIELDS
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.globals import (
     ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT,
     ANNOTATION_CHOICE_SUM,
+    ANNOTATION_VALUE_DAY,
+    ANNOTATION_VALUE_FUNCTIONS,
+    ANNOTATION_VALUE_MONTH,
+    ANNOTATION_VALUE_QUARTER,
+    ANNOTATION_VALUE_YEAR,
     PREFIX_TYPE_CUSTOM,
 )
 from advanced_report_builder.models import (
@@ -39,6 +48,7 @@ from advanced_report_builder.models import (
     MultiValueReport,
     MultiValueReportCell,
     MultiValueReportColumn,
+    MultiValueReportRow,
     ReportType,
 )
 from advanced_report_builder.record_nav import RecordNavPlugin
@@ -55,6 +65,72 @@ from advanced_report_builder.views.value_base import ValueBaseView
 from advanced_report_builder.widgets import SmallNumberInputWidget
 
 logger = logging.getLogger(__name__)
+
+# Data-merge variables available in a dynamic row's cell text, using ARB's ``{{ }}`` merge syntax:
+# ``{{ value }}`` -> the row's group value (universal); for a date group field also ``{{ period }}``
+# (period start / row label) and ``{{ period_end }}`` (the period's last day).
+_PERIOD_MERGE_RE = re.compile(r'{{\s*(period_end|period|value)\s*}}')
+
+
+def apply_dynamic_merge(text, spec, label_format):
+    """Resolve the ``{{ value }}`` / ``{{ period }}`` / ``{{ period_end }}`` merge variables in a
+    dynamic row's text. ``spec`` is one row descriptor from ``_distinct_row_specs``: a period spec
+    (``spec['period'] == (start, end)``) or a value spec (``spec['value']``). Dates are formatted with
+    the row's ``label_format``. Other ``{{ ... }}`` fields are left untouched.
+    """
+    if not text:
+        return text
+    if spec['period'] is not None:
+        start, end = spec['period']
+        value = period = start.strftime(label_format)
+        period_end = (end - timedelta(days=1)).strftime(label_format)
+    else:
+        value = period = period_end = '' if spec['value'] is None else str(spec['value'])
+
+    replacements = {'value': value, 'period': period, 'period_end': period_end}
+    return _PERIOD_MERGE_RE.sub(lambda match: replacements[match.group(1)], text)
+
+
+def _period_rule(field, start, end):
+    """A query-builder AND group limiting ``field`` to [start, end)."""
+    return {
+        'condition': 'AND',
+        'valid': True,
+        'rules': [
+            {
+                'id': field,
+                'field': field,
+                'type': 'date',
+                'operator': 'greater_or_equal',
+                'value': start.strftime('%Y-%m-%d'),
+            },
+            {'id': field, 'field': field, 'type': 'date', 'operator': 'less', 'value': end.strftime('%Y-%m-%d')},
+        ],
+    }
+
+
+def _and_period_filter(query_data, field, start, end):
+    """AND a ``field in [start, end)`` restriction onto ``query_data`` (which may be empty), keeping
+    any existing rules intact by nesting them alongside the period group under a top-level AND."""
+    return _and_rules(query_data, _period_rule(field, start, end))
+
+
+def _and_value_filter(query_data, field, value):
+    """AND a ``field == value`` restriction onto ``query_data`` (used for value-grouped rows)."""
+    rule = {
+        'condition': 'AND',
+        'valid': True,
+        'rules': [{'id': field, 'field': field, 'type': 'string', 'operator': 'equal', 'value': value}],
+    }
+    return _and_rules(query_data, rule)
+
+
+def _and_rules(query_data, extra_group):
+    """AND ``extra_group`` onto ``query_data`` (which may be empty), nesting any existing rules
+    alongside it under a top-level AND so their own condition is preserved."""
+    if not query_data or not query_data.get('rules'):
+        return extra_group
+    return {'condition': 'AND', 'valid': True, 'rules': [deepcopy(query_data), extra_group]}
 
 
 class MultiValueModal(ModelFormModal):
@@ -250,6 +326,152 @@ class MultiValueHeldQueryModal(QueryBuilderModalBase):
         return self.command_response('reload')
 
 
+class MultiValueReportRowForm(QueryBuilderModelForm):
+    """Config for a dynamic grid row (from the "Dynamic" button on the cells grid): the field to
+    group rows by (a date -> one row per period; any other field -> one row per distinct value),
+    plus an optional base filter. ``report_type`` and ``base_query`` are named to drive the stock
+    query-builder JS."""
+
+    cancel_class = 'btn-secondary modal-cancel'
+
+    class Meta:
+        model = MultiValueReportRow
+        fields = [
+            'report_type',
+            'group_field',
+            'period',
+            'base_query',
+            'label_format',
+            'limit',
+            'descending',
+            'show_blank_dates',
+        ]
+        widgets = {
+            'report_type': Select2,
+            'period': Select2,
+            'limit': SmallNumberInputWidget,
+            'descending': RBToggle,
+            'show_blank_dates': RBToggle,
+        }
+
+
+class MultiValueReportRowModal(QueryBuilderModalBase):
+    process = PROCESS_EDIT_DELETE
+    permission_delete = PERMISSION_OFF
+    model = MultiValueReportRow
+    form_class = MultiValueReportRowForm
+    template_name = 'advanced_report_builder/multi_values/row_modal.html'
+    helptext = {
+        'group_field': (
+            'Field to group the rows by. A date field gives one row per period (set Period); any '
+            'other field (user, type, ...) gives one row per distinct value.'
+        ),
+        'period': 'Row per this period - only used when Group field is a date.',
+        'label_format': 'Python strftime for date labels, e.g. %d/%m/%Y (dates only).',
+        'show_blank_dates': 'Date grouping only: also show periods with no data (blank rows).',
+    }
+
+    def form_setup(self, form, *_args, **_kwargs):
+        for field_name, text in self.helptext.items():
+            if field_name in form.fields:
+                form.fields[field_name].help_text = text
+
+        # group_field is a Select2 of the report type's fields (populated by report_type), rather than
+        # free text. On a report_type change the modal reposts with `data`; otherwise use the instance.
+        if 'data' in _kwargs and len(_kwargs['data']) > 0:
+            group_field = _kwargs['data'].get('group_field')
+            report_type_id = _kwargs['data'].get('report_type')
+            report_type = get_object_or_404(ReportType, id=report_type_id) if report_type_id else None
+        else:
+            group_field = form.instance.group_field
+            report_type = form.instance.report_type
+
+        self.setup_field(
+            field_type='all',
+            form=form,
+            field_name='group_field',
+            selected_field_id=group_field,
+            report_type=report_type,
+        )
+
+        # The period / label format / blank-dates options only apply to a DATE group field, so show
+        # them only when the chosen group field is one of the report type's date fields (and hide them
+        # for user/type/etc. value grouping). Driven by the set of date-field paths.
+        date_field_ids = []
+        if report_type:
+            date_fields = []
+            model = report_type.content_type.model_class()
+            self._get_date_fields(
+                base_model=model,
+                fields=date_fields,
+                report_builder_class=get_report_builder_class(model=model, report_type=report_type),
+                search_string=None,
+            )
+            date_field_ids = [date_field['id'] for date_field in date_fields]
+        show_for_dates = {date_field_id: 'show' for date_field_id in date_field_ids}
+        form.add_trigger(
+            'group_field',
+            'onchange',
+            [
+                {'selector': '#div_id_period', 'values': show_for_dates, 'default': 'hide'},
+                {'selector': '#div_id_label_format', 'values': show_for_dates, 'default': 'hide'},
+                {'selector': '#div_id_show_blank_dates', 'values': show_for_dates, 'default': 'hide'},
+            ],
+        )
+
+        # Flag a stale group field (one that no longer resolves, e.g. a renamed/removed field) in red
+        # so it is obvious it must be reselected - and keep the old value visible in the dropdown.
+        stale_warning = []
+        if group_field and report_type and not self._field_resolves(report_type, group_field):
+            form.fields['group_field'].widget.select_data = [{'id': group_field, 'text': f'{group_field} (missing)'}]
+            stale_warning = [
+                HTML(
+                    '<div class="form-group row"><div class="col-3"></div>'
+                    '<div class="col-9 text-danger"><i class="fas fa-exclamation-triangle"></i> '
+                    f'Group by field "{escape(group_field)}" no longer exists - please choose another.'
+                    '</div></div>'
+                )
+            ]
+
+        return [
+            'report_type',
+            'group_field',
+            *stale_warning,
+            'period',
+            FieldEx('base_query', template='advanced_report_builder/query_builder.html'),
+            'label_format',
+            'limit',
+            'descending',
+            'show_blank_dates',
+        ]
+
+    def _field_resolves(self, report_type, field):
+        """True if ``field`` still resolves on ``report_type``'s model (a valid column/field path)."""
+        model = report_type.content_type.model_class()
+        report_builder_class = get_report_builder_class(model=model, report_type=report_type)
+        try:
+            django_field, col_type_override, _, _ = self.get_field_details(
+                base_model=model, field=field, report_builder_class=report_builder_class
+            )
+        except Exception:  # noqa: BLE001 - any resolution failure means the field is stale
+            return False
+        return django_field is not None or col_type_override is not None
+
+    def select2_group_field(self, **kwargs):
+        return self.get_fields_for_select2(
+            field_type='all', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+        )
+
+    def form_valid(self, form):
+        instance = form.save(commit=False)
+        # Created via the cells grid button, which passes the report id + row number in the slug.
+        if not instance.multi_value_report_id:
+            instance.multi_value_report_id = self.slug['multi_value_report_id']
+            instance.row = int(self.slug['row'])
+        instance.save()
+        return self.command_response('reload')
+
+
 class MultiValueReportCellForm(QueryBuilderModelForm):
     cancel_class = 'btn-secondary modal-cancel'
 
@@ -267,6 +489,7 @@ class MultiValueReportCellForm(QueryBuilderModelForm):
             'report_type',
             'field',
             'numerator',
+            'group_field',
             'prefix_type',
             'prefix',
             'decimal_places',
@@ -323,12 +546,30 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
 
         form.fields['extra_query_data'].label = 'Numerator'
 
+        # When this cell is on a dynamic (repeat) row, offer buttons to insert the period merge
+        # variables into the Static Text field, so the {{ }} syntax needn't be typed.
+        report_id = self.object.multi_value_report_id or self.slug.get('multi_value_report_id')
+        row_number = self.object.row or self.slug.get('row')
+        self.is_dynamic_row = bool(
+            report_id
+            and row_number
+            and MultiValueReportRow.objects.filter(multi_value_report_id=report_id, row=row_number).exists()
+        )
+
         form.add_trigger(
             'multi_value_type',
             'onchange',
             [
                 {
                     'selector': '#div_id_text',
+                    'values': {
+                        MultiValueReportCell.MultiValueType.STATIC_TEXT: 'show',
+                        MultiValueReportCell.MultiValueType.EQUATION: 'show',
+                    },
+                    'default': 'hide',
+                },
+                {
+                    'selector': '#div_id_period_insert',
                     'values': {
                         MultiValueReportCell.MultiValueType.STATIC_TEXT: 'show',
                         MultiValueReportCell.MultiValueType.EQUATION: 'show',
@@ -409,6 +650,14 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     'default': 'show',
                 },
                 {
+                    'selector': '#div_id_group_field',
+                    'values': {
+                        MultiValueReportCell.MultiValueType.STATIC_TEXT: 'hide',
+                        MultiValueReportCell.MultiValueType.EQUATION: 'hide',
+                    },
+                    'default': 'show',
+                },
+                {
                     'selector': '#div_id_show_breakdown',
                     'values': {
                         MultiValueReportCell.MultiValueType.STATIC_TEXT: 'hide',
@@ -473,6 +722,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
         if 'data' in _kwargs and len(_kwargs['data']) > 0:
             field = _kwargs['data'].get('field')
             numerator = _kwargs['data'].get('numerator')
+            group_field = _kwargs['data'].get('group_field')
             report_type_id = _kwargs['data'].get('report_type')
             if report_type_id != '':
                 report_type = get_object_or_404(ReportType, id=report_type_id)
@@ -482,6 +732,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
             field = form.instance.field
             report_type = form.instance.report_type
             numerator = form.instance.numerator
+            group_field = form.instance.group_field
 
         self.setup_field(
             field_type='number',
@@ -497,6 +748,22 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
             field_name='numerator',
             selected_field_id=numerator,
             report_type=report_type,
+        )
+
+        self.setup_field(
+            field_type='all',
+            form=form,
+            field_name='group_field',
+            selected_field_id=group_field,
+            report_type=report_type,
+        )
+        form.fields['group_field'].help_text = (
+            "On a dynamic row, limits this cell to the row's value using this field. Leave blank to "
+            "use the dynamic row's own group field when this cell has the same report type."
+        )
+        form.fields['text'].help_text = (
+            'On a dynamic row, use {{ value }} to show the row value (or {{ period }} / {{ period_end }} '
+            'for date grouping).'
         )
 
         url = reverse(
@@ -516,9 +783,27 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
             ]
             form.fields['multi_value_held_query'].widget.select_data = selected_data
 
+        # crispy HTML() renders its content as a Django template, so wrap the literal {{ }} tokens
+        # shown on the buttons in {% verbatim %} so they aren't evaluated.
+        period_insert = HTML(
+            '<div id="div_id_period_insert" class="form-group row">'
+            '<div class="col-3"></div><div class="col-9">'
+            '<button type="button" class="btn btn-sm btn-outline-secondary mr-1" '
+            'onclick="mv_insert_period_token(\'value\')">'
+            'Insert {% verbatim %}{{ value }}{% endverbatim %}</button>'
+            '<button type="button" class="btn btn-sm btn-outline-secondary mr-1" '
+            'onclick="mv_insert_period_token(\'period\')">'
+            'Insert {% verbatim %}{{ period }}{% endverbatim %}</button>'
+            '<button type="button" class="btn btn-sm btn-outline-secondary" '
+            'onclick="mv_insert_period_token(\'period_end\')">'
+            'Insert {% verbatim %}{{ period_end }}{% endverbatim %}</button>'
+            '</div></div>'
+        )
+
         fields = [
             'multi_value_type',
             'text',
+            *([period_insert] if self.is_dynamic_row else []),
             'label',
             'multi_cell_style',
             'row',
@@ -528,6 +813,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
             'report_type',
             'field',
             'numerator',
+            'group_field',
             'prefix_type',
             'prefix',
             'decimal_places',
@@ -549,6 +835,11 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
             FieldEx('extra_query_data', template='advanced_report_builder/query_builder.html'),
         ]
         return fields
+
+    def select2_group_field(self, **kwargs):
+        return self.get_fields_for_select2(
+            field_type='all', report_type=kwargs['report_type'], search_string=kwargs.get('search')
+        )
 
     def select2_multi_value_held_query(self, **kwargs):
         results = []
@@ -605,6 +896,7 @@ class MultiValueReportCellsModal(Modal):
 
     @staticmethod
     def render_html(table_data, multi_value_report):
+        dynamic_rows = {row.row: row for row in multi_value_report.multivaluereportrow_set.all()}
         html = '<table class="table table-bordered kanban_summary"><tr><td></td>'
         columns_data = {}
         for multi_value_report_column in multi_value_report.multivaluereportcolumn_set.all():
@@ -638,7 +930,27 @@ class MultiValueReportCellsModal(Modal):
                 )
         html += '</tr>'
         for row_index, row in enumerate(table_data, start=1):
-            html += f'<tr><td>{row_index}</td>'
+            dynamic_row = dynamic_rows.get(row_index)
+            if dynamic_row is not None:
+                row_link = show_modal(
+                    'advanced_report_builder:multi_value_row_modal', '', f'pk-{dynamic_row.id}', href=True
+                )
+                row_button = (
+                    f'<a href="{row_link}" class="btn btn-warning btn-sm mt-1" title="Dynamic row - edit">'
+                    f'<i class="fas fa-bolt"></i></a>'
+                )
+            else:
+                row_link = show_modal(
+                    'advanced_report_builder:multi_value_row_modal',
+                    '',
+                    f'multi_value_report_id-{multi_value_report.id}-row-{row_index}',
+                    href=True,
+                )
+                row_button = (
+                    f'<a href="{row_link}" class="btn btn-outline-secondary btn-sm mt-1" title="Make row dynamic">'
+                    f'<i class="fas fa-bolt"></i></a>'
+                )
+            html += f'<tr><td>{row_index}<br>{row_button}</td>'
             for cols_index, cell in enumerate(row, start=1):
                 if cell is None:
                     add_link = show_modal(
@@ -811,6 +1123,11 @@ class MultiValueView(ValueBaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs) if hasattr(super(), 'get_context_data') else {}
 
+        dynamic_rows = {row.row: row for row in self.chart_report.multivaluereportrow_set.all()}
+        if dynamic_rows:
+            context['html'] = self.render_html(table_data=self._get_dynamic_table_data(dynamic_rows))
+            return context
+
         multi_value_report_cells = (
             MultiValueReportCell.objects.filter(
                 multi_value_report=self.chart_report,
@@ -826,125 +1143,19 @@ class MultiValueView(ValueBaseView):
         multi_value_report_equations = []
         for multi_value_report_cell in multi_value_report_cells:
             cell_name = excel_column_name(multi_value_report_cell.column, row=multi_value_report_cell.row)
-            base_model = multi_value_report_cell.get_base_model()
-            value = ''
-            report_builder_class = None
 
             row = multi_value_report_cell.row - 1
             column = multi_value_report_cell.column - 1
             if table_data[row][column] is not None:
                 continue
 
-            multi_value_type = multi_value_report_cell.multi_value_type
-            if base_model is not None:
-                report_builder_class = get_report_builder_class(
-                    model=base_model, report_type=multi_value_report_cell.report_type
+            if multi_value_report_cell.multi_value_type == MultiValueReportCell.MultiValueType.EQUATION:
+                multi_value_report_equations.append((cell_name, multi_value_report_cell))
+                value, append_str = '', ''
+            else:
+                value, append_str = self._evaluate_cell(
+                    multi_value_report_cell=multi_value_report_cell, cell_name=cell_name, exp=exp
                 )
-
-            fields = []
-            append_str = ''
-            try:
-                if multi_value_type == MultiValueReportCell.MultiValueType.STATIC_TEXT:
-                    value = multi_value_report_cell.text
-                elif multi_value_type == MultiValueReportCell.MultiValueType.COUNT:
-                    self._get_count(fields=fields)
-                elif multi_value_type == MultiValueReportCell.MultiValueType.SUM:
-                    if multi_value_report_cell.field is None:
-                        value = 'Error no field selected'
-                    else:
-                        self._process_aggregations(
-                            field=multi_value_report_cell.field,
-                            report_builder_class=report_builder_class,
-                            base_model=base_model,
-                            decimal_places=multi_value_report_cell.decimal_places,
-                            fields=fields,
-                            aggregations_type=ANNOTATION_CHOICE_SUM,
-                        )
-                elif multi_value_type == MultiValueReportCell.MultiValueType.AVERAGE_SUM_FROM_COUNT:
-                    self._process_aggregations(
-                        field=multi_value_report_cell.field,
-                        report_builder_class=report_builder_class,
-                        base_model=base_model,
-                        decimal_places=multi_value_report_cell.decimal_places,
-                        fields=fields,
-                        aggregations_type=ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT,
-                    )
-
-                elif multi_value_type in [
-                    MultiValueReportCell.MultiValueType.AVERAGE_SUM_OVER_TIME,
-                    MultiValueReportCell.MultiValueType.AVERAGE_SUM_OVER_TIME_EXCLUDING_WEEKENDS,
-                ]:
-                    exclude_weekdays = None
-                    if multi_value_type == MultiValueReportCell.MultiValueType.AVERAGE_SUM_OVER_TIME_EXCLUDING_WEEKENDS:
-                        exclude_weekdays = [1, 7]
-
-                    divider = self.get_period_divider(
-                        annotation_value_choice=multi_value_report_cell.average_scale,
-                        start_date_type=multi_value_report_cell.average_start_period,
-                        end_date_type=multi_value_report_cell.average_end_period,
-                        exclude_weekdays=exclude_weekdays,
-                    )
-                    self._process_aggregations(
-                        field=multi_value_report_cell.field,
-                        report_builder_class=report_builder_class,
-                        base_model=base_model,
-                        decimal_places=multi_value_report_cell.decimal_places,
-                        fields=fields,
-                        aggregations_type=ANNOTATION_CHOICE_SUM,
-                        divider=divider,
-                    )
-
-                elif multi_value_type == MultiValueReportCell.MultiValueType.PERCENT:
-                    numerator_filter = self.process_filters(search_filter_data=multi_value_report_cell.extra_query_data)
-                    denominator_filter = self.process_filters(
-                        search_filter_data=multi_value_report_cell.denominator_query_data
-                    )
-                    self._process_percentage(
-                        numerator_filter=numerator_filter,
-                        denominator_field=multi_value_report_cell.field,
-                        numerator_field=multi_value_report_cell.numerator,
-                        report_builder_class=report_builder_class,
-                        decimal_places=multi_value_report_cell.decimal_places,
-                        base_model=base_model,
-                        fields=fields,
-                        denominator_filter=denominator_filter,
-                    )
-                    append_str = '%'
-                elif multi_value_type == MultiValueReportCell.MultiValueType.PERCENT_FROM_COUNT:
-                    numerator_filter = self.process_filters(search_filter_data=multi_value_report_cell.extra_query_data)
-                    self._process_percentage_from_count(
-                        numerator_filter=numerator_filter,
-                        decimal_places=multi_value_report_cell.decimal_places,
-                        fields=fields,
-                    )
-                    append_str = '%'
-                elif multi_value_type == MultiValueReportCell.MultiValueType.EQUATION:
-                    multi_value_report_equations.append((cell_name, multi_value_report_cell))
-            except ReportError as e:
-                value = self._cell_error(cell_name, e)
-            except Exception as e:  # noqa: BLE001 - contain a bad cell rather than 500-ing the whole grid
-                value = self._cell_error(cell_name, e)
-
-            if fields:
-                try:
-                    value, raw_value = self.render_value(
-                        base_model=base_model, fields=fields, multi_value_report_cell=multi_value_report_cell
-                    )
-                # A cell that fails to render (e.g. a non-aggregatable field wrongly summed) must not
-                # take down the whole report - show the error in the cell, prefixed with its grid
-                # reference (e.g. "B2") so it is clear which cell failed.
-                except Exception as e:  # noqa: BLE001
-                    value = self._cell_error(cell_name, e)
-                    raw_value = None
-                if raw_value is not None:
-                    with contextlib.suppress(ValueError):
-                        raw_value = float(raw_value)
-                    exp.add_to_global(name=cell_name, value=raw_value)
-            elif value is not None:
-                expression_value = value
-                with contextlib.suppress(ValueError):
-                    expression_value = float(expression_value)
-                exp.add_to_global(name=cell_name, value=expression_value)
 
             table_data[row][column] = {'value': value, 'cell': multi_value_report_cell, 'append_str': append_str}
 
@@ -957,9 +1168,134 @@ class MultiValueView(ValueBaseView):
 
                         table_data[row + row_offset][column + col_offset] = {'value': None}
 
-        unresolved = multi_value_report_equations[:]  # initial list
+        self._resolve_equations(table_data=table_data, equations=multi_value_report_equations, exp=exp)
+
+        context['html'] = self.render_html(table_data=table_data)
+        return context
+
+    def _evaluate_cell(self, multi_value_report_cell, cell_name, exp):
+        """Compute a single (non-equation) cell's display value and trailing symbol.
+
+        Extracted so the fixed grid and the dynamic-row grid share identical cell semantics. Feeds
+        the cell's numeric result into the expression builder so equation cells can reference it.
+        """
+        base_model = multi_value_report_cell.get_base_model()
+        value = ''
+        append_str = ''
+        report_builder_class = None
+        multi_value_type = multi_value_report_cell.multi_value_type
+        if base_model is not None:
+            report_builder_class = get_report_builder_class(
+                model=base_model, report_type=multi_value_report_cell.report_type
+            )
+
+        fields = []
+        try:
+            if multi_value_type == MultiValueReportCell.MultiValueType.STATIC_TEXT:
+                value = multi_value_report_cell.text
+            elif multi_value_type == MultiValueReportCell.MultiValueType.COUNT:
+                self._get_count(fields=fields)
+            elif multi_value_type == MultiValueReportCell.MultiValueType.SUM:
+                if multi_value_report_cell.field is None:
+                    value = 'Error no field selected'
+                else:
+                    self._process_aggregations(
+                        field=multi_value_report_cell.field,
+                        report_builder_class=report_builder_class,
+                        base_model=base_model,
+                        decimal_places=multi_value_report_cell.decimal_places,
+                        fields=fields,
+                        aggregations_type=ANNOTATION_CHOICE_SUM,
+                    )
+            elif multi_value_type == MultiValueReportCell.MultiValueType.AVERAGE_SUM_FROM_COUNT:
+                self._process_aggregations(
+                    field=multi_value_report_cell.field,
+                    report_builder_class=report_builder_class,
+                    base_model=base_model,
+                    decimal_places=multi_value_report_cell.decimal_places,
+                    fields=fields,
+                    aggregations_type=ANNOTATION_CHOICE_AVERAGE_SUM_FROM_COUNT,
+                )
+            elif multi_value_type in [
+                MultiValueReportCell.MultiValueType.AVERAGE_SUM_OVER_TIME,
+                MultiValueReportCell.MultiValueType.AVERAGE_SUM_OVER_TIME_EXCLUDING_WEEKENDS,
+            ]:
+                exclude_weekdays = None
+                if multi_value_type == MultiValueReportCell.MultiValueType.AVERAGE_SUM_OVER_TIME_EXCLUDING_WEEKENDS:
+                    exclude_weekdays = [1, 7]
+
+                divider = self.get_period_divider(
+                    annotation_value_choice=multi_value_report_cell.average_scale,
+                    start_date_type=multi_value_report_cell.average_start_period,
+                    end_date_type=multi_value_report_cell.average_end_period,
+                    exclude_weekdays=exclude_weekdays,
+                )
+                self._process_aggregations(
+                    field=multi_value_report_cell.field,
+                    report_builder_class=report_builder_class,
+                    base_model=base_model,
+                    decimal_places=multi_value_report_cell.decimal_places,
+                    fields=fields,
+                    aggregations_type=ANNOTATION_CHOICE_SUM,
+                    divider=divider,
+                )
+            elif multi_value_type == MultiValueReportCell.MultiValueType.PERCENT:
+                numerator_filter = self.process_filters(search_filter_data=multi_value_report_cell.extra_query_data)
+                denominator_filter = self.process_filters(
+                    search_filter_data=multi_value_report_cell.denominator_query_data
+                )
+                self._process_percentage(
+                    numerator_filter=numerator_filter,
+                    denominator_field=multi_value_report_cell.field,
+                    numerator_field=multi_value_report_cell.numerator,
+                    report_builder_class=report_builder_class,
+                    decimal_places=multi_value_report_cell.decimal_places,
+                    base_model=base_model,
+                    fields=fields,
+                    denominator_filter=denominator_filter,
+                )
+                append_str = '%'
+            elif multi_value_type == MultiValueReportCell.MultiValueType.PERCENT_FROM_COUNT:
+                numerator_filter = self.process_filters(search_filter_data=multi_value_report_cell.extra_query_data)
+                self._process_percentage_from_count(
+                    numerator_filter=numerator_filter,
+                    decimal_places=multi_value_report_cell.decimal_places,
+                    fields=fields,
+                )
+                append_str = '%'
+        except ReportError as e:
+            value = self._cell_error(cell_name, e)
+        except Exception as e:  # noqa: BLE001 - contain a bad cell rather than 500-ing the whole grid
+            value = self._cell_error(cell_name, e)
+
+        if fields:
+            try:
+                value, raw_value = self.render_value(
+                    base_model=base_model, fields=fields, multi_value_report_cell=multi_value_report_cell
+                )
+            # A cell that fails to render (e.g. a non-aggregatable field wrongly summed) must not
+            # take down the whole report - show the error in the cell, prefixed with its grid
+            # reference (e.g. "B2") so it is clear which cell failed.
+            except Exception as e:  # noqa: BLE001
+                value = self._cell_error(cell_name, e)
+                raw_value = None
+            if raw_value is not None:
+                with contextlib.suppress(ValueError):
+                    raw_value = float(raw_value)
+                exp.add_to_global(name=cell_name, value=raw_value)
+        elif value is not None:
+            expression_value = value
+            with contextlib.suppress(ValueError):
+                expression_value = float(expression_value)
+            exp.add_to_global(name=cell_name, value=expression_value)
+
+        return value, append_str
+
+    @staticmethod
+    def _resolve_equations(table_data, equations, exp):
+        unresolved = equations[:]  # initial list
         previous_count = None
-        max_iterations = max(100, len(multi_value_report_equations) * 2)
+        max_iterations = max(100, len(equations) * 2)
         iteration = 0
 
         while (previous_count is None or len(unresolved) < previous_count) and iteration < max_iterations:
@@ -983,8 +1319,177 @@ class MultiValueView(ValueBaseView):
 
             unresolved = next_unresolved
 
-        context['html'] = self.render_html(table_data=table_data)
-        return context
+    # --- Dynamic rows -----------------------------------------------------------------------------
+    def _get_dynamic_table_data(self, dynamic_rows):
+        """Build the grid when one or more rows are dynamic. Rows render top to bottom: a static row
+        renders once; a dynamic row (one with a MultiValueReportRow config, keyed by row number in
+        ``dynamic_rows``) is the template for one generated row per group value (a period for a date
+        group field, else each distinct value), each cell limited to that value and Static Text able
+        to show it via the ``{{ value }}`` / ``{{ period }}`` merge variables."""
+        report = self.chart_report
+        columns = report.columns
+        cells = (
+            MultiValueReportCell.objects.filter(multi_value_report=report, row__lte=report.rows, column__lte=columns)
+            .select_related('multi_value_held_query')
+            .order_by('row', 'column')
+        )
+        cells_by_row = {}
+        for cell in cells:
+            cells_by_row.setdefault(cell.row, []).append(cell)
+
+        exp = ExpressionBuilder()
+        table_data = []
+        for row_number in range(1, report.rows + 1):
+            row_cells = cells_by_row.get(row_number, [])
+            row_config = dynamic_rows.get(row_number)
+            if row_config is None:
+                table_data.append(self._render_static_row(row_cells=row_cells, columns=columns, exp=exp))
+            else:
+                # Contain a broken dynamic row (e.g. a group field that no longer resolves) so it
+                # shows an error line rather than 500-ing the whole report - which would also lock
+                # the user out of editing it.
+                try:
+                    specs = self._distinct_row_specs(row_config)
+                except Exception as e:  # noqa: BLE001
+                    logger.warning('Dynamic row %s failed: %s', row_number, e, exc_info=e)
+                    table_data.append(self._error_row(columns, f'Row {row_number}: {e}'))
+                    continue
+                for spec in specs:
+                    table_data.append(
+                        self._render_dynamic_row(row_cells=row_cells, columns=columns, spec=spec, row_config=row_config)
+                    )
+        return table_data
+
+    def _error_row(self, columns, message):
+        data_row = [{'value': escape(str(message)), 'cell': None, 'append_str': ''}]
+        data_row += [{'value': None} for _ in range(columns - 1)]
+        return data_row
+
+    def _render_static_row(self, row_cells, columns, exp):
+        data_row = [None for _ in range(columns)]
+        for cell in row_cells:
+            column = cell.column - 1
+            if column >= columns or data_row[column] is not None:
+                continue
+            cell_name = excel_column_name(cell.column, row=cell.row)
+            if cell.multi_value_type == MultiValueReportCell.MultiValueType.EQUATION:
+                value, append_str = cell.text or '', ''
+            else:
+                value, append_str = self._evaluate_cell(multi_value_report_cell=cell, cell_name=cell_name, exp=exp)
+            data_row[column] = {'value': value, 'cell': cell, 'append_str': append_str}
+            for col_offset in range(1, cell.col_span):
+                if column + col_offset < columns:
+                    data_row[column + col_offset] = {'value': None}
+        return data_row
+
+    def _render_dynamic_row(self, row_cells, columns, spec, row_config):
+        data_row = [None for _ in range(columns)]
+        for cell in row_cells:
+            column = cell.column - 1
+            if column >= columns or data_row[column] is not None:
+                continue
+            cell_name = excel_column_name(cell.column, row=cell.row)
+            dynamic_cell = self._dynamic_cell(template_cell=cell, spec=spec, row_config=row_config)
+            if dynamic_cell.multi_value_type == MultiValueReportCell.MultiValueType.EQUATION:
+                # Cross-row equations don't have a well-defined meaning in a dynamic grid yet.
+                value, append_str = dynamic_cell.text or '', ''
+            else:
+                value, append_str = self._evaluate_cell(
+                    multi_value_report_cell=dynamic_cell, cell_name=cell_name, exp=ExpressionBuilder()
+                )
+            data_row[column] = {'value': value, 'cell': dynamic_cell, 'append_str': append_str, 'spec': spec}
+            for col_offset in range(1, cell.col_span):
+                if column + col_offset < columns:
+                    data_row[column + col_offset] = {'value': None}
+        return data_row
+
+    def _group_field_is_date(self, row_config):
+        model = row_config.report_type.content_type.model_class()
+        report_builder_class = get_report_builder_class(model=model, report_type=row_config.report_type)
+        django_field, _, _, _ = self.get_field_details(
+            base_model=model, field=row_config.group_field, report_builder_class=report_builder_class
+        )
+        return isinstance(django_field, DATE_FIELDS)
+
+    def _distinct_row_specs(self, row_config):
+        """The ordered list of row descriptors, one per generated row. A date group field yields
+        period specs (``{'period': (start, end), 'value': None}``); any other field yields value specs
+        (``{'period': None, 'value': v}``). Only groups that contain data, unless ``show_blank_dates``
+        fills the empty periods between the first and last (date group fields only)."""
+        if not row_config.report_type_id or not row_config.group_field:
+            return []
+        model = row_config.report_type.content_type.model_class()
+        query = model.objects.all()
+        if row_config.base_query:
+            query = self.process_query_filters(query=query, search_filter_data=row_config.base_query)
+
+        if not self._group_field_is_date(row_config):
+            values = {
+                value for value in query.values_list(row_config.group_field, flat=True).distinct() if value is not None
+            }
+            values = sorted(values, reverse=row_config.descending)[: row_config.limit]
+            return [{'period': None, 'value': value} for value in values]
+
+        trunc = ANNOTATION_VALUE_FUNCTIONS[row_config.period]
+        period_starts = {
+            start
+            for start in query.annotate(_dyn_period=trunc(row_config.group_field))
+            .values_list('_dyn_period', flat=True)
+            .distinct()
+            if start is not None
+        }
+        if not period_starts:
+            return []
+        if row_config.show_blank_dates:
+            # Fill every period between the first and last, so empty periods render as blank rows.
+            starts = []
+            current, last = min(period_starts), max(period_starts)
+            while current <= last and len(starts) < row_config.limit:
+                starts.append(current)
+                current = self._period_end(current, row_config.period)
+        else:
+            starts = period_starts
+        starts = sorted(starts, reverse=row_config.descending)[: row_config.limit]
+        return [{'period': (start, self._period_end(start, row_config.period)), 'value': None} for start in starts]
+
+    @staticmethod
+    def _period_end(start, period):
+        if period == ANNOTATION_VALUE_DAY:
+            return start + timedelta(days=1)
+        if period == ANNOTATION_VALUE_MONTH:
+            return MultiValueView._add_months(start, 1)
+        if period == ANNOTATION_VALUE_QUARTER:
+            return MultiValueView._add_months(start, 3)
+        if period == ANNOTATION_VALUE_YEAR:
+            return start.replace(year=start.year + 1, month=1, day=1)
+        return start + timedelta(days=7)  # ANNOTATION_VALUE_WEEK (default)
+
+    @staticmethod
+    def _add_months(start, months):
+        month_index = start.month - 1 + months
+        year = start.year + month_index // 12
+        month = month_index % 12 + 1
+        return start.replace(year=year, month=month, day=1)
+
+    def _dynamic_cell(self, template_cell, spec, row_config):
+        """A per-group-value copy of a dynamic row's cell, limited to the row's value.
+
+        The cell's metric is filtered on the group field it specifies (``group_field``), else the
+        row's own ``group_field`` when the cell shares the row's report type - a date range for a
+        period spec, an equality for a value spec. Static Text can reference the value via the
+        ``{{ value }}`` / ``{{ period }}`` / ``{{ period_end }}`` merge variables (the row label).
+        """
+        cell = deepcopy(template_cell)
+        group_field = template_cell.group_field
+        if not group_field and template_cell.report_type_id == row_config.report_type_id:
+            group_field = row_config.group_field
+        if group_field:
+            if spec['period'] is not None:
+                cell.query_data = _and_period_filter(cell.query_data, group_field, *spec['period'])
+            else:
+                cell.query_data = _and_value_filter(cell.query_data, group_field, spec['value'])
+        cell.text = apply_dynamic_merge(cell.text, spec, row_config.label_format)
+        return cell
 
     def render_html(self, table_data):
         html = '<table class="table table-bordered kanban_summary">'
@@ -998,6 +1503,9 @@ class MultiValueView(ValueBaseView):
             for cols_index, cell in enumerate(row, start=1):
                 if cell is None:
                     html += '<td></td>'
+                elif cell.get('cell') is None and cell['value'] is not None:
+                    # Contained-error cell (no backing MultiValueReportCell): plain, no span/link.
+                    html += f'<td class="text-danger">{cell["value"]}</td>'
                 elif cell['value'] is not None:
                     attrs = []
                     multi_value_report_cell = cell['cell']
@@ -1017,7 +1525,9 @@ class MultiValueView(ValueBaseView):
                     if multi_value_report_cell.multi_cell_style is not None:
                         attrs.append('class="' + multi_value_report_cell.multi_cell_style.get_td_class() + '"')
                         styles.append(multi_value_report_cell.multi_cell_style.get_td_style())
-                    link = self.get_breakdown_url(multi_value_report_cell=multi_value_report_cell)
+                    link = self.get_breakdown_url(
+                        multi_value_report_cell=multi_value_report_cell, spec=cell.get('spec')
+                    )
                     if link is not None:
                         styles.append('cursor:pointer')
                         attrs.append(f'onclick="{link}"')
@@ -1035,13 +1545,23 @@ class MultiValueView(ValueBaseView):
         html += '</table>'
         return html
 
-    def get_breakdown_url(self, multi_value_report_cell):
+    def get_breakdown_url(self, multi_value_report_cell, spec=None):
         if multi_value_report_cell.show_breakdown:
             enable_links = self.kwargs.get('enable_links')
+            slug = f'pk-{multi_value_report_cell.id}-enable_links-{enable_links}'
+            if spec is not None and spec['period'] is not None:
+                # Carry the row's period so the drill-down lists only that period's records
+                # (compact yyyymmdd - the slug separator is '-', so no dashes in the value).
+                start, end = spec['period']
+                slug += f'-dyn_start-{start.strftime("%Y%m%d")}-dyn_end-{end.strftime("%Y%m%d")}'
+            elif spec is not None and spec['value'] is not None:
+                # Carry the row's value hex-encoded (slug-safe: no separators) so the drill-down
+                # lists only that value's records.
+                slug += f'-dyn_value-{str(spec["value"]).encode().hex()}'
             link = show_modal(
                 'advanced_report_builder:multi_value_breakdown_modal',
                 '',
-                f'pk-{multi_value_report_cell.id}-enable_links-{enable_links}',
+                slug,
                 href=True,
             )
             return link
@@ -1177,6 +1697,30 @@ class MultiValueShowBreakdownModal(TableUtilsMixin, Modal):
     def extra_filters(self, query):
         multi_value_report_cell = self.get_multi_value_report_cell()
         query_data = multi_value_report_cell.query_data
+        # Dynamic-row drill-down: the clicked row's group value arrives in the slug (a period range or
+        # a hex value); limit the breakdown to it on the field the cell is filtered by (its own
+        # group_field, else the row's when it shares the report type).
+        dyn_start = self.slug.get('dyn_start')
+        dyn_end = self.slug.get('dyn_end')
+        dyn_value = self.slug.get('dyn_value')
+        if dyn_start or dyn_value:
+            group_field = multi_value_report_cell.group_field
+            if not group_field:
+                row_config = MultiValueReportRow.objects.filter(
+                    multi_value_report_id=multi_value_report_cell.multi_value_report_id,
+                    row=multi_value_report_cell.row,
+                ).first()
+                if row_config and row_config.report_type_id == multi_value_report_cell.report_type_id:
+                    group_field = row_config.group_field
+            if group_field and dyn_start and dyn_end:
+                query_data = _and_period_filter(
+                    query_data,
+                    group_field,
+                    datetime.strptime(dyn_start, '%Y%m%d'),
+                    datetime.strptime(dyn_end, '%Y%m%d'),
+                )
+            elif group_field and dyn_value:
+                query_data = _and_value_filter(query_data, group_field, bytes.fromhex(dyn_value).decode())
         extra_filter_data = None
         if multi_value_report_cell.multi_value_held_query is not None:
             extra_filter_data = multi_value_report_cell.multi_value_held_query.query
