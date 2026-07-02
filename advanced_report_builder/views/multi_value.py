@@ -1292,11 +1292,25 @@ class MultiValueView(ValueBaseView):
             if row_config is None:
                 table_data.append(self._render_static_row(row_cells=row_cells, columns=columns, exp=exp))
             else:
-                for spec in self._distinct_row_specs(row_config):
+                # Contain a broken dynamic row (e.g. a group field that no longer resolves) so it
+                # shows an error line rather than 500-ing the whole report - which would also lock
+                # the user out of editing it.
+                try:
+                    specs = self._distinct_row_specs(row_config)
+                except Exception as e:  # noqa: BLE001
+                    logger.warning('Dynamic row %s failed: %s', row_number, e, exc_info=e)
+                    table_data.append(self._error_row(columns, f'Row {row_number}: {e}'))
+                    continue
+                for spec in specs:
                     table_data.append(
                         self._render_dynamic_row(row_cells=row_cells, columns=columns, spec=spec, row_config=row_config)
                     )
         return table_data
+
+    def _error_row(self, columns, message):
+        data_row = [{'value': escape(str(message)), 'cell': None, 'append_str': ''}]
+        data_row += [{'value': None} for _ in range(columns - 1)]
+        return data_row
 
     def _render_static_row(self, row_cells, columns, exp):
         data_row = [None for _ in range(columns)]
@@ -1436,6 +1450,9 @@ class MultiValueView(ValueBaseView):
             for cols_index, cell in enumerate(row, start=1):
                 if cell is None:
                     html += '<td></td>'
+                elif cell.get('cell') is None and cell['value'] is not None:
+                    # Contained-error cell (no backing MultiValueReportCell): plain, no span/link.
+                    html += f'<td class="text-danger">{cell["value"]}</td>'
                 elif cell['value'] is not None:
                     attrs = []
                     multi_value_report_cell = cell['cell']
