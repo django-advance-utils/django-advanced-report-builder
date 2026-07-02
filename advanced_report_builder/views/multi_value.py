@@ -658,8 +658,7 @@ class MultiValueReportCellModal(MultiQueryModalMixin, QueryBuilderModalBase):
             "to use the dynamic row's own date field when this cell has the same report type."
         )
         form.fields['text'].help_text = (
-            'On a dynamic row, use {{ period }} to show the period date (and {{ period_end }} for its '
-            'last day).'
+            'On a dynamic row, use {{ period }} to show the period date (and {{ period_end }} for its last day).'
         )
 
         url = reverse(
