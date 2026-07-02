@@ -393,9 +393,25 @@ class MultiValueReportRowModal(QueryBuilderModalBase):
             selected_field_id=group_field,
             report_type=report_type,
         )
+
+        # Flag a stale group field (one that no longer resolves, e.g. a renamed/removed field) in red
+        # so it is obvious it must be reselected - and keep the old value visible in the dropdown.
+        stale_warning = []
+        if group_field and report_type and not self._field_resolves(report_type, group_field):
+            form.fields['group_field'].widget.select_data = [{'id': group_field, 'text': f'{group_field} (missing)'}]
+            stale_warning = [
+                HTML(
+                    '<div class="form-group row"><div class="col-3"></div>'
+                    '<div class="col-9 text-danger"><i class="fas fa-exclamation-triangle"></i> '
+                    f'Group by field "{escape(group_field)}" no longer exists - please choose another.'
+                    '</div></div>'
+                )
+            ]
+
         return [
             'report_type',
             'group_field',
+            *stale_warning,
             'period',
             FieldEx('base_query', template='advanced_report_builder/query_builder.html'),
             'label_format',
@@ -403,6 +419,18 @@ class MultiValueReportRowModal(QueryBuilderModalBase):
             'descending',
             'show_blank_dates',
         ]
+
+    def _field_resolves(self, report_type, field):
+        """True if ``field`` still resolves on ``report_type``'s model (a valid column/field path)."""
+        model = report_type.content_type.model_class()
+        report_builder_class = get_report_builder_class(model=model, report_type=report_type)
+        try:
+            django_field, col_type_override, _, _ = self.get_field_details(
+                base_model=model, field=field, report_builder_class=report_builder_class
+            )
+        except Exception:  # noqa: BLE001 - any resolution failure means the field is stale
+            return False
+        return django_field is not None or col_type_override is not None
 
     def select2_group_field(self, **kwargs):
         return self.get_fields_for_select2(
