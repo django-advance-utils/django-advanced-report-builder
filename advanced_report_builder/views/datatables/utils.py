@@ -357,11 +357,17 @@ class TableUtilsMixin(ReportUtilsMixin):
                     fields_used.add(pivot_field_data['id'])
 
                 pivot_field_details = pivot_field_data['details']
+                # Copy so a per-report override of ``collapsed`` never mutates the shared
+                # kwargs dict on the report builder class definition.
+                pivot_kwargs = dict(pivot_field_details['kwargs'])
+                pivot_data_attr = split_attr(pivot_field)
+                if 'collapsed' in pivot_data_attr:
+                    pivot_kwargs['collapsed'] = pivot_data_attr['collapsed'] == '1'
                 table.add_js_filters(
                     pivot_field_details['type'],
                     pivot_field_data['id'],
                     filter_title=pivot_field_details['title'],
-                    **pivot_field_details['kwargs'],
+                    **pivot_kwargs,
                 )
                 table.show_pivot_table = True
         if totals:

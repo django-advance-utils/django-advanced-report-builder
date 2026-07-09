@@ -1204,7 +1204,19 @@ class TablePivotForm(ChartBaseFieldForm):
     def setup_modal(self, *args, **kwargs):
         data = json.loads(base64.b64decode(self.slug['data']))
         self.fields['title'] = CharField(initial=data['title'])
+        data_attr = split_attr(data)
+        self.fields['collapsed'] = BooleanField(
+            required=False, widget=RBToggle(), label='Collapsed by default'
+        )
+        if data_attr.get('collapsed') == '1':
+            self.fields['collapsed'].initial = True
         super().setup_modal(*args, **kwargs)
+
+    def get_additional_attributes(self):
+        # Persist the pivot's default expanded/collapsed state into the saved field's
+        # data-attr so it renders the same way for everyone each time the report loads.
+        # Default is expanded (collapsed-0).
+        return 'collapsed-1' if self.cleaned_data.get('collapsed') else 'collapsed-0'
 
     def cancel_button(self, css_class=cancel_class, **kwargs):
         commands = [{'function': 'close'}]
@@ -1223,6 +1235,15 @@ class TablePivotModal(QueryBuilderModalBaseMixin, FormModal):
 
     def form_valid(self, form):
         selector = self.slug['selector']
+
+        self.add_command(
+            {
+                'function': 'set_attr',
+                'selector': f'#{selector}',
+                'attr': 'data-attr',
+                'val': form.get_additional_attributes(),
+            }
+        )
 
         self.add_command(
             {
