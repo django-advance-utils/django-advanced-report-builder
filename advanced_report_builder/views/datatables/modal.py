@@ -1216,6 +1216,13 @@ class TablePivotForm(ChartBaseFieldForm):
         # Default is expanded (collapsed-0).
         return 'collapsed-1' if self.cleaned_data.get('collapsed') else 'collapsed-0'
 
+    def submit_button(self, css_class='btn-success modal-submit', button_text='Submit', **kwargs):
+        # Use the standard modal post. This form has no query builder, so it must not use
+        # the ``save_modal_<form_id>()`` onclick inherited from QueryBuilderForm: that JS is
+        # only defined by query-builder modal templates, and its absence on this modal makes
+        # the Submit button throw a ReferenceError and silently hang.
+        return self.button(button_text, 'post_modal', css_class, **kwargs)
+
     def cancel_button(self, css_class=cancel_class, **kwargs):
         commands = [{'function': 'close'}]
         return self.button('Cancel', commands, css_class, **kwargs)
