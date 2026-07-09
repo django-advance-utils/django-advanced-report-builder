@@ -1205,9 +1205,7 @@ class TablePivotForm(ChartBaseFieldForm):
         data = json.loads(base64.b64decode(self.slug['data']))
         self.fields['title'] = CharField(initial=data['title'])
         data_attr = split_attr(data)
-        self.fields['collapsed'] = BooleanField(
-            required=False, widget=RBToggle(), label='Collapsed by default'
-        )
+        self.fields['collapsed'] = BooleanField(required=False, widget=RBToggle(), label='Collapsed by default')
         if data_attr.get('collapsed') == '1':
             self.fields['collapsed'].initial = True
         super().setup_modal(*args, **kwargs)
