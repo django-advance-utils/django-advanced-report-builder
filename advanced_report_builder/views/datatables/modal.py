@@ -349,9 +349,7 @@ class TableFieldForm(ChartBaseFieldForm):
         `extra_totals-1`; the rows themselves are produced by the column, not here."""
         if not getattr(self.col_type_override, 'extra_totals', None):
             return
-        self.fields['show_extra_total'] = BooleanField(
-            required=False, widget=RBToggle(), label='Show extra total'
-        )
+        self.fields['show_extra_total'] = BooleanField(required=False, widget=RBToggle(), label='Show extra total')
         if data_attr.get('extra_totals') == '1':
             self.fields['show_extra_total'].initial = True
 
