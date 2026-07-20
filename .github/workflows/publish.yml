@@ -7,6 +7,10 @@ name: Publish to PyPI
 on:
   release:
     types: [published]
+  # Manual trigger: publishes whatever version is in pyproject.toml from the
+  # chosen ref. Use when a release event can't be used (e.g. the tag predates
+  # this workflow). The tag/version guard below is skipped for manual runs.
+  workflow_dispatch:
 
 jobs:
   build:
@@ -26,6 +30,7 @@ jobs:
       # Guard: the release tag (e.g. v1.4.2) must match pyproject version, so we
       # can never publish a version that disagrees with the source tree.
       - name: Verify tag matches pyproject version
+        if: github.event_name == 'release'
         run: |
           TAG="${GITHUB_REF_NAME#v}"
           PROJ=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
