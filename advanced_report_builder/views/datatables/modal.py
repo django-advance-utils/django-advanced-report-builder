@@ -343,10 +343,27 @@ class TableFieldForm(ChartBaseFieldForm):
                 ext.add_form_fields(self, data_attr)
         super().setup_modal(*args, **kwargs)
 
+    def add_extra_total_field(self, data_attr):
+        """Show an optional 'Show extra total' toggle ONLY when the column declares its own extra
+        footer rows (a truthy `extra_totals` attribute on the column). Ticking it stores
+        `extra_totals-1`; the rows themselves are produced by the column, not here."""
+        if not getattr(self.col_type_override, 'extra_totals', None):
+            return
+        self.fields['show_extra_total'] = BooleanField(
+            required=False, widget=RBToggle(), label='Show extra total'
+        )
+        if data_attr.get('extra_totals') == '1':
+            self.fields['show_extra_total'].initial = True
+
+    def save_extra_total_field(self, attributes):
+        if self.cleaned_data.get('show_extra_total'):
+            attributes.append('extra_totals-1')
+
     def setup_annotation_fields(self, data_attr):
         self.fields['show_table_totals'] = BooleanField(required=False, widget=RBToggle(), label='Show totals')
         if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
             self.fields['show_table_totals'].initial = True
+        self.add_extra_total_field(data_attr)
 
     def setup_currency_fields(self, data_attr, base_model, report_type, has_existing_annotations):
         self.fields['alignment'] = ChoiceField(choices=ALIGNMENT_CHOICES, required=False)
@@ -374,6 +391,7 @@ class TableFieldForm(ChartBaseFieldForm):
         self.fields['show_table_totals'] = BooleanField(required=False, widget=RBToggle(), label='Show totals')
         if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
             self.fields['show_table_totals'].initial = True
+        self.add_extra_total_field(data_attr)
 
         self.fields['currency_prefix_type'] = ChoiceField(
             choices=PREFIX_TYPE_CHOICES, required=False, label='Currency prefix'
@@ -512,6 +530,7 @@ class TableFieldForm(ChartBaseFieldForm):
         self.fields['show_table_totals'] = BooleanField(required=False, widget=RBToggle(), label='Show totals')
         if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
             self.fields['show_table_totals'].initial = True
+        self.add_extra_total_field(data_attr)
 
         self.fields['alignment'] = ChoiceField(choices=ALIGNMENT_CHOICES, required=False)
         if 'alignment' in data_attr:
@@ -582,6 +601,7 @@ class TableFieldForm(ChartBaseFieldForm):
         self.fields['show_table_totals'] = BooleanField(required=False, widget=RBToggle(), label='Show totals')
         if 'show_totals' in data_attr and data_attr['show_totals'] == '1':
             self.fields['show_table_totals'].initial = True
+        self.add_extra_total_field(data_attr)
 
         self.fields['alignment'] = ChoiceField(choices=ALIGNMENT_CHOICES, required=False)
         if 'alignment' in data_attr:
@@ -623,6 +643,7 @@ class TableFieldForm(ChartBaseFieldForm):
         attributes.append(f'decimal_places-{self.cleaned_data.get("decimal_places", 0)}')
         if self.cleaned_data['show_table_totals']:
             attributes.append('show_totals-1')
+        self.save_extra_total_field(attributes)
 
     def save_number_fields(self, attributes):
         alignment = self.cleaned_data.get('alignment')
@@ -636,6 +657,7 @@ class TableFieldForm(ChartBaseFieldForm):
             attributes.append(f'annotation_column_id-{b64_annotation_column_id}')
         if self.cleaned_data['show_table_totals']:
             attributes.append('show_totals-1')
+        self.save_extra_total_field(attributes)
         if self.cleaned_data['decimal_places'] > 0:
             attributes.append(f'decimal_places-{self.cleaned_data["decimal_places"]}')
         self.save_filter(attributes=attributes)
@@ -658,6 +680,7 @@ class TableFieldForm(ChartBaseFieldForm):
             attributes.append(f'annotation_column_id-{b64_annotation_column_id}')
         if self.cleaned_data['show_table_totals']:
             attributes.append('show_totals-1')
+        self.save_extra_total_field(attributes)
         currency_prefix_type = self.cleaned_data.get('currency_prefix_type', str(PREFIX_TYPE_AUTOMATIC))
         attributes.append(f'currency_prefix_type-{currency_prefix_type}')
         if self.cleaned_data.get('currency_prefix'):
@@ -728,6 +751,7 @@ class TableFieldForm(ChartBaseFieldForm):
     def save_annotations_fields(self, attributes):
         if self.cleaned_data['show_table_totals']:
             attributes.append('show_totals-1')
+        self.save_extra_total_field(attributes)
 
     def get_additional_attributes(self):
         attributes = []
@@ -904,6 +928,7 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
             'title',
             'display_heading',
             'show_table_totals',
+            *(['show_extra_total'] if 'show_extra_total' in form.fields else []),
             'decimal_places',
             'alignment',
             annotations_type_field,
@@ -1004,6 +1029,7 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
             'currency_prefix_type',
             'currency_prefix',
             'show_table_totals',
+            *(['show_extra_total'] if 'show_extra_total' in form.fields else []),
             'alignment',
             annotations_type_field,
             Div(
