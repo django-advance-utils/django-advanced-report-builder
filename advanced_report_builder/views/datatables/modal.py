@@ -338,6 +338,19 @@ class TableFieldForm(ChartBaseFieldForm):
             self.fields['annotation_label'] = BooleanField(required=False, widget=RBToggle())
             if 'annotation_label' in data_attr and data_attr['annotation_label'] == '1':
                 self.fields['annotation_label'].initial = True
+
+        # Shared across every column type: cap the rendered column width (in pixels).
+        # Longer content is truncated with an ellipsis (see the ``rb-truncate-col`` class
+        # in datatables/report.html). Left blank means no cap.
+        self.fields['max_width'] = IntegerField(
+            required=False,
+            min_value=1,
+            label='Max width (px)',
+            help_text='Optional. Caps the column width in pixels; longer content is truncated with an ellipsis.',
+        )
+        if 'max_width' in data_attr:
+            self.fields['max_width'].initial = int(data_attr['max_width'])
+
         for ext in load_field_extensions(self.slug):
             if ext.applies_to(self.django_field, self.col_type_override, data):
                 ext.add_form_fields(self, data_attr)
@@ -785,6 +798,12 @@ class TableFieldForm(ChartBaseFieldForm):
             if self.cleaned_data['annotation_label'] and self.cleaned_data['annotation_label']:
                 attributes.append('annotation_label-1')
 
+        # Shared across every column type (see setup_modal). Only persisted when set so
+        # existing fields are untouched.
+        max_width = self.cleaned_data.get('max_width')
+        if max_width:
+            attributes.append(f'max_width-{int(max_width)}')
+
         for ext in load_field_extensions(self.slug):
             if ext.applies_to(self.django_field, self.col_type_override, data):
                 ext.save_attributes(self, attributes)
@@ -859,6 +878,9 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
             layout = None
 
         if layout is not None:
+            # Expose the shared max-width field on every explicit layout. Column types that
+            # fall through to the default layout (layout is None) render it automatically.
+            layout = list(layout) + ['max_width']
             extras = []
             for ext in load_field_extensions(self.slug):
                 if ext.applies_to(django_field, col_type_override, data):

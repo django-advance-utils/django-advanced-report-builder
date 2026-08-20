@@ -123,6 +123,50 @@ class TableUtilsMixin(ReportUtilsMixin):
 
         return field_name
 
+    TRUNCATE_CLASS = 'rb-truncate-col'
+
+    @classmethod
+    def _merge_max_width_defs(cls, column_defs, width_value):
+        """Set the DataTables column width and append the truncating class, preserving any
+        existing ``className`` (e.g. an alignment class)."""
+        column_defs['width'] = width_value
+        existing = column_defs.get('className')
+        if existing:
+            if cls.TRUNCATE_CLASS not in existing.split():
+                column_defs['className'] = f'{existing} {cls.TRUNCATE_CLASS}'
+        else:
+            column_defs['className'] = cls.TRUNCATE_CLASS
+        return column_defs
+
+    def apply_column_max_width(self, data_attr, fields, start_index):
+        """Apply the optional per-column ``max_width`` (pixels) to every column added by the
+        current field. Handles all three shapes an entry in ``fields`` can take: a column
+        object, a ``(name, attr_dict)`` tuple, or a bare field-name string."""
+        max_width = data_attr.get('max_width')
+        if not max_width:
+            return
+        try:
+            width_px = int(max_width)
+        except (TypeError, ValueError):
+            return
+        if width_px <= 0:
+            return
+        width_value = f'{width_px}px'
+
+        for i in range(start_index, len(fields)):
+            entry = fields[i]
+            if isinstance(entry, (list, tuple)):
+                name = entry[0]
+                attr = dict(entry[1]) if len(entry) > 1 and isinstance(entry[1], dict) else {}
+                attr['column_defs'] = self._merge_max_width_defs(dict(attr.get('column_defs') or {}), width_value)
+                fields[i] = (name, attr)
+            elif isinstance(entry, str):
+                fields[i] = (entry, {'column_defs': self._merge_max_width_defs({}, width_value)})
+            else:
+                column_defs = getattr(entry, 'column_defs', None)
+                if column_defs is not None:
+                    self._merge_max_width_defs(column_defs, width_value)
+
     def process_query_results(
         self,
         report_builder_class,
@@ -148,6 +192,11 @@ class TableUtilsMixin(ReportUtilsMixin):
             field_attr = {}
             if 'title' in table_field:
                 field_attr['title'] = table_field['title']
+
+            # Remember how many columns already exist so any column(s) this iteration adds
+            # (a single field can expand into several, e.g. multiple_columns) can have the
+            # optional per-column max width applied to just those entries.
+            fields_before = len(fields)
 
             original_field_name = field
             fields_used.add(field)
@@ -333,6 +382,8 @@ class TableUtilsMixin(ReportUtilsMixin):
                     if field_attr:
                         field = (field, field_attr)
                     fields.append(field)
+
+            self.apply_column_max_width(data_attr=data_attr, fields=fields, start_index=fields_before)
 
             if not first_field_name:
                 first_field_name = field_name

@@ -1,6 +1,19 @@
 {% load datatable_tags %}
 {% load ajax_helpers %}
 
+<style>
+    /* Per-column max width (set via the report builder's "Max width" field). The pixel
+       width comes from the column's DataTables columnDefs; max-width:0 lets that width win
+       in the table layout while the cell truncates its content with an ellipsis. */
+    table.dataTable td.rb-truncate-col,
+    table.dataTable th.rb-truncate-col {
+        max-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+</style>
+
 {% if datatable.show_pivot_table %}
     <div class="col-12 col-sm-6 col-md-5 col-lg-4 col-xl-2 float-left">
         <div class="card report-card">
