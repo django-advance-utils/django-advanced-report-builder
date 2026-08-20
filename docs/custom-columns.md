@@ -11,6 +11,7 @@ Formats date values with a configurable format string.
 ```python
 from advanced_report_builder.columns import ReportBuilderDateColumn
 
+
 class Datatable(DatatableModel):
     created_date = ReportBuilderDateColumn(
         column_name='created_date',
@@ -26,6 +27,7 @@ Formats numeric values with configurable decimal places.
 
 ```python
 from advanced_report_builder.columns import ReportBuilderNumberColumn
+
 
 class Datatable(DatatableModel):
     weight = ReportBuilderNumberColumn(
@@ -60,6 +62,7 @@ Displays a colour swatch based on a hex colour value stored in the model.
 ```python
 from advanced_report_builder.columns import ColourColumn
 
+
 class Datatable(DatatableModel):
     background_colour_column = ColourColumn(
         title='Background Colour',
@@ -74,6 +77,7 @@ Displays a right-arrow icon. Useful as a navigation indicator in table rows.
 ```python
 from advanced_report_builder.columns import ArrowColumn
 
+
 class Datatable(DatatableModel):
     arrow = ArrowColumn(title='Arrow Icon')
 ```
@@ -84,6 +88,7 @@ A column that provides filter options derived from distinct values of a foreign 
 
 ```python
 from advanced_report_builder.columns import FilterForeignKeyColumn
+
 
 class Datatable(DatatableModel):
     category = FilterForeignKeyColumn(
@@ -106,6 +111,7 @@ A clickable link column that can link to a Django URL.
 
 ```python
 from advanced_report_builder.columns import ReportBuilderColumnLink
+
 
 class Datatable(DatatableModel):
     link = ReportBuilderColumnLink(
@@ -133,6 +139,7 @@ Displays values from a many-to-many relationship.
 ```python
 from advanced_report_builder.columns import ReportBuilderManyToManyColumn
 
+
 class Datatable(DatatableModel):
     sector_names = ReportBuilderManyToManyColumn(field='sectors__name')
 ```
@@ -148,6 +155,7 @@ Aggregates string values from a reverse FK using `StringAgg`.
 ```python
 from advanced_report_builder.columns import ReverseForeignKeyStrColumn
 
+
 class Datatable(DatatableModel):
     contract_notes = ReverseForeignKeyStrColumn(
         field_name='contract__notes',
@@ -161,6 +169,7 @@ Aggregates boolean values from a reverse FK using XOR, AND or Array operations.
 
 ```python
 from advanced_report_builder.columns import ReverseForeignKeyBoolColumn
+
 
 class Datatable(DatatableModel):
     contract_valid = ReverseForeignKeyBoolColumn(
@@ -176,6 +185,7 @@ Aggregates choice field values from a reverse FK.
 ```python
 from advanced_report_builder.columns import ReverseForeignKeyChoiceColumn
 
+
 class Datatable(DatatableModel):
     contract_temperature = ReverseForeignKeyChoiceColumn(
         field_name='contract__temperature',
@@ -189,6 +199,7 @@ Aggregates date values from a reverse FK using Array, Min or Max operations.
 
 ```python
 from advanced_report_builder.columns import ReverseForeignKeyDateColumn
+
 
 class Datatable(DatatableModel):
     contract_created = ReverseForeignKeyDateColumn(

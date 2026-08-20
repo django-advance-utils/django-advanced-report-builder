@@ -81,12 +81,7 @@ The modal that owns the column picker needs to opt in by appending
 url = reverse(
     'advanced_report_builder:table_field_modal',
     kwargs={
-        'slug': (
-            'selector-99999'
-            '-data-FIELD_INFO'
-            '-report_type_id-REPORT_TYPE_ID'
-            '-extensions-my_extension'
-        ),
+        'slug': ('selector-99999-data-FIELD_INFO-report_type_id-REPORT_TYPE_ID-extensions-my_extension'),
     },
 )
 ```
@@ -122,11 +117,10 @@ class FilterableExtension(FieldExtension):
         return django_field is not None
 
     def add_form_fields(self, form, data_attr):
-        form.fields['filter_enabled'] = BooleanField(
-            required=False, widget=RBToggle(), label='Allow GET filtering'
-        )
+        form.fields['filter_enabled'] = BooleanField(required=False, widget=RBToggle(), label='Allow GET filtering')
         form.fields['filter_param'] = CharField(
-            required=False, label='Query param',
+            required=False,
+            label='Query param',
         )
         if data_attr.get('filter_enabled') == '1':
             form.fields['filter_enabled'].initial = True

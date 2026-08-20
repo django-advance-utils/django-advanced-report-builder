@@ -52,6 +52,7 @@ The record navigation plugin can be added to any django-datatables table, not ju
 ```python
 from advanced_report_builder.record_nav import RecordNavPlugin
 
+
 def setup_table(self, table):
     # ... configure table ...
     table.add_plugin(RecordNavPlugin, 'My Report Title')

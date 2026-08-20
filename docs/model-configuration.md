@@ -5,6 +5,7 @@ To make a Django model available to the report builder, add an inner class calle
 ```python
 from advanced_report_builder.report_builder import ReportBuilderFields
 
+
 class MyModel(models.Model):
     # ... fields ...
 
@@ -79,8 +80,8 @@ class Payment(models.Model):
     class ReportBuilder(ReportBuilderFields):
         fields = [
             'date',
-            'currency_amount',              # Reference a Datatable column by name
-            CustomDateColumn(               # Inline column instance
+            'currency_amount',  # Reference a Datatable column by name
+            CustomDateColumn(  # Inline column instance
                 column_name='modified',
                 field='modified',
                 title='Modified',
@@ -102,13 +103,13 @@ class ReportBuilder(ReportBuilderFields):
         'user_profile': {
             'title': 'User',
             'model': 'myapp.UserProfile.ReportBuilder',
-            'show_includes': False,   # Don't show nested includes
+            'show_includes': False,  # Don't show nested includes
         },
         'companyinformation': {
             'title': 'Company Information',
             'model': 'myapp.CompanyInformation.ReportBuilder',
-            'reversed': True,         # Reverse foreign key
-            'allow_pivots': False,    # Disable pivots for this include
+            'reversed': True,  # Reverse foreign key
+            'allow_pivots': False,  # Disable pivots for this include
         },
     }
 ```
