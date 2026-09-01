@@ -150,6 +150,12 @@ class ReportType(TimeStampedModel):
     slug = models.SlugField(unique=True)
     content_type = models.ForeignKey(ContentType, null=False, blank=False, on_delete=models.PROTECT)
     report_builder_class_name = models.CharField(max_length=200)
+    # Keep this type out of the report-type pickers without deleting it. For a type that exists
+    # only to give some other feature a distinct report builder -- a second builder over the same
+    # model, told apart by an attribute that means nothing to a report -- the picker offers the
+    # reader two entries that behave identically and no way to tell which they want.
+    # Existing reports and every by-id/by-slug lookup are unaffected; only the choice lists filter.
+    hidden = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
@@ -194,7 +200,7 @@ class Report(TimeStampedModel):
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
     slug_alias = models.SlugField(blank=True, null=True)  # used if the slug changes
-    report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
+    report_type = models.ForeignKey(ReportType, limit_choices_to={'hidden': False}, null=True, blank=False, on_delete=models.PROTECT)
     instance_type = models.CharField(null=True, max_length=255)
     template_style = models.CharField(blank=True, null=True, max_length=255)
     report_tags = models.ManyToManyField(ReportTag, blank=True)
@@ -566,7 +572,7 @@ class KanbanReport(Report):
 class KanbanReportDescription(TimeStampedModel):
     kanban_report = models.ForeignKey(KanbanReport, on_delete=models.CASCADE)
     name = models.CharField(max_length=200)
-    report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
+    report_type = models.ForeignKey(ReportType, limit_choices_to={'hidden': False}, null=True, blank=False, on_delete=models.PROTECT)
     description = models.TextField(blank=True, null=True)
     order = models.PositiveSmallIntegerField()
 
@@ -609,7 +615,7 @@ class KanbanReportLane(TimeStampedModel):
     kanban_report = models.ForeignKey(KanbanReport, on_delete=models.CASCADE)
     name = models.CharField(max_length=200)
     order = models.PositiveSmallIntegerField()
-    report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
+    report_type = models.ForeignKey(ReportType, limit_choices_to={'hidden': False}, null=True, blank=False, on_delete=models.PROTECT)
     heading_field = models.CharField(max_length=200, blank=True, null=True)
     link_field = models.CharField(max_length=200, blank=True, null=True)
     order_by_field = models.CharField(max_length=200, blank=True, null=True)
@@ -665,7 +671,7 @@ class MultiValueReportRow(TimeStampedModel):
 
     multi_value_report = models.ForeignKey(MultiValueReport, on_delete=models.CASCADE)
     row = models.PositiveSmallIntegerField()
-    report_type = models.ForeignKey(ReportType, on_delete=models.PROTECT, null=True, blank=True)
+    report_type = models.ForeignKey(ReportType, limit_choices_to={'hidden': False}, on_delete=models.PROTECT, null=True, blank=True)
     group_field = models.CharField(max_length=200, blank=True, null=True)
     period = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES, default=ANNOTATION_VALUE_WEEK)
     base_query = models.JSONField(null=True, blank=True)
@@ -731,7 +737,7 @@ class MultiCellStyle(TimeStampedModel):
 class MultiValueHeldQuery(TimeStampedModel):
     multi_value_report = models.ForeignKey(MultiValueReport, on_delete=models.CASCADE)
     name = models.CharField(max_length=200)
-    report_type = models.ForeignKey(ReportType, null=True, blank=True, on_delete=models.PROTECT)
+    report_type = models.ForeignKey(ReportType, limit_choices_to={'hidden': False}, null=True, blank=True, on_delete=models.PROTECT)
     query = models.JSONField(null=True, blank=True)
 
     def __str__(self):
@@ -783,7 +789,7 @@ class MultiValueReportCell(TimeStampedModel):
     multi_value_type = models.IntegerField(choices=MultiValueType.choices, default=MultiValueType.STATIC_TEXT)
     text = models.TextField(blank=True, null=True)
     multi_cell_style = models.ForeignKey('MultiCellStyle', on_delete=models.SET_NULL, null=True, blank=True)
-    report_type = models.ForeignKey(ReportType, null=True, blank=True, on_delete=models.PROTECT)
+    report_type = models.ForeignKey(ReportType, limit_choices_to={'hidden': False}, null=True, blank=True, on_delete=models.PROTECT)
 
     field = models.CharField(max_length=200, blank=True, null=True)  # denominator
     numerator = models.CharField(max_length=200, blank=True, null=True)
@@ -868,7 +874,7 @@ class CalendarReport(Report):
 class CalendarReportDescription(TimeStampedModel):
     calendar_report = models.ForeignKey(CalendarReport, on_delete=models.CASCADE)
     name = models.CharField(max_length=200)
-    report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
+    report_type = models.ForeignKey(ReportType, limit_choices_to={'hidden': False}, null=True, blank=False, on_delete=models.PROTECT)
     description = models.TextField(blank=True, null=True)
     order = models.PositiveSmallIntegerField()
 
@@ -909,7 +915,7 @@ class CalendarReportDataSet(TimeStampedModel):
 
     calendar_report = models.ForeignKey(CalendarReport, on_delete=models.CASCADE)
     order = models.PositiveSmallIntegerField()
-    report_type = models.ForeignKey(ReportType, null=True, blank=False, on_delete=models.PROTECT)
+    report_type = models.ForeignKey(ReportType, limit_choices_to={'hidden': False}, null=True, blank=False, on_delete=models.PROTECT)
     heading_field = models.CharField(max_length=200, blank=True, null=True)
     name = models.CharField(max_length=200)
     display_type = models.PositiveSmallIntegerField(

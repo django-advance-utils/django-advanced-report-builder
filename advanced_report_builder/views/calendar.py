@@ -526,7 +526,11 @@ class CalendarDataSetModal(QueryBuilderModalBase):
         form.fields['calendar_report_description'].label = 'Description'
         form.fields['calendar_report_description'].required = False
 
-        form.fields['report_type'] = ModelChoiceField(queryset=ReportType.objects.all(), widget=Select2, required=False)
+        # Built by hand rather than off the model field, so limit_choices_to does not reach it --
+        # filter hidden types here too or this one picker still offers them.
+        form.fields['report_type'] = ModelChoiceField(
+            queryset=ReportType.objects.filter(hidden=False), widget=Select2, required=False
+        )
 
         form.add_trigger(
             'display_type',
