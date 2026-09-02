@@ -55,7 +55,7 @@ class ReportAdmin(admin.ModelAdmin):
 
 @admin.register(ReportType)
 class ReportTypeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'content_type', 'report_builder_class_name')
+    list_display = ('name', 'content_type', 'report_builder_class_name', 'hidden')
 
 
 @admin.register(TableReport)

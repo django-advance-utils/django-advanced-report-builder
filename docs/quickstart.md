@@ -42,6 +42,13 @@ ReportType.objects.create(
 )
 ```
 
+Pass `hidden=True` for a report type you do not want offered in the report-type pickers — one
+that exists only to give another feature its own report builder, rather than to be picked as a
+report. It stays fully usable by id, by slug, and through your own foreign keys.
+
+Re-point any existing reports off a type before hiding it: `report_type` is a live field on the
+report modals, so a report left on a hidden type will refuse to save with "Select a valid choice".
+
 ## 3. Create views for reports and dashboards
 
 You need to provide views in your application that render individual reports and dashboards. Set the URL names in your settings:

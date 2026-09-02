@@ -154,7 +154,18 @@ class ReportType(TimeStampedModel):
     # only to give some other feature a distinct report builder -- a second builder over the same
     # model, told apart by an attribute that means nothing to a report -- the picker offers the
     # reader two entries that behave identically and no way to tell which they want.
-    # Existing reports and every by-id/by-slug lookup are unaffected; only the choice lists filter.
+    #
+    # Reading is unaffected: every by-id and by-slug lookup still finds a hidden type, an existing
+    # report goes on rendering, and a consumer's own FK (without the limit_choices_to below) still
+    # offers it. What filters is the choice lists.
+    #
+    # Which is the catch, and it is on the WRITE path: report_type is a live ModelForm field on
+    # the report modals and in the admin, and ModelChoiceField drops the instance's current value
+    # when the queryset excludes it -- so a report already built on a type you hide renders with
+    # its type unselected and refuses to save with "Select a valid choice", without anyone having
+    # touched it. Re-point existing reports off a type BEFORE hiding it. (A consumer that must
+    # keep them there should union the current value into the field's queryset in form_setup:
+    # Q(hidden=False) | Q(pk=form.instance.report_type_id).)
     hidden = models.BooleanField(default=False)
 
     def __str__(self):
