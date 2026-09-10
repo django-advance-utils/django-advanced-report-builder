@@ -469,6 +469,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                     value_prefix=multiple_column_field,
                     fields=_fields,
                     text=field_report_builder_class.default_multiple_column_text,
+                    null_text=field_report_builder_class.default_multiple_column_null_text,
                 )
                 extra_filter = Q((multiple_column_field, result[multiple_column_field]))
 
@@ -500,14 +501,6 @@ class TableUtilsMixin(ReportUtilsMixin):
                 convert_currency_fields=convert_currency_fields,
             )
         return field_name
-
-    @staticmethod
-    def _set_multiple_title(database_values, value_prefix, fields, text):
-        results = {}
-        for field in fields:
-            value = database_values[value_prefix + '__' + field]
-            results[field] = value
-        return text.format(**results)
 
     def extra_filters(self, query):
         report_query = self.get_report_query(report=self.table_report)

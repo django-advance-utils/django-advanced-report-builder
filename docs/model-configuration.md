@@ -33,6 +33,7 @@ class MyModel(models.Model):
 | `extra_chart_field` | `list` | `['record_count']` | Extra fields available in chart reports |
 | `default_multiple_column_text` | `str` | `''` | Format string for multi-value display (e.g. `'{name} - {code}'`) |
 | `default_multiple_column_fields` | `list` | `[]` | Fields used in `default_multiple_column_text` |
+| `default_multiple_column_null_text` | `str` | `''` | Title for the column a split produces for the NULL row, where the relation is nullable. Without one it is headed `None` |
 | `default_multiple_pk` | `str` | `'id'` | Primary key field for multi-value lookups |
 | `options_filter` | `Q` | `Q()` | Django Q object to filter options |
 | `option_label` | `str` | `'__str__'` | Method used for option labels |

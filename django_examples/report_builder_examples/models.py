@@ -62,6 +62,9 @@ class UserProfile(AbstractUser):
         fields = ['first_name', 'last_name', 'username', 'full_name', 'colour_column']
         default_multiple_column_text = '{username} - {first_name} {last_name}'
         default_multiple_column_fields = ['username', 'first_name', 'last_name']
+        # Company.user_profile is nullable, so splitting a count by user always produces a column
+        # for the companies that have none. Without this it is headed 'None'.
+        default_multiple_column_null_text = 'No user'
 
 
 class Sector(TimeStampedModel):
