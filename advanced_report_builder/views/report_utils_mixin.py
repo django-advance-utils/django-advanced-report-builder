@@ -26,7 +26,6 @@ from advanced_report_builder.utils import decode_attribute
 
 
 class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
-
     use_annotations = True
     number_field = ReportBuilderNumberColumn
 
