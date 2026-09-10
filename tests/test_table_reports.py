@@ -389,4 +389,8 @@ def test_a_split_names_its_null_column(authenticated_page):
 
     headings = page.locator('table.dataTable thead th')
     expect(headings.filter(has_text='No user').first).to_be_visible(timeout=5000)
-    assert 'None' not in headings.all_inner_texts(), headings.all_inner_texts()
+    # Substring, not list membership: the unfixed heading for this builder is the whole format
+    # string rendered against a missing row -- "None - None None" -- so an exact-match assertion
+    # could never have fired.
+    texts = headings.all_inner_texts()
+    assert not any('None' in heading for heading in texts), texts
