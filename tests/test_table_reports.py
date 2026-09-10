@@ -361,3 +361,32 @@ def test_table_report_sum_of_included_field_grouped_by_week(authenticated_page):
     info = page.locator('.dataTables_info')
     expect(info).not_to_contain_text('193', timeout=5000)
     expect(page.locator('table.dataTable tbody tr').first).to_contain_text('885', timeout=5000)
+
+
+def test_a_split_names_its_null_column(authenticated_page):
+    """Splitting a count one-column-per-related-row always turns up a column for the NULL row
+    wherever the relation is nullable, and it used to be headed with the word 'None'.
+
+    Company.user_profile is nullable and every company in the fixture has none, so splitting
+    Importance by User is exactly that case: one generated column, for the absence of a user.
+    UserProfile.ReportBuilder names it via `default_multiple_column_null_text`.
+    """
+    page = authenticated_page
+    _create_table_report(page, 'Null Split Test', report_type='Company')
+    _navigate_to_report(page, 'Null Split Test')
+    _add_fields_to_table(page, ['Importance'])
+
+    # Sum (annotations_type-1), split one column per user_profile.
+    _set_table_field_data_attr(
+        'Null Split Test',
+        'importance',
+        'annotations_type-1-multiple_columns-1-multiple_column_field-user_profile',
+    )
+
+    page.reload()
+    page.wait_for_load_state('networkidle')
+    page.locator('table.dataTable').first.wait_for(state='visible', timeout=10000)
+
+    headings = page.locator('table.dataTable thead th')
+    expect(headings.filter(has_text='No user').first).to_be_visible(timeout=5000)
+    assert 'None' not in headings.all_inner_texts(), headings.all_inner_texts()

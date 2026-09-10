@@ -209,14 +209,6 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         fields.append(field)
         return field_name
 
-    @staticmethod
-    def _set_multiple_title(database_values, value_prefix, fields, text):
-        results = {}
-        for field in fields:
-            value = database_values[value_prefix + '__' + field]
-            results[field] = value
-        return text.format(**results)
-
     def process_query_results(self, base_model, table):
         fields = []
         date_field_name = self.get_date_field(0, fields, base_model=base_model, table=table)
@@ -294,6 +286,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
                             value_prefix=multiple_column_field,
                             fields=_fields,
                             text=report_builder_class.default_multiple_column_text,
+                            null_text=report_builder_class.default_multiple_column_null_text,
                         )
                         extra_filter = Q((multiple_column_field, result[multiple_column_field]))
 
