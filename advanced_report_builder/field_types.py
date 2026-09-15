@@ -244,7 +244,13 @@ class FieldTypes(ReportBuilderFieldUtils):
                     title=field_detail.title,
                 )
             elif field_type == FieldType.MANY_TO_MANY:
-                choices = dict(field_detail.column.options['lookup'])
+                # A lookup value may be a list — a coloured tag column carries [name, colour, ...] for
+                # its badge template. The filter only wants the name; the whole list would be printed
+                # as "Name,E20000".
+                choices = {
+                    key: value[0] if isinstance(value, (list, tuple)) else value
+                    for key, value in field_detail.column.options['lookup']
+                }
                 query_builder_filter = {
                     'id': field_detail.column_id,
                     'label': field_detail.title,
