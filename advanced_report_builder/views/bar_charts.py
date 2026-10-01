@@ -39,7 +39,7 @@ from advanced_report_builder.globals import (
 )
 from advanced_report_builder.models import BarChartReport, ReportType
 from advanced_report_builder.record_nav import RecordNavPlugin
-from advanced_report_builder.restrict import restrict_queryset
+from advanced_report_builder.restrict import restrict_queryset, restricted
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import (
     decode_attribute,
@@ -692,7 +692,7 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
                 table=table,
             )[3]
 
-        table.extra_filters = self.extra_filters
+        table.extra_filters = restricted(self, self.extra_filters)
 
         table.ajax_data = False
         table.table_options['pageLength'] = 25

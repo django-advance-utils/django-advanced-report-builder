@@ -1,4 +1,4 @@
-from django.core.exceptions import FieldDoesNotExist, FieldError
+from django.core.exceptions import FieldDoesNotExist, FieldError, PermissionDenied
 from django.db import ProgrammingError
 from django_datatables.datatables import DatatableError, DatatableView
 from django_datatables.helpers import row_link
@@ -7,6 +7,7 @@ from django_menus.menu import MenuItem
 from advanced_report_builder.columns import ArrowColumn
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.record_nav import RecordNavPlugin
+from advanced_report_builder.restrict import restricted
 from advanced_report_builder.utils import get_report_builder_class, split_slug
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
 from advanced_report_builder.views.report import ReportBase
@@ -44,8 +45,13 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
         except ProgrammingError as de:
             raise ReportError(de.args[0])
 
+    def row_edit(self, **kwargs):
+        """Report rows are never edited from a report; django-datatables' row edit would read any pk
+        unrestricted and save it, so it is refused."""
+        raise PermissionDenied('Report rows cannot be edited from a report.')
+
     def setup_table(self, table):
-        table.extra_filters = self.extra_filters
+        table.extra_filters = restricted(self, self.extra_filters)
         base_model = self.table_report.get_base_model()
         table_fields = self.table_report.table_fields
         pivot_fields = self.table_report.pivot_fields

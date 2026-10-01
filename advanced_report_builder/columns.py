@@ -112,10 +112,16 @@ class ColourColumn(ColumnBase):
 
 
 class FilterForeignKeyColumn(ColumnBase):
+    def view_request(self):
+        """The request of the view this column's table belongs to, when it has one."""
+        table = getattr(self, 'table', None)
+        view = getattr(table, 'view', None)
+        return getattr(view, 'request', None)
+
     def get_query_options(self):
         # Only the values in rows this user may see: the list itself would otherwise show the rest.
         values = (
-            restrict_queryset(self.model.objects.all())
+            restrict_queryset(self.model.objects.all(), self.view_request())
             .distinct(self.field)
             .order_by(self.field)
             .values_list(self.field, flat=True)

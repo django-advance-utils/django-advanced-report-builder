@@ -818,7 +818,7 @@ class FilterQueryMixin:
                 )
 
                 _obj = (
-                    restrict_queryset(base_model.objects.all())
+                    restrict_queryset(base_model.objects.all(), getattr(self, 'request', None))
                     .filter(pk=report_options_dict.get(report_option.pk))
                     .first()
                 )

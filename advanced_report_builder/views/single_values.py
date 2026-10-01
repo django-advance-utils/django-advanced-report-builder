@@ -30,6 +30,7 @@ from advanced_report_builder.globals import (
 )
 from advanced_report_builder.models import ReportOption, ReportQuery, ReportType, SingleValueReport, Target
 from advanced_report_builder.record_nav import RecordNavPlugin
+from advanced_report_builder.restrict import restricted
 from advanced_report_builder.utils import get_query_js, get_report_builder_class, get_template_type_class
 from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.datatables.modal import (
@@ -704,7 +705,7 @@ class SingleValueShowBreakdownModal(TableUtilsMixin, Modal):
         self.report = single_value_report
         base_model = single_value_report.get_base_model()
         table = self.add_table(base_model=base_model)
-        table.extra_filters = self.extra_filters
+        table.extra_filters = restricted(self, self.extra_filters)
         table_fields = single_value_report.breakdown_fields
         report_builder_class = get_report_builder_class(model=base_model, report_type=self.table_report.report_type)
         fields_used = set()
