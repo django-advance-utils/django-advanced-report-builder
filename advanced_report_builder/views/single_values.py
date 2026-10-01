@@ -37,7 +37,7 @@ from advanced_report_builder.views.datatables.modal import (
     TableFieldModal,
 )
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
-from advanced_report_builder.views.helpers import QueryBuilderModelForm
+from advanced_report_builder.views.helpers import BreakdownModalSizeMixin, QueryBuilderModelForm
 from advanced_report_builder.views.modals_base import (
     QueryBuilderModalBase,
     QueryBuilderModalBaseMixin,
@@ -687,9 +687,9 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
         return self.command_response()
 
 
-class SingleValueShowBreakdownModal(TableUtilsMixin, Modal):
+class SingleValueShowBreakdownModal(BreakdownModalSizeMixin, TableUtilsMixin, Modal):
     button_container_class = 'text-center'
-    size = 'xl'
+    breakdown_size_setting = 'REPORT_BUILDER_SINGLE_VALUE_BREAKDOWN_MODAL_SIZE'
 
     def modal_title(self):
         return self.table_report.name
