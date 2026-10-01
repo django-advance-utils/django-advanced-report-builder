@@ -75,6 +75,15 @@ Controls the default value of the **Record Nav** toggle when creating new report
 REPORT_BUILDER_RECORD_NAV_DEFAULT = False
 ```
 
+### REPORT_BUILDER_SINGLE_VALUE_BREAKDOWN_MODAL_SIZE
+
+The size of the modal that opens when a single value with **Show breakdown** is clicked: the records behind the figure. The value becomes the dialog's `modal-<size>` class, so it can name one of Bootstrap's sizes or a class the host styles itself, for a breakdown that needs more room than `xl` gives it.
+
+```python
+# Default: 'xl'
+REPORT_BUILDER_SINGLE_VALUE_BREAKDOWN_MODAL_SIZE = 'xxl'  # with .modal-xxl { max-width: 95vw; } in the host's CSS
+```
+
 ### ADVANCED_REPORT_BUILDER_FIELD_EXTENSIONS
 
 A dict mapping short keys to dotted paths of `FieldExtension` subclasses. Registered extensions can inject extra fields into the column edit modal on an opt-in per-render basis. See [Field extensions](field-extensions.md) for the full interface.

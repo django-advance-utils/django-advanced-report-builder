@@ -689,7 +689,16 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
 
 class SingleValueShowBreakdownModal(TableUtilsMixin, Modal):
     button_container_class = 'text-center'
-    size = 'xl'
+
+    @property
+    def size(self):
+        """The breakdown opened by clicking a single value: ``xl`` unless the host asks for another size.
+
+        ``REPORT_BUILDER_SINGLE_VALUE_BREAKDOWN_MODAL_SIZE`` becomes the dialog's ``modal-<size>`` class, so
+        a host can ask for a size Bootstrap does not ship (an ``xxl`` it styles itself) when the records
+        behind a figure need more room than ``xl`` gives them.
+        """
+        return getattr(settings, 'REPORT_BUILDER_SINGLE_VALUE_BREAKDOWN_MODAL_SIZE', 'xl')
 
     def modal_title(self):
         return self.table_report.name
