@@ -75,6 +75,18 @@ Controls the default value of the **Record Nav** toggle when creating new report
 REPORT_BUILDER_RECORD_NAV_DEFAULT = False
 ```
 
+### REPORT_BUILDER_BREAKDOWN_MODAL_SIZE
+
+The size of the modal that opens when a figure with **Show breakdown** is clicked (a single value, a bar, a multi-value cell): the records behind it. The value becomes the dialog's `modal-<size>` class, so it can name one of Bootstrap's sizes or a class the host styles itself, for breakdowns that need more room than `xl` gives them.
+
+```python
+# Default: 'xl'
+REPORT_BUILDER_BREAKDOWN_MODAL_SIZE = 'xxl'  # with .modal-xxl { max-width: 95vw; } in the host's CSS
+```
+
+### REPORT_BUILDER_SINGLE_VALUE_BREAKDOWN_MODAL_SIZE
+
+The same, for a single value's breakdown only; read before `REPORT_BUILDER_BREAKDOWN_MODAL_SIZE`.
 ### ADVANCED_REPORT_BUILDER_RESTRICT_QUERYSET
 
 A callable, or the dotted path of one, taking `(queryset, request)` and returning the rows that request's user may see. Use it when some users must not see some rows at all (one brand of a group, a sales team's own customers). The report builder calls it on every queryset it reads report rows from, so tables, charts, single values, multi-value cells, kanban and calendar lanes, custom reports, breakdowns, report options and the query builder's filter-by-value lists all leave those rows out. Report rows can no longer be edited through the table's row-edit request. Not set, nothing changes.

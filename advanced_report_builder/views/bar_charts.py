@@ -53,6 +53,7 @@ from advanced_report_builder.views.datatables.modal import (
     TableFieldModal,
 )
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
+from advanced_report_builder.views.helpers import BreakdownModalSizeMixin
 from advanced_report_builder.views.modals_base import (
     QueryBuilderModalBase,
     QueryBuilderModalBaseMixin,
@@ -608,9 +609,8 @@ class BarChartBreakdownFieldModal(TableFieldModal):
     update_selection_command = 'breakdown_update_selection'
 
 
-class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
+class BarChartShowBreakdownModal(BreakdownModalSizeMixin, TableUtilsMixin, Modal):
     button_container_class = 'text-center'
-    size = 'xl'
 
     def __init__(self, *args, **kwargs):
         self.date_field_path = None
