@@ -58,7 +58,7 @@ from advanced_report_builder.variable_date import VariableDate
 from advanced_report_builder.views.charts_base import ChartJSTable
 from advanced_report_builder.views.datatables.modal import TableFieldForm, TableFieldModal
 from advanced_report_builder.views.datatables.utils import TableUtilsMixin
-from advanced_report_builder.views.helpers import QueryBuilderModelForm
+from advanced_report_builder.views.helpers import BreakdownModalSizeMixin, QueryBuilderModelForm
 from advanced_report_builder.views.modals_base import QueryBuilderModalBase
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 from advanced_report_builder.views.value_base import ValueBaseView
@@ -1660,9 +1660,8 @@ class MultiValueView(ValueBaseView):
         return value, None
 
 
-class MultiValueShowBreakdownModal(TableUtilsMixin, Modal):
+class MultiValueShowBreakdownModal(BreakdownModalSizeMixin, TableUtilsMixin, Modal):
     button_container_class = 'text-center'
-    size = 'xl'
 
     def __init__(self, *args, **kwargs):
         self._held_multi_value_report_cell = None

@@ -75,14 +75,18 @@ Controls the default value of the **Record Nav** toggle when creating new report
 REPORT_BUILDER_RECORD_NAV_DEFAULT = False
 ```
 
-### REPORT_BUILDER_SINGLE_VALUE_BREAKDOWN_MODAL_SIZE
+### REPORT_BUILDER_BREAKDOWN_MODAL_SIZE
 
-The size of the modal that opens when a single value with **Show breakdown** is clicked: the records behind the figure. The value becomes the dialog's `modal-<size>` class, so it can name one of Bootstrap's sizes or a class the host styles itself, for a breakdown that needs more room than `xl` gives it.
+The size of the modal that opens when a figure with **Show breakdown** is clicked (a single value, a bar, a multi-value cell): the records behind it. The value becomes the dialog's `modal-<size>` class, so it can name one of Bootstrap's sizes or a class the host styles itself, for breakdowns that need more room than `xl` gives them.
 
 ```python
 # Default: 'xl'
-REPORT_BUILDER_SINGLE_VALUE_BREAKDOWN_MODAL_SIZE = 'xxl'  # with .modal-xxl { max-width: 95vw; } in the host's CSS
+REPORT_BUILDER_BREAKDOWN_MODAL_SIZE = 'xxl'  # with .modal-xxl { max-width: 95vw; } in the host's CSS
 ```
+
+### REPORT_BUILDER_SINGLE_VALUE_BREAKDOWN_MODAL_SIZE
+
+The same, for a single value's breakdown only; read before `REPORT_BUILDER_BREAKDOWN_MODAL_SIZE`.
 
 ### ADVANCED_REPORT_BUILDER_FIELD_EXTENSIONS
 
