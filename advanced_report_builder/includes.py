@@ -15,7 +15,8 @@ class JQueryExtendext(SourceBase):
 class QueryBuilder(SourceBase):
     static_path = 'advanced_report_builder/query_builder/'
     css_filename = 'query-builder.default.css'
-    js_filename = 'query-builder.min.js'
+    # known-rules.js: load a saved query without losing it to one rule the builder cannot show.
+    js_filename = ['query-builder.min.js', 'known-rules.js']
 
 
 class DashboardInclude(SourceBase):
