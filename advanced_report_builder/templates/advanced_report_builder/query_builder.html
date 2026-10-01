@@ -25,16 +25,57 @@
                 }, 100)
             }
 
+            // A saved query can name a field the builder no longer offers (renamed, removed, or not
+            // offered to this user). jQuery QueryBuilder then refuses the whole set and shows no rules
+            // at all, and saving from there wipes every rule, the good ones too. Set aside only the
+            // unknown rules, show the rest, and say what was set aside and that saving drops it.
+            function split_unknown_rules(group, known_ids, dropped) {
+                if (!group || !group.rules) {
+                    return group;
+                }
+                group.rules = group.rules.filter(function (rule) {
+                    if (rule.rules) {
+                        split_unknown_rules(rule, known_ids, dropped);
+                        return true;
+                    }
+                    if (known_ids.indexOf(rule.id) === -1) {
+                        dropped.push(rule.id);
+                        return false;
+                    }
+                    return true;
+                });
+                return group;
+            }
+
+            function warn_unknown_rules(dropped) {
+                let $warning = $('#{{ field.auto_id }}_unknown_rules');
+                if (dropped.length === 0) {
+                    $warning.remove();
+                    return;
+                }
+                if ($warning.length === 0) {
+                    $warning = $('<div class="alert alert-warning col-12" id="{{ field.auto_id }}_unknown_rules"></div>');
+                    query_builder.before($warning);
+                }
+                $warning.text(dropped.length + (dropped.length === 1 ? ' rule refers' : ' rules refer') +
+                    ' to a field that is no longer available (' + dropped.join(', ') + ') and is not shown.' +
+                    ' Saving this query will remove ' + (dropped.length === 1 ? 'it.' : 'them.'));
+            }
+
             ajax_helpers.command_functions.query_builder_{{ field.auto_id }} = function (command) {
                 let rules = $(field_id).val();
                 let filters = jQuery.parseJSON(command.data);
 
                 if (rules !== '') {
                     $(field_id).val('');
+                    let known_ids = filters.map(function (filter) { return filter.id; });
+                    let dropped = [];
+                    let kept = split_unknown_rules(JSON.parse(rules), known_ids, dropped);
+                    warn_unknown_rules(dropped);
                     query_builder.queryBuilder({
                         allow_empty: true,
                         filters: filters,
-                        rules: JSON.parse(rules)
+                        rules: kept
                     });
                 } else {
                     query_builder.queryBuilder({
