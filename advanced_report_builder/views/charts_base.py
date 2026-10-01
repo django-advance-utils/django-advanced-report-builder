@@ -33,6 +33,7 @@ from advanced_report_builder.globals import (
     PeriodType,
 )
 from advanced_report_builder.models import ReportType
+from advanced_report_builder.restrict import restrict_queryset
 from advanced_report_builder.utils import (
     count_days,
     get_report_builder_class,
@@ -165,7 +166,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
             query = self.process_query_filters(
                 query=query, search_filter_data=search_filter_data, extra_filter=option_query
             )
-        return query
+        return restrict_queryset(query, getattr(self, 'request', None))
 
     def get_report_template(self):
         template_type_class = get_template_type_class()

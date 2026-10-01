@@ -13,6 +13,7 @@ from django_modals.modals import FormModal
 from django_modals.widgets.select2 import Select2, select2_ajax_result
 
 from advanced_report_builder.models import ReportOption
+from advanced_report_builder.restrict import restrict_queryset
 from advanced_report_builder.utils import get_report_builder_class, make_slug_str
 
 
@@ -108,7 +109,7 @@ class ReportBase(AjaxHelpers, MenuMixin):
             option_slug = f'option{report_option.id}{append_option_slug}'
             base_model = report_option.content_type.model_class()
             report_cls = get_report_builder_class(model=base_model, class_name=report_option.report_builder_class_name)
-            qs = base_model.objects.filter(report_cls.options_filter)
+            qs = restrict_queryset(base_model.objects.filter(report_cls.options_filter), self.request)
             # Fetch at most 21 rows
             probe = list(qs[: self.max_dropdown_option + 1])
             if len(probe) <= self.max_dropdown_option:
@@ -199,7 +200,7 @@ class SelectOptionModal(FormModal):
         choices = []
         initial = None
         if option_slug in self.slug:
-            _obj = base_model.objects.filter(report_cls.options_filter).first()
+            _obj = restrict_queryset(base_model.objects.filter(report_cls.options_filter), self.request).first()
             if _obj is not None:
                 label = self.get_option_label(_obj, report_cls)
                 choices.append((_obj.id, label))
@@ -237,7 +238,7 @@ class SelectOptionModal(FormModal):
     def select2_select_option(self, search=None, page=None, **_kwargs):
         report_cls, base_model = self.get_report_class_and_base_model()
 
-        qs = base_model.objects.filter(report_cls.options_filter)
+        qs = restrict_queryset(base_model.objects.filter(report_cls.options_filter), self.request)
 
         if search:
             try:

@@ -28,6 +28,7 @@ from advanced_report_builder.models import (
     Report,
     ReportQuery,
 )
+from advanced_report_builder.restrict import restrict_queryset
 from advanced_report_builder.utils import (
     get_report_builder_class,
     get_template_type_class,
@@ -311,7 +312,7 @@ class DashboardReportModal(ModelFormModal):
                     model=base_model, class_name=report_option.report_builder_class_name
                 )
                 choices = [(0, 'N/A')]
-                for _obj in base_model.objects.filter(report_cls.options_filter):
+                for _obj in restrict_queryset(base_model.objects.filter(report_cls.options_filter), self.request):
                     method = getattr(_obj, report_cls.option_label, None)
                     label = method() if callable(method) else _obj.__str__()
                     choices.append((_obj.id, label))

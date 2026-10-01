@@ -14,6 +14,7 @@ from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.globals import DATE_FORMAT_TYPE_DD_MM_YYYY_SLASH, PeriodType
 from advanced_report_builder.models import ReportOption, ReportQuery
+from advanced_report_builder.restrict import restrict_queryset
 from advanced_report_builder.utils import get_report_builder_class, try_int
 from advanced_report_builder.variable_date import VariableDate
 
@@ -816,7 +817,11 @@ class FilterQueryMixin:
                     model=base_model, class_name=report_option.report_builder_class_name
                 )
 
-                _obj = base_model.objects.filter(pk=report_options_dict.get(report_option.pk)).first()
+                _obj = (
+                    restrict_queryset(base_model.objects.all())
+                    .filter(pk=report_options_dict.get(report_option.pk))
+                    .first()
+                )
                 if _obj is not None:
                     method = getattr(_obj, report_cls.option_label, None)
                     label = method() if callable(method) else _obj.__str__()

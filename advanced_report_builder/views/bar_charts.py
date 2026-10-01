@@ -39,6 +39,7 @@ from advanced_report_builder.globals import (
 )
 from advanced_report_builder.models import BarChartReport, ReportType
 from advanced_report_builder.record_nav import RecordNavPlugin
+from advanced_report_builder.restrict import restrict_queryset
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import (
     decode_attribute,
@@ -760,4 +761,4 @@ class BarChartShowBreakdownModal(TableUtilsMixin, Modal):
             query = self.process_query_filters(query=query, search_filter_data=self.field_filter)
 
         query = self.filter_date(query=query)
-        return query
+        return restrict_queryset(query, getattr(self, 'request', None))

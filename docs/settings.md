@@ -75,6 +75,28 @@ Controls the default value of the **Record Nav** toggle when creating new report
 REPORT_BUILDER_RECORD_NAV_DEFAULT = False
 ```
 
+### ADVANCED_REPORT_BUILDER_RESTRICT_QUERYSET
+
+A callable, or the dotted path of one, taking `(queryset, request)` and returning the rows that request's user may see. Use it when some users must not see some rows at all (one brand of a group, a sales team's own customers): the report builder calls it on every queryset it reads report data from, so tables, charts, single values, multi-value cells, kanban and calendar lanes, custom reports, breakdowns, report options and the query builder's filter-by-value lists all leave those rows out. Not set, nothing changes.
+
+Add `ReportBuilderRequestMiddleware` too, so querysets built away from a view (a column's option list) still know whose they are:
+
+```python
+ADVANCED_REPORT_BUILDER_RESTRICT_QUERYSET = 'myapp.reports.restrict'
+
+MIDDLEWARE = [
+    # ...
+    'advanced_report_builder.restrict.ReportBuilderRequestMiddleware',
+]
+
+
+# myapp/reports.py
+def restrict(queryset, request):
+    if queryset.model is Order and request is not None and not request.user.is_superuser:
+        return queryset.filter(team__in=request.user.teams.all())
+    return queryset
+```
+
 ### ADVANCED_REPORT_BUILDER_FIELD_EXTENSIONS
 
 A dict mapping short keys to dotted paths of `FieldExtension` subclasses. Registered extensions can inject extra fields into the column edit modal on an opt-in per-render basis. See [Field extensions](field-extensions.md) for the full interface.
