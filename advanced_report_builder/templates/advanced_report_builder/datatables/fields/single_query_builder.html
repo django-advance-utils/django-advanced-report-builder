@@ -26,18 +26,28 @@
                 }, 100)
             }
 
+            let warning_id = '{{ field.auto_id }}_unknown_rules';
+            let original_rules = '';
+
             ajax_helpers.command_functions.query_builder_{{ field.auto_id }} = function (command) {
                 let rules = $(field_id).val();
                 let filters = jQuery.parseJSON(command.data);
 
                 if (rules !== '') {
                     $(field_id).val('');
+                    original_rules = rules;
+                    let dropped = [];
+                    let kept = arbQueryRules.split(JSON.parse(rules), filters, dropped);
+                    arbQueryRules.warn(query_builder, warning_id, dropped);
                     query_builder.queryBuilder({
                         allow_empty: true,
                         filters: filters,
-                        rules: JSON.parse(rules)
+                        rules: kept
                     });
                 } else {
+                    // A fresh builder (a new query, or another report type): nothing was set aside.
+                    original_rules = '';
+                    arbQueryRules.warn(query_builder, warning_id, []);
                     query_builder.queryBuilder({
                         allow_empty: true,
                         filters: filters,
@@ -72,6 +82,12 @@
 
             {{ field.auto_id }}.save_query_builder = function () {
                 let results = query_builder.queryBuilder('getRules', {skip_empty: true});
+                if (results === null) {
+                    // The builder could not produce a valid query (it marks the offending rule or group);
+                    // keep the query as it was rather than saving "null" over it.
+                    $(field_id).val(original_rules);
+                    return results;
+                }
                 $(field_id).val(JSON.stringify(results, null, 2));
                 return results;
             }
