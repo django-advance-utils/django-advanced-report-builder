@@ -30,6 +30,7 @@ from advanced_report_builder.globals import (
     REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_XOR,
     REVERSE_FOREIGN_KEY_DELIMITER_COMMA,
 )
+from advanced_report_builder.restrict import restrict_queryset
 from advanced_report_builder.utils import decode_attribute, split_attr
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
 
@@ -509,7 +510,7 @@ class TableUtilsMixin(ReportUtilsMixin):
             query = self.process_query_filters(
                 query=query, search_filter_data=report_query.query, extra_filter=option_query
             )
-        return query
+        return restrict_queryset(query, getattr(self, 'request', None))
 
     def setup_mathematical_field(
         self,

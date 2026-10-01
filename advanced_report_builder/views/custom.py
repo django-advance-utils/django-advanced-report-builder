@@ -6,6 +6,7 @@ from django_modals.widgets.select2 import Select2Multiple
 
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.models import CustomReport, ReportType
+from advanced_report_builder.restrict import restrict_queryset
 from advanced_report_builder.utils import split_slug
 from advanced_report_builder.views.query_modal.mixin import MultiQueryModalMixin
 from advanced_report_builder.views.report import ReportBase
@@ -105,7 +106,7 @@ class CustomBaseView(ReportBase, FilterQueryMixin, TemplateView):
         report_type = self.get_report_type()
         if report_type is not None:
             base_model = report_type.content_type.model_class()
-            return base_model.objects.all()
+            return restrict_queryset(base_model.objects.all(), getattr(self, 'request', None))
         return None
 
     def get_default_filter(self, query):

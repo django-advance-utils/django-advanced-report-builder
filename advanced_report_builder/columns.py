@@ -25,6 +25,7 @@ from advanced_report_builder.globals import (
     REVERSE_FOREIGN_KEY_DELIMITER_COMMA,
     REVERSE_FOREIGN_KEY_DELIMITER_VALUES,
 )
+from advanced_report_builder.restrict import restrict_queryset
 
 
 class ReportBuilderDateColumn(ColumnBase):
@@ -111,8 +112,20 @@ class ColourColumn(ColumnBase):
 
 
 class FilterForeignKeyColumn(ColumnBase):
+    def view_request(self):
+        """The request of the view this column's table belongs to, when it has one."""
+        table = getattr(self, 'table', None)
+        view = getattr(table, 'view', None)
+        return getattr(view, 'request', None)
+
     def get_query_options(self):
-        values = self.model.objects.distinct(self.field).order_by(self.field).values_list(self.field, flat=True)
+        # Only the values in rows this user may see: the list itself would otherwise show the rest.
+        values = (
+            restrict_queryset(self.model.objects.all(), self.view_request())
+            .distinct(self.field)
+            .order_by(self.field)
+            .values_list(self.field, flat=True)
+        )
         return {v: v for v in values if v}
 
 

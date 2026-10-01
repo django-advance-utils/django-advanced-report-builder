@@ -87,6 +87,35 @@ REPORT_BUILDER_BREAKDOWN_MODAL_SIZE = 'xxl'  # with .modal-xxl { max-width: 95vw
 ### REPORT_BUILDER_SINGLE_VALUE_BREAKDOWN_MODAL_SIZE
 
 The same, for a single value's breakdown only; read before `REPORT_BUILDER_BREAKDOWN_MODAL_SIZE`.
+### ADVANCED_REPORT_BUILDER_RESTRICT_QUERYSET
+
+A callable, or the dotted path of one, taking `(queryset, request)` and returning the rows that request's user may see. Use it when some users must not see some rows at all (one brand of a group, a sales team's own customers). The report builder calls it on every queryset it reads report rows from, so tables, charts, single values, multi-value cells, kanban and calendar lanes, custom reports, breakdowns, report options and the query builder's filter-by-value lists all leave those rows out. Report rows can no longer be edited through the table's row-edit request. Not set, nothing changes.
+
+Add `ReportBuilderRequestMiddleware` too, so querysets built away from a view (a column's option list) still know whose they are. If the hook is set and no request can be found (the middleware is missing, or a report is built in a background task), the hook is called with `None` and a warning is logged: **return no rows then**, so a missing request can never show everything.
+
+```python
+ADVANCED_REPORT_BUILDER_RESTRICT_QUERYSET = 'myapp.reports.restrict'
+
+MIDDLEWARE = [
+    # ...
+    'advanced_report_builder.restrict.ReportBuilderRequestMiddleware',
+]
+
+
+# myapp/reports.py
+def restrict(queryset, request):
+    if queryset.model is not Order:
+        return queryset
+    if request is None:
+        return queryset.none()  # fail closed
+    if request.user.is_superuser:
+        return queryset
+    return queryset.filter(team_id__in=request.user.team_ids())
+```
+
+Write the filter on the model's own fields or a single-valued relation, or as `pk__in=<subquery>`. The hook runs after the report has added its totals and annotations, so a filter across a many-valued relation would add a join and inflate sums and counts.
+
+It narrows the report's own rows. A column that aggregates a *related* model's rows (a reverse foreign key column, or a sum across a relation) counts every related row of each visible row; if the restriction is on that related model, restrict it there as well.
 
 ### ADVANCED_REPORT_BUILDER_FIELD_EXTENSIONS
 

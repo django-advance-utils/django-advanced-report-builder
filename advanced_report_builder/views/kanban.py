@@ -37,6 +37,7 @@ from advanced_report_builder.models import (
     KanbanReportLane,
     ReportType,
 )
+from advanced_report_builder.restrict import restrict_queryset
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import (
     crispy_modal_link_args,
@@ -122,7 +123,7 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
     def view_filter_extra(self, query, table):
         if table.extra_query_filter:
             query = query.filter(table.extra_query_filter)
-        return self.view_filter(query, table)
+        return restrict_queryset(self.view_filter(query, table), getattr(self, 'request', None))
 
     def get_lane(
         self,

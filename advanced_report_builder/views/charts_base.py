@@ -33,6 +33,7 @@ from advanced_report_builder.globals import (
     PeriodType,
 )
 from advanced_report_builder.models import ReportType
+from advanced_report_builder.restrict import restrict_queryset, restricted
 from advanced_report_builder.utils import (
     count_days,
     get_report_builder_class,
@@ -165,7 +166,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
             query = self.process_query_filters(
                 query=query, search_filter_data=search_filter_data, extra_filter=option_query
             )
-        return query
+        return restrict_queryset(query, getattr(self, 'request', None))
 
     def get_report_template(self):
         template_type_class = get_template_type_class()
@@ -359,7 +360,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
         base_model = self.chart_report.get_base_model()
         if base_model:
             self.setup_table(base_model=base_model)
-            self.table.extra_filters = self.extra_filters
+            self.table.extra_filters = restricted(self, self.extra_filters)
             try:
                 fields = self.process_query_results(base_model=base_model, table=self.table)
             except (FieldError, FieldDoesNotExist) as e:

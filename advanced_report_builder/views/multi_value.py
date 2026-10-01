@@ -52,6 +52,7 @@ from advanced_report_builder.models import (
     ReportType,
 )
 from advanced_report_builder.record_nav import RecordNavPlugin
+from advanced_report_builder.restrict import restrict_queryset, restricted
 from advanced_report_builder.toggle import RBToggle
 from advanced_report_builder.utils import crispy_modal_link_args, excel_column_name, get_report_builder_class
 from advanced_report_builder.variable_date import VariableDate
@@ -1441,7 +1442,7 @@ class MultiValueView(ValueBaseView):
         if not row_config.report_type_id or not row_config.group_field:
             return []
         model = row_config.report_type.content_type.model_class()
-        query = model.objects.all()
+        query = restrict_queryset(model.objects.all(), getattr(self, 'request', None))
         if row_config.base_query:
             query = self.process_query_filters(query=query, search_filter_data=row_config.base_query)
 
@@ -1608,7 +1609,7 @@ class MultiValueView(ValueBaseView):
             query = self.process_query_filters(
                 query=query, search_filter_data=query_data, extra_filter_data=extra_filter_data
             )
-        return query
+        return restrict_queryset(query, getattr(self, 'request', None))
 
     def _is_currency_field(self, multi_value_report_cell):
         from advanced_report_builder.column_types import CURRENCY_COLUMNS
@@ -1651,7 +1652,7 @@ class MultiValueView(ValueBaseView):
 
         self.current_multi_value_report_cell = multi_value_report_cell
 
-        table.extra_filters = self.extra_filters
+        table.extra_filters = restricted(self, self.extra_filters)
         table.enable_links = self.kwargs.get('enable_links')
         table.datatable_template = 'advanced_report_builder/multi_values/middle.html'
         value = table.render()
@@ -1688,7 +1689,7 @@ class MultiValueShowBreakdownModal(BreakdownModalSizeMixin, TableUtilsMixin, Mod
         self.table_report = multi_value_report_cell
         base_model = multi_value_report_cell.get_base_model()
         table = self.add_table(base_model=base_model)
-        table.extra_filters = self.extra_filters
+        table.extra_filters = restricted(self, self.extra_filters)
         table_fields = multi_value_report_cell.breakdown_fields
         report_builder_class = get_report_builder_class(model=base_model, report_type=self.table_report.report_type)
         fields_used = set()
@@ -1749,7 +1750,7 @@ class MultiValueShowBreakdownModal(BreakdownModalSizeMixin, TableUtilsMixin, Mod
             query = self.process_query_filters(
                 query=query, search_filter_data=query_data, extra_filter_data=extra_filter_data
             )
-        return query
+        return restrict_queryset(query, getattr(self, 'request', None))
 
     def get_report_query(self, report):
         return self.get_multi_value_report_cell()

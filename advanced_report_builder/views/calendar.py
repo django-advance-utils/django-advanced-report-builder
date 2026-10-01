@@ -30,6 +30,7 @@ from advanced_report_builder.models import (
     CalendarReportDescription,
     ReportType,
 )
+from advanced_report_builder.restrict import restrict_queryset
 from advanced_report_builder.utils import crispy_modal_link_args, get_report_builder_class
 from advanced_report_builder.views.charts_base import ChartJSTable
 from advanced_report_builder.views.datatables.utils import DescriptionColumn
@@ -99,7 +100,7 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
     def view_filter_extra(self, query, table):
         if table.extra_query_filter:
             query = query.filter(table.extra_query_filter)
-        return self.view_filter(query, table)
+        return restrict_queryset(self.view_filter(query, table), getattr(self, 'request', None))
 
     def get_calendar_events(self, base_model, calendar_report_data_set, lanes, label=None, extra_query_filter=None):
         table = self.chart_js_table(model=base_model)
