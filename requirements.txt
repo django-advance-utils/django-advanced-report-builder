@@ -2,7 +2,7 @@ Django==5.1.3
 psycopg2-binary>=2.8
 django-crispy-forms==1.14.0
 
-ajax-advanced-helpers==1.0.3
+ajax-advanced-helpers @ git+https://github.com/django-advance-utils/ajax-advanced-helpers@77d5d3e34640909391b4b1947191ae36689d3b47
 django-advanced-menus==1.0.0
 django-advanced-modals==1.0.0
 django-advanced-datatables==1.0.0
