@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-advanced-report-builder"
-version = "1.4.7"
+version = "1.5.0"
 description = "Django app that allows you to build reports from modals"
 readme = "README.md"
 requires-python = ">=3.6"
@@ -15,9 +15,10 @@ authors = [
 
 dependencies = [
     "Django >= 3.2",
-    "django-filtered-datatables >= 0.0.21",
-    "django-ajax-helpers >= 0.0.20",
-    "django-nested-modals >= 0.0.21",
+    "ajax-advanced-helpers >= 1.0.3",
+    "django-advanced-menus >= 1.0.0",
+    "django-advanced-modals >= 1.0.0",
+    "django-advanced-datatables >= 1.0.0",
     "time-stamped-model >= 0.2.3",
     "date-offset >= 0.0.2",
     "expression-builder >= 0.0.12",

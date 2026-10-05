@@ -18,9 +18,10 @@ The following packages are installed automatically:
 
 | Package | Purpose |
 |---|---|
-| `django-filtered-datatables` | Table rendering and filtering |
-| `django-ajax-helpers` | AJAX request handling |
-| `django-nested-modals` | Modal dialog framework |
+| `ajax-advanced-helpers` | AJAX request handling |
+| `django-advanced-menus` | Menus and tabs |
+| `django-advanced-modals` | Modal dialog framework |
+| `django-advanced-datatables` | Table rendering and filtering |
 | `time-stamped-model` | Automatic created/updated timestamps |
 | `date-offset` | Date arithmetic utilities |
 | `expression-builder` | Query expression building |
