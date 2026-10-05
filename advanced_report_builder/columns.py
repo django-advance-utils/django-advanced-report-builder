@@ -257,10 +257,11 @@ class ReportBuilderColumnLink(ColumnLink):
     def url(self):
         return self._url
 
-    def setup_link(self, link_css, link_html):
+    def setup_link(self, link_css, link_html, new_tab=False):
         if self.enable_links():
             link_css = f' class="{link_css}"' if link_css else ''
-            link = f'<a{link_css} href="{self.url}">{{}}</a>'
+            target = 'target="_blank" ' if new_tab else ''
+            link = f'<a{link_css} {target}href="{self.url}">{{}}</a>'
         else:
             link = '{}'
         if isinstance(self.field, list | tuple):
