@@ -23,6 +23,7 @@ from advanced_report_builder.columns import ReportBuilderDateColumn
 from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.globals import (
+    ANNOTATION_CHART_SCALE,
     ANNOTATION_VALUE_DAY,
     ANNOTATION_VALUE_FINANCIAL_QUARTER,
     ANNOTATION_VALUE_FUNCTIONS,
@@ -58,6 +59,10 @@ class ChartJSTable(DatatableTable):
         super().__init__(*args, **kwargs)
         if pk:
             self.filter['pk'] = pk
+
+    @property
+    def chart_scale(self):
+        return ANNOTATION_CHART_SCALE.get(self.axis_scale)
 
     def model_table_setup(self):
         try:
@@ -197,7 +202,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
 
         date_function_kwargs = {'title': field_name, 'date_format': date_format}
 
-        annotations_value = self.chart_report.axis_scale
+        annotations_value = self.get_axis_scale(report=self.chart_report)
 
         new_field_name = f'{annotations_value}_{field_name}_{index}'
         function = ANNOTATION_VALUE_FUNCTIONS[annotations_value]
@@ -350,7 +355,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
 
     def setup_table(self, base_model):
         if hasattr(self.chart_report, 'axis_scale'):
-            self.table = self.chart_js_table(model=base_model, axis_scale=self.chart_report.axis_scale)
+            self.table = self.chart_js_table(model=base_model, axis_scale=self.get_axis_scale(report=self.chart_report))
         else:
             self.table = self.chart_js_table(model=base_model)
 

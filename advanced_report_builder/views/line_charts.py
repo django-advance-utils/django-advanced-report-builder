@@ -130,7 +130,7 @@ class LineChartView(ChartBaseView):
         ]
 
     def setup_table(self, base_model):
-        axis_scale = self.chart_report.axis_scale
+        axis_scale = self.get_axis_scale(report=self.chart_report)
         targets = None
 
         if getattr(self.chart_report, 'has_targets', False):
@@ -144,6 +144,7 @@ class LineChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
     permission_delete = PERMISSION_OFF
     model = LineChartReport
     show_order_by = False
+    show_period = True
 
     widgets = {
         'line_colour': ColourPickerWidget,

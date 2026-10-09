@@ -93,7 +93,7 @@ class BarChartView(ChartBaseView):
         if self.chart_report.show_blank_dates:
             date_format = '%Y-%m-%d'
         else:
-            default_format_type = DEFAULT_DATE_FORMAT[self.chart_report.axis_scale]
+            default_format_type = DEFAULT_DATE_FORMAT[self.get_axis_scale(report=self.chart_report)]
             date_format = DATE_FORMAT_TYPES_DJANGO_FORMAT[default_format_type]
         return date_format
 
@@ -164,7 +164,7 @@ class BarChartView(ChartBaseView):
 
         date_function_kwargs = {'title': start_field_name, 'date_format': date_format}
 
-        annotations_value = self.chart_report.axis_scale
+        annotations_value = self.get_axis_scale(report=self.chart_report)
 
         new_field_name = f'{annotations_value}_{start_field_name}_{index}'
         function = ANNOTATION_VALUE_FUNCTIONS[annotations_value]
@@ -196,6 +196,7 @@ class BarChartModal(MultiQueryModalMixin, QueryBuilderModalBase):
     permission_delete = PERMISSION_OFF
     model = BarChartReport
     show_order_by = False
+    show_period = True
     widgets = {
         'positive_bar_colour': ColourPickerWidget,
         'negative_bar_colour': ColourPickerWidget,
@@ -706,38 +707,38 @@ class BarChartShowBreakdownModal(BreakdownModalSizeMixin, TableUtilsMixin, Modal
         return table.render()
 
     def get_date_title(self):
-        bar_chart_report = self.bar_chart_report
+        axis_scale = self.get_axis_scale(report=self.bar_chart_report)
         start_date = datetime.strptime(self.slug['date'], '%Y_%m_%d').date()
 
-        if bar_chart_report.axis_scale == ANNOTATION_VALUE_YEAR:
+        if axis_scale == ANNOTATION_VALUE_YEAR:
             return start_date.year
-        elif bar_chart_report.axis_scale in [
+        elif axis_scale in [
             ANNOTATION_VALUE_QUARTER,
             ANNOTATION_VALUE_MONTH,
         ]:
             return start_date.strftime('%b %Y')
-        elif bar_chart_report.axis_scale == ANNOTATION_VALUE_WEEK:
+        elif axis_scale == ANNOTATION_VALUE_WEEK:
             end_date = start_date + timedelta(weeks=1)
             return start_date.strftime('%d/%m/%Y') + ' - ' + end_date.strftime('%d/%b/%Y')
 
-        elif bar_chart_report.axis_scale == ANNOTATION_VALUE_DAY:
+        elif axis_scale == ANNOTATION_VALUE_DAY:
             return start_date.strftime('%d/%m/%Y')
         else:
             raise AssertionError()
 
     def filter_date(self, query):
-        bar_chart_report = self.chart_report
+        axis_scale = self.get_axis_scale(report=self.chart_report)
         start_date = datetime.strptime(self.slug['date'], '%Y_%m_%d').date()
 
-        if bar_chart_report.axis_scale == ANNOTATION_VALUE_YEAR:
+        if axis_scale == ANNOTATION_VALUE_YEAR:
             end_date = start_date + MonthDelta(months=12)
-        elif bar_chart_report.axis_scale == ANNOTATION_VALUE_QUARTER:
+        elif axis_scale == ANNOTATION_VALUE_QUARTER:
             end_date = start_date + MonthDelta(months=3)
-        elif bar_chart_report.axis_scale == ANNOTATION_VALUE_MONTH:
+        elif axis_scale == ANNOTATION_VALUE_MONTH:
             end_date = start_date + MonthDelta(months=1)
-        elif bar_chart_report.axis_scale == ANNOTATION_VALUE_WEEK:
+        elif axis_scale == ANNOTATION_VALUE_WEEK:
             end_date = start_date + timedelta(weeks=1)
-        elif bar_chart_report.axis_scale == ANNOTATION_VALUE_DAY:
+        elif axis_scale == ANNOTATION_VALUE_DAY:
             end_date = start_date + timedelta(days=1)
         else:
             raise AssertionError()

@@ -80,6 +80,13 @@ Reports support multiple named queries (versions). This allows you to:
 - Switch between query versions in the UI
 - Use specific query versions when embedding reports in dashboards
 
+### A version's own period
+
+On a chart that groups by a period (bar and line charts), each version can also set its own **Period**
+(`ReportQuery.axis_scale`: Year, Quarter, Month, Week or Day). While that version is selected, the chart
+groups by it — so one chart can offer, say, a weekly and a monthly version in its Version menu. A version
+that leaves the period blank uses the chart's own. Reports without a period don't offer the field.
+
 ## Extra queries
 
 Reports can also have an `extra_query` field for additional filtering that is applied on top of the main query. This is useful for applying global filters or security constraints.

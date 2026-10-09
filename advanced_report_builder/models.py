@@ -366,6 +366,9 @@ class ReportQuery(TimeStampedModel):
     extra_query = models.JSONField(null=True, blank=True)  # used for single value Numerator
     denominator_query = models.JSONField(null=True, blank=True)  # used for single value Denominator
     target = models.ForeignKey(Target, blank=True, null=True, on_delete=models.SET_NULL)
+    # For a chart with a period (bar, line): group by this one while the version is selected. Blank uses
+    # the chart's own.
+    axis_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES, blank=True, null=True)
     order = models.PositiveSmallIntegerField()
 
     def save(self, *args, **kwargs):

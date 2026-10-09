@@ -64,7 +64,7 @@
             {% if datatable.bar_chart_report.show_blank_dates %}
                 type: 'time',
                 time: {
-                    unit: '{{ datatable.bar_chart_report.get_chart_scale}}'
+                    unit: '{{ datatable.chart_scale}}'
                 }
             {% endif %}
         };

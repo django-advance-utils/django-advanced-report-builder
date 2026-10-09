@@ -777,6 +777,13 @@ class FilterQueryMixin:
         self._held_report_query = report_query
         return self._held_report_query
 
+    def get_axis_scale(self, report):
+        """The period a chart groups by: the selected version's own, if it has one, else the chart's."""
+        report_query = self.get_report_query(report=report)
+        if report_query is not None and report_query.axis_scale:
+            return report_query.axis_scale
+        return report.axis_scale
+
     @staticmethod
     def apply_order_by(query, report_query, base_model, report_type):
         order_by = []

@@ -13,6 +13,8 @@ from advanced_report_builder.utils import get_query_js
 class MultiQueryModalMixin:
     show_order_by = True
     show_target = False
+    # Reports that group by a period (bar and line charts): each version may group by its own.
+    show_period = False
 
     ajax_commands = ['datatable', 'button', 'ajax']
 
@@ -32,7 +34,11 @@ class MultiQueryModalMixin:
         report_type = self.get_report_type(**_kwargs)
         show_order_by = 1 if self.show_order_by else 0
         show_target = 1 if self.show_target else 0
-        slug += f'-report_type-{report_type}-show_order_by-{show_order_by}-show_target-{show_target}'
+        show_period = 1 if self.show_period else 0
+        slug += (
+            f'-report_type-{report_type}-show_order_by-{show_order_by}-show_target-{show_target}'
+            f'-show_period-{show_period}'
+        )
         return slug
 
     def get_report_type(self, **_kwargs):

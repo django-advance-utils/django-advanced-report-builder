@@ -25,7 +25,7 @@ class QueryForm(QueryBuilderModelForm):
 
     class Meta:
         model = ReportQuery
-        fields = ['name', 'query']
+        fields = ['name', 'query', 'axis_scale']
 
 
 class QueryFormWithTarget(QueryBuilderModelForm):
@@ -33,7 +33,7 @@ class QueryFormWithTarget(QueryBuilderModelForm):
 
     class Meta:
         model = ReportQuery
-        fields = ['name', 'query', 'target']
+        fields = ['name', 'query', 'target', 'axis_scale']
 
 
 class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
@@ -69,6 +69,14 @@ class QueryModal(QueryBuilderModalBaseMixin, ModelFormModal):
         if self.slug.get('show_target') == '1':
             form.fields['target'] = ModelChoiceField(queryset=Target.objects.all(), widget=Select2(), required=False)
             fields.append('target')
+
+        if self.slug.get('show_period') == '1':
+            form.fields['axis_scale'].label = 'Period'
+            form.fields['axis_scale'].help_text = "Leave blank to use the chart's own."
+            fields.append('axis_scale')
+        else:
+            # Taken off the form, so saving leaves whatever the version holds alone.
+            del form.fields['axis_scale']
 
         fields.append(FieldEx('query', template='advanced_report_builder/query_builder.html'))
 
