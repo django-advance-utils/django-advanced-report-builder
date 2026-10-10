@@ -23,11 +23,59 @@
         text-decoration: none;
     }
 
+    /* A tile on a dashboard being edited: the tile as it is viewed, its buttons in its top right corner. */
+    .dashboard-tile-editable {
+        position: relative;
+    }
+
+    .dashboard-tile-buttons {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        z-index: 2;
+        /* Several buttons on a narrow tile wrap inside it rather than hang past its left edge. */
+        max-width: calc(100% - 12px);
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    /* Light on any tile colour, rather than the button colour against it. */
+    .dashboard-tile-buttons .btn {
+        padding: 0.1rem 0.45rem;
+        font-size: 0.8rem;
+        line-height: 1.4;
+        background-color: rgba(255, 255, 255, 0.85);
+        border-color: transparent;
+        color: #333;
+    }
+
+    /* As specific as Bootstrap's own pressed and focused button rules, so a click does not flash its colour. */
+    .dashboard-tile-buttons .btn:hover,
+    .dashboard-tile-buttons .btn:focus,
+    .dashboard-tile-buttons .btn:not(:disabled):not(.disabled):active {
+        background-color: #fff;
+        border-color: transparent;
+        color: #000;
+        box-shadow: none;
+    }
+
 
 </style>
 
 {% lib_include 'ChartJS' module='advanced_report_builder.includes' %}
-{% if show_toolbar %}
+{% if tile_edit %}
+    <div>
+        <div class="dashboard-tile detail dashboard-tile-editable" style="background-color: {% if single_value_report.tile_colour %}#{{ single_value_report.tile_colour }}{% else %}#23527c{% endif %}; color: white;">
+            <div class="dashboard-tile-buttons">{{ menus.button_menu.render }}</div>
+            <div class="content" style="padding: 2px;">
+                {{ datatable.render }}
+
+                <p>{{ title|safe }}</p>
+            </div>
+        </div>
+    </div>
+{% elif show_toolbar %}
         <div class="card report-card">
             <div class="card-header">
                 <div class="d-flex align-items-center">

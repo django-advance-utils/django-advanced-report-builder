@@ -189,6 +189,9 @@ class SingleValueView(ValueBaseView):
         self.table.datatable_template = self.get_report_template()
         self.table.breakdown_url = self.get_breakdown_url()
         context['single_value_report'] = self.chart_report
+        # A top tile on a dashboard being edited is drawn as it is viewed, its buttons in its corner, so that
+        # editing does not change what the dashboard looks like.
+        context['tile_edit'] = bool(self.enable_edit and self.dashboard_report and self.dashboard_report.top)
         return context
 
     def get_target_data(self):
