@@ -1,5 +1,8 @@
-# version = pip_version('django-advanced-report-builder')
-from ajax_helpers.html_include import SourceBase
+from ajax_helpers.html_include import SourceBase, pip_version
+
+# Stamped as ?v= on every file below. Static is served with a far-future expiry, so without it a
+# browser that has ever loaded dashboard.js or the query builder keeps that copy until a hard refresh.
+version = pip_version('django-advanced-report-builder')
 
 
 class Dot(SourceBase):
