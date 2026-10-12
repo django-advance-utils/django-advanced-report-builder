@@ -1,4 +1,4 @@
-<textarea
+{% load static %}<textarea
     name="{{ widget.name }}"
     id="{{ widget.attrs.id }}_textarea"
     autocomplete="off"
@@ -31,7 +31,8 @@ function setup_tiny_{{ widget.attrs.id }}() {
         menubar: false,
         branding: false,
         content_css: [
-            '//fonts.googleapis.com/css?family=Lato:300,300i,400,400i'
+            // self-hosted, no CDN: the editor iframe needs an absolute or root-relative URL
+            '{% static "advanced_report_builder/fonts/lato/lato.css" %}'
         ],
 
         {% if disabled %}
