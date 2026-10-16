@@ -230,6 +230,26 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
 
         raise AssertionError()
 
+    @classmethod
+    def get_lane_windows(cls, multiple_type, start_period, end_period, financial_year_start_month=1):
+        """The (start, end) of each lane a split lane is drawn as: one a day, week or month, from where the
+        start period begins to where the end period finishes -- that last day, week or month included."""
+        variable_date = VariableDate()
+        current, _, _ = variable_date.get_variable_dates(
+            range_type=start_period, financial_year_start_month=financial_year_start_month
+        )
+        _, last, _ = variable_date.get_variable_dates(
+            range_type=end_period, financial_year_start_month=financial_year_start_month
+        )
+        windows = []
+        # Each lane that starts before the period finishes: the period ends at the last moment of its last day,
+        # so a lane ending at the following midnight is still inside it.
+        while current < last:
+            following = cls.get_multiple_date(multiple_type=multiple_type, current_date=current)
+            windows.append((current, following))
+            current = following
+        return windows
+
     @staticmethod
     def get_date_format():
         return DATE_FORMAT_TYPES_DJANGO_FORMAT[DATE_FORMAT_TYPE_DD_MM_YY_SLASH]
@@ -280,19 +300,7 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
                 )
                 headings.append({'label': kanban_report_lane.name, 'row_span': 2, 'col_span': 1})
             else:
-                variable_date = VariableDate()
-                financial_year_start_month = self.get_financial_month()
-                start_date_and_time, _, _ = variable_date.get_variable_dates(
-                    range_type=kanban_report_lane.multiple_start_period,
-                    financial_year_start_month=financial_year_start_month,
-                )
-                _, end_date_and_time, _ = variable_date.get_variable_dates(
-                    range_type=kanban_report_lane.multiple_end_period,
-                    financial_year_start_month=financial_year_start_month,
-                )
-
                 multiple_type = kanban_report_lane.multiple_type
-                current_start_date = start_date_and_time
 
                 _, _, _, field_name = self.get_field_details(
                     base_model=base_model,
@@ -309,11 +317,12 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
                     )
 
                 sub_lanes = []
-                while (
-                    current_end_date := self.get_multiple_date(
-                        multiple_type=multiple_type, current_date=current_start_date
-                    )
-                ) <= end_date_and_time:
+                for current_start_date, current_end_date in self.get_lane_windows(
+                    multiple_type=multiple_type,
+                    start_period=kanban_report_lane.multiple_start_period,
+                    end_period=kanban_report_lane.multiple_end_period,
+                    financial_year_start_month=self.get_financial_month(),
+                ):
                     if multiple_type in (
                         KanbanReportLane.MULTIPLE_TYPE_DAILY,
                         KanbanReportLane.MULTIPLE_TYPE_WEEKLY,
@@ -341,7 +350,6 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
                         extra_query_filter=query_filter,
                         multiple=True,
                     )
-                    current_start_date = current_end_date
 
                 headings.append(
                     {

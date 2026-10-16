@@ -26,12 +26,18 @@ $.each(table.data, function( index, card ) {
         if(link_index >= 0) {
             link = link_details.html.replace(link_details.var, card[link_index]);
         }
+        // A hex colour, '#' added where it is stored without one; anything else -- blank on many records --
+        // leaves the entry the calendar's own colour.
+        var colour_match = background_colour_index >= 0
+            ? /^#?([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.exec(String(card[background_colour_index] || '').trim())
+            : null;
+        var colour = colour_match ? '#' + colour_match[1] : undefined;
         var event = {
             title: card[heading_index],
             start: start_date,
             end: end_date,
-            backgroundColor: card[background_colour_index],
-            borderColor: card[background_colour_index],
+            backgroundColor: colour,
+            borderColor: colour,
             description: card[description],
             url: link
         }

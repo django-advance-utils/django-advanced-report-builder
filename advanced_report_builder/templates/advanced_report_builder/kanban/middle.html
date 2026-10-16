@@ -3,6 +3,12 @@
 </div>
 <script>
     (function () {
+        // A colour as CSS takes it, or '' for a blank one or anything that is not a hex colour -- the card
+        // then keeps its own. Colours come from the database, and many records have none.
+        function css_colour(value) {
+            var match = /^#?([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.exec(String(value || '').trim());
+            return match ? '#' + match[1] : '';
+        }
         var table = {{ datatable.model_table_setup }};
         var link_index = -1;
         var link_details;
@@ -25,13 +31,11 @@
                 link = link_details.html.replace(link_details.var, card[link_index]);
                 styles += 'cursor:pointer;';
             }
-            console.log(card[background_colour_index])
             if(background_colour_index >= 0){
-                var background_colour = card[background_colour_index];
-                if (!background_colour.startsWith('#')) {
-                    background_colour = '#' + background_colour;
+                var background_colour = css_colour(card[background_colour_index]);
+                if (background_colour !== '') {
+                    styles += 'background-color:' + background_colour + ';'
                 }
-                styles += 'background-color:' +background_colour + ';'
             }
             html += '<div class="kanban_item"';
             if(styles !== ''){
@@ -42,11 +46,8 @@
             }
             html += '>'
             if(heading_index >= 0) {
-                if(heading_colour_index >= 0) {
-                    var heading_colour = card[heading_colour_index];
-                    if (!heading_colour.startsWith('#')) {
-                        heading_colour = '#' + heading_colour;
-                    }
+                var heading_colour = heading_colour_index >= 0 ? css_colour(card[heading_colour_index]) : '';
+                if(heading_colour !== '') {
                     html += '<h5 style="color: ' + heading_colour + '">' + card[heading_index] + '</h5>';
                 } else {
                     html += '<h5>' + card[heading_index] + '</h5>';
