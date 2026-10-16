@@ -10,7 +10,8 @@ var description = indexes.indexOf('description');
 var link_index = -1;
 if(table.initsetup.tableOptions.row_href) {
     link_details = table.initsetup.tableOptions.row_href[0];
-    link_index = table.initsetup.field_ids.indexOf(link_details.column);
+    // The last: the link column is added after the rest, and the heading may be the same column.
+    link_index = table.initsetup.field_ids.lastIndexOf(link_details.column);
 }
 $.each(table.data, function( index, card ) {
     try {
@@ -24,7 +25,9 @@ $.each(table.data, function( index, card ) {
 
         var link = '';
         if(link_index >= 0) {
-            link = link_details.html.replace(link_details.var, card[link_index]);
+            // A link column gives [key, text]: the key goes in the url, encoded so it can only be a key.
+            var key = Array.isArray(card[link_index]) ? card[link_index][0] : card[link_index];
+            link = link_details.html.replace(link_details.var, encodeURIComponent(key));
         }
         // A hex colour, '#' added where it is stored without one; anything else -- blank on many records --
         // leaves the entry the calendar's own colour.
