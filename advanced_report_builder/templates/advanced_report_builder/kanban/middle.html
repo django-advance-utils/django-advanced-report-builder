@@ -15,14 +15,17 @@
 
         if(table.initsetup.tableOptions.row_href) {
             link_details = table.initsetup.tableOptions.row_href[0];
-            link_index = table.initsetup.field_ids.indexOf(link_details.column);
+            // The last: the link column is added after the rest, and the heading may be the same column, escaped.
+            link_index = table.initsetup.field_ids.lastIndexOf(link_details.column);
         }
         $.each(table.data, function( index, card ) {
             var html = '';
             var link = '';
             var styles = '';
             if(link_index >= 0) {
-                link = link_details.html.replace(link_details.var, card[link_index]);
+                // A link column gives [key, text]: the key goes in the url, encoded so it can only be a key.
+                var key = Array.isArray(card[link_index]) ? card[link_index][0] : card[link_index];
+                link = link_details.html.replace(link_details.var, encodeURIComponent(key));
                 styles += 'cursor:pointer;';
             }
             console.log(card[background_colour_index])
@@ -36,9 +39,6 @@
             html += '<div class="kanban_item"';
             if(styles !== ''){
                 html += ' style="' + styles + '"';
-            }
-            if(link !== ''){
-                html += ' onclick="location.href=\'' + link + '\'"'
             }
             html += '>'
             if(heading_index >= 0) {
@@ -57,7 +57,13 @@
             }
             html += '</div>';
 
-            $('#' + table.table_id).append(html);
+            var item = $(html);
+            if(link !== ''){
+                // Attached, not written into an onclick attribute: there the browser would decode the link's
+                // entities back into quotes before running it.
+                item.on('click', function () { location.href = link; });
+            }
+            $('#' + table.table_id).append(item);
         })
     })();
 </script>

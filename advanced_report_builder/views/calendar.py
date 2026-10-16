@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.views.generic import TemplateView
 from django_datatables.columns import DateColumn, DateTimeColumn, MenuColumn
 from django_datatables.datatables import DatatableExcludedRow
-from django_datatables.helpers import DUMMY_ID, row_link
+from django_datatables.helpers import DUMMY_ID
 from django_datatables.widgets import DataTableReorderWidget
 from django_menus.menu import HtmlMenu, MenuItem
 from django_modals.fields import FieldEx
@@ -218,11 +218,7 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
                 field=calendar_report_data_set.link_field,
                 report_builder_class=report_builder_class,
             )
-            field = col_type_override.field[0] if isinstance(col_type_override.field, list) else 'id'
-            if field not in table.columns:
-                table.add_columns(f'.{field}')
-            table.has_link = True
-            table.table_options['row_href'] = row_link(col_type_override.url, field)
+            table.add_row_link(col_type_override.url, calendar_report_data_set.link_field)
         else:
             table.has_link = False
 

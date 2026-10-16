@@ -15,6 +15,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.safestring import mark_safe
 from django.views.generic import TemplateView
 from django_datatables.datatables import DatatableTable
+from django_datatables.helpers import row_link
 from django_menus.menu import MenuItem
 from django_modals.widgets.select2 import Select2
 
@@ -47,6 +48,9 @@ from advanced_report_builder.views.report import ReportBase
 from advanced_report_builder.views.report_utils_mixin import ReportUtilsMixin
 from advanced_report_builder.views.targets.utils import TargetUtils
 
+#: What JSON written into a <script> must not carry as itself -- as Django's json_script escapes it.
+SCRIPT_ESCAPES = {ord('<'): '\\u003C', ord('>'): '\\u003E', ord('&'): '\\u0026'}
+
 
 class ChartJSTable(DatatableTable):
     def __init__(self, *args, **kwargs):
@@ -58,6 +62,19 @@ class ChartJSTable(DatatableTable):
         super().__init__(*args, **kwargs)
         if pk:
             self.filter['pk'] = pk
+
+    def add_row_link(self, url, link_field):
+        """Link each row -- a kanban card, a calendar entry -- as ``link_field`` links it. The key in the url is the
+        link column's own first value, as its datatable takes it: not its first field, which a link column may
+        list in any order (a project name before its slug)."""
+        before = {id(column) for column in self.columns}
+        self.add_columns(f'.{link_field}')
+        added = [column for column in self.columns if id(column) not in before]
+        self.has_link = bool(added)
+        if added:
+            # The column itself, not its name: a lane can be headed by the same link column, and that one is shown.
+            self.link_column = added[0]
+            self.table_options['row_href'] = row_link(url, self.link_column.column_name)
 
     def model_table_setup(self):
         try:
@@ -73,17 +90,18 @@ class ChartJSTable(DatatableTable):
                 targets = self.targets.all()
                 if targets and len(data) > 0:
                     targets_data = self.process_data_structure_target(targets=targets, data=data)
-            return mark_safe(
-                json.dumps(
-                    {
-                        'initsetup': json.loads(self.col_def_str()),
-                        'data': data,
-                        'targets': targets_data,
-                        'row_titles': self.all_titles(),
-                        'table_id': self.table_id,
-                    }
-                )
+            setup = json.dumps(
+                {
+                    'initsetup': json.loads(self.col_def_str()),
+                    'data': data,
+                    'targets': targets_data,
+                    'row_titles': self.all_titles(),
+                    'table_id': self.table_id,
+                }
             )
+            # Written into a <script>: a value holding "</script>" would end it there and put the rest of the
+            # value into the page as HTML. These escapes read back as the same characters in JavaScript.
+            return mark_safe(setup.translate(SCRIPT_ESCAPES))
         except (ProgrammingError, TypeError, ValueError, KeyError) as e:
             raise ReportError(e)
 

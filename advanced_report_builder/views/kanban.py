@@ -9,10 +9,11 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template import Context, Template, TemplateSyntaxError
 from django.urls import reverse
+from django.utils.html import conditional_escape
 from django.views.generic import TemplateView
 from django_datatables.columns import ColumnBase, MenuColumn
 from django_datatables.datatables import DatatableExcludedRow
-from django_datatables.helpers import DUMMY_ID, row_link
+from django_datatables.helpers import DUMMY_ID
 from django_datatables.widgets import DataTableReorderWidget
 from django_menus.menu import HtmlMenu, MenuItem
 from django_modals.fields import FieldEx
@@ -67,6 +68,15 @@ class DescriptionColumn(ColumnBase):
 
 
 class KanbanTable(ChartJSTable):
+    @classmethod
+    def escaped(cls, value):
+        """``value`` as text for HTML: escaped unless already marked safe; a list's items each."""
+        if isinstance(value, str):
+            return conditional_escape(value)
+        if isinstance(value, list | tuple):
+            return [cls.escaped(item) for item in value]
+        return value
+
     def get_table_array(self, request, results):
         result_processes = self.get_result_processes()
         for p in result_processes:
@@ -82,8 +92,13 @@ class KanbanTable(ChartJSTable):
                 for column in self.columns:
                     if isinstance(column, DescriptionColumn):
                         row_data.append(column.row_result(data_dict, self.page_results, columns=self.columns))
-                    else:
+                    elif column is getattr(self, 'link_column', None):
+                        # The key the card's link is built from: encoded into the url in the browser, never shown.
                         row_data.append(column.row_result(data_dict, self.page_results))
+                    else:
+                        # The card is put together as HTML in the browser, so a value is text unless its column
+                        # marked it safe (a link). The description is a template, which escapes its own.
+                        row_data.append(self.escaped(column.row_result(data_dict, self.page_results)))
 
                 results_list.append(row_data)
             except DatatableExcludedRow:
@@ -179,11 +194,7 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
                 field=kanban_report_lane.link_field,
                 report_builder_class=report_builder_class,
             )
-            field = col_type_override.field[0] if isinstance(col_type_override.field, list) else 'id'
-            if field not in table.columns:
-                table.add_columns(f'.{field}')
-            table.has_link = True
-            table.table_options['row_href'] = row_link(col_type_override.url, field)
+            table.add_row_link(col_type_override.url, kanban_report_lane.link_field)
         else:
             table.has_link = False
 
