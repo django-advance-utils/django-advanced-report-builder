@@ -159,11 +159,21 @@
             }
 
             function load_section() {
-                if ($(main_field).val() !== '') {
-                    let fields = JSON.parse($(main_field).val())
+                // Nothing to load from a field that is empty -- or gone: the pivots arrive by
+                // ajax, and a form closed before they do has no field left to read.
+                let saved = $(main_field).val();
+                if (saved) {
+                    let fields = JSON.parse(saved)
                     $.each(fields, function (key, value) {
                         let field_data = available_fields_data[value.field];
-                        $(selection_pivots_id_name).append(get_field_html(value.field, value.title, field_data.colour, value.data_attr));
+                        if (field_data === undefined) {
+                            // A saved pivot the fields no longer offer (renamed or removed since the
+                            // layout was saved): shown grey so it can be dragged out, as select_column
+                            // shows a column in that state, rather than taking the form down.
+                            $(selection_pivots_id_name).append(get_field_html(value.field, value.title, '#D3D3D3', value.data_attr));
+                        } else {
+                            $(selection_pivots_id_name).append(get_field_html(value.field, value.title, field_data.colour, value.data_attr));
+                        }
                     });
                 }
             }

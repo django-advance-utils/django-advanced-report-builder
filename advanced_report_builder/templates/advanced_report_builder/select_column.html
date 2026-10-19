@@ -185,9 +185,11 @@
                 }
 
                 function {{ command_prefix }}load_section() {
-
-                    if($({{ command_prefix }}main_field).val() !== '') {
-                        let fields = JSON.parse($({{ command_prefix }}main_field).val())
+                    // Nothing to load from a field that is empty -- or gone: the fields arrive by
+                    // ajax, and a form closed before they do has no field left to read.
+                    let saved = $({{ command_prefix }}main_field).val();
+                    if (saved) {
+                        let fields = JSON.parse(saved)
                         $.each(fields, function (key, value) {
                             let field_data = {{ command_prefix }}available_fields_data[value.field];
                             if(field_data == undefined) {
