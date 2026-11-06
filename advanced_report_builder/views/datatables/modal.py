@@ -5,6 +5,7 @@ from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Div
 from django.apps import apps
 from django.conf import settings
+from django.db.models import DateTimeField
 from django.forms import BooleanField, CharField, ChoiceField, IntegerField
 from django.urls import reverse
 from django_modals.fields import FieldEx
@@ -31,6 +32,7 @@ from advanced_report_builder.globals import (
     ANNOTATION_VALUE_CHOICES,
     ANNOTATIONS_CHOICES,
     DATE_FORMAT_TYPES,
+    DATE_TIME_FORMAT_TYPES,
     PREFIX_TYPE_AUTOMATIC,
     PREFIX_TYPE_CHOICES,
     PREFIX_TYPE_CUSTOM,
@@ -517,7 +519,10 @@ class TableFieldForm(ChartBaseFieldForm):
         )
         if 'annotations_value' in data_attr:
             self.fields['annotations_value'].initial = data_attr['annotations_value']
-        self.fields['date_format'] = ChoiceField(choices=[(0, 'Automatic')] + DATE_FORMAT_TYPES, required=False)
+        date_formats = DATE_FORMAT_TYPES
+        if isinstance(self.django_field, DateTimeField):
+            date_formats = DATE_FORMAT_TYPES + DATE_TIME_FORMAT_TYPES
+        self.fields['date_format'] = ChoiceField(choices=[(0, 'Automatic')] + date_formats, required=False)
         if 'date_format' in data_attr:
             self.fields['date_format'].initial = data_attr['date_format']
 

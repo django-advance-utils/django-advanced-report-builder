@@ -4,7 +4,7 @@ import json
 from django.db.models import ExpressionWrapper, F, FloatField, Q
 from django.db.models.functions import NullIf
 from django.template import Context, Template, TemplateSyntaxError
-from django_datatables.columns import ColumnBase
+from django_datatables.columns import ColumnBase, DateColumn, DateTimeColumn
 from django_datatables.helpers import render_replace
 from django_datatables.plugins.column_totals import ColumnTotals
 
@@ -47,6 +47,7 @@ class TableUtilsMixin(ReportUtilsMixin):
         data_attr = split_attr(table_field)
         field_name = table_field['field']
         date_format_type = data_attr.get('date_format')
+        picked_format = bool(date_format_type) and int(date_format_type) != 0
         date_format_type = int(date_format_type) if date_format_type else self.get_default_date_format()
 
         date_format = DATE_FORMAT_TYPES_DJANGO_FORMAT.get(date_format_type)
@@ -68,6 +69,14 @@ class TableUtilsMixin(ReportUtilsMixin):
             field = copy.deepcopy(col_type_override)
             if date_format:
                 field.date_format = date_format
+                if picked_format and isinstance(field, DateColumn):
+                    # A datatables DateColumn formats with date_str and never reads date_format. Set only for a
+                    # format picked for the column, so one left on Automatic keeps the column's own default.
+                    date_str = date_format
+                    if isinstance(field, DateTimeColumn):
+                        # A DateTimeColumn adds the time itself: given a format with the time, it would show it twice.
+                        date_str = date_str.removesuffix(' %H:%M')
+                    field.date_str = date_str
             if title or not display_heading:
                 field.title = title
             fields.append(field)
