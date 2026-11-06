@@ -4,7 +4,7 @@ import json
 from django.db.models import ExpressionWrapper, F, FloatField, Q
 from django.db.models.functions import NullIf
 from django.template import Context, Template, TemplateSyntaxError
-from django_datatables.columns import ColumnBase
+from django_datatables.columns import ColumnBase, DateColumn
 from django_datatables.helpers import render_replace
 from django_datatables.plugins.column_totals import ColumnTotals
 
@@ -68,6 +68,9 @@ class TableUtilsMixin(ReportUtilsMixin):
             field = copy.deepcopy(col_type_override)
             if date_format:
                 field.date_format = date_format
+                if isinstance(field, DateColumn):
+                    # A datatables DateColumn formats with date_str and never reads date_format.
+                    field.date_str = date_format
             if title or not display_heading:
                 field.title = title
             fields.append(field)
