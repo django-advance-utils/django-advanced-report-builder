@@ -3,6 +3,7 @@ import copy
 from ajax_helpers.mixins import AjaxHelpers
 from crispy_forms.layout import Fieldset
 from django.conf import settings
+from django.core.exceptions import PermissionDenied
 from django.forms import ChoiceField, ModelChoiceField
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -217,10 +218,14 @@ class ViewDashboardBase(AjaxHelpers, MenuMixin, TemplateView):
         return super().post(request, *args, **kwargs)
 
     def ajax_change_placement(self, **kwargs):
-        ids = kwargs['ids']
-        dashboard_reports = DashboardReport.objects.filter(id__in=ids)
-        obj_dict = dict([(obj.id, obj) for obj in dashboard_reports])
-        sorted_objects = [obj_dict[_id] for _id in ids]
+        """Reorder this dashboard's reports. Only while the page is in edit mode, which is the only time it
+        offers the drag, and only the dashboard's own reports: an id from another dashboard is ignored."""
+        if not self.enable_edit:
+            raise PermissionDenied
+        ids = [int(_id) for _id in kwargs['ids']]
+        dashboard_reports = self.dashboard.dashboardreport_set.filter(id__in=ids)
+        obj_dict = {obj.id: obj for obj in dashboard_reports}
+        sorted_objects = [obj_dict[_id] for _id in ids if _id in obj_dict]
 
         for index, dashboard_report in enumerate(sorted_objects):
             if dashboard_report.order != index:
