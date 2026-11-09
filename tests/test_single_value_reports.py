@@ -164,3 +164,51 @@ def test_single_value_report_has_edit_and_duplicate_buttons(authenticated_page):
     expect(page.locator('a.btn', has_text='Edit')).to_be_visible()
     expect(page.locator('a.btn', has_text='Duplicate')).to_be_visible()
     expect(page.locator('a.btn', has_text='Back')).to_be_visible()
+
+
+def _breakdown_quantities(page, report_name):
+    """Open the report's breakdown and return the Quantity column of its first page."""
+    _navigate_to_report(page, report_name)
+    page.locator('a.single_value_link').first.click()
+    table = page.locator('#modal-1 table.dataTable')
+    table.locator('tbody tr').first.wait_for(state='visible', timeout=10000)
+    headers = [h.strip() for h in table.locator('thead th').all_inner_texts()]
+    column = headers.index('Quantity')
+    cells = table.locator(f'tbody tr td:nth-child({column + 1})').all_inner_texts()
+    return [int(c.replace(',', '')) for c in cells]
+
+
+def test_breakdown_sorts_on_the_chosen_field(authenticated_page):
+    """The breakdown opens sorted on its order-by field, descending when ascending is off.
+
+    Without an order the table would sort on its first column ascending, so a descending
+    Quantity column shows the setting was applied.
+    """
+    page = authenticated_page
+    modal = _open_single_value_modal(page)
+    modal.locator('#id_name').fill('Payments by Quantity')
+    modal.locator('#id_report_type').select_option(label='Payment')
+    modal.locator('#id_show_breakdown').locator('xpath=..').click()
+    modal.locator('#div_id_breakdown_order_by_field').wait_for(state='visible')
+    quantity = modal.locator('#id_breakdown_fields_available_fields li', has_text='Quantity').first
+    quantity.drag_to(modal.locator('#id_breakdown_fields_selection'))
+    select2_select(page, 'id_breakdown_order_by_field', 'Quantity')
+    modal.locator('#id_breakdown_order_by_ascending').locator('xpath=..').click()
+    click_submit_button(page)
+    page.wait_for_timeout(1000)
+
+    quantities = _breakdown_quantities(page, 'Payments by Quantity')
+    assert len(quantities) > 1, quantities
+    assert quantities == sorted(quantities, reverse=True), quantities
+    assert quantities[0] > quantities[-1], quantities
+
+
+def test_breakdown_order_by_hidden_until_breakdown_shown(authenticated_page):
+    """The breakdown order fields only show once Show breakdown is on."""
+    page = authenticated_page
+    modal = _open_single_value_modal(page)
+    expect(modal.locator('#div_id_breakdown_order_by_field')).to_be_hidden()
+    expect(modal.locator('#div_id_breakdown_order_by_ascending')).to_be_hidden()
+    modal.locator('#id_show_breakdown').locator('xpath=..').click()
+    expect(modal.locator('#div_id_breakdown_order_by_field')).to_be_visible()
+    expect(modal.locator('#div_id_breakdown_order_by_ascending')).to_be_visible()

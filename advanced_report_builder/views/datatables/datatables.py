@@ -70,16 +70,13 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
             )
         except (FieldError, FieldDoesNotExist) as e:
             raise ReportError(e)
-        if self.table_report.order_by_field:
-            order_by_field = self.table_report.order_by_field
-            if order_by_field not in fields_used:
-                table.add_columns(f'.{order_by_field}')
-            elif order_by_field in fields_map:
-                order_by_field = fields_map[order_by_field]
-            if self.table_report.order_by_ascending:
-                table.sort(order_by_field)
-            else:
-                table.sort(f'-{order_by_field}')
+        self.apply_order_by(
+            table=table,
+            order_by_field=self.table_report.order_by_field,
+            ascending=self.table_report.order_by_ascending,
+            fields_used=fields_used,
+            fields_map=fields_map,
+        )
 
         table.table_options['pageLength'] = self.table_report.page_length
         table.table_options['bStateSave'] = False

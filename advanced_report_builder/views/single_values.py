@@ -317,6 +317,14 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
             ('decimal_places', {'field_class': 'col-md-5 col-lg-3 input-group-sm'}),
             'show_breakdown',
             'breakdown_fields',
+            ('breakdown_order_by_field', {'label': 'Breakdown order by'}),
+            (
+                'breakdown_order_by_ascending',
+                {
+                    'label': 'Breakdown ascending',
+                    'widget': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'}),
+                },
+            ),
             ('record_nav', {'widget': Toggle(attrs={'data-onstyle': 'success', 'data-on': 'YES', 'data-off': 'NO'})}),
         ]
         return form_fields
@@ -417,6 +425,16 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
                     'default': 'hide',
                 },
                 {
+                    'selector': '#div_id_breakdown_order_by_field',
+                    'values': {'checked': 'show'},
+                    'default': 'hide',
+                },
+                {
+                    'selector': '#div_id_breakdown_order_by_ascending',
+                    'values': {'checked': 'show'},
+                    'default': 'hide',
+                },
+                {
                     'selector': '#div_id_record_nav',
                     'values': {'checked': 'show'},
                     'default': 'hide',
@@ -429,10 +447,12 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
             numerator = _kwargs['data'].get('numerator')
             report_type_id = _kwargs['data'].get('report_type')
             report_type = get_object_or_404(ReportType, id=report_type_id)
+            breakdown_order_by_field = _kwargs['data'].get('breakdown_order_by_field')
         else:
             field = form.instance.field
             report_type = form.instance.report_type
             numerator = form.instance.numerator
+            breakdown_order_by_field = form.instance.breakdown_order_by_field
 
         self.setup_field(
             field_type='number',
@@ -447,6 +467,14 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
             form=form,
             field_name='numerator',
             selected_field_id=numerator,
+            report_type=report_type,
+        )
+
+        self.setup_field(
+            field_type='order',
+            form=form,
+            field_name='breakdown_order_by_field',
+            selected_field_id=breakdown_order_by_field,
             report_type=report_type,
         )
 
@@ -486,6 +514,11 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
                 template='advanced_report_builder/select_column.html',
                 extra_context={'select_column_url': url, 'command_prefix': ''},
             ),
+            'breakdown_order_by_field',
+            FieldEx(
+                'breakdown_order_by_ascending',
+                template='django_modals/fields/label_checkbox.html',
+            ),
             FieldEx(
                 'record_nav',
                 template='django_modals/fields/label_checkbox.html',
@@ -518,6 +551,13 @@ class SingleValueModal(MultiQueryModalMixin, QueryBuilderModalBase):
     def select2_numerator(self, **kwargs):
         return self.get_fields_for_select2(
             field_type='number',
+            report_type=kwargs['report_type'],
+            search_string=kwargs.get('search'),
+        )
+
+    def select2_breakdown_order_by_field(self, **kwargs):
+        return self.get_fields_for_select2(
+            field_type='order',
             report_type=kwargs['report_type'],
             search_string=kwargs.get('search'),
         )
@@ -724,6 +764,13 @@ class SingleValueShowBreakdownModal(BreakdownModalSizeMixin, TableUtilsMixin, Mo
             )
         except (FieldError, FieldDoesNotExist) as e:
             raise ReportError(e)
+        self.apply_order_by(
+            table=table,
+            order_by_field=single_value_report.breakdown_order_by_field,
+            ascending=single_value_report.breakdown_order_by_ascending,
+            fields_used=fields_used,
+            fields_map=fields_map,
+        )
         table.ajax_data = False
         table.table_options['pageLength'] = 25
         table.table_options['bStateSave'] = False

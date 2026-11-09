@@ -177,6 +177,20 @@ class TableUtilsMixin(ReportUtilsMixin):
                 if column_defs is not None:
                     self._merge_max_width_defs(column_defs, width_value)
 
+    @staticmethod
+    def apply_order_by(table, order_by_field, ascending, fields_used, fields_map):
+        """Sort the table on order_by_field, adding it as a column when no selected column shows it."""
+        if not order_by_field:
+            return
+        if order_by_field not in fields_used:
+            table.add_columns(f'.{order_by_field}')
+        elif order_by_field in fields_map:
+            order_by_field = fields_map[order_by_field]
+        if ascending:
+            table.sort(order_by_field)
+        else:
+            table.sort(f'-{order_by_field}')
+
     def process_query_results(
         self,
         report_builder_class,
