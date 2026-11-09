@@ -458,6 +458,8 @@ class SingleValueReport(Report):
 
     show_breakdown = models.BooleanField(default=False)
     breakdown_fields = models.JSONField(null=True, blank=True)
+    breakdown_order_by_field = models.CharField(max_length=200, blank=True, null=True)
+    breakdown_order_by_ascending = models.BooleanField(default=True)
     record_nav = models.BooleanField(default=True)
 
     average_scale = models.PositiveSmallIntegerField(choices=ANNOTATION_VALUE_CHOICES, blank=True, null=True)
