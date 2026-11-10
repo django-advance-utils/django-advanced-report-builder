@@ -9,6 +9,7 @@ from advanced_report_builder.column_types import (
     NUMBER_FIELDS,
 )
 from advanced_report_builder.exceptions import ReportError
+from advanced_report_builder.field_access import check_field_path
 from advanced_report_builder.utils import get_report_builder_class
 
 
@@ -18,6 +19,8 @@ class ReportBuilderFieldUtils:
     def get_field_details(self, base_model, field, report_builder_class, table=None, field_attr=None):
         if field_attr is None:
             field_attr = {}
+        # Only a path the report type's pickers offer reaches the ORM (field_access).
+        check_field_path(model=base_model, report_builder_class=report_builder_class, path=field)
         if isinstance(field, str) and field in report_builder_class.field_classes:
             field = report_builder_class.field_classes[field]
 
@@ -268,7 +271,8 @@ class ReportBuilderFieldUtils:
         report_builder_class_fields = report_builder_class.fields
 
         if extra_fields:
-            report_builder_class_fields += extra_fields
+            # A new list: += would add them to the ReportBuilder class's own fields, for good.
+            report_builder_class_fields = [*report_builder_class_fields, *extra_fields]
         if not only_include_names:
             for report_builder_field in report_builder_class_fields:
                 if (

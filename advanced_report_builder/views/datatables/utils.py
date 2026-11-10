@@ -19,6 +19,7 @@ from advanced_report_builder.column_types import (
     REVERSE_FOREIGN_KEY_STR_COLUMNS,
 )
 from advanced_report_builder.columns import ReportBuilderDateColumn
+from advanced_report_builder.field_access import check_field_path
 from advanced_report_builder.globals import (
     ALIGNMENT_CHOICE_RIGHT,
     ALIGNMENT_CLASS,
@@ -178,10 +179,11 @@ class TableUtilsMixin(ReportUtilsMixin):
                     self._merge_max_width_defs(column_defs, width_value)
 
     @staticmethod
-    def apply_order_by(table, order_by_field, ascending, fields_used, fields_map):
+    def apply_order_by(table, order_by_field, ascending, fields_used, fields_map, base_model, report_builder_class):
         """Sort the table on order_by_field, adding it as a column when no selected column shows it."""
         if not order_by_field:
             return
+        check_field_path(model=base_model, report_builder_class=report_builder_class, path=order_by_field)
         if order_by_field not in fields_used:
             table.add_columns(f'.{order_by_field}')
         elif order_by_field in fields_map:
@@ -326,6 +328,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                     data_attr=data_attr,
                     field_attr=field_attr,
                     index=index,
+                    base_model=base_model,
                 )
                 fields.append(field)
             elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_BOOL_COLUMNS):
@@ -335,6 +338,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                     data_attr=data_attr,
                     field_attr=field_attr,
                     index=index,
+                    base_model=base_model,
                 )
                 fields.append(field)
             elif isinstance(col_type_override, REVERSE_FOREIGN_KEY_CHOICE_COLUMNS):
@@ -344,6 +348,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                     data_attr=data_attr,
                     field_attr=field_attr,
                     index=index,
+                    base_model=base_model,
                 )
                 fields.append(field)
 
@@ -354,6 +359,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                     data_attr=data_attr,
                     field_attr=field_attr,
                     index=index,
+                    base_model=base_model,
                 )
                 fields.append(field)
 
@@ -498,6 +504,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                 extra_filter = Q((multiple_column_field, result[multiple_column_field]))
 
                 field_name = self.get_number_field(
+                    base_model=base_model,
                     annotations_type=annotations_type,
                     append_annotation_query=append_annotation_query,
                     index=f'{index}_{multiple_index}',
@@ -513,6 +520,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                 )
         else:
             field_name = self.get_number_field(
+                base_model=base_model,
                 annotations_type=annotations_type,
                 append_annotation_query=append_annotation_query,
                 index=index,
@@ -728,7 +736,7 @@ class TableUtilsMixin(ReportUtilsMixin):
                 )
         fields.append(field)
 
-    def get_reverse_foreign_key_str_field(self, col_type_override, data_attr, field_attr, index):
+    def get_reverse_foreign_key_str_field(self, col_type_override, data_attr, field_attr, index, base_model=None):
         col_type_override.table = None
         field_name = f'{col_type_override.field_name}_{index}'
         field = copy.deepcopy(col_type_override)
@@ -738,13 +746,15 @@ class TableUtilsMixin(ReportUtilsMixin):
         if int(data_attr.get('has_filter', 0)) == 1:
             _filter = json.loads(decode_attribute(data_attr['filter']))
             prefix_field_name = col_type_override.field_name.split('__')[0]
-            sub_query = self.process_filters(search_filter_data=_filter, prefix_field_name=prefix_field_name)
+            sub_query = self.process_filters(
+                search_filter_data=_filter, prefix_field_name=prefix_field_name, model=base_model
+            )
         field.setup_annotations(delimiter_type=delimiter_type, sub_filter=sub_query, field_name=field_name)
         if field_attr:
             field = (field, field_attr)
         return field
 
-    def get_reverse_foreign_key_bool_field(self, col_type_override, data_attr, field_attr, index):
+    def get_reverse_foreign_key_bool_field(self, col_type_override, data_attr, field_attr, index, base_model=None):
         col_type_override.table = None
         field_name = f'{col_type_override.field_name}_{index}'
         field = copy.deepcopy(col_type_override)
@@ -752,7 +762,9 @@ class TableUtilsMixin(ReportUtilsMixin):
         if int(data_attr.get('has_filter', 0)) == 1:
             _filter = json.loads(decode_attribute(data_attr['filter']))
             prefix_field_name = col_type_override.field_name.split('__')[0]
-            sub_query = self.process_filters(search_filter_data=_filter, prefix_field_name=prefix_field_name)
+            sub_query = self.process_filters(
+                search_filter_data=_filter, prefix_field_name=prefix_field_name, model=base_model
+            )
         annotations_type = int(data_attr.get('annotations_type', REVERSE_FOREIGN_KEY_ANNOTATION_BOOLEAN_XOR))
         field.setup_annotations(
             annotations_type=annotations_type,
@@ -763,7 +775,7 @@ class TableUtilsMixin(ReportUtilsMixin):
             field = (field, field_attr)
         return field
 
-    def get_reverse_foreign_key_choice_field(self, col_type_override, data_attr, field_attr, index):
+    def get_reverse_foreign_key_choice_field(self, col_type_override, data_attr, field_attr, index, base_model=None):
         col_type_override.table = None
         field_name = f'{col_type_override.field_name}_{index}'
         field = copy.deepcopy(col_type_override)
@@ -772,13 +784,15 @@ class TableUtilsMixin(ReportUtilsMixin):
         if int(data_attr.get('has_filter', 0)) == 1:
             _filter = json.loads(decode_attribute(data_attr['filter']))
             prefix_field_name = col_type_override.field_name.split('__')[0]
-            sub_query = self.process_filters(search_filter_data=_filter, prefix_field_name=prefix_field_name)
+            sub_query = self.process_filters(
+                search_filter_data=_filter, prefix_field_name=prefix_field_name, model=base_model
+            )
         field.setup_annotations(delimiter_type=delimiter_type, sub_filter=sub_query, field_name=field_name)
         if field_attr:
             field = (field, field_attr)
         return field
 
-    def get_reverse_foreign_key_date_field(self, col_type_override, data_attr, field_attr, index):
+    def get_reverse_foreign_key_date_field(self, col_type_override, data_attr, field_attr, index, base_model=None):
         col_type_override.table = None
         field_name = f'{col_type_override.field_name}_{index}'
         field = copy.deepcopy(col_type_override)
@@ -790,7 +804,9 @@ class TableUtilsMixin(ReportUtilsMixin):
         if int(data_attr.get('has_filter', 0)) == 1:
             _filter = json.loads(decode_attribute(data_attr['filter']))
             prefix_field_name = col_type_override.field_name.split('__')[0]
-            sub_query = self.process_filters(search_filter_data=_filter, prefix_field_name=prefix_field_name)
+            sub_query = self.process_filters(
+                search_filter_data=_filter, prefix_field_name=prefix_field_name, model=base_model
+            )
 
         field.setup_annotations(
             delimiter_type=delimiter_type,

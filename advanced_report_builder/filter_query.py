@@ -11,6 +11,7 @@ from django.db.models.functions import ExtractWeekDay
 from django.shortcuts import get_object_or_404
 
 from advanced_report_builder.exceptions import ReportError
+from advanced_report_builder.field_access import check_field_path, check_filter_path
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.globals import DATE_FORMAT_TYPE_DD_MM_YYYY_SLASH, PeriodType
 from advanced_report_builder.models import ReportOption, ReportQuery
@@ -188,6 +189,7 @@ class FilterQueryMixin:
             annotations=annotations,
             extra_filter_data=extra_filter_data,
             extra_filter=extra_filter,
+            model=query.model,
         )
         if annotations:
             query = query.annotate(**annotations)
@@ -196,8 +198,17 @@ class FilterQueryMixin:
         return query
 
     def process_filters(
-        self, search_filter_data, extra_filter_data=None, annotations=None, extra_filter=None, prefix_field_name=None
+        self,
+        search_filter_data,
+        extra_filter_data=None,
+        annotations=None,
+        extra_filter=None,
+        prefix_field_name=None,
+        model=None,
     ):
+        """``model`` is the model the filters apply to: every rule's field is checked against what its query
+        builder offers (field_access.check_filter_path), so a rule cannot be checked, and is refused,
+        without it."""
         if not search_filter_data and not extra_filter_data:
             return []
 
@@ -206,12 +217,12 @@ class FilterQueryMixin:
         reduce_by = operator.and_
         if search_filter_data:
             query_list = self._process_group(
-                query_data=search_filter_data, prefix_field_name=prefix_field_name, annotations=annotations
+                query_data=search_filter_data, prefix_field_name=prefix_field_name, annotations=annotations, model=model
             )
             reduce_by = self._format_group_conditions(display_condition=search_filter_data['condition'])
         if extra_filter_data:
             extra_query_list = self._process_group(
-                query_data=extra_filter_data, prefix_field_name=prefix_field_name, annotations=annotations
+                query_data=extra_filter_data, prefix_field_name=prefix_field_name, annotations=annotations, model=model
             )
 
         if len(query_list) == 0:
@@ -267,14 +278,16 @@ class FilterQueryMixin:
 
         return reduce_by
 
-    def _process_group(self, query_data, prefix_field_name, annotations):
+    def _process_group(self, query_data, prefix_field_name, annotations, model=None):
         query_list = []
+        if model is None:
+            model = getattr(self, 'base_model', None)
 
         for rule in query_data['rules']:
             if condition := rule.get('condition'):
                 reduce_by = self._format_group_conditions(display_condition=condition)
                 sub_query_list = self._process_group(
-                    query_data=rule, prefix_field_name=prefix_field_name, annotations=annotations
+                    query_data=rule, prefix_field_name=prefix_field_name, annotations=annotations, model=model
                 )
                 if sub_query_list:
                     query_list.append(reduce(reduce_by, sub_query_list))
@@ -292,6 +305,13 @@ class FilterQueryMixin:
                 value = True
             elif display_operator == 'is_not_null':
                 value = False
+            if model is None:
+                raise ReportError('A filter was applied without the model it filters')
+            check_filter_path(
+                model=model,
+                path=field,
+                compared=value if _id.endswith('__field_vs_field') else None,
+            )
 
             if _id.endswith('__field_vs_field'):
                 self.field_vs_field(
@@ -843,6 +863,13 @@ class FilterQueryMixin:
         for report_option in report_options:
             value = report_options_dict.get(report_option.id)
             if value:
+                report = report_option.report
+                base_model = report.get_base_model()
+                check_field_path(
+                    model=base_model,
+                    report_builder_class=get_report_builder_class(model=base_model, report_type=report.report_type),
+                    path=report_option.field,
+                )
                 query &= Q(**{f'{report_option.field}_id': value})
 
         return query

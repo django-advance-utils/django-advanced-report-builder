@@ -1263,9 +1263,11 @@ class MultiValueView(ValueBaseView):
                     divider=divider,
                 )
             elif multi_value_type == MultiValueReportCell.MultiValueType.PERCENT:
-                numerator_filter = self.process_filters(search_filter_data=multi_value_report_cell.extra_query_data)
+                numerator_filter = self.process_filters(
+                    search_filter_data=multi_value_report_cell.extra_query_data, model=base_model
+                )
                 denominator_filter = self.process_filters(
-                    search_filter_data=multi_value_report_cell.denominator_query_data
+                    search_filter_data=multi_value_report_cell.denominator_query_data, model=base_model
                 )
                 self._process_percentage(
                     numerator_filter=numerator_filter,
@@ -1279,7 +1281,9 @@ class MultiValueView(ValueBaseView):
                 )
                 append_str = '%'
             elif multi_value_type == MultiValueReportCell.MultiValueType.PERCENT_FROM_COUNT:
-                numerator_filter = self.process_filters(search_filter_data=multi_value_report_cell.extra_query_data)
+                numerator_filter = self.process_filters(
+                    search_filter_data=multi_value_report_cell.extra_query_data, model=base_model
+                )
                 self._process_percentage_from_count(
                     numerator_filter=numerator_filter,
                     decimal_places=multi_value_report_cell.decimal_places,

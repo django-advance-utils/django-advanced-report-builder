@@ -76,6 +76,8 @@ class TableView(ReportBase, TableUtilsMixin, DatatableView):
             ascending=self.table_report.order_by_ascending,
             fields_used=fields_used,
             fields_map=fields_map,
+            base_model=base_model,
+            report_builder_class=report_builder_class,
         )
 
         table.table_options['pageLength'] = self.table_report.page_length

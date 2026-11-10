@@ -51,6 +51,7 @@ class ValueBaseView(ChartBaseView):
         is_summable_number = isinstance(django_field, NUMBER_FIELDS) and not is_primary_key
         if is_summable_number or has_annotation:
             self.get_number_field(
+                base_model=base_model,
                 annotations_type=aggregations_type,
                 append_annotation_query=False,
                 index=0,

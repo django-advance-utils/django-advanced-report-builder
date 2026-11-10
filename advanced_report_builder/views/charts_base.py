@@ -317,6 +317,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
                             additional_options['negative_colour'] = result[negative_colour_field]
 
                         self.get_number_field(
+                            base_model=base_model,
                             annotations_type=self.chart_report.axis_value_type,
                             append_annotation_query=True,
                             index=f'{index}_{multiple_index}',
@@ -332,6 +333,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
 
                 else:
                     self.get_number_field(
+                        base_model=base_model,
                         annotations_type=self.chart_report.axis_value_type,
                         append_annotation_query=False,
                         index=index,

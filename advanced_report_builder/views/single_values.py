@@ -124,8 +124,10 @@ class SingleValueView(ValueBaseView):
             denominator_filter = None
             report_query = self.get_report_query(report=self.chart_report)
             if report_query:
-                numerator_filter = self.process_filters(search_filter_data=report_query.extra_query)
-                denominator_filter = self.process_filters(search_filter_data=report_query.denominator_query)
+                numerator_filter = self.process_filters(search_filter_data=report_query.extra_query, model=base_model)
+                denominator_filter = self.process_filters(
+                    search_filter_data=report_query.denominator_query, model=base_model
+                )
 
             self._process_percentage(
                 numerator_filter=numerator_filter,
@@ -142,7 +144,7 @@ class SingleValueView(ValueBaseView):
 
             numerator_filter = None
             if report_query:
-                numerator_filter = self.process_filters(search_filter_data=report_query.extra_query)
+                numerator_filter = self.process_filters(search_filter_data=report_query.extra_query, model=base_model)
 
             self._process_percentage_from_count(
                 numerator_filter=numerator_filter, decimal_places=self.chart_report.decimal_places, fields=fields
@@ -770,6 +772,8 @@ class SingleValueShowBreakdownModal(BreakdownModalSizeMixin, TableUtilsMixin, Mo
             ascending=single_value_report.breakdown_order_by_ascending,
             fields_used=fields_used,
             fields_map=fields_map,
+            base_model=base_model,
+            report_builder_class=report_builder_class,
         )
         table.ajax_data = False
         table.table_options['pageLength'] = 25
