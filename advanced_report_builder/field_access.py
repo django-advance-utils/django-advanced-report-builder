@@ -180,6 +180,8 @@ def check_filter_path(model, path, compared=None):
     vs field rule, the field it is compared with."""
     if checks_suspended():
         return
+    if not isinstance(path, str):
+        _refuse(path)
     fields, _ = _model_filter_paths(_model_key(model))
     if path not in fields and not _host_allows(model, path, 'filter'):
         _refuse(path)
@@ -191,6 +193,8 @@ def check_compared_path(model, compared):
     """Refuse the field a field vs field rule compares with unless the query builder offers it on ``model``."""
     if checks_suspended():
         return
+    if not isinstance(compared, str):
+        _refuse(compared)
     _, compared_fields = _model_filter_paths(_model_key(model))
     if compared not in compared_fields and not _host_allows(model, compared, 'filter'):
         _refuse(compared)
