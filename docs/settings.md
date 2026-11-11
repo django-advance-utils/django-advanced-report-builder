@@ -20,6 +20,27 @@ The Django URL name for the view that renders a dashboard.
 REPORT_BUILDER_DASHBOARD_URL_NAME = 'myapp:view_dashboard'
 ```
 
+### REPORT_BUILDER_UNOFFERED_FIELD_PATHS
+
+A report may use only the field paths its report type's pickers offer: the `ReportBuilder`'s `fields`,
+`field_classes`, pivots and `includes`, the maths columns and the model's key. Every path a saved report names -- in a
+column, a filter, a sort order, a chart, a value, a calendar, a kanban lane, a report option or a data merge -- is
+checked before it reaches a query, and a report naming one that is not offered shows an error instead of its data.
+
+A `ReportBuilder` can stop offering a field that saved reports still name, because it was renamed or moved behind
+another include. To keep such reports drawing, name a callable here (a dotted path, or the callable itself). It is
+called as `hook(model=..., path=..., kind=...)` for each path that is not offered, `kind` being `'field'` or
+`'filter'`, and a true answer lets that path through. It is never called for a path that is offered.
+
+```python
+# Default: refuse every path that is not offered
+REPORT_BUILDER_UNOFFERED_FIELD_PATHS = None
+
+REPORT_BUILDER_UNOFFERED_FIELD_PATHS = 'myapp.reports.allow_unoffered_path'
+```
+
+Keep the answer narrow: a `ReportBuilder` leaves relations and columns out on purpose.
+
 ### REPORT_BUILDER_CUSTOMISATION
 
 Dotted path to a customisation class. Override this to provide custom initialisation hooks.

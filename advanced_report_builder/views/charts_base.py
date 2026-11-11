@@ -262,17 +262,19 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
                     multiple_column_field = data_attr.get('multiple_column_field')
                     if multiple_column_field is None:
                         return
-                    report_builder_class = self._get_report_builder_class(
+                    # The builder of the model the split follows: it names the split's own fields. The colour
+                    # fields, and every chart field after this one, belong to the report's own builder.
+                    field_report_builder_class = self._get_report_builder_class(
                         base_model=base_model,
                         field_str=multiple_column_field,
                         report_builder_class=report_builder_class,
                     )
                     try:
-                        _fields = report_builder_class.default_multiple_column_fields
+                        _fields = field_report_builder_class.default_multiple_column_fields
                     except AttributeError:
                         return
                     default_multiple_column_fields = [multiple_column_field + '__' + x for x in _fields]
-                    order_by = f'{multiple_column_field}__{report_builder_class.default_multiple_pk}'
+                    order_by = f'{multiple_column_field}__{field_report_builder_class.default_multiple_pk}'
                     positive_colour_field = self.get_field_path(
                         field_name=data_attr.get('positive_colour_field'),
                         base_model=base_model,
@@ -304,8 +306,8 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
                             database_values=result,
                             value_prefix=multiple_column_field,
                             fields=_fields,
-                            text=report_builder_class.default_multiple_column_text,
-                            null_text=report_builder_class.default_multiple_column_null_text,
+                            text=field_report_builder_class.default_multiple_column_text,
+                            null_text=field_report_builder_class.default_multiple_column_null_text,
                         )
                         extra_filter = Q((multiple_column_field, result[multiple_column_field]))
 
@@ -317,6 +319,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
                             additional_options['negative_colour'] = result[negative_colour_field]
 
                         self.get_number_field(
+                            base_model=base_model,
                             annotations_type=self.chart_report.axis_value_type,
                             append_annotation_query=True,
                             index=f'{index}_{multiple_index}',
@@ -332,6 +335,7 @@ class ChartBaseView(ReportBase, ReportUtilsMixin, TemplateView):
 
                 else:
                     self.get_number_field(
+                        base_model=base_model,
                         annotations_type=self.chart_report.axis_value_type,
                         append_annotation_query=False,
                         index=index,

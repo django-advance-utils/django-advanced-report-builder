@@ -68,6 +68,7 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
         totals=None,
         divider=None,
         additional_options=None,
+        base_model=None,
     ):
         field_name = table_field['field']
         alignment_class = ALIGNMENT_CLASS.get(int(data_attr.get('alignment', ALIGNMENT_CHOICE_RIGHT)))
@@ -83,7 +84,9 @@ class ReportUtilsMixin(ReportBuilderFieldUtils, FilterQueryMixin):
             if b64_filter:
                 _filter = decode_attribute(b64_filter)
                 _filter = json.loads(_filter)
-                annotation_filter = self.process_filters(search_filter_data=_filter, extra_filter=extra_filter)
+                annotation_filter = self.process_filters(
+                    search_filter_data=_filter, extra_filter=extra_filter, model=base_model
+                )
             elif extra_filter:
                 annotation_filter = reduce(operator.and_, [extra_filter])
 
