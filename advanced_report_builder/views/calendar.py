@@ -23,6 +23,7 @@ from django_modals.widgets.select2 import Select2, Select2Multiple
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.data_merge.utils import DataMergeUtils
 from advanced_report_builder.data_merge.widget import DataMergeWidget
+from advanced_report_builder.field_access import check_field_path
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.models import (
     CalendarReport,
@@ -108,6 +109,14 @@ class CalendarView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
         report_builder_class = get_report_builder_class(
             model=base_model, report_type=calendar_report_data_set.report_type
         )
+        for path in (
+            calendar_report_data_set.start_date_field,
+            calendar_report_data_set.end_date_field,
+            calendar_report_data_set.heading_field,
+            calendar_report_data_set.background_colour_field,
+        ):
+            if path:
+                check_field_path(model=base_model, report_builder_class=report_builder_class, path=path)
         table_indexes = ['start_date_field', 'end_date_field']
         table.add_columns(calendar_report_data_set.start_date_field)
         if calendar_report_data_set.end_date_type == CalendarReportDataSet.END_DATE_TYPE_FIELD:

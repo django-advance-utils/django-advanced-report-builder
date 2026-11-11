@@ -26,6 +26,7 @@ from django_modals.widgets.select2 import Select2, Select2Multiple
 from advanced_report_builder.columns import ReportBuilderNumberColumn
 from advanced_report_builder.data_merge.utils import DataMergeUtils
 from advanced_report_builder.data_merge.widget import DataMergeWidget
+from advanced_report_builder.field_access import check_field_path
 from advanced_report_builder.filter_query import FilterQueryMixin
 from advanced_report_builder.globals import (
     DATE_FORMAT_TYPE_DD_MM_YY_SLASH,
@@ -152,6 +153,14 @@ class KanbanView(DataMergeUtils, ReportBase, FilterQueryMixin, TemplateView):
         table = self.chart_js_table(model=base_model)
 
         report_builder_class = get_report_builder_class(model=base_model, report_type=kanban_report_lane.report_type)
+        for path in (
+            kanban_report_lane.heading_field,
+            kanban_report_lane.background_colour_field,
+            kanban_report_lane.heading_colour_field,
+            kanban_report_lane.order_by_field,
+        ):
+            if path:
+                check_field_path(model=base_model, report_builder_class=report_builder_class, path=path)
         table_indexes = []
 
         if kanban_report_lane.heading_field is not None:

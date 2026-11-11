@@ -19,7 +19,7 @@ from advanced_report_builder.column_types import (
     REVERSE_FOREIGN_KEY_STR_COLUMNS,
 )
 from advanced_report_builder.columns import ReportBuilderDateColumn
-from advanced_report_builder.field_access import check_field_path
+from advanced_report_builder.field_access import check_field_path, check_mathematical_operand
 from advanced_report_builder.globals import (
     ALIGNMENT_CHOICE_RIGHT,
     ALIGNMENT_CLASS,
@@ -378,6 +378,8 @@ class TableUtilsMixin(ReportUtilsMixin):
                 'rb_percentage',
             ]:
                 self.setup_mathematical_field(
+                    base_model=base_model,
+                    report_builder_class=report_builder_class,
                     data_attr=data_attr,
                     fields=fields,
                     field_attr=field_attr,
@@ -545,6 +547,8 @@ class TableUtilsMixin(ReportUtilsMixin):
 
     def setup_mathematical_field(
         self,
+        base_model,
+        report_builder_class,
         data_attr,
         fields,
         field_attr,
@@ -556,6 +560,8 @@ class TableUtilsMixin(ReportUtilsMixin):
         field = table_field['field']
         if field == 'rb_percentage':
             self.get_mathematical_percentage_field(
+                base_model=base_model,
+                report_builder_class=report_builder_class,
                 fields=fields,
                 field_attr=field_attr,
                 data_attr=data_attr,
@@ -565,6 +571,8 @@ class TableUtilsMixin(ReportUtilsMixin):
             )
         elif field == 'rb_division':
             values = self.decode_mathematical_columns(
+                base_model=base_model,
+                report_builder_class=report_builder_class,
                 data_attr=data_attr,
                 first_value_column_name='numerator_column',
                 second_value_column_name='denominator_column',
@@ -583,6 +591,8 @@ class TableUtilsMixin(ReportUtilsMixin):
                 )
         elif field == 'rb_times':
             values = self.decode_mathematical_columns(
+                base_model=base_model,
+                report_builder_class=report_builder_class,
                 data_attr=data_attr,
                 first_value_column_name='multiplicand_column',
                 second_value_column_name='multiplier_column',
@@ -600,7 +610,9 @@ class TableUtilsMixin(ReportUtilsMixin):
                     expression=expression,
                 )
         elif field == 'rb_addition':
-            values = self.decode_mathematical_columns(data_attr=data_attr)
+            values = self.decode_mathematical_columns(
+                base_model=base_model, report_builder_class=report_builder_class, data_attr=data_attr
+            )
             if values is not None:
                 expression = ExpressionWrapper(NullIf(F(values[0]), 0) + F(values[1]), output_field=FloatField())
                 self.get_mathematical_field(
@@ -614,7 +626,9 @@ class TableUtilsMixin(ReportUtilsMixin):
                     expression=expression,
                 )
         elif field == 'rb_subtraction':
-            values = self.decode_mathematical_columns(data_attr=data_attr)
+            values = self.decode_mathematical_columns(
+                base_model=base_model, report_builder_class=report_builder_class, data_attr=data_attr
+            )
             if values is not None:
                 expression = ExpressionWrapper(NullIf(F(values[0]), 0) - F(values[1]), output_field=FloatField())
                 self.get_mathematical_field(
@@ -630,6 +644,8 @@ class TableUtilsMixin(ReportUtilsMixin):
 
     @staticmethod
     def decode_mathematical_columns(
+        base_model,
+        report_builder_class,
         data_attr,
         first_value_column_name='first_value_column',
         second_value_column_name='second_value_column',
@@ -641,11 +657,17 @@ class TableUtilsMixin(ReportUtilsMixin):
 
         first_value_column = decode_attribute(first_value_column)
         second_value_column = decode_attribute(second_value_column)
+        for operand in (first_value_column, second_value_column):
+            check_mathematical_operand(base_model, report_builder_class, operand)
 
         return first_value_column, second_value_column
 
-    def get_mathematical_percentage_field(self, fields, field_attr, data_attr, table_field, index, totals):
+    def get_mathematical_percentage_field(
+        self, base_model, report_builder_class, fields, field_attr, data_attr, table_field, index, totals
+    ):
         values = self.decode_mathematical_columns(
+            base_model=base_model,
+            report_builder_class=report_builder_class,
             data_attr=data_attr,
             first_value_column_name='numerator_column',
             second_value_column_name='denominator_column',

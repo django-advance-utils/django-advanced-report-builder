@@ -7,7 +7,8 @@ is checked against that same walk before it reaches a query:
 
 * :func:`check_field_path` for anything resolved through ``get_field_details`` (columns, charts,
   values, calendars, kanban lanes, sort orders, data merge);
-* :func:`check_filter_path` for the query builder's rules, against what the query builder offers.
+* :func:`check_filter_path` for the query builder's rules, against what the query builder offers;
+* :func:`check_mathematical_operand` for the two columns a maths column combines.
 
 A path that fails raises ``ReportError``, which the report views already turn into an error
 message on the report instead of a page error.
@@ -29,6 +30,7 @@ from functools import cache
 
 from django.apps import apps
 from django.conf import settings
+from django.core.exceptions import FieldDoesNotExist
 from django.utils.module_loading import import_string
 
 from advanced_report_builder.exceptions import ReportError
@@ -159,13 +161,36 @@ def check_field_path(model, report_builder_class, path):
         _refuse(path)
 
 
+def check_mathematical_operand(model, report_builder_class, operand):
+    """Refuse a maths column's operand unless it is a path the report type offers, or the name another column
+    of the table gives itself (its column id): a single name that is no field of the model, which the query can
+    only resolve as that column's annotation."""
+    if checks_suspended() or not isinstance(operand, str) or report_builder_class is None:
+        return
+    if '__' not in operand:
+        try:
+            model._meta.get_field(operand)
+        except FieldDoesNotExist:
+            return
+    check_field_path(model=model, report_builder_class=report_builder_class, path=operand)
+
+
 def check_filter_path(model, path, compared=None):
     """Refuse a query builder rule unless the query builder offers its field on ``model``, and, for a field
     vs field rule, the field it is compared with."""
     if checks_suspended():
         return
-    fields, compared_fields = _model_filter_paths(_model_key(model))
+    fields, _ = _model_filter_paths(_model_key(model))
     if path not in fields and not _host_allows(model, path, 'filter'):
         _refuse(path)
-    if compared is not None and compared not in compared_fields and not _host_allows(model, compared, 'filter'):
+    if compared is not None:
+        check_compared_path(model, compared)
+
+
+def check_compared_path(model, compared):
+    """Refuse the field a field vs field rule compares with unless the query builder offers it on ``model``."""
+    if checks_suspended():
+        return
+    _, compared_fields = _model_filter_paths(_model_key(model))
+    if compared not in compared_fields and not _host_allows(model, compared, 'filter'):
         _refuse(compared)

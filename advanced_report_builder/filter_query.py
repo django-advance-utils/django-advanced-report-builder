@@ -6,12 +6,13 @@ from functools import reduce
 from dateutil.relativedelta import relativedelta
 from django.apps import apps
 from django.conf import settings
+from django.core.exceptions import FieldDoesNotExist
 from django.db.models import F, Q
 from django.db.models.functions import ExtractWeekDay
 from django.shortcuts import get_object_or_404
 
 from advanced_report_builder.exceptions import ReportError
-from advanced_report_builder.field_access import check_field_path, check_filter_path
+from advanced_report_builder.field_access import check_compared_path, check_field_path, check_filter_path
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.globals import DATE_FORMAT_TYPE_DD_MM_YYYY_SLASH, PeriodType
 from advanced_report_builder.models import ReportOption, ReportQuery
@@ -278,6 +279,21 @@ class FilterQueryMixin:
 
         return reduce_by
 
+    @staticmethod
+    def _prefixed_filter_model(model, prefix_field_name):
+        """The model a reverse foreign key column's own filter is written for: the one ``prefix_field_name``
+        leads to from ``model``. Its rules name that model's fields, and are checked against what the query
+        builder offers there."""
+        if model is None:
+            raise ReportError('A filter was applied without the model it filters')
+        try:
+            related_model = model._meta.get_field(prefix_field_name).related_model
+        except FieldDoesNotExist:
+            related_model = None
+        if related_model is None:
+            raise ReportError(f'"{prefix_field_name}" is not a field this report can use')
+        return related_model
+
     def _process_group(self, query_data, prefix_field_name, annotations, model=None):
         query_list = []
         if model is None:
@@ -294,7 +310,9 @@ class FilterQueryMixin:
                 continue
 
             field = rule['field']
+            rule_model, rule_path = model, field
             if prefix_field_name is not None:
+                rule_model = self._prefixed_filter_model(model, prefix_field_name)
                 field = prefix_field_name + '__' + field
             _id = rule['id']
             display_operator = rule['operator']
@@ -307,11 +325,10 @@ class FilterQueryMixin:
                 value = False
             if model is None:
                 raise ReportError('A filter was applied without the model it filters')
-            check_filter_path(
-                model=model,
-                path=field,
-                compared=value if _id.endswith('__field_vs_field') else None,
-            )
+            check_filter_path(model=rule_model, path=rule_path)
+            if _id.endswith('__field_vs_field'):
+                # F(value) is resolved from the query's own model, prefix or not.
+                check_compared_path(model=model, compared=value)
 
             if _id.endswith('__field_vs_field'):
                 self.field_vs_field(
