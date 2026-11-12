@@ -44,14 +44,14 @@
 
                     <tr class="active">
                         {% for heading in headings %}
-                            <th class="col-xs-1 text-center" rowspan="{{ heading.row_span }}" colspan="{{ heading.col_span }}">{{ heading.label|safe }}</th>
+                            <th class="col-xs-1 text-center" rowspan="{{ heading.row_span }}" colspan="{{ heading.col_span }}">{{ heading.label }}</th>
                         {% endfor %}
                     </tr>
 
                     <tr class="active">
                         {% for lane in lanes %}
                             {% if lane.multiple %}
-                            <th class="col-xs-1 text-center">{{ lane.label|safe }}</th>
+                            <th class="col-xs-1 text-center">{{ lane.label }}</th>
                             {% endif %}
                         {% endfor %}
                     </tr>
