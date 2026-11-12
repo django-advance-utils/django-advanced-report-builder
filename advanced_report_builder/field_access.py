@@ -131,8 +131,13 @@ def clear_offered_paths():
     _model_filter_paths.cache_clear()
 
 
+def _builder_type(report_builder_class):
+    """The ``ReportBuilder`` class, whether its caller passed the class or an instance of it."""
+    return report_builder_class if isinstance(report_builder_class, type) else type(report_builder_class)
+
+
 def offered_field_paths(model, report_builder_class):
-    return _offered_field_paths(_model_key(model), type(report_builder_class))
+    return _offered_field_paths(_model_key(model), _builder_type(report_builder_class))
 
 
 def _host_allows(model, path, kind):

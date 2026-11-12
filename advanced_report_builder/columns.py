@@ -13,6 +13,7 @@ from django_datatables.columns import (
 from django_datatables.helpers import DUMMY_ID, get_url, render_replace
 from django_datatables.model_def import DatatableModel
 
+from advanced_report_builder.field_access import checks_suspended
 from advanced_report_builder.globals import (
     DATE_FORMAT_TYPE_DD_MM_YY_SLASH,
     DATE_FORMAT_TYPES_DJANGO_FORMAT,
@@ -281,7 +282,9 @@ class ReportBuilderColumnLink(ColumnLink):
 
     @url.setter
     def url(self, url_name):
-        if self.enable_links():
+        # Working out the paths a report type offers builds its columns with no page to link to, and maybe no
+        # urlconf to reverse with (a background task).
+        if self.enable_links() and not checks_suspended():
             self._url = get_url(url_name)
         else:
             self._url = f'#?{DUMMY_ID}'
