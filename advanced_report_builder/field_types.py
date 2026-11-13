@@ -3,11 +3,13 @@ from enum import Enum
 
 from django.apps import apps
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import FieldDoesNotExist
 from django.db import models
 from django_datatables.columns import ManyToManyColumn
 
 from advanced_report_builder.column_types import DATE_FIELDS
 from advanced_report_builder.columns import FilterForeignKeyColumn
+from advanced_report_builder.field_access import checks_suspended
 from advanced_report_builder.field_utils import ReportBuilderFieldUtils
 from advanced_report_builder.globals import FieldType
 from advanced_report_builder.utils import get_report_builder_class
@@ -402,11 +404,16 @@ class FieldTypes(ReportBuilderFieldUtils):
                 not isinstance(report_builder_field, str)
                 or report_builder_field not in report_builder_class.exclude_search_fields
             ):
-                django_field, _, columns, _ = self.get_field_details(
-                    base_model=base_model,
-                    field=report_builder_field,
-                    report_builder_class=report_builder_class,
-                )
+                try:
+                    django_field, _, columns, _ = self.get_field_details(
+                        base_model=base_model,
+                        field=report_builder_field,
+                        report_builder_class=report_builder_class,
+                    )
+                except FieldDoesNotExist:
+                    if not checks_suspended():
+                        raise
+                    continue
 
                 for column in columns:
                     field = prefix + column.column_name
