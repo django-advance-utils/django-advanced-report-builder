@@ -1,4 +1,5 @@
 from django.apps import apps
+from django.core.exceptions import FieldDoesNotExist
 from django_datatables.columns import ColumnNameError
 from django_datatables.datatables import ColumnInitialisor
 
@@ -9,7 +10,7 @@ from advanced_report_builder.column_types import (
     NUMBER_FIELDS,
 )
 from advanced_report_builder.exceptions import ReportError
-from advanced_report_builder.field_access import check_field_path
+from advanced_report_builder.field_access import check_field_path, checks_suspended
 from advanced_report_builder.utils import get_report_builder_class
 
 
@@ -280,11 +281,18 @@ class ReportBuilderFieldUtils:
                     or report_builder_field not in report_builder_class.exclude_display_fields
                     or (show_order_by_fields and report_builder_field in report_builder_class.order_by_fields)
                 ):
-                    django_field, col_type_override, columns, _ = self.get_field_details(
-                        base_model=base_model,
-                        field=report_builder_field,
-                        report_builder_class=report_builder_class,
-                    )
+                    try:
+                        django_field, col_type_override, columns, _ = self.get_field_details(
+                            base_model=base_model,
+                            field=report_builder_field,
+                            report_builder_class=report_builder_class,
+                        )
+                    except FieldDoesNotExist:
+                        # Working out the offered paths for a model the ReportBuilder was not written for
+                        # (a child model drawn with its parent's): a field that does not resolve is not offered.
+                        if not checks_suspended():
+                            raise
+                        continue
                     if django_field is None and must_have_django_field:
                         continue
                     for column in columns:
