@@ -159,7 +159,10 @@ def check_field_path(model, report_builder_class, path):
     a ``ReportBuilder`` declares as a class) came from the ``ReportBuilder`` itself and passes."""
     if checks_suspended() or not isinstance(path, str) or report_builder_class is None:
         return
-    if path in report_builder_class.field_classes or path in report_builder_class.fields:
+    # Read the declared columns off an instance: a ReportBuilder may declare ``fields`` as a property,
+    # and its callers pass the class as often as an instance.
+    builder = _builder_type(report_builder_class)()
+    if path in builder.field_classes or path in builder.fields:
         return
     path = path.lstrip('-')
     if path not in offered_field_paths(model, report_builder_class) and not _host_allows(model, path, 'field'):
