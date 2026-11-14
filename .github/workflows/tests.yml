@@ -55,6 +55,9 @@ jobs:
           docker compose logs db
           exit 1
 
+      - name: Run Django unit tests
+        run: docker compose exec -T django_report_builder python manage.py test report_builder_examples -v 2
+
       - name: Install test dependencies
         working-directory: tests
         # No --frozen because tests/uv.lock is gitignored; uv will resolve from pyproject.toml.
