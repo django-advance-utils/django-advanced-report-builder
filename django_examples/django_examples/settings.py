@@ -145,6 +145,8 @@ REPORT_BUILDER_DASHBOARD_URL_NAME = 'report_builder_examples:view_dashboard'
 
 DEBUG_TOOLBAR_CONFIG = {
     'SHOW_TOOLBAR_CALLBACK': 'django_examples.toolbar.show_toolbar',
+    # The callback decides when the toolbar shows, so it can stay installed under `manage.py test`.
+    'IS_RUNNING_TESTS': False,
 }
 
 FINANCIAL_YEAR_START_MONTH = 3
