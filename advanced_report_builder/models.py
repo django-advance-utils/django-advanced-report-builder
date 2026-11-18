@@ -998,7 +998,7 @@ class Dashboard(TimeStampedModel):
     # their names until someone orders them; a new one goes last.
     order = models.PositiveSmallIntegerField(default=0)
 
-    class Meta:
+    class Meta(TimeStampedModel.Meta):
         ordering = ('order', 'name', 'id')
 
     def __str__(self):
