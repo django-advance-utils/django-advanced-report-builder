@@ -994,11 +994,20 @@ class Dashboard(TimeStampedModel):
         choices=[(e.value, e.label) for e in DisplayOption if e != DisplayOption.NONE],
         default=DisplayOption.TWO_PER_ROW,
     )
+    # Where the dashboard comes in a list of them. Dashboards made before it existed all have 0, so they keep to
+    # their names until someone orders them; a new one goes last.
+    order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ('order', 'name', 'id')
 
     def __str__(self):
         return self.name
 
     def save(self, *args, **kwargs):
+        if self._state.adding and not self.order:
+            self.order = None
+            self.set_order_field()
         slug_alias = self.slug
         self.make_new_slug(allow_dashes=False, on_edit=True)
         if slug_alias != self.slug:
