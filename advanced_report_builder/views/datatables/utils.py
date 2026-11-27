@@ -1,6 +1,7 @@
 import copy
 import json
 
+from django.core.exceptions import FieldDoesNotExist
 from django.db.models import ExpressionWrapper, F, FloatField, Q
 from django.db.models.functions import NullIf
 from django.template import Context, Template, TemplateSyntaxError
@@ -19,6 +20,7 @@ from advanced_report_builder.column_types import (
     REVERSE_FOREIGN_KEY_STR_COLUMNS,
 )
 from advanced_report_builder.columns import ReportBuilderDateColumn
+from advanced_report_builder.exceptions import ReportError
 from advanced_report_builder.field_access import check_field_path, check_mathematical_operand
 from advanced_report_builder.globals import (
     ALIGNMENT_CHOICE_RIGHT,
@@ -763,9 +765,9 @@ class TableUtilsMixin(ReportUtilsMixin):
 
         Its rules are written against what the column's ``report_builder_class_name`` offers, the model its
         relation leads to from the model the column is on. That is the report's model only when the column is
-        the report's own: reached through an include, it is on the included model, and the filter is checked
-        and written from there. The aggregate's path is grown for the include by whatever grows the column's
-        annotation, so the filter is left at the column's own model as the annotation is.
+        the report's own: reached through an include, it is on the included model, so the rules are checked
+        there, and the filter is then led to it from the report's model by the include's path, as the
+        aggregate's field is.
 
         A column saved as having a filter but with none in it (a window saved while its query builder could not
         load) has no filter, rather than failing the report.
@@ -773,11 +775,30 @@ class TableUtilsMixin(ReportUtilsMixin):
         if int(data_attr.get('has_filter', 0)) != 1 or not data_attr.get('filter'):
             return None
         _filter = json.loads(decode_attribute(data_attr['filter']))
-        return self.process_filters(
+        condition = self.process_filters(
             search_filter_data=_filter,
             prefix_field_name=col_type_override.field_name.split('__')[0],
             model=self.column_model(base_model=base_model, col_type_override=col_type_override),
         )
+        if not condition:
+            return None
+        return self.prefixed_condition(condition, getattr(col_type_override, 'model_path', None) or '')
+
+    @classmethod
+    def prefixed_condition(cls, condition, prefix):
+        """``condition`` led to from further back by ``prefix``: each lookup and each field it compares with."""
+        if not prefix:
+            return condition
+        if isinstance(condition, Q):
+            prefixed = copy.copy(condition)
+            prefixed.children = [cls.prefixed_condition(child, prefix) for child in condition.children]
+            return prefixed
+        if isinstance(condition, tuple):
+            lookup, value = condition
+            return prefix + lookup, cls.prefixed_condition(value, prefix)
+        if isinstance(condition, F):
+            return F(prefix + condition.name)
+        return condition
 
     @staticmethod
     def column_model(base_model, col_type_override):
@@ -785,7 +806,12 @@ class TableUtilsMixin(ReportUtilsMixin):
         model = base_model
         model_path = (getattr(col_type_override, 'model_path', None) or '').removesuffix('__')
         for part in model_path.split('__') if model_path else []:
-            model = model._meta.get_field(part).related_model
+            try:
+                model = model._meta.get_field(part).related_model
+            except (AttributeError, FieldDoesNotExist):
+                model = None
+            if model is None:
+                raise ReportError(f'"{model_path}" is not a path this report can use')
         return model
 
     def get_reverse_foreign_key_str_field(self, col_type_override, data_attr, field_attr, index, base_model=None):

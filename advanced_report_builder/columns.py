@@ -224,10 +224,10 @@ class ReverseForeignKeyDateColumn(ColumnBase):
         if annotations_type == REVERSE_FOREIGN_KEY_ANNOTATION_DATE_ARRAY:
             self.annotations = {field_name: ArrayAgg(self.field_name, distinct=True, filter=sub_filter)}
         elif annotations_type == REVERSE_FOREIGN_KEY_ANNOTATION_DATE_MIN:
-            self.annotations = {field_name: Min(self.field_name, sub_filter=sub_filter)}
+            self.annotations = {field_name: Min(self.field_name, filter=sub_filter)}
 
         elif annotations_type == REVERSE_FOREIGN_KEY_ANNOTATION_DATE_MAX:
-            self.annotations = {field_name: Max(self.field_name, sub_filter=sub_filter)}
+            self.annotations = {field_name: Max(self.field_name, filter=sub_filter)}
 
     def row_result(self, data, _page_data):
         field = self.field

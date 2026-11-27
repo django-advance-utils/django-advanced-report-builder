@@ -32,6 +32,14 @@ class QueryBuilderModalBaseMixin(ReportBuilderFieldUtils):
         if report_builder_class is None:
             # noinspection PyUnresolvedReferences
             return self.command_response()
+        return self.get_query_builder_fields(base_model=base_model, report_builder_class=report_builder_class)
+
+    def get_query_builder_fields(self, base_model, report_builder_class):
+        """The query builder's filters for a report builder, each field once.
+
+        A field can be offered twice (its own and again through an include of the same model), and the query
+        builder refuses a list with an id in it twice and draws nothing.
+        """
         query_builder_filters = []
         self._get_query_builder_fields(
             base_model=base_model,
