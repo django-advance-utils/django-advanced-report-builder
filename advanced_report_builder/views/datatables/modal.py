@@ -1243,6 +1243,13 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
                 query_builder_filters=query_builder_filters,
                 report_builder_class=report_builder_class,
             )
+            # A field offered twice (its own and again through an include of the same model) is one filter:
+            # the query builder refuses a list with an id in it twice and draws nothing, as the report type's
+            # does not (get_query_builder_report_type_field).
+            seen_ids = set()
+            query_builder_filters = [
+                f for f in query_builder_filters if f['id'] not in seen_ids and not seen_ids.add(f['id'])
+            ]
         else:
             report_type_id = self.slug['report_type_id']
             query_builder_filters = self.get_query_builder_report_type_field(report_type_id=report_type_id)
