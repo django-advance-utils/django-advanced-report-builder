@@ -327,8 +327,11 @@ class FilterQueryMixin:
                 raise ReportError('A filter was applied without the model it filters')
             check_filter_path(model=rule_model, path=rule_path)
             if _id.endswith('__field_vs_field'):
-                # F(value) is resolved from the query's own model, prefix or not.
-                check_compared_path(model=model, compared=value)
+                # The compared field is offered by the same query builder as the field, so under a prefix it is
+                # on the prefixed model too, and F(value) is resolved from the query's own model through it.
+                check_compared_path(model=rule_model, compared=value)
+                if prefix_field_name is not None:
+                    value = prefix_field_name + '__' + value
 
             if _id.endswith('__field_vs_field'):
                 self.field_vs_field(
@@ -687,15 +690,15 @@ class FilterQueryMixin:
     @staticmethod
     def get_variable_day(value, query_list, display_operator, field, annotations):
         if annotations is None:
-            # maybe create a warning.  As this won't work with sub queries
-            return
-
-        annotate_name = f'{field}_weekday'
-        annotations[annotate_name] = ExtractWeekDay(field)
-        if display_operator == 'not_equal':
-            query_list.append(~Q(**{f'{annotate_name}': value}))
+            # No query to annotate, as in a column's own filter (an aggregate's ``filter``): the ``week_day``
+            # lookup is the same day numbering as ExtractWeekDay, and goes inside a condition. It used to return
+            # here, so the rule was ignored and the column showed every row.
+            condition = Q(**{f'{field}__week_day': value})
         else:
-            query_list.append(Q(**{f'{annotate_name}': value}))
+            annotate_name = f'{field}_weekday'
+            annotations[annotate_name] = ExtractWeekDay(field)
+            condition = Q(**{f'{annotate_name}': value})
+        query_list.append(~condition if display_operator == 'not_equal' else condition)
 
     @staticmethod
     def get_week_number(value, query_list, display_operator, field, query_string):

@@ -1237,11 +1237,8 @@ class TableFieldModal(QueryBuilderModalBaseMixin, FormModal):
             app_label, model, report_builder_fields_str = report_builder_class_name.split('.')
             new_model = apps.get_model(app_label, model)
             report_builder_class = get_report_builder_class(model=new_model, class_name=report_builder_fields_str)
-            query_builder_filters = []
-            self._get_query_builder_fields(
-                base_model=new_model,
-                query_builder_filters=query_builder_filters,
-                report_builder_class=report_builder_class,
+            query_builder_filters = self.get_query_builder_fields(
+                base_model=new_model, report_builder_class=report_builder_class
             )
         else:
             report_type_id = self.slug['report_type_id']
